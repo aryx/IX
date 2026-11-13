@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's libs/network/tls/Tls12.ml (its 8af888e);
- * P-384, and the curves by Ecdsa (mini-chrome's P256 not copied) *)
+(* ix: copied from libs/network/tls/Tls12.ml in the author's mini-chrome
+ * (at its commit 8af888e). P-384 was added, and the curves are done by
+ * Ecdsa (mini-chrome's P256 was not copied). *)
 
 (* See Tls12.mli *)
 

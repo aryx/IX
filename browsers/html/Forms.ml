@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/html/Forms.ml, its first version; no optional argument; Option.value written out (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/html/Forms.ml in the author's mini-chrome
+ * (its first version; docs/plans/plan_browser.md). It has no optional
+ * argument, and an Option.value is written out as the match it stands
+ * for. *)
 
 (* See Forms.mli *)
 

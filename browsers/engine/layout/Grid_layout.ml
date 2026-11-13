@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/layout/Grid_layout.ml, as its add433e first had it (docs/plans/plan_browser.md) *)
+(* ix: copied from src/layout/Grid_layout.ml in the author's
+ * mini-chrome, as its commit add433e first had it
+ * (docs/plans/plan_browser.md) *)
 
 (* See Grid_layout.mli *)
 

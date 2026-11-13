@@ -1,51 +1,57 @@
-(* Tab_worker: a tab's pieces (Tab.step: the page fetched, read and
-   laid out, its scripts run, a picture) done by a worker beside the
-   window (Worker_spawn: a thread, a domain), so that the window draws,
-   scrolls and goes Back while a page is on its way. The worker is
-   given a copy of the tab; the window keeps its own (Netscape):
+(* Tab_worker has a tab's pieces of work done by a worker beside the
+   window (Worker_spawn: a thread or a domain), so that the window can
+   draw, scroll and go Back while a page is on its way. A piece is one
+   call of Tab.step: the page fetched, read and laid out, its scripts
+   run, or a picture fetched. The worker is given a copy of the tab,
+   and the window keeps its own (see Netscape):
 
       window                         worker
       ------                         ------
-      give tab: n  --------------->  Tab.step
+      give tab, gets n ----------->  Tab.step
       draws its copy, scrolls;            |
-      Back, a tab, an address: the        |
-        piece n given up                  |
-      a click on the page, a key in       |
-        it: kept for later                |
+      on Back, a tab or an address,       |
+        piece n is given up               |
+      a click or a key on the page        |
+        is kept for later                 |
       take () <--------------------  (n, tab')
-      tab' merged with the copy (Tab.merged), what was kept done on it
+      tab' is merged with the copy (Tab.merged), and what was kept is
+        done on it
 
-   The tab's scripts (their engine is not a value but a store) run on
-   one thread at a time: the worker's while a piece is out -- given, or
-   given up and not done yet -- the window's otherwise: its timers
-   wait, and so does what a click on the page or a key in it is to
-   tell them. The cookies, written by the worker's requests, are read
-   by the window when the tab has nothing left to do. One worker, one
-   piece at a time.
+   The tab's scripts run on one thread at a time, because their engine
+   is not a value but a store. They run on the worker's thread while a
+   piece is out (given, or given up and not done yet), and on the
+   window's thread otherwise. While a piece is out, their timers wait,
+   and so do the events that a click or a key on the page would send
+   them. The cookies are written by the worker's requests, and the
+   window reads them when the tab has nothing left to do. There is one
+   worker, and it does one piece at a time.
 
-   worker=wait (Waited): the window waits for each piece (the tests:
-   the same frames at each run); worker=off (Inline): the window does
-   the piece itself, as before (a frame waits for it). Under mini-ml a
-   thread runs until it waits: the window yields at each frame while
-   a piece is out, and the worker does it whole.
+   With worker=wait (Waited), the window waits for each piece, so that
+   the tests see the same frames at each run. With worker=off (Inline),
+   the window does the piece itself, as before, and a frame waits for
+   it. Under mini-ml a thread runs until it waits, so the window yields
+   at each frame while a piece is out, and the worker does the piece
+   whole.
 
    modern:
-   Chrome's tab (2008) is a process of its own, its renderer; Firefox
-   moved its pages out of the window's process with Electrolysis
+   In Chrome (2008) each tab is a process of its own, its renderer;
+   Firefox moved its pages out of the window's process with Electrolysis
    (2016). Here the renderer is a thread, and a page's work is still
    done one piece after the other. *)
 
 type working = Beside | Waited | Inline
 
-(* Beside unless the flag says *)
+(* Beside, unless the worker= flag says otherwise *)
 val working : working ref
 
-(* the piece of [tab] given to the worker (started the first time): its number *)
+(* Gives the worker a piece of [tab] (starting the worker the first
+ * time) and returns the piece's number. *)
 val give : < Cap.network; Cap.clock; Cap.open_in; .. > -> Tab.t -> int
 
 (* is a piece out (given, and not taken back)? *)
 val out : unit -> bool
 
-(* the piece done, if it is (Waited: waited for), with its number;
- * Error, what it raised *)
+(* The piece done, with its number, if it is done (with Waited, [take]
+ * waits for it). The result is Error with what Tab.step raised, when
+ * it raised. *)
 val take : unit -> (int * (Tab.t, exn) result) option

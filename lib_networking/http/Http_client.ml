@@ -1,7 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/unix/Http_client.ml; no optional argument (post an option, five redirections, Tcp's timeout), get_once is once; options (more headers, the connection kept, a jar of cookies) said by the _with functions (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/networking/unix/Http_client.ml in the author's
+ * playground (docs/plans/plan_browser.md). It has no optional
+ * argument: post is an option, the redirections are always five, and
+ * the timeout is Tcp's. The playground's get_once is once here. The
+ * options (more headers, the connection kept, a jar of cookies) are
+ * given to the _with functions. *)
 
 (* See Http_client.mli *)
 

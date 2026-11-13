@@ -1,23 +1,26 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-timesync: the time a server of the network says, as the seconds
- * since 1970, on standard output; what a machine without a clock chip
- * (a Raspberry Pi) writes to its /dev/time when it starts, a
- * certificate's dates being checked against it:
+(* mini-timesync writes on standard output the time that a server of the
+ * network gives, as the seconds since 1970. A machine without a clock
+ * chip (a Raspberry Pi) writes it to its /dev/time when it starts,
+ * because a certificate's dates are checked against it:
  *
  *     timesync pool.ntp.org > /dev/time
  *
- * One question and its answer (SNTP): a packet of 48 bytes, its first
- * 0x1b (version 3, a client), sent to UDP's port 123; in the answer of
- * the same size the bytes 40 to 43 are the seconds since 1900 when the
- * server sent it. None of NTP's own work: no delay measured, no clock
- * slowed or hurried, one server believed; a second is what is wanted.
+ * It asks one question and reads its answer (SNTP). The question is a
+ * packet of 48 bytes whose first byte is 0x1b (version 3, a client),
+ * sent to UDP's port 123. In the answer, of the same size, the bytes 40
+ * to 43 are the seconds since 1900 when the server sent it. It does
+ * none of NTP's own work: no delay is measured, no clock is slowed or
+ * hurried, and one server is believed, because a second is the
+ * precision wanted.
  *
  * history:
  * Plan 9's is aux/timesync, which also takes the time from a file
  * server or a radio clock and keeps the clock's frequency right.
- * David Mills's NTP (1985) is the protocol; SNTP its simple subset.
+ * David Mills's NTP (1985) is the protocol, and SNTP is its simple
+ * subset.
  *
  * References: RFC 4330, "Simple Network Time Protocol (SNTP) Version
  * 4" (2006); Plan 9's timesync(8). *)

@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/protocols/Http.ml; gzip asked for and read (Zlib), a response's extent, saying and keeping, as mini-chrome's later one (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/networking/protocols/Http.ml in the author's
+ * playground (docs/plans/plan_browser.md). As in mini-chrome's later
+ * version, it asks for gzip and reads it (with Zlib), and it adds a
+ * response's extent, saying and keeping. *)
 
 (* See Http.mli *)
 

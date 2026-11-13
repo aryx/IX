@@ -1,4 +1,4 @@
-(* Event_loop: one thing at a time -- how a page's scripts, its
+(* Event_loop: one thing at a time. This is how a page's scripts, its
    timers and its events share a single thread; and setTimeout.
 
    A script is never interrupted. While a function runs, no other
@@ -32,45 +32,45 @@
    timer's function is another task, and comes after (4), however
    small its delay.
 
-   Here: [install] gives a page setTimeout, setInterval and their
+   Here, [install] gives a page setTimeout, setInterval and their
    clear functions, which only put a function in a list with the time
-   it is due; [advance] is the loop's turn for the timers -- the
-   browser calls it at each frame with the time gone by, and each
-   timer due is run as a task ([task]: Browser_script's, which runs
-   the microtasks after it and reports an error on the console). The
-   other tasks are the browser's to bring: a click (Browser_script's
-   [click]), an answer ([answer]), a WebSocket's message (in
-   mini-chrome; ix has no WebSocket).
-   requestAnimationFrame is a timer of a sixtieth of a second.
+   it is due. [advance] is the loop's turn for the timers: the browser
+   calls it at each frame with the time gone by, and each timer due is
+   run as a task. [task] is Browser_script's; it runs the microtasks
+   after the task and reports an error on the console. The other tasks
+   are the browser's to bring: a click (Browser_script's [click]), an
+   answer ([answer]), or a WebSocket's message (in mini-chrome; ix has
+   no WebSocket). requestAnimationFrame is a timer of a sixtieth of a
+   second.
 
-   In ix the loop's "forever" is the window's: mini-netscape is a
-   program of the playground's, called once a frame, and at each
-   frame it does a piece of what the page still waits for (Tab.step:
-   a file fetched, the scripts run, a request answered), handles the
-   mouse and the keys (Tab.click: a task), and moves the page's clock
-   by a sixtieth of a second (Tab.advance: the timers due, a task
-   each). The clock is the frames', not the wall's: a frame is a
+   In ix the loop's "forever" is the window's. mini-netscape is a
+   program of the playground's, called once a frame. At each frame it
+   does a piece of what the page still waits for (Tab.step fetches a
+   file, runs the scripts, or answers a request), handles the mouse and
+   the keys (Tab.click runs a task), and moves the page's clock by a
+   sixtieth of a second (Tab.advance runs the timers due, each as a
+   task). The clock is the frames', not the wall's: a frame is a
    sixtieth of a second to the page however long it took, and a
    recorded session sees the same ticks at each run (the timers wait
    while the page or its scripts are still on their way). The kernel
-   has the same shape one
-   level down: an interrupt is its click, the clock's tick its timer,
-   and the scheduler its loop; what differs is that a process can be
-   interrupted and a script cannot.
+   has the same shape one level down: an interrupt is its click, the
+   clock's tick is its timer, and the scheduler is its loop. What
+   differs is that a process can be interrupted and a script cannot.
 
-   Not here: a timer's delay is not clamped as a browser's (4 ms at
-   least for a timer set from a timer five deep, a second in a tab
-   not shown); tasks have no priorities; no idle callbacks.
+   These are not here: a timer's delay is not clamped as a browser
+   clamps it (to 4 ms at least for a timer set from a timer five deep,
+   and to a second in a tab not shown); tasks have no priorities; and
+   there are no idle callbacks.
 
    cs-history:
-   setTimeout is of the first JavaScript (Netscape Navigator 2, 1995),
-   setInterval of Navigator 4 (1997). The loop itself is older than
-   the web: it is how every graphical program has been written since
-   the Macintosh (1984) -- "get the next event, handle it" -- and
-   JavaScript inherited it by living inside one. What JavaScript added
-   was to have nothing else: no threads, no blocking call (but alert),
-   so that everything slow had to be asked for and answered later, by
-   a callback.
+   setTimeout dates from the first JavaScript (Netscape Navigator 2,
+   1995), and setInterval from Navigator 4 (1997). The loop itself is
+   older than the web: it is how every graphical program has been
+   written since the Macintosh (1984), as "get the next event, handle
+   it", and JavaScript inherited it by living inside one. What
+   JavaScript added was to have nothing else: no threads, and no
+   blocking call (except alert), so that everything slow had to be
+   asked for and answered later, by a callback.
 
    cs-history:
    That style left the browser with Node.js (Ryan Dahl, 2009): a
@@ -91,25 +91,27 @@
    8.7, "Timers"; Philip Roberts, What the heck is the event loop
    anyway? (JSConf EU, 2014); Jake Archibald, Tasks, microtasks,
    queues and schedules (2015). *)
-(* ix: the author's mini-chrome's src/webapi/run/Event_loop.mli (its 8af888e) (docs/plans/plan_browser.md) *)
+(* ix: copied from src/webapi/run/Event_loop.mli in the author's
+ * mini-chrome (its 8af888e) (docs/plans/plan_browser.md) *)
 
 open Js_value
 open Script_types
 
-(* setTimeout, setInterval, clearTimeout, clearInterval,
- * requestAnimationFrame and cancelAnimationFrame, defined as globals *)
+(* defines setTimeout, setInterval, clearTimeout, clearInterval,
+ * requestAnimationFrame and cancelAnimationFrame as globals *)
 val install : t -> (string -> (value list -> value) -> unit) -> unit
 
-(* [add t [f; ms] ~repeat]: f to be run in ms milliseconds (1 at
- * least), again every ms if [repeat]; the timer's number. [frame]:
- * requestAnimationFrame's, whose f is given the time *)
+(* [add t [f; ms] ~repeat] sets f to run in ms milliseconds (1 at
+ * least), and again every ms if [repeat]; it returns the timer's
+ * number. [frame] is true for a timer of requestAnimationFrame, whose f
+ * is given the time *)
 val add : frame:bool -> t -> value list -> repeat:bool -> value
 
-(* the timer of that number forgotten *)
+(* forgets the timer of that number *)
 val clear : t -> value list -> value
 
-(* [advance t ms ~task]: the page's clock moved on by [ms]; the timers
- * due run, the earliest first, each given to [task] with what it is
- * called with (the time, for an animation frame's; else undefined), a
- * thousand at most per call *)
+(* [advance t ms ~task] moves the page's clock on by [ms]. The timers
+ * due run, the earliest first, and each is given to [task] with what
+ * it is called with (the time, for an animation frame's timer, and
+ * undefined otherwise). At most a thousand run per call *)
 val advance : t -> float -> task:(value -> value -> unit) -> unit

@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/www/Browser_page.ml, its first version; no optional argument; an error's page names the window's buttons, not mini-chrome's keys (docs/plans/plan_browser.md) *)
+(* ix: copied from src/www/Browser_page.ml in the author's mini-chrome,
+ * from its first version (docs/plans/plan_browser.md). It has no
+ * optional argument, and an error's page names the window's buttons,
+ * not mini-chrome's keys. *)
 
 (* See Browser_page.mli *)
 

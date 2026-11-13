@@ -1,5 +1,5 @@
 (* Pem: certificates as text, the base64 of their DER between two lines
-   (Privacy-Enhanced Mail, RFC 1421, 1993 -- mail again, Mail.mli; its
+   (Privacy-Enhanced Mail, RFC 1421, 1993: mail again, Mail.mli; its
    format outlived it, RFC 7468):
 
        -----BEGIN CERTIFICATE-----
@@ -7,8 +7,9 @@
        ...
        -----END CERTIFICATE-----
 
-   How the system keeps its trusted roots (a bundle of them, one file:
-   /etc/ssl/certs/ca-certificates.crt) and how openssl shows a chain.
+   It is how the system keeps its trusted roots (a bundle of them, in
+   one file: /etc/ssl/certs/ca-certificates.crt), and how openssl shows
+   a chain.
 
    Where it stands: Tls_client reads the system's bundle through
    [certificates] and gives each DER to X509.parse; mini-curl's

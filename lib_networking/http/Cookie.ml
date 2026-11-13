@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's libs/network/protocols/Cookie.ml; ~script said (no optional argument), the days by Civil, the date's seconds in floats (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/network/protocols/Cookie.ml in the author's
+ * mini-chrome (docs/plans/plan_browser.md). ~script must be given
+ * (there is no optional argument), the days are computed by Civil, and
+ * the seconds of a date are floats. *)
 
 (* See Cookie.mli *)
 

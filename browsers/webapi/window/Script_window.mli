@@ -1,13 +1,14 @@
-(* Script_window: the globals of a page -- what a library looks for on
+(* Script_window: the globals of a page, which a library looks for on
    window before it does anything.
 
-   A script in a page has, besides the language's own globals
-   (Js_globals, the engine's) and document, a crowd of things that are the
+   Besides the language's own globals (Js_globals, in the engine) and
+   document, a script in a page has a crowd of things that are the
    browser's: classes to test a value against, the window's size,
-   places to keep a little data, ways to be told of a change. A library
-   takes stock of them as it starts, and one that is missing ends it at
-   its first line. So they are here, most of them less than the real
-   thing, each as much as a page here can mean:
+   places to keep a little data, and ways to be told of a change. A
+   library takes stock of them as it starts, and if one is missing, the
+   library stops at its first line. So they are here. Most of them do
+   less than the real thing: each does as much as it can mean for a
+   page here:
 
    cs-history:
    Two of these names are fossils. navigator is Netscape Navigator,
@@ -24,38 +25,42 @@
    the browser is.
 
      Node, Element, HTMLElement, Text, Document, EventTarget ...
-         the classes of the host objects: el instanceof HTMLElement,
-         Node.ELEMENT_NODE, and a method a library adds to
-         Element.prototype is every element's. Every element is an
-         HTMLElement and nothing more precise (no HTMLInputElement of
-         its own)
+         the classes of the host objects, for el instanceof HTMLElement
+         and Node.ELEMENT_NODE; a method that a library adds to
+         Element.prototype is every element's. An element's prototype
+         is its tag's (HTMLInputElement for an <input>), or
+         HTMLElement for a tag without one
      getComputedStyle(el)
-         what the element's own style= says, and the defaults of a few
-         properties (display: block). The cascade's answer is the
-         browser's, after the script: a script cannot ask for it
+         gives what the element's own style= says, and the defaults of
+         a few properties (display: block). The cascade's answer is the
+         browser's, computed after the script, so a script cannot ask
+         for it
      MutationObserver, ResizeObserver, IntersectionObserver
-         can be made and told to observe; are never called back
+         can be made and told to observe; only IntersectionObserver
+         is called back (Script_prelude's, which says all is in view)
      localStorage, sessionStorage
          kept as long as the page is, not after (LocalStorage.mli)
-     matchMedia(query)       never matches
-     history.pushState       the address does not change
+     matchMedia(query)       matches by the window's size
+     history.pushState       changes the address, with no page loaded
      performance.now()       the page's clock
      screen, devicePixelRatio, scrollX, scrollY, getSelection,
-     customElements, CSS.supports, requestIdleCallback's absence...
+     customElements, CSS.supports, requestIdleCallback...
 
-   and window itself: an object through which every global is read and
-   set (window.x = 1 makes the global x), with its size, its location,
-   and the document's listeners for its own.
+   and window itself, an object through which every global is read and
+   set (window.x = 1 makes the global x). It has its size and its
+   location, and its listeners are the document's.
 
    Reference: Aaron Andersen, "History of the browser user-agent
    string" (2008); HTML Living Standard, section 7.2.2 (the Window object);
    CSSOM, section 7.2 (getComputedStyle); Web IDL, for what "an
    interface object" such as Node is. *)
-(* ix: the author's mini-chrome's src/webapi/window/Script_window.mli (its 8af888e) (docs/plans/plan_browser.md) *)
+(* ix: copied from src/webapi/window/Script_window.mli in the author's
+ * mini-chrome (its 8af888e) (docs/plans/plan_browser.md) *)
 
 open Js_value
 open Script_types
 
-(* the globals above defined, the host objects' prototypes noted in the
- * page's state; the window object, for a viewport's width and height *)
+(* defines the globals above, and notes the host objects' prototypes in
+ * the page's state. It returns the window object, made for a viewport
+ * of that width and height *)
 val install : t -> viewport:float * float -> (string -> value -> unit) -> value

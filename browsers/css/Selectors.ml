@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/css/Selectors.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/css/Selectors.ml in the author's mini-chrome
+ * (its first version; docs/plans/plan_browser.md) *)
 
 (* See Selectors.mli *)
 open Css_syntax

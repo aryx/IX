@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's libs/network/unix/Keep_alive.ml; no mutex (no threads), the roots said by the caller, Tcp's timeout (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/network/unix/Keep_alive.ml in the author's
+ * mini-chrome (docs/plans/plan_browser.md). It has no mutex, because
+ * there are no threads; the caller gives the roots, and the timeout is
+ * Tcp's. *)
 
 (* See Keep_alive.mli *)
 

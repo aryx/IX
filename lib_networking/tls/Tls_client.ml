@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/unix/Tls_client.ml; the roots said by the caller (no optional argument), files read with Cap.open_in, no mutex, no Transport of lines (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/networking/unix/Tls_client.ml in the author's
+ * playground (docs/plans/plan_browser.md). The caller gives the roots
+ * (there is no optional argument), files are read with Cap.open_in,
+ * and there is no mutex and no Transport of lines. *)
 
 (* See Tls_client.mli *)
 

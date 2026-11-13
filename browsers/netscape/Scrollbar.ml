@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's libs/gui/Gui_scrollbar.ml (its 8af888e) *)
+(* ix: copied from libs/gui/Gui_scrollbar.ml in the author's mini-chrome
+ * (its 8af888e) *)
 
 (* See Scrollbar.mli *)
 

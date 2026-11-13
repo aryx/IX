@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/html/Html_lexer.ml, its first version; emit_text_as, where ~decode was optional (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/html/Html_lexer.ml in the author's
+ * mini-chrome (its first version; docs/plans/plan_browser.md). emit_text_as
+ * is a separate function, where ~decode was optional. *)
 
 (* See Html_lexer.mli *)
 

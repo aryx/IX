@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/webapi/run/Event_loop.ml (its 8af888e) (docs/plans/plan_browser.md) *)
+(* ix: copied from src/webapi/run/Event_loop.ml in the author's
+ * mini-chrome (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Event_loop.mli *)
 open Js_value

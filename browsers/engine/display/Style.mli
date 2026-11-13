@@ -12,11 +12,12 @@ type t = {
   italic : bool;
   underline : bool;
   strike : bool;
-  (* in the playground's units, the height of an em *)
+  (* the height of an em, in the playground's units *)
   size : float;
 }
 
-(* the body text: nothing on, at a size a page reads well at *)
+(* the body text: no look is on, and the size is one a page reads well
+ * at *)
 val plain : t
 
 (* the looks a toolbar toggles, by name, for the apps and the tests *)

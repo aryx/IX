@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/javascript/parsing/Js_ast.ml (its 8af888e) (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/javascript/parsing/Js_ast.ml in the
+ * author's mini-chrome, at its commit 8af888e (docs/plans/plan_browser.md) *)
 
 (* See Js_ast.mli *)
 

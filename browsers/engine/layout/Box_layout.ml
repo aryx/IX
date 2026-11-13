@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/layout/Box_layout.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: copied from src/layout/Box_layout.ml in the author's
+ * mini-chrome, from its first version (docs/plans/plan_browser.md) *)
 
 (* See Box_layout.mli *)
 

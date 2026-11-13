@@ -73873,3 +73873,35 @@ Claude reported that all seven review groups were done and the checks had run.
 Claude found 29 new lines over 80 columns and planned to look at those first.
 Claude noted that Playground.mli's parse tree differed only in its doc comment text.
 Claude then turned to the code bug an agent had reported in Time.ml.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 21:59
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that the webapi group had finished, so all seven browser and networking groups were done.
+Claude collected 47 stale-comment facts from those groups into one list for a single fixing agent.
+Claude flagged the largest fact: Tab.mli and Netscape.ml still describe a window that stops while a page loads.
+Claude said it would read the fixing agent's diff before showing Yoann the batch.
+Claude had earlier recorded the graphics batch as pushed in commit 41c6a531, covering 249 files.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 22:19
+
+**Yoann:**
+
+> done?
+
+**Claude (summary):**
+
+Claude reported the fixing agent had corrected 46 of the 47 facts, with the MutationObserver case left partly wrong.
+Claude found the reporting agent was itself wrong about MutationObserver, since it is defined but never calls back.
+Claude also flagged two more misplaced comments and two stale README lines, planning to fix the comments itself.
+Claude then checked the two README lines and found them correct, as they sit in lists of what ix cut from mini-chrome.
+Claude moved on to the Script_types.mli comments, intending to fix them before showing the batch.

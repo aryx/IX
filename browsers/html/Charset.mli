@@ -1,27 +1,29 @@
-(* Charset: which encoding a page's bytes are in, and the page in UTF-8.
+(* Charset: which encoding a page's bytes are in, and the page decoded
+   into UTF-8.
 
    HTML is text, but what arrives is bytes, and the bytes do not say how
    they encode the text. "é" is one byte in Latin-1 (ISO 8859-1, the
-   web's default until HTML5), two in UTF-8:
+   web's default until HTML5), and two in UTF-8:
 
      "café"   Latin-1   63 61 66 E9
               UTF-8     63 61 66 C3 A9
 
-   Read the UTF-8 bytes as Latin-1 and C3 A9 are two characters, "Ã©":
-   "cafÃ©", mojibake, the web's commonest bug for twenty years. So
-   before anything else, a browser decides the encoding, and decodes
-   the page into the one it works in -- UTF-8 here, as in OCaml's
-   strings everywhere else in the repository.
+   If you read the UTF-8 bytes as Latin-1, C3 A9 are two characters,
+   "Ã©", and you get "cafÃ©". That is mojibake, the web's commonest bug
+   for twenty years. So before anything else, a browser decides the
+   encoding, and decodes the page into the one it works in. That is
+   UTF-8 here, as in OCaml's strings everywhere else in the repository.
 
-   Deciding, in the WHATWG's order ("Encoding", and HTML's "determining
-   the character encoding"), simplified:
+   Here is how the encoding is decided, in the WHATWG's order
+   ("Encoding", and HTML's "determining the character encoding"),
+   simplified:
 
      1. a byte order mark: EF BB BF starts a UTF-8 file;
      2. the HTTP header: "Content-Type: text/html; charset=ISO-8859-1";
      3. the page itself, near its top: <meta charset="utf-8">, or the
         older <meta http-equiv="Content-Type" content="text/html;
-        charset=utf-8"> (a page naming its own encoding in the encoding
-        it names: it works because both are ASCII there);
+        charset=utf-8"> (a page names its own encoding in the encoding
+        it names, which works because both are ASCII there);
      4. a guess: bytes that are valid UTF-8 and not all ASCII are UTF-8
         (a Latin-1 text is almost never valid UTF-8 by accident: an é
         followed by a letter is not a UTF-8 sequence); anything else is
@@ -29,46 +31,47 @@
 
    **Windows-1252 for Latin-1**: the WHATWG decodes a page labelled
    ISO-8859-1 as Windows-1252, and so do we. The two agree except on
-   bytes 80 to 9F, control characters in Latin-1 that no page meant,
-   and in Windows-1252 the characters Word typed: the curly quotes
-   (93 and 94: "“" and "”"), the dashes (96, 97), "€" (80), "…" (85).
-   Pages labelled Latin-1 in the 1990s were written in Windows-1252 on
-   Windows, and a browser that believed the label showed boxes where
-   the quotes were.
+   bytes 80 to 9F. In Latin-1 those are control characters that no page
+   meant, and in Windows-1252 they are the characters Word typed: the
+   curly quotes (93 and 94: "“" and "”"), the dashes (96, 97), "€" (80),
+   and "…" (85). Pages labelled Latin-1 in the 1990s were written in
+   Windows-1252 on Windows, and a browser that believed the label
+   showed boxes where the quotes were.
 
      bytes 93 68 69 94, labelled "iso-8859-1"  ->  "“hi”"
 
-   Not done: the other encodings (Shift_JIS, GB18030, KOI8-R... the
-   WHATWG lists 40; ours are the two a Mosaic-era page and a modern one
-   need), UTF-16, and the spec's statistical guessers.
+   Not done: the other encodings (Shift_JIS, GB18030, KOI8-R...; the
+   WHATWG lists 40, and ours are the two that a Mosaic-era page and a
+   modern one need), UTF-16, and the spec's statistical guessers.
 
-   In the system: Browser_page decodes a page's bytes here before
+   In the system, Browser_page decodes a page's bytes here before
    Html_tree sees them, and mini-lynx (Lynx) does the same; the
    content type is the one Http_client read in the answer's headers.
-   After this module everything is UTF-8: Html_lexer cuts bytes at
+   After this module everything is UTF-8. Html_lexer cuts bytes at
    ASCII's < and &, which no byte of a longer UTF-8 character can be
-   taken for, and never asks what a character is.
+   taken for, and it never asks what a character is.
 
    cs-history:
-   How the web got here. ASCII (1963) is seven bits, English's
-   letters; every country then used the eighth bit for its own (ISO
-   8859-1 for Western Europe, 1987; Windows-1252, Microsoft's variant
-   of it; KOI8 for Russian; several for Japanese alone), and a text
-   did not say which. Unicode (1991) numbered every character of every
-   script, and UTF-8 is the way to write those numbers as bytes that
-   won: designed by Ken Thompson with Rob Pike in September 1992, on a
-   placemat in a New Jersey diner, for Plan 9 -- ASCII stays ASCII, no
-   byte of a longer character looks like one, a text can be read from
-   its middle. The web's pages were mostly Latin-1 and its relatives
-   until about 2008, when UTF-8 passed them; nearly all are UTF-8 now.
-   A browser still has to read the old ones, and to guess: the bytes
-   do not say, the server's header is often wrong, and the page's own
-   <meta> is inside the bytes to be decoded.
+   Here is how the web got here. ASCII (1963) is seven bits, for
+   English's letters. Every country then used the eighth bit for its
+   own letters (ISO 8859-1 for Western Europe, 1987; Windows-1252,
+   Microsoft's variant of it; KOI8 for Russian; several for Japanese
+   alone), and a text did not say which. Unicode (1991) numbered every
+   character of every script, and UTF-8 is the way of writing those
+   numbers as bytes that won. Ken Thompson designed it with Rob Pike in
+   September 1992, on a placemat in a New Jersey diner, for Plan 9:
+   ASCII stays ASCII, no byte of a longer character looks like one, and
+   a text can be read from its middle. The web's pages were mostly
+   Latin-1 and its relatives until about 2008, when UTF-8 passed them;
+   nearly all are UTF-8 now. A browser still has to read the old ones,
+   and to guess, because the bytes do not say, the server's header is
+   often wrong, and the page's own <meta> is inside the bytes to be
+   decoded.
 
    plan9-is-cleaner:
    Plan 9 was the first system to be UTF-8 throughout (1992): the
    kernel, the window system, the editor, the file names. So a Plan 9
-   program has no encoding to decide; the question this module answers
+   program has no encoding to decide. The question this module answers
    is asked once, at the border, by the program that reads the
    outside's bytes (there, tcs), and nowhere after. It is the same
    border here.
@@ -82,32 +85,32 @@
 
 type t = Utf_8 | Windows_1252
 
-(* an encoding by one of its labels, case and surrounding spaces
- * ignored: "utf-8", "utf8", "unicode-1-1-utf-8"; "iso-8859-1",
+(* an encoding by one of its labels, ignoring case and surrounding
+ * spaces: "utf-8", "utf8", "unicode-1-1-utf-8"; "iso-8859-1",
  * "latin1", "us-ascii", "windows-1252", "cp1252" and the rest of the
- * WHATWG's labels for it; None for what we don't decode *)
+ * WHATWG's labels for it. It is None for what we don't decode. *)
 val of_label : string -> t option
 
 (* the charset parameter of a Content-Type:
  * "text/html; charset=ISO-8859-1" -> Some Windows_1252 *)
 val of_content_type : string -> t option
 
-(* a <meta> naming the encoding, in the first 1024 bytes (the
+(* a <meta> naming the encoding, in the first 1024 bytes (this is the
  * WHATWG's prescan, simplified: the first "charset=" inside a <meta>
  * tag, quoted or not) *)
 val of_meta : string -> t option
 
-(* the bytes are UTF-8: every sequence well formed, no overlong
- * encoding, no surrogate, nothing above U+10FFFF *)
+(* whether the bytes are UTF-8: every sequence is well formed, with no
+ * overlong encoding, no surrogate, and nothing above U+10FFFF *)
 val is_utf_8 : string -> bool
 
-(* the encoding, in the order above; [content_type] is the header's
- * value, if there was one *)
+(* the encoding, decided in the order above; [content_type] is the
+ * header's value, if there was one *)
 val detect : string option -> string -> t
 
-(* the bytes decoded into UTF-8: Windows-1252 byte by byte; UTF-8 kept,
- * a byte order mark dropped, and each malformed sequence replaced by
- * U+FFFD ("�", the replacement character) *)
+(* the bytes decoded into UTF-8. Windows-1252 is decoded byte by byte.
+ * UTF-8 is kept, with a byte order mark dropped and each malformed
+ * sequence replaced by U+FFFD ("�", the replacement character). *)
 val to_utf_8 : t -> string -> string
 
 (* detect, then to_utf_8: what a browser does with a page's bytes *)
@@ -115,5 +118,5 @@ val decode : string option -> string -> string
 
 (* the Unicode code point of a Windows-1252 byte (0x93 -> 0x201C; the
  * five bytes it leaves undefined, 81 8D 8F 90 9D, are themselves, as
- * the WHATWG's index says), for Entities' &#147; too *)
+ * the WHATWG's index says). Entities uses it for &#147; too. *)
 val windows_1252 : int -> int

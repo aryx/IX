@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: after the author's playground's libs/networking/unix/Tcp.ml; no optional timeout, a read's by select (lib_core's Unix has no SO_RCVTIMEO), a name asked of Dns when getaddrinfo knows none (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/networking/unix/Tcp.ml in the author's
+ * playground, with three changes (docs/plans/plan_browser.md): there is
+ * no optional timeout; a read gives up by select (lib_core's Unix has
+ * no SO_RCVTIMEO); and a name is asked of Dns when getaddrinfo knows
+ * none. *)
 
 (* See Tcp.mli *)
 

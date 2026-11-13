@@ -1,4 +1,5 @@
-(* Tcp: a connection to another computer, the operating system's side.
+(* Tcp is a connection to another computer, on the operating system's
+   side.
 
    Everything in networking/ is bytes in, bytes out; this module is
    where the bytes leave the machine. TCP (Vint Cerf and Bob Kahn, 1974;
@@ -17,10 +18,10 @@
      read = 0 (end of stream) <-----------  close
      close
 
-   A name becomes an address through DNS (getaddrinfo asks the
-   system's resolver, and where it has none, mini-ml's, Dns.mli asks;
-   a name may have several addresses, IPv4 and IPv6,
-   tried in the order given until one answers). A stream has no
+   A name becomes an address through DNS: getaddrinfo asks the
+   system's resolver, and where there is none, as with mini-ml, Dns
+   asks. A name may have several addresses, IPv4 and IPv6, which are
+   tried in the order given until one answers. A stream has no
    messages, only bytes: a read gives whatever has arrived, maybe half a
    header, so a protocol must say where its messages end (Http.mli) --
    or, as here, read until the other side closes.
@@ -35,20 +36,21 @@
    which a program gets only from Cap.main and hands down to the code it
    trusts with it (the open row [..]: any capabilities that include the
    network, with no coercion at the call). A function without one in
-   its type can't reach the network. (ix: with Cap.open_in, for the
-   name server's address, /etc/resolv.conf.)
+   its type can't reach the network. (ix: connect and exchange take
+   Cap.open_in too, to read the name server's address in
+   /etc/resolv.conf.)
 
-   Where it stands: under Http_client (http://) and under Tls_client
-   (https://), and above the kernel. This module is the program's
-   side, a dozen lines around the system calls; the work the first
-   paragraph leaves to the kernel is in ix too, in mini-9pi's own Tcp
-   (its network's ip): the segments, the window, a segment sent again
-   after a second of silence, FIN both ways, in a simple form with no
-   congestion control. Two modules of one name, one each side of the
-   system call.
+   Where it stands: it is under Http_client (http://) and under
+   Tls_client (https://), and above the kernel. This module is the
+   program's side, a dozen lines around the system calls. The work the
+   first paragraph leaves to the kernel is in ix too, in mini-9pi's own
+   Tcp (in its network's ip): the segments, the window, a segment sent
+   again after a second of silence, and FIN both ways, in a simple form
+   with no congestion control. So there are two modules of one name,
+   one on each side of the system call.
 
    cs-history:
-   How the Internet got its stream. The ARPANET's first protocol (NCP,
+   This is how the Internet got its stream. The ARPANET's first protocol (NCP,
    1970) trusted the network to deliver. Cerf and Kahn's design ("A
    Protocol for Packet Network Intercommunication", 1974) trusted
    nothing but the two ends: any network that can carry a packet,
@@ -86,9 +88,9 @@
    "Elementary TCP Sockets");
    RFC 793 (TCP) and RFC 791 (IP), Jon Postel (1981). *)
 
-(* ix: the seconds of silence after which a read gives up; 30, and a program
- * that knows a server to think longer says so around its request (mini-maps,
- * for Overpass) *)
+(* ix: the seconds of silence after which a read gives up. It is 30; a
+ * program that knows a server thinks longer sets it around its request
+ * (mini-maps, for Overpass). *)
 val timeout : float ref
 
 (* a connection to [host] (a name, or an address: "127.0.0.1")
@@ -99,21 +101,22 @@ val connect : < Cap.network; Cap.open_in; .. > -> host:string -> port:int -> Uni
 (* write all of [s] (a write may take only part of it) *)
 val send_all : Unix.file_descr -> string -> unit
 
-(* what has come and can be read without waiting ("" for nothing
- * yet); None when the other side has closed, or the connection is
+(* What has come and can be read without waiting ("" when nothing has
+ * come yet). None when the other side has closed, or the connection is
  * lost. (On Plan 9 a read waits: plan9/Tcp.ml gives what the first
  * read does, waiting for it.) *)
 val arrived : Unix.file_descr -> string option
 
-(* wait for bytes to come, [seconds] at most (on Plan 9: no wait, the
- * read does it) *)
+(* Waits for bytes to come, [seconds] at most (on Plan 9 it does not
+ * wait, because the read does). *)
 val wait : Unix.file_descr -> float -> unit
 
 (* read until the other side closes the connection; Failure after
  * [timeout] seconds of silence *)
 val receive_all : Unix.file_descr -> string
 
-(* [exchange ~host ~port s]: connect, send [s], read everything the
- * other side sends until it closes, close: one request of a protocol
- * that closes after answering (HTTP with "Connection: close") *)
+(* [exchange ~host ~port s] connects, sends [s], reads everything the
+ * other side sends until it closes, and closes. It is one request of a
+ * protocol that closes after answering (HTTP with "Connection:
+ * close"). *)
 val exchange : < Cap.network; Cap.open_in; .. > -> host:string -> port:int -> string -> string

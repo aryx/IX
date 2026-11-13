@@ -1,23 +1,24 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-curl: a URL's bytes on standard output (curl, Daniel Stenberg,
- * 1998), after the author's mini-chrome's tools/curl: the request made
- * by Http_client, over Tcp, or inside ix's own TLS 1.3 for https://.
- * A redirection is followed with a GET, ten at most. With -v, what is
- * sent and the answer's head on standard error, as curl ("> ", "< ").
+(* mini-curl writes a URL's bytes on standard output (curl, Daniel
+ * Stenberg, 1998). It was written after tools/curl in the author's
+ * mini-chrome. Http_client makes the request, over Tcp, or inside ix's
+ * own TLS 1.3 for https://. With -L, a redirection is followed with a
+ * GET, ten at most. With -v, what is sent and the answer's head go to
+ * standard error, as with curl ("> ", "< ").
  *
  * It is the browser's network stack with no browser around it: what
- * the address bar does before anything is shown, each step a module
- * that can be looked at on its own.
+ * the address bar does before anything is shown, where each step is a
+ * module that can be looked at on its own.
  *
  *     mini-curl -v https://example.com/
  *        Url           the string cut: https, example.com, 443, /
- *        Dns, Tcp      the name's address, a connection
- *        Tls_client    the handshake (Tls13), the certificate's chain
- *                      checked against the system's roots (X509)
- *        Http          "GET / HTTP/1.1" written, the status line,
- *                      the headers and the body read
+ *        Dns, Tcp      the name's address, then a connection
+ *        Tls_client    the handshake (Tls13), and the certificate's
+ *                      chain checked against the system's roots (X509)
+ *        Http          "GET / HTTP/1.1" written; the status line, the
+ *                      headers and the body read
  *     * example.com, port 443, TLS             on standard error
  *     > GET / HTTP/1.1
  *     > Host: example.com
@@ -27,8 +28,8 @@
  *     < ...
  *     <!doctype html>...                       on standard output
  *
- * A redirection, by mini-httpd, which answers so for a directory
- * named without its slash (the tests' served.sh has the first):
+ * Here is a redirection by mini-httpd, which answers so for a directory
+ * named without its slash (the tests' served.sh has the first one):
  *
  *     mini-curl -i U/sub      HTTP/1.1 301 Moved Permanently
  *                             Location: /sub/
@@ -36,11 +37,11 @@
  *                             > GET /sub/ HTTP/1.1 ...  < HTTP/1.1 200 OK
  *                             and /sub/'s page
  *
- * The flags are [usage]'s, and their letters curl's. Less than
- * curl's hundreds: no HEAD, no header of one's own, no upload, no
- * cookie kept between two requests (mini-chrome's has a jar),
- * HTTP/1.1 only, and the body as the server sent it (Http asks for
- * no compression).
+ * The flags are those of [usage], and their letters are curl's. There
+ * are far fewer than curl's hundreds: there is no HEAD, no header of
+ * one's own, no upload, and no cookie kept between two requests
+ * (mini-chrome's curl has a jar); there is HTTP/1.1 only, and the body
+ * is as the server sent it (Http asks for no compression).
  *
  * design:
  * A program for one layer of a system is how the layer gets tested
@@ -52,8 +53,8 @@
  * script comparing two programs' output, this one's and the system's
  * curl's.
  *
- * Reference: curl(1), whose flags' letters these are; Daniel
- * Stenberg's history of it is told in Http_client.mli. *)
+ * Reference: curl(1), whose flags' letters these are. Daniel Stenberg's
+ * history of it is told in Http_client.mli. *)
 
 type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/mail/Mail_thread.ml
- * (docs/plans/done/plan_mail.md); Option.value and Option.fold a match *)
+(* ix: copied from libs/networking/mail/Mail_thread.ml in the author's
+ * playground (docs/plans/done/plan_mail.md). An Option.value or an
+ * Option.fold is written out as a match. *)
 
 (* See Mail_thread.mli *)
 

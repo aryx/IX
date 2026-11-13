@@ -1,23 +1,24 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-lynx: the web in a terminal (CERN's Line Mode Browser, 1991;
- * Lynx, University of Kansas, 1992), after the author's mini-chrome's
- * tools/lynx: a page as lines of text, its links numbered, a number
- * typed to follow one. A browser with the hard parts left out, no
- * fonts, no boxes, no pictures, and so the shortest path through one:
+(* mini-lynx shows the web in a terminal, like CERN's Line Mode Browser
+ * (1991) and Lynx (University of Kansas, 1992). It follows tools/lynx
+ * in the author's mini-chrome. A page is shown as lines of text, its
+ * links are numbered, and you type a number to follow one. It is a
+ * browser with the hard parts left out (no fonts, no boxes, no
+ * pictures), and so it is the shortest path through one:
  *
  *     an address --Http_client--> bytes --Charset--> text
  *                --Html_tree--> the tree --Line_mode--> lines, links
  *                a number typed --Url.resolve--> an address
  *
- * An address without "http://" is a file when there is one of that
- * name, else a host. Styles and scripts are not read; a form cannot be
- * filled.
+ * An address without "http://" is a file when there is a file of that
+ * name, and a host otherwise. Styles and scripts are not read, and a
+ * form cannot be filled.
  *
- * A page shown (show): its title and address, its lines, and the
- * addresses of its links by their numbers, each made whole against
- * the page's own:
+ * A page is shown (by show) as its title and address, its lines, and
+ * the addresses of its links by their numbers, each one made whole
+ * against the page's own address:
  *
  *     Menu  (http://localhost/menu.html)
  *
@@ -28,31 +29,31 @@
  *     [1] http://localhost/recipes.html
  *     [2] http://localhost/
  *
- * What is typed after a page (step): a link's number to go there, an
- * address to go to it, b to come back, q to leave, nothing to see
- * the page again. The pages come through are a list, the one shown
- * first: b drops its head, and there is no forward.
+ * After a page, you type (see step) a link's number to go there, an
+ * address to go to it, b to come back, q to leave, or nothing to see
+ * the page again. The pages you went through are a list, with the one
+ * shown first: b drops its head, and there is no forward.
  *
- * Where it stands: mini-netscape's way from an address to pixels
- * (its header draws it) with the middle taken out. No Cascade, no
- * Box_layout, no Hit: Line_mode walks the tree once and fills lines
- * of a fixed width, a link being found again by its number where a
- * window needs the place of a click. The network under it is the
- * same (Http_client, ix's own TLS), and so is the tree (Html_tree),
- * which is why it came first (plan_browser.md, stage 4: HTML, before
- * the pictures, CSS and the window). Of its terminal it asks only
- * lines read and written (Console): no cursor moved, no key read
- * alone.
+ * Where it stands: this is mini-netscape's way from an address to
+ * pixels (its header draws it) with the middle taken out. There is no
+ * Cascade, no Box_layout and no Hit: Line_mode walks the tree once and
+ * fills lines of a fixed width, and a link is found again by its
+ * number, where a window needs the place of a click. The network under
+ * it is the same (Http_client, with ix's own TLS), and so is the tree
+ * (Html_tree), which is why it came first (plan_browser.md, stage 4:
+ * HTML, before the pictures, CSS and the window). Of its terminal it
+ * asks only to read and write lines (Console): it moves no cursor and
+ * reads no key alone.
  *
  * cs-history:
  * The first browser most people could run was not the one with a
- * window. Tim Berners-Lee's WorldWideWeb (1990) needed a NeXT; CERN's
+ * window. Tim Berners-Lee's WorldWideWeb (1990) needed a NeXT. CERN's
  * Line Mode Browser (1991, begun by Nicola Pellow, a student there)
- * worked on any terminal and was what was ported everywhere, with
- * the numbered links kept here. Lynx (University of Kansas, 1992)
+ * worked on any terminal, and it was the one ported everywhere; its
+ * numbered links are kept here. Lynx (University of Kansas, 1992)
  * replaced the numbers by a cursor moved from link to link with the
- * arrows, and is still used: on a console, and by a script (lynx
- * -dump, which our -dump is after).
+ * arrows, and it is still used, on a console and by scripts (lynx
+ * -dump, which our -dump follows).
  *
  * References: the Line Mode Browser (libwww, 1991); lynx(1). *)
 

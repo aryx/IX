@@ -1,8 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/unix/Mail_server.ml,
- * its SMTP half (docs/plans/done/plan_mail.md); a pure machine, AUTH added *)
+(* ix: copied from the SMTP half of libs/networking/unix/Mail_server.ml
+ * in the author's playground (docs/plans/done/plan_mail.md). It is a
+ * pure machine here, and AUTH was added. *)
 
 type delivery = { users : string list; mail : Mail.t }
 

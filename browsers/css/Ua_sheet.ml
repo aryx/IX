@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/css/ua.css, its first version, as it is, in a string: its dune makes this file there; here it is kept, so that neither dune nor mini-mk has a rule for it (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/css/ua.css in the author's mini-chrome
+ * (its first version; docs/plans/plan_browser.md), as it is, in a
+ * string. mini-chrome's dune makes this file there; here the file is
+ * kept, so that neither dune nor mini-mk has a rule for it. *)
 
 let text = {|
 /* The browser's own style sheet: CSS 2.1's appendix D ("Default style

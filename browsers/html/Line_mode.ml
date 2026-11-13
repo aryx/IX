@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/html/Line_mode.ml, its first version; divs and a table's rows, which came with its mini-lynx (d3e138f); no optional argument (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/html/Line_mode.ml in the author's
+ * mini-chrome (its first version, with the divs and a table's rows,
+ * which came with its mini-lynx in d3e138f; docs/plans/plan_browser.md).
+ * It has no optional argument. *)
 
 (* See Line_mode.mli *)
 

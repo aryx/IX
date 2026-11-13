@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's libs/gui/Gui_field.ml and
- * src/chrome/Omnibox.ml (its 8af888e) *)
+(* ix: copied from libs/gui/Gui_field.ml and src/chrome/Omnibox.ml in
+ * the author's mini-chrome (its commit 8af888e) *)
 
 (* See Text_field.mli *)
 

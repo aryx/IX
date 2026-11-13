@@ -1,14 +1,15 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-httpd: a directory's files served over HTTP, to this machine
- * only (127.0.0.1), after the author's mini-chrome's tools/httpd: a
- * request read, its file answered (a directory: its index.html, or its
- * names as links), the connection closed, the next one taken. One
- * client at a time; GET only; nothing above the directory served. No
- * WebSocket here (mini-chrome's echoes one).
+(* mini-httpd serves a directory's files over HTTP, to this machine only
+ * (127.0.0.1). It was written after tools/httpd in the author's
+ * mini-chrome. It reads a request, answers with its file (for a
+ * directory, its index.html, or its names as links), closes the
+ * connection, and takes the next one. It serves one client at a time,
+ * GET only, and nothing above the directory served. There is no
+ * WebSocket here (mini-chrome's httpd echoes one).
  *
- * The other end of the browser's conversation. A browser writes a
+ * It is the other end of the browser's conversation. A browser writes a
  * request and reads an answer (Http_client); a server does the
  * reverse with the same two messages (Http): it waits for a
  * connection, reads until the request is whole (Http.parse_request),
@@ -28,25 +29,25 @@
  *     /notes/a.html     that file: 200, its Content-Type from its
  *                       extension (.html, .css, .js, .png, ...)
  *     /notes/           the directory's index.html if it has one; else
- *                       a page listing what is in it, each a link
+ *                       a page listing what is in it, each with a link
  *     /notes            301, Location: /notes/ (so that the listing's
  *                       relative links resolve)
  *     /nope             404
  *     /../secret        403: the ".." are counted before the path is
  *                       cleaned (Url.remove_dot_segments), and nothing
  *                       above the directory is ever named
- *     POST /x           405: only GET
+ *     POST /x           405: only GET is served
  *
- * A query (?v=2) is dropped, %20 decoded. It listens on 127.0.0.1
- * alone: a server for the pages on one's own machine, not for the
- * Internet. Each request is a line of the log on standard output,
- * "GET /notes/ 200 153": the method, the target, the status, the
- * body's length.
+ * A query (?v=2) is dropped, and %20 is decoded. It listens on
+ * 127.0.0.1 alone, because it is a server for the pages on one's own
+ * machine, not for the Internet. Each request makes a line of the log
+ * on standard output, such as "GET /notes/ 200 153": the method, the
+ * target, the status, and the body's length.
  *
- * Where it stands: what mini-curl and mini-lynx are tried against
- * with no network but this machine's (their tests' served.sh and
- * session.sh), and the server's half of Http, which nothing else in
- * ix uses. The sockets are called here and not through Tcp, which
+ * Where it stands: mini-curl and mini-lynx are tried against it with
+ * no network but this machine's (their tests' served.sh and
+ * session.sh). It uses the server's half of Http, which nothing else
+ * in ix uses. The sockets are called here and not through Tcp, which
  * only connects: socket, bind, listen and accept are the four lines
  * of [listen] and [serve].
  *
@@ -57,20 +58,20 @@
  * NCSA's HTTPd (Rob McCool, 1993) was the one sites ran, and added
  * programs behind a URL (CGI). When McCool left for Netscape its users
  * went on exchanging their patches by mail, and released them together
- * in 1995 -- "a patchy server", as the story goes: Apache, the most
- * used web server for the twenty years after, and with Linux the
- * proof that software so made could run the Internet. nginx (Igor
+ * in 1995 -- "a patchy server", as the story goes. Apache was the most
+ * used web server for the twenty years after, and, with Linux, the
+ * proof that software made that way could run the Internet. nginx (Igor
  * Sysoev, 2004) took its place by serving ten thousand connections
  * from one loop instead of a process for each. This one serves one
  * at a time.
  *
  * others:
- * One at a time means a client that connects and says nothing holds
- * everyone else up, here for five seconds at most. The ways out are
- * the history of servers: a process per connection (fork after
- * accept, the first Unix servers and Apache), a thread per
+ * Serving one at a time means that a client that connects and says
+ * nothing holds everyone else up, here for five seconds at most. The
+ * ways out are the history of servers: a process per connection (fork
+ * after accept, as in the first Unix servers and Apache), a thread per
  * connection, or one loop that asks the kernel which of its thousand
- * sockets have something to read (select, then epoll and kqueue:
+ * sockets have something to read (select, then epoll and kqueue, as in
  * nginx). mini-rio's file server is of the last kind, for the same
  * reason: it has other things to listen to (P9_server.mli).
  *

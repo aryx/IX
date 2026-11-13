@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/html/Html_tree.ml, its first version; ~self_closing is said; </table> and </tr> end their open cells (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/html/Html_tree.ml in the author's
+ * mini-chrome (its first version; docs/plans/plan_browser.md).
+ * ~self_closing must be given, and </table> and </tr> end their open
+ * cells. *)
 
 (* See Html_tree.mli *)
 

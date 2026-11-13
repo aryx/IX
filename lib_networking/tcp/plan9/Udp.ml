@@ -1,14 +1,16 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Udp.mli: Plan 9's, for mini-9pi (docs/plans/plan_browser.md, stage
- * 10). A directory of /net/udp, as Tcp's of /net/tcp: once "connect
- * address!port" is written to its ctl, a write to its data is a packet
- * sent there and a read a packet come from there. No select: the read
- * waits, [seconds] at most: an alarm set before it (Unix.setitimer,
- * as Tcp's), the read it interrupts no answer.
- * old: no alarm; a packet lost (a time server that did not answer)
- * held the program, and with it mini-9pi's boot *)
+(* See Udp.mli. This is Plan 9's version, for mini-9pi
+ * (docs/plans/plan_browser.md, stage 10). It uses a directory of
+ * /net/udp, as Tcp uses one of /net/tcp: once "connect address!port" is
+ * written to its ctl, a write to its data sends a packet there, and a
+ * read gets a packet that came from there. There is no select, so the
+ * read waits, [seconds] at most: an alarm is set before it
+ * (Unix.setitimer, as in Tcp), and a read that the alarm interrupts
+ * means no answer. Without the alarm, a lost packet (a time server
+ * that did not answer) would hold the program, and with it mini-9pi's
+ * boot. *)
 
 let ask (_caps : < Cap.network; .. >) ~(address : string) ~(port : int) (packet : string) (seconds : float) : string option =
   let ctl = Unix.openfile "/net/udp/clone" [ Unix.O_RDWR ] 0 in

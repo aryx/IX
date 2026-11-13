@@ -1,5 +1,5 @@
-(* Dtd: what HTML says about its elements, as data -- which have no
-   content, which belong in the head, which end which.
+(* Dtd: what HTML says about its elements, as data: which elements have
+   no content, which belong in the head, and which end which.
 
    HTML was an SGML language, and SGML described a language by its DTD
    (Document Type Definition), a grammar that also said which tags a
@@ -12,13 +12,13 @@
 
    An SGML parser read the DTD and inferred the missing tags: a <p>
    cannot contain a <p>, so the second one ends the first. Browsers
-   never read DTDs; they hard-coded the rules. MMM (1996) did it in
-   between, and this module follows it: the rules as OCaml data, one
-   table per question (MMM's dtd.ml has HTML 2.0's and 3.2's), read by
-   Html_tree's one algorithm.
+   never read DTDs; they hard-coded the rules. MMM (1996) did something
+   in between, and this module follows it: the rules are OCaml data,
+   one table per question (MMM's dtd.ml has HTML 2.0's and 3.2's),
+   read by Html_tree's one algorithm.
 
-   The questions, and HTML 3.2's answers (with a few of HTML5's where
-   the pages of the time already relied on them):
+   Here are the questions, and HTML 3.2's answers (with a few of
+   HTML5's, where the pages of the time already relied on them):
 
      void        no content, never pushed:   br hr img input meta ...
      head        belongs in the head:         title meta link base style script
@@ -34,16 +34,16 @@
                  closed across a table cell
 
    **Where each thing comes from.** HTML 2.0 (RFC 1866, 1995) wrote
-   down what Mosaic read; Netscape (1.0, December 1994, and 1.1, 1995)
-   added to it what pages wanted and did not ask anyone -- the
+   down what Mosaic read. Netscape (1.0, December 1994, and 1.1, 1995)
+   added to it what pages wanted, without asking anyone: these are the
    "Netscape extensions", most of them in HTML 3.2 two years later. A
    page of 1995 mixes both, so the table below says which is which,
-   and the tree keeps the mark (Html_lexer's tokens, Dom's elements):
-   the core first, the extensions apart, and a browser honours only
-   what it knows -- the core alone, or the extensions too
-   (Browser_page's setting; mini-netscape's are on), as Mosaic and
-   Netscape did (an extension unknown to a browser
-   is an unknown tag: ignored, its content shown).
+   and the tree keeps the mark (in Html_lexer's tokens and in Dom's
+   elements). The core comes first and the extensions are kept apart,
+   and a browser honours only what it knows: the core alone, or the
+   extensions too (mini-netscape always honours them), as Mosaic and
+   Netscape did (an extension unknown to a browser is an unknown tag:
+   it is ignored, and its content shown).
 
      Netscape's elements      font (size, color), basefont, center,
                               blink, nobr, wbr; and (1.1) table,
@@ -60,16 +60,16 @@
                               middle, bottom): pictures the text flows
                               around, the first floats
 
-   What is not in the table counts as core: HTML 3.2's own (div) is
-   left so.
+   What is not in the table counts as core, and HTML 3.2's own elements
+   (div) are left so.
 
    road-not-taken:
-   A browser held to the DTD was tried more than once: MMM
-   (Francois Rouaix, INRIA, in OCaml, its applets OCaml bytecode
-   checked by the type system), Arena and Amaya at the W3C. They
-   showed pages that followed the grammar and refused, or mangled, the
-   others; and the others were the web. XHTML (2000) was the same bet
-   made by the standard itself. What won instead is a grammar of
+   A browser held to the DTD was tried more than once: MMM (Francois
+   Rouaix, INRIA, written in OCaml, whose applets were OCaml bytecode
+   checked by the type system), and Arena and Amaya at the W3C. They
+   showed the pages that followed the grammar, and refused or mangled
+   the others; and the others were the web. XHTML (2000) was the same
+   bet, made by the standard itself. What won instead is a grammar of
    mistakes (Html_tree.mli).
 
    Reference: HTML 3.2 Reference Specification (W3C, 1997), its DTD;
@@ -83,19 +83,22 @@ type origin =
   | Core (* HTML 2.0, what Mosaic read *)
   | Netscape (* Netscape's extensions *)
 
-(* <br>, <img>...: no content, so no end tag and never on the stack *)
+(* <br>, <img>...: they have no content, so no end tag, and they are
+ * never on the stack *)
 val is_void : string -> bool
 
-(* <title>, <meta>...: in the head, when met before the body started *)
+(* <title>, <meta>...: they go in the head when met before the body has
+ * started *)
 val is_head_element : string -> bool
 
-(* the block elements: those that end an open <p> *)
+(* the block elements, which are those that end an open <p> *)
 val is_block : string -> bool
 
-(* [closes x y]: a start tag x ends an open element y *)
+(* [closes x y]: whether a start tag x ends an open element y *)
 val closes : string -> string -> bool
 
-(* [stops x y]: looking for what x closes, an open y stops the search *)
+(* [stops x y]: whether, when looking for what x closes, an open y stops
+ * the search *)
 val stops : string -> string -> bool
 
 (* where the element of this name comes from *)

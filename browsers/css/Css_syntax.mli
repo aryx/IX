@@ -1,14 +1,16 @@
-(* Css_syntax: a style sheet's text read -- tokens, then rules and blocks.
+(* Css_syntax: reading a style sheet's text, first into tokens, then into
+   rules and blocks.
 
-   (mini-chrome's notes_css_engine.md sections 1 and 2.) CSS's syntax is
-   older and smaller than its properties, and CSS Syntax Level 3 wrote
-   down the tokenizer every browser had converged on: identifiers,
-   functions ("rgb("), at-keywords ("@media"), hashes ("#top"), strings,
-   url()s, numbers with their kind (2, 50%, 1.5em), delimiters, and the
-   punctuation. Tokens first, then **blocks** by matching brackets, then
-   **rules** -- so that a "{" inside a string, a "}" inside a url() or a
-   block inside @media never cut a rule in the wrong place, as a split
-   on braces does (the playground's first Css did).
+   (See mini-chrome's notes_css_engine.md sections 1 and 2.) CSS's
+   syntax is older and smaller than its properties, and CSS Syntax
+   Level 3 wrote down the tokenizer that every browser had converged
+   on: identifiers, functions ("rgb("), at-keywords ("@media"), hashes
+   ("#top"), strings, url()s, numbers with their kind (2, 50%, 1.5em),
+   delimiters, and the punctuation. The tokens come first, then the
+   **blocks**, by matching brackets, then the **rules**. So a "{"
+   inside a string, a "}" inside a url() or a block inside @media
+   never cuts a rule in the wrong place, as a split on braces does (the
+   playground's first Css did that).
 
      a:hover > .x { color: #f00 !important }
 
@@ -17,35 +19,36 @@
      Ident color, Colon, Whitespace, Hash f00, Whitespace, Delim !,
      Ident important
 
-   A style sheet is **rules**: a qualified rule (a prelude, the
-   selectors, and a { } block of declarations) or an at-rule
-   (@media ... { rules }, @import url(x.css);). **Errors are skipped,
-   not fatal**, CSS's own rule, the one that lets a browser read a sheet
-   written for a newer one: a declaration that does not parse is dropped
-   up to its ";", a rule up to its block's end, an unknown at-rule with
-   its block.
+   A style sheet is made of **rules**. A rule is either a qualified
+   rule (a prelude, which is the selectors, and a { } block of
+   declarations) or an at-rule (@media ... { rules }, @import
+   url(x.css);). **Errors are skipped, not fatal.** That is CSS's own
+   rule, the one that lets a browser read a sheet written for a newer
+   one. A declaration that does not parse is dropped up to its ";", a
+   rule up to its block's end, and an unknown at-rule with its block.
 
    Not done: the tokens' exact positions (for a devtools' "line 3"),
-   CSS nesting ("&:hover" inside a rule: its nested rules are dropped),
-   @charset (a sheet is taken as UTF-8).
+   CSS nesting ("&:hover" inside a rule; its nested rules are dropped),
+   and @charset (a sheet is taken as UTF-8).
 
-   In the system: Cascade and Css read a sheet's rules from here,
-   Selectors a rule's prelude, Css_values and Computed a declaration's
-   components. The same order of work as Html_lexer and Html_tree for
-   a page, and the same manners: nothing typed is an error, a meaning
-   is found for all of it.
+   In the system, Cascade and Css read a sheet's rules from here,
+   Selectors reads a rule's prelude, and Css_values and Computed read a
+   declaration's components. It is the same order of work as Html_lexer
+   and Html_tree for a page, with the same manners: nothing typed is an
+   error, and a meaning is found for all of it.
 
    design:
-   A syntax made to be skipped. CSS1 (1996) already said how to read
-   what a browser does not know: a declaration with an unknown property
-   or a value it cannot read is dropped, alone; a rule with a selector
-   it cannot read, dropped whole; an unknown @-rule skipped to its
-   ";" or its matching "}". So a style sheet written for tomorrow's
-   browsers does no harm in today's, and CSS could grow for thirty
-   years without versions -- a page says "display: grid" and an old
-   browser simply lays it out as blocks. Reading CSS is mostly knowing
-   where the thing one does not understand ends: hence blocks matched
-   by their brackets before anything is interpreted.
+   This is a syntax made to be skipped. CSS1 (1996) already said how
+   to read what a browser does not know. A declaration with an unknown
+   property, or a value the browser cannot read, is dropped alone; a
+   rule with a selector it cannot read is dropped whole; an unknown
+   @-rule is skipped to its ";" or its matching "}". So a style sheet
+   written for tomorrow's browsers does no harm in today's, and CSS
+   could grow for thirty years without versions: a page says "display:
+   grid" and an old browser simply lays it out as blocks. Reading CSS
+   is mostly knowing where the thing one does not understand ends;
+   hence the blocks are matched by their brackets before anything is
+   interpreted.
 
    others:
    A C compiler stops at the first thing it cannot read, and a JSON
@@ -58,15 +61,15 @@
 
 type token =
   | Ident of string
-  | Function of string (* "rgb(": the name, lowercase kept as written *)
-  | At_keyword of string (* "@media": "media" *)
-  | Hash of string (* "#f00": "f00" *)
-  | String of string (* its escapes decoded *)
-  | Url of string (* url(x.png), unquoted: "x.png" *)
+  | Function of string (* "rgb(": the name, its case kept as written *)
+  | At_keyword of string (* "@media" gives "media" *)
+  | Hash of string (* "#f00" gives "f00" *)
+  | String of string (* with its escapes decoded *)
+  | Url of string (* url(x.png), unquoted, gives "x.png" *)
   | Delim of char
   | Number of float
   | Percentage of float
-  | Dimension of float * string (* 1.5em: 1.5, "em" *)
+  | Dimension of float * string (* 1.5em gives 1.5 and "em" *)
   | Whitespace
   | Colon
   | Semicolon
@@ -84,10 +87,11 @@ type rule =
 
 val tokenize : string -> token list
 
-(* a text's components: tokens, blocks and functions *)
+(* a text's components: its tokens, blocks and functions *)
 val components_of : string -> component list
 
-(* spaces taken off both ends; a list cut at a token (commas) *)
+(* trim takes the spaces off both ends; split_on cuts a list at a token
+ * (at the commas, say) *)
 val trim : component list -> component list
 val split_on : token -> component list -> component list list
 
@@ -97,12 +101,12 @@ val parse_stylesheet : string -> rule list
 (* the declarations of a style="..." attribute *)
 val parse_declarations : string -> declaration list
 
-(* an at-rule's block read as rules (@media's) or as declarations
- * (@font-face's) *)
+(* an at-rule's block, read as rules (for @media) or as declarations
+ * (for @font-face) *)
 val rules_of_block : component list -> rule list
 val declarations_of_block : component list -> declaration list
 
-(* components written back as text, spaces as one: "rgb(1, 2, 3)",
- * "0 auto", "calc(100% - 2em)" -- a declaration's value, as the
- * properties' readers take it *)
+(* components written back as text, with the spaces made one:
+ * "rgb(1, 2, 3)", "0 auto", "calc(100% - 2em)". This is how a
+ * declaration's value is given to the properties' readers. *)
 val to_string : component list -> string

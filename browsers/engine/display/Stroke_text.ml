@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/display/Stroke_text.ml, its first version, and Glyph_unicode's glyphs (docs/plans/plan_browser.md) *)
+(* ix: copied from src/display/Stroke_text.ml in the author's
+ * mini-chrome, from its first version, with Glyph_unicode's glyphs
+ * (docs/plans/plan_browser.md) *)
 
 (* See Stroke_text.mli *)
 

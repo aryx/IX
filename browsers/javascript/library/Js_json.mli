@@ -1,17 +1,18 @@
-(* Js_json: JSON.parse -- a text read into values.
+(* Js_json is JSON.parse: it reads a text into values.
 
    JSON is the notation of JavaScript's own literals, cut down to what
    every language can read: objects, arrays, strings in double quotes,
-   numbers, true, false, null -- and nothing else (no undefined, no
+   numbers, true, false, null, and nothing else (no undefined, no
    function, no comment, no comma after the last item).
 
    cs-history:
    Douglas Crockford named it and wrote it down in 2001 (json.org; RFC
    4627 in 2006), observing that he had not invented it but found it:
    pages were already sending such text to each other and reading it
-   with eval. That was the danger -- eval runs whatever it is given --
-   and why his json2.js (2007), then the language itself (JSON.parse
-   and JSON.stringify, ES5, 2009), got a reader that only reads. It
+   with eval. That was the danger, since eval runs whatever it is
+   given, and it is why his json2.js (2007), and then the language
+   itself (JSON.parse and JSON.stringify, ES5, 2009), got a reader that
+   only reads. It
    replaced XML as what an XMLHttpRequest brings back, though the XML
    stayed in the name.
 
@@ -30,27 +31,28 @@
    Where it stands: ix reads JSON twice. Here the text becomes the
    script's own values (an object, an array, a float), since JSON is
    their notation. lib_core's Json reads it into an OCaml type of its
-   own (Null, Bool, Int, String, List, Assoc: no float) for the
-   programs that talk JSON to others, mini-qemu's QMP first. The same
-   grammar; what differs is what is built.
+   own (Null, Bool, Int, String, List, Assoc, and no float), for the
+   programs that talk JSON to others, mini-qemu's QMP first among
+   them. The grammar is the same; what differs is what is built.
 
    why-win:
-   Over XML, for data between programs. An XML document must be
-   walked as a tree of elements, attributes and text, and what is a
-   list or a number is the reader's guess; JSON's six kinds are the
-   ones every language already has, so reading it gives values and
-   no code is written. And it had a reader in every browser from the
-   first day, eval, however unwise. Its limits are of the same
-   origin: no comment (Crockford took them out, having seen them
-   used for directives to parsers: his account, of 2012), no
-   date, and a number that is whatever the reader's float can hold.
+   JSON won over XML, for data between programs. An XML document must
+   be walked as a tree of elements, attributes and text, and what is a
+   list or a number is the reader's guess. JSON's six kinds are the
+   ones every language already has, so reading it gives values and no
+   code is written. And it had a reader in every browser from the
+   first day, eval, however unwise. Its limits have the same origin:
+   there is no comment (Crockford took them out, having seen them used
+   for directives to parsers, as he told in 2012), no date, and a
+   number is whatever the reader's float can hold.
 
    Reference: ECMA-404, "The JSON Data Interchange Syntax" (2017; its
    first edition, 2013), a few pages; RFC 8259 (2017); ECMA-262
-   section 25.5. Crockford, "JSON: The
-   Fat-Free Alternative to XML" (2006). *)
-(* ix: the author's mini-chrome's languages/javascript/library/Js_json.mli (its 8af888e) (docs/plans/plan_browser.md) *)
+   section 25.5. Crockford, "JSON: The Fat-Free Alternative to XML"
+   (2006). *)
+(* ix: copied from languages/javascript/library/Js_json.mli in the
+ * author's mini-chrome, at its commit 8af888e (docs/plans/plan_browser.md) *)
 
-(* the value a JSON text stands for; Js_value.Throw of a SyntaxError
- * saying where the text stops being JSON *)
+(* the value a JSON text stands for. It raises Js_value.Throw of a
+ * SyntaxError that says where the text stops being JSON. *)
 val parse : string -> Js_value.value

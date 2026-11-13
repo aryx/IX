@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/display/Browser_text.ml, its first version (docs/plans/plan_browser.md) *)
+(* ix: copied from src/display/Browser_text.ml in the author's
+ * mini-chrome, from its first version (docs/plans/plan_browser.md) *)
 
 (* See Browser_text.mli *)
 

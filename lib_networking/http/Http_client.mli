@@ -1,4 +1,4 @@
-(* Http_client: getting a URL, the three layers put together.
+(* Http_client: getting a URL, with the three layers put together.
 
      "http://elm-lang.org/images/turtle.gif"
         | Url.parse
@@ -16,20 +16,20 @@
      [max_redirects] times (5; Firefox and Chrome stop at 20)
 
    https:// is the same request inside TLS, our own TLS 1.3
-   (Tls_client.mli, Tls13.mli): the server's certificate checked with
-   the system's roots, then the same bytes, encrypted. A URL of
-   another scheme is refused.
-   This one blocks: the program waits, doing nothing else, until the
-   answer is in -- the simple version, fine for a file loaded once
-   (Download.mli). (ix: the playground's Http_request, the same request
-   that doesn't block, is not here yet.)
+   (Tls_client.mli, Tls13.mli). The server's certificate is checked
+   with the system's roots, and then the same bytes are sent,
+   encrypted. A URL of another scheme is refused.
+   This client blocks: the program waits, doing nothing else, until
+   the answer is in. It is the simple version, fine for a file loaded
+   once (mini-curl's). (ix: the playground's Http_request, the same
+   request that does not block, is not here yet.)
 
-   Where it stands: the top of the network's libraries, and the one
-   function most programs want of them. mini-curl is [once] and
-   [prepare] with flags around; mini-lynx and mini-netscape's tabs
-   call [fetch] for a page, its style sheets, scripts and pictures,
-   one after the other. Under it, by layers, each knowing only the
-   one below:
+   Where it stands: it is the top of the network's libraries, and the
+   one function that most programs want of them. mini-curl is [once]
+   and [prepare] with flags around them. mini-lynx and the tabs of
+   mini-netscape call [fetch] for a page, its style sheets, its scripts
+   and its pictures, one after the other. Under it are layers, each
+   knowing only the one below:
 
        Url, Http          text: what to ask, what came back
        Tls_client, Tls13  https:// only: the same bytes, encrypted
@@ -38,50 +38,53 @@
 
    others:
    A redirection followed blindly is a way to be sent anywhere, so
-   every client counts them. And which method the second request
-   uses is history's accident: after a POST answered 301 or 302 the
+   every client counts them. And which method the second request uses
+   is an accident of history. After a POST answered by 301 or 302, the
    browsers of the 1990s asked again with a GET, against the
-   specification, which then gave in and added 307 and 308 for "the
-   same method again". Here every redirection is followed with a
-   GET, 307 and 308 included: simpler, and wrong for those two.
+   specification; the specification then gave in and added 307 and 308
+   for "the same method again". Here every redirection is followed
+   with a GET, 307 and 308 included, which is simpler, and wrong for
+   those two.
 
    cs-history:
    What this stands in for is curl, which the author's playground ran
    as a program for its https:// until it had a TLS of its own. Daniel
    Stenberg took up Rafael Sagula's httpget at the end of 1996 to fetch
-   currency rates for an IRC bot (urlget in 1997; "curl" in 1998); its library is now in
-   nearly every phone, car and television, the most widely installed
-   HTTP client there is, and what "getting a URL" means when a program
-   that is not a browser does it. mini-curl (Curl) is a small one made
-   of this module. *)
+   currency rates for an IRC bot (it became urlget in 1997, and "curl"
+   in 1998). Its library is now in nearly every phone, car and
+   television. It is the most widely installed HTTP client there is,
+   and what "getting a URL" means when a program that is not a browser
+   does it. mini-curl (Curl) is a small one made of this module. *)
 
 val max_redirects : int
 
-(* the final response (whatever its status, 404 included: the caller
- * decides), or why there is none: a URL we can't get, a network error,
- * a response that doesn't parse, too many redirections *)
+(* the final response (whatever its status, 404 included, because the
+ * caller decides), or why there is none: a URL we cannot get, a
+ * network error, a response that does not parse, or too many
+ * redirections *)
 val get : < Cap.network; Cap.open_in; Cap.clock; .. > -> string -> (Http.response, string) result
 
-(* the same, and the URL the redirections led to; with [post] (its
- * content type and body), the first request a POST *)
+(* the same, plus the URL that the redirections led to. With [post]
+ * (its content type and body), the first request is a POST. *)
 val fetch : < Cap.network; Cap.open_in; Cap.clock; .. > -> post:(string * string) option -> string -> (string * Http.response, string) result
 
-(* one request, no redirection followed (mini-curl without -L) *)
+(* one request, with no redirection followed (mini-curl without -L) *)
 val once : < Cap.network; Cap.open_in; Cap.clock; .. > -> post:(string * string) option -> Url.t -> (Http.response, string) result
 
 (* what to connect to and what to send for [url]: the host for the
- * resolver, the port, the request's bytes (a GET; a POST of [post], its
- * content type and body); Error for a URL that isn't http:// or
- * https:// (the message says why) *)
+ * resolver, the port, and the bytes of the request (a GET, or a POST
+ * of [post], which is its content type and body). It is Error for a
+ * URL that is not http:// or https:// (the message says why). *)
 val prepare : post:(string * string) option -> Url.t -> (string * int * string, string) result
 
-(* the same with what a request says and does besides: [said], more
- * headers (a script's own, a page's cookies); [keep], an https://
- * connection kept open for the next request to its host (Keep_alive)
- * -- a browser's way, a page being a hundred requests to three hosts;
- * [jar]: each request says the cookies kept for its URL, and each
- * answer's Set-Cookie is kept, a redirection's before the next request
- * is made *)
+(* the same, with what a request says and does besides:
+ * - [said] is more headers (a script's own, a page's cookies);
+ * - [keep] keeps an https:// connection open for the next request to
+ *   its host (Keep_alive). This is how a browser works, since a page
+ *   is a hundred requests to three hosts;
+ * - with [jar], each request says the cookies kept for its URL, and
+ *   the Set-Cookie of each answer is kept, a redirection's before the
+ *   next request is made. *)
 type options = { said : Http.header list; keep : bool; jar : Cookie_jar.t option }
 
 (* nothing more said, the connection closed after each answer, no jar *)

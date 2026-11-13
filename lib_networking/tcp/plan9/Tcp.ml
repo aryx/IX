@@ -1,13 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Tcp.mli: Plan 9's, for mini-9pi (docs/plans/plan_browser.md, stage
- * 10). No socket: a connection is a directory of /net/tcp, as libc's
- * dial makes it -- clone opened (it is the new connection's ctl, and
- * says its number), "connect address!port" written to it (which
- * returns once connected, or fails with the reason), its data file
- * opened: the stream. The ctl is then closed; the kernel hangs up at
- * the last close, the data's (mini-9pi's Devip). *)
+(* See Tcp.mli. This is Plan 9's version, for mini-9pi
+ * (docs/plans/plan_browser.md, stage 10). There is no socket: a
+ * connection is a directory of /net/tcp, made as libc's dial makes it.
+ * It opens clone (which is the new connection's ctl, and says its
+ * number), writes "connect address!port" to it (which returns once
+ * connected, or fails with the reason), and opens the data file, which
+ * is the stream. The ctl is then closed; the kernel hangs up at the
+ * last close, the data's (mini-9pi's Devip). *)
 
 let timeout = ref 30.
 

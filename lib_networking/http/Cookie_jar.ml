@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's libs/network/unix/Cookie_jar.ml; no lock (no threads), create's cookies said (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/network/unix/Cookie_jar.ml in the author's
+ * mini-chrome (docs/plans/plan_browser.md). It has no lock, because
+ * there are no threads, and create's cookies must be given. *)
 
 (* See Cookie_jar.mli *)
 

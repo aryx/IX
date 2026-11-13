@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's data/prelude/web/*.js (its 8af888e), one after the other as its dune puts them, in a string: kept here, as Js_prelude is (docs/plans/plan_browser.md) *)
+(* ix: copied from data/prelude/web/*.js in the author's mini-chrome
+ * (its 8af888e) (docs/plans/plan_browser.md). The files are put one
+ * after the other in a string, in the order its dune puts them, and
+ * the string is kept here, as Js_prelude's is. *)
 
 let text = {prelude|
 // What a page's scripts expect of a browser beyond the DOM, where it

@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's languages/css/Css_grid.ml, as its add433e first had it (docs/plans/plan_browser.md) *)
+(* ix: copied from languages/css/Css_grid.ml in the author's mini-chrome
+ * (as its commit add433e first had it; docs/plans/plan_browser.md) *)
 
 (* See Css_grid.mli *)
 open Css_syntax

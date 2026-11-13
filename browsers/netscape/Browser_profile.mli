@@ -1,4 +1,4 @@
-(* The profile: what the browser keeps from one run to the next, in a
+(* The profile is what the browser keeps from one run to the next, in a
    directory of the user's.
 
      ~/.config/mini-netscape/
@@ -10,65 +10,79 @@
         history         (Places)
         bookmarks.html
 
-   Two files of text, a line a thing, so that they can be read, and
-   mended, in an editor. [preferences] has the window's size as it
-   was last, and the sites zoomed (Browser_zoom). [cookies.txt] has the cookies that have a date (a
-   session's are forgotten when the browser closes), seven fields a
-   line with a tab between: the domain, TRUE if the hosts under it get
-   the cookie too, the path, TRUE if over https:// only, when it ends
-   (seconds since 1970), its name, its value. A line whose domain
-   starts with "#HttpOnly_" is a cookie the page's scripts do not see;
-   another line starting with '#' is a comment.
+   There are two files of text, with one thing on each line, so that
+   they can be read, and mended, in an editor. [preferences] has the
+   window's last size and the sites zoomed (Browser_zoom). [cookies.txt]
+   has the cookies that have an expiry date (a session's cookies are
+   forgotten when the browser closes). Each of its lines has seven
+   fields, with a tab between them:
+   - the domain;
+   - TRUE if the hosts under it get the cookie too;
+   - the path;
+   - TRUE if the cookie goes over https:// only;
+   - when it expires (in seconds since 1970);
+   - its name;
+   - its value.
+   A line whose domain starts with "#HttpOnly_" is a cookie that the
+   page's scripts do not see; any other line starting with '#' is a
+   comment.
 
    The files are read once, when the program starts, and written when
-   what they hold has changed, each through a capability: reading asks
-   Cap.open_in, writing Cap.open_out, and the directory's place is
-   read in the environment (HOME; XDG_CONFIG_HOME if said). profile=DIR
-   says another directory, profile=off none: nothing read, nothing
-   kept, which is what the tests run with.
+   what they hold has changed, each through a capability: reading needs
+   Cap.open_in, and writing needs Cap.open_out. The directory's place is
+   read from the environment (HOME, or XDG_CONFIG_HOME if it is set).
+   profile=DIR names another directory, and profile=off names none:
+   nothing is read and nothing is kept, which is how the tests run.
 
    cs-history:
-   cookies.txt is Netscape's own file, and this is its format: Lou
-   Montulli's cookies (1994) were kept by Navigator in one text file of
-   that name in the user's directory, with these seven fields. The
-   browsers moved to databases (Firefox's cookies.sqlite, 2008;
-   Chrome's Cookies, an SQLite file, its values encrypted), but the
-   format outlived the browser as the one tools exchange: curl's
-   --cookie-jar writes it and wget's --load-cookies reads it, and
-   "#HttpOnly_" is curl's addition to it.
+   cookies.txt is Netscape's own file, and this is its format: Navigator
+   kept Lou Montulli's cookies (1994) in one text file of that name in
+   the user's directory, with these seven fields. The browsers moved to
+   databases (Firefox's cookies.sqlite in 2008; Chrome's Cookies, an
+   SQLite file whose values are encrypted), but the format outlived the
+   browser as the one that tools exchange: curl's --cookie-jar writes
+   it, and wget's --load-cookies reads it. "#HttpOnly_" is curl's
+   addition to it.
 
-   And the history and the bookmarks, history and bookmarks.html
-   (Places). Not done: the file written under another name first and
-   renamed (a write cut short loses the cookies, here). *)
+   The profile also has the history and the bookmarks, in history and
+   bookmarks.html (Places). Not done: writing a file under another name
+   first and then renaming it (here, a write cut short loses the
+   cookies). *)
 
-(* the sites zoomed, the window's size, the helper programs written by
- * hand ("helper youtube.com/watch mpv %u": Helpers) *)
+(* The sites zoomed, the window's size, and the helper programs that the
+ * user wrote by hand (a line such as "helper youtube.com/watch mpv %u":
+ * see Helpers). *)
 type t = { zooms : Browser_zoom.t; window : (int * int) option; helpers : Helpers.rule list }
 
 val empty : t
 
-(* preferences' text, and back; a line not understood is left out *)
+(* The text of preferences, and back. A line that is not understood is
+ * left out. *)
 val to_string : t -> string
 val of_string : string -> t
 
-(* cookies.txt's text: the cookies of [jar] that have a date; and back,
- * without those whose date is past [now] *)
+(* The text of cookies.txt, which has the cookies of [jar] that have an
+ * expiry date; and back, without the cookies that expired before
+ * [now]. *)
 val cookies_to_string : Cookie.jar -> string
 val cookies_of_string : now:float -> string -> Cookie.jar
 
-(* the directory when none is said: $XDG_CONFIG_HOME/mini-netscape, or
- * $HOME/.config/mini-netscape; None if the environment says neither *)
+(* The directory used when none is named: $XDG_CONFIG_HOME/mini-netscape,
+ * or $HOME/.config/mini-netscape. None if the environment has neither. *)
 val default_dir : < Cap.env; .. > -> string option
 
-(* what [dir] holds: empty, and no cookie, for a file that is not there *)
+(* What [dir] holds. A file that is not there gives an empty profile,
+ * or no cookies. *)
 val load : < Cap.open_in; Cap.clock; .. > -> dir:string -> t * Cookie.jar
 
-(* each file written, [dir] made if it is not there; cookies.txt for
- * its owner alone, being what signs in. Error says why not *)
+(* Writes preferences, making [dir] if it is not there. Error says why
+ * it could not be written. *)
 val save : < Cap.open_out; .. > -> dir:string -> t -> (unit, string) result
-(* the history and the bookmarks (Places), each file written if it
- * changed since [was]; the history its owner's alone, being where one
- * went *)
+(* The history and the bookmarks (Places). Each file is written only if
+ * it changed since [was]. The history is readable by its owner alone,
+ * because it says where one went. *)
 val load_places : < Cap.open_in; .. > -> dir:string -> Places.t
 val save_places : < Cap.open_out; .. > -> dir:string -> was:Places.t -> Places.t -> (unit, string) result
+(* Writes cookies.txt, readable by its owner alone, because it is what
+ * signs one in. *)
 val save_cookies : < Cap.open_out; .. > -> dir:string -> Cookie.jar -> (unit, string) result

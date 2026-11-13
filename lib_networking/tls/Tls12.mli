@@ -1,9 +1,10 @@
 (* Tls12: TLS 1.2's handshake and records, for the servers that have
-   not moved to 1.3 -- what Tls13's client falls back to when the
+   not moved to 1.3. It is what Tls13's client falls back to when the
    ServerHello says the older version.
 
-   The same goal as 1.3 by an older road: more messages, in the clear
-   until the very end, and keys made by a function of its own.
+   It has the same goal as 1.3, by an older road: there are more
+   messages, they are in the clear until the very end, and the keys are
+   made by a function of its own.
 
      ClientHello            -->                     (Tls13's, offering both)
                             <--  ServerHello        version 1.2, a suite
@@ -19,53 +20,56 @@
                             <--  Finished
      application data      <-->
 
-   The keys: the two keys' shared secret (X25519) is the "pre-master
-   secret"; the PRF -- HMAC-SHA256 run in a chain, P_hash -- makes of it
-   the master secret (48 bytes), and of that the key block, cut into a
-   key and an IV for each direction:
+   The keys: the shared secret of the two keys (X25519) is the
+   "pre-master secret". The PRF (HMAC-SHA256 run in a chain, P_hash)
+   makes the master secret (48 bytes) from it, and from that the key
+   block, which is cut into a key and an IV for each direction:
 
      master    = PRF(pre_master, "extended master secret", hash(messages))
      key block = PRF(master, "key expansion", server_random + client_random)
      Finished  = PRF(master, "client finished", hash(all messages))   12 bytes
 
    A record is an AEAD's output as in 1.3, but its type is in the clear
-   in its header and its number is authenticated beside it; with
-   AES-GCM the nonce's last 8 bytes travel with each record.
+   in its header, and its number is authenticated beside it. With
+   AES-GCM, the last 8 bytes of the nonce travel with each record.
 
-   What is here: ECDHE over X25519, P-256 or P-384 (Ecdsa's curves:
-   some servers will only P-384, web.maths.unsw.edu.au), the server's
-   signature by RSA (PKCS#1 or PSS) or ECDSA, AES-128-GCM and
-   ChaCha20-Poly1305 with SHA-256, the extended master secret when the
-   server has it. Not here, and such a server is refused: the RSA key
-   exchange (no forward secrecy), CBC suites, resumption,
-   renegotiation.
+   What is here:
+   - ECDHE over X25519, P-256 or P-384 (Ecdsa's curves; some servers
+     will only do P-384, such as web.maths.unsw.edu.au);
+   - the server's signature by RSA (PKCS#1 or PSS) or ECDSA;
+   - AES-128-GCM and ChaCha20-Poly1305 with SHA-256;
+   - the extended master secret, when the server has it.
+   Not here, and such a server is refused: the RSA key exchange (which
+   has no forward secrecy), CBC suites, resumption, renegotiation.
 
-   ix: the author's mini-chrome's libs/network/tls/Tls12.ml (its
-   8af888e), P-384 added; not in make loc (an alternative: the web
-   that has moved to 1.3 needs none of it).
+   ix: copied from libs/network/tls/Tls12.ml in the author's mini-chrome
+   (at its commit 8af888e), with P-384 added. It is counted in make
+   loc, because many sites still need it.
 
    cs-history:
-   TLS 1.2 is RFC 5246, of August 2008: the version that let a suite
-   choose its hash (SHA-256 for MD5 and SHA-1) and brought the AEAD
-   ciphers. It carried the web for a decade, through the attacks that
-   shaped 1.3 -- BEAST, CRIME, Lucky Thirteen, POODLE, Logjam, each on
-   something 1.2 still allowed (CBC, compression, RSA exchange, export
-   suites) -- so that a careful 1.2 came to mean a short list of
-   suites, the one offered here, and 1.3 (2018) is that list made the
-   whole protocol. The extended master secret is RFC 7627 (2015), the
-   answer to the "triple handshake" attack: the master secret tied to
-   the handshake's messages, not to the randoms alone.
+   TLS 1.2 is RFC 5246, of August 2008. It is the version that let a
+   suite choose its hash (SHA-256 instead of MD5 and SHA-1), and it
+   brought the AEAD ciphers. It carried the web for a decade, through
+   the attacks that shaped 1.3: BEAST, CRIME, Lucky Thirteen, POODLE
+   and Logjam, each on something that 1.2 still allowed (CBC,
+   compression, the RSA exchange, export suites). So a careful 1.2 came
+   to mean a short list of suites, the one offered here, and 1.3 (2018)
+   is that list made into the whole protocol. The extended master
+   secret is RFC 7627 (2015), the answer to the "triple handshake"
+   attack: it ties the master secret to the handshake's messages, not
+   to the randoms alone.
 
    modern:
-   Browsers removed TLS 1.0 and 1.1 in 2020; 1.2 stays, for the servers
-   that were set up once and left: a university's, a device's.
+   Browsers removed TLS 1.0 and 1.1 in 2020. 1.2 stays, for the
+   servers that were set up once and left, such as a university's or a
+   device's.
 
    References: RFC 5246; RFC 5288 (AES-GCM); RFC 7905 (ChaCha20-
    Poly1305); RFC 8422 (ECDHE, X25519); RFC 7627. *)
 
 (* the suites offered, and what the ClientHello says besides 1.3's
-   extensions (the extended master secret, no renegotiation, the
-   points' one format) *)
+   extensions (the extended master secret, no renegotiation, and the
+   one format of the points) *)
 val suites : int list
 val hello_extensions : string
 
@@ -74,30 +78,31 @@ val prf : string -> string -> string -> int -> string
 
 type keys = { chacha : bool; key : string; iv : string; seq : int }
 
-(* a record of a type sealed, whole with its header; and one opened:
-   its body's plaintext *)
+(* seal makes a sealed record of a type, whole with its header; open_
+   opens one and gives its body's plaintext *)
 val seal : keys -> int -> string -> string * keys
 val open_ : keys -> int -> string -> (string * keys) option
 
 type t
 
-(* the handshake taken over at the ServerHello: our X25519 secret (a
-   P-256 or P-384 one is made of it), how a chain is checked, our
-   random, the server's, its suite, whether it has the extended master
-   secret, the messages so far *)
+(* the handshake, taken over at the ServerHello. It is given our X25519
+   secret (a P-256 or P-384 secret is made from it), how a chain is
+   checked, our random, the server's random, its suite, whether it has
+   the extended master secret, and the messages so far. *)
 val start :
   secret:string -> verify:(X509.t list -> (unit, string) result) ->
   client_random:string -> server_random:string -> suite:int ->
   extended:bool -> transcript:string -> (t, string) result
 
-(* a handshake message, whole with its header: the bytes to send, and
-   whether the handshake is done -- or why it failed *)
+(* takes a handshake message, whole with its header, and gives the
+   bytes to send and whether the handshake is done, or else why it
+   failed *)
 val handshake : t -> int -> string -> (t * string * bool, string) result
 
 (* the server's ChangeCipherSpec: what it sends next is encrypted *)
 val change_cipher : t -> t
 
-(* a record received: its plaintext (itself, before the
+(* a record received: its plaintext (the record itself, before the
    ChangeCipherSpec) *)
 val received : t -> int -> string -> (string * t) option
 

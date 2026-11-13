@@ -1,12 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-netscape: Netscape Navigator's window (Mosaic Communications,
- * 1994) over an engine of today's kind: a page fetched (ix's own TLS),
- * read, its style sheets cascaded, its boxes laid out and drawn
- * (browsers/html, css, engine). Written for ix after the author's
- * mini-chrome's first window; the look is Netscape's: a grey toolbar
- * with its buttons, the Location field, the N, the status bar.
+(* mini-netscape is Netscape Navigator's window (Mosaic Communications,
+ * 1994) over an engine of today's kind. The engine fetches a page (with
+ * ix's own TLS), reads it, cascades its style sheets, and lays out and
+ * draws its boxes (browsers/html, css and engine). It was written for
+ * ix after the first window of the author's mini-chrome. The look is
+ * Netscape's: a grey toolbar with its buttons, the Location field, the
+ * N, and the status bar.
  *
  *   +--------------------------------------------------------------+
  *   | [Back] [Forward] [Reload] [Bookmarks] Location: [http:] [N]  |
@@ -20,35 +21,35 @@
  *   | the link under the mouse, or what the last load said         |
  *   +--------------------------------------------------------------+
  *
- * A browser is two things: its chrome, here this file (the toolbar,
- * the field, the bar: each browser's own), and what turns an address
- * into a picture of a page, which is every module of browsers/ and
- * the network's under them. A page's way, from the address to the
- * window, and who does each step:
+ * A browser is two things. One is its chrome (the toolbar, the field
+ * and the bar, which are each browser's own), here this file. The other
+ * is what turns an address into a picture of a page, which is every
+ * module of browsers/ and the network's modules under them. Here is a
+ * page's way, from the address to the window, and who does each step:
  *
  *   an address         typed in the Location field, a link's, a form's
  *      | Browser_url   made whole against the page's own
- *      | Http_client   its bytes asked for: HTTP on Tcp, https the
+ *      | Http_client   its bytes asked for: HTTP on Tcp, and https the
  *      |               same inside Tls_client's TLS 1.3; or a file,
- *      |               data:, about: (Tab's fetch)
+ *      |               data: or about: (Tab's fetch)
  *   bytes
  *      | Charset       to UTF-8, by what the server and the page say
  *      | Html_lexer    tags and text
- *      | Html_tree     the tree, the page's mistakes repaired
+ *      | Html_tree     the tree, with the page's mistakes repaired
  *   Dom.element <--.
  *      |           |   Browser_script: the page's scripts, run by
  *      |           '-- Js_eval on a copy of the tree, which they
- *      |               change; the tree taken back when they did
+ *      |               change; the tree is taken back when they did
  *      | Css_syntax    the style sheets read: the browser's own
- *      |               (Ua_sheet), then the page's, each a fetch more
+ *      |               (Ua_sheet), then the page's, each one more fetch
  *      | Cascade       for each element and property, the
  *      |               declaration that wins (Selectors)
- *      | Computed      a record of values an element, the inherited
- *      |               ones come down from its parent
+ *      | Computed      a record of values for each element; the
+ *      |               inherited ones come down from its parent
  *   styles
  *      | Box_layout    CSS's boxes, each with its place and size
- *      |               (Flex_layout, Table_layout; a word's width is
- *      |               Browser_text's, a picture's Browser_picture's:
+ *      |               (Flex_layout, Table_layout; Browser_text gives a
+ *      |               word's width, and Browser_picture a picture's:
  *      |               Png, Jpeg, Gif, Svg)
  *   boxes ------------ Hit: the way back, from a point clicked to
  *      |               the link or the element there
@@ -59,54 +60,61 @@
  *      | Playground_platform   SDL's window, or a file (the tests')
  *   pixels
  *
- * Browser_page is the middle of it in one call (read: from the bytes
- * to the shapes, every stage kept); Tab is a page and what is still
- * to fetch for it, and the pages before; this file is the window, a
- * program of the playground's kind: a model, an update a frame (the
- * keys and the mouse, a piece of the page fetched, the scripts'
- * timers), a view from the model to shapes. mini-lynx is the same
- * way cut short: from the tree straight to lines of text (Line_mode).
+ * Browser_page does the middle of it in one call (read, from the bytes
+ * to the shapes, with every stage kept). Tab is a page, what is still
+ * to fetch for it, and the pages before it. This file is the window, a
+ * program of the playground's kind: a model, an update at each frame
+ * (for the keys and the mouse, a piece of the page fetched, the
+ * scripts' timers), and a view from the model to shapes. mini-lynx
+ * takes the same way, cut short: it goes from the tree straight to
+ * lines of text (Line_mode).
  *
- * The mouse: a click on a link follows it, on a field gives it the
- * keys, on a button sends its form; the wheel scrolls, and the
- * scrollbar at the right of a page longer than the window (Scrollbar).
- * In the Location field (Text_field) a click puts the caret, a drag
- * selects, a double click selects all; Ctrl and A, C, X, V, the
- * clipboard being the desktop's (Playground_platform). The keys: the
- * arrows, Page Up and Down, Space, Home and End scroll; Backspace goes
- * back; in the Location field, an address or words typed and Enter, or
- * one of the pages it offers as one types (the history's, the
- * bookmarks': Places), taken by the arrows or a click. Ctrl and D keeps
- * the page in the bookmarks, which the Bookmarks button shows; Ctrl
- * and T opens a tab, Ctrl and W closes it, Ctrl and Tab goes to the
- * next, Ctrl and a click opens a link in one behind. Ctrl and +
- * (or =), Ctrl and -, Ctrl and the wheel zoom the page, Ctrl and 0
- * back to 100% (Browser_zoom: Chrome's steps, each site its own): the
- * page is laid out narrower and drawn scaled.
+ * The mouse: a click on a link follows it, a click on a field gives it
+ * the keys, and a click on a button sends its form. The wheel scrolls,
+ * and so does the scrollbar at the right of a page longer than the
+ * window (Scrollbar). In the Location field (Text_field), a click puts
+ * the caret, a drag selects, and a double click selects all; Ctrl and
+ * A, C, X and V work, with the desktop's clipboard (Playground_platform).
+ * The keys:
+ * - the arrows, Page Up and Page Down, Space, Home and End scroll;
+ * - Backspace goes back;
+ * - in the Location field, one types an address or words and Enter, or
+ *   takes, with the arrows or a click, one of the pages the field offers
+ *   as one types (from the history and the bookmarks: Places);
+ * - Ctrl and D keeps the page in the bookmarks, which the Bookmarks
+ *   button shows;
+ * - Ctrl and T opens a tab, Ctrl and W closes it, Ctrl and Tab goes to
+ *   the next one, and Ctrl and a click opens a link in a tab behind;
+ * - Ctrl and + (or =), Ctrl and -, and Ctrl and the wheel zoom the
+ *   page, and Ctrl and 0 brings it back to 100% (Browser_zoom: Chrome's
+ *   steps, each site with its own zoom). The page is then laid out
+ *   narrower and drawn scaled.
  *
- * The page is as wide as the window: the program asks the platform
- * for a screen that is the window's (Session's flag window; without a
+ * The page is as wide as the window: the program asks the platform for
+ * a screen the size of the window (Session's flag window; without a
  * window, the playground's 1000 units square), and the size is kept in
- * the profile. Nothing is fetched while the window draws
- * (plan_browser.md, decision 6): a page on its way is fetched a piece
- * between two frames (the page and its sheets, then a picture each),
- * the status bar saying which and the N turned white meanwhile. The
- * cursor is a hand over a link or a button, an I-beam over a field.
- * A page's scripts run (browsers/webapi over browsers/javascript:
- * mini-chrome's engine and DOM of today), their timers on the frame's
- * clock. What it does not show, a PDF file or a film of YouTube's, it
- * gives to a program beside it, Mosaic's helper applications
- * (Helpers): ~/.mailcap's, the profile's, mini-page and mpv.
+ * the profile. A page on its way is fetched one piece at a time (the
+ * page and its sheets, then one picture at a time) on a worker beside
+ * the window (Tab_worker), and meanwhile the status bar says which
+ * piece and the N is turned white. The cursor is a hand over a link or
+ * a button, and an I-beam over a field. A page's scripts run
+ * (browsers/webapi over browsers/javascript: mini-chrome's engine and
+ * today's DOM), and their timers run on the frame's clock. What the
+ * browser does not show, such as a PDF file or a film of YouTube's, it
+ * gives to a program beside it, as Mosaic's helper applications did
+ * (Helpers): those of ~/.mailcap and of the profile, mini-page and
+ * mpv.
  *
- * What is ours: the name says the window's period, not the engine's
+ * What is ours: the name gives the window's period, not the engine's
  * (plan_browser.md, decision 1). Netscape 1 had no style sheets and
- * no scripts; a Netscape faithful to it, over Mosaic's kind of layout
- * (Html_layout, which the engine still has), would not show a page
- * of today. Tabs are Mozilla's (2002) and the field's offers Netscape
- * 4's and Chrome's, not Navigator 1's; a page's work on a worker beside
- * the window, Back to a page kept whole (Tab), as browsers of today;
- * no cache, a page's requests one after the other, a tab not shown
- * waiting.
+ * no scripts; a Netscape faithful to it, over Mosaic's kind of layout,
+ * would not show a page of today. Tabs come from Mozilla (2002), and
+ * the field's offers come from Netscape 4 and Chrome, not from
+ * Navigator 1. A page's work is
+ * done on a worker beside the window, and Back goes to a page kept
+ * whole (Tab), as in browsers of today. There is no cache, a page's
+ * requests are made one after the other, and a tab that is not shown
+ * waits.
  *
  * cs-history:
  * Netscape was Mosaic's authors' second browser. Marc Andreessen and
@@ -115,31 +123,31 @@
  * 1994 Andreessen and Jim Clark, the founder of Silicon Graphics,
  * started Mosaic Communications, hired several of Mosaic's
  * programmers, and wrote a new browser from nothing; the university
- * objected to the name, and company and browser became Netscape
- * (Navigator 1.0, December 1994). Within two years it brought most
- * of what a page still relies on: a page shown while it arrives,
+ * objected to the name, and the company and the browser became
+ * Netscape (Navigator 1.0, December 1994). Within two years it brought
+ * most of what a page still relies on: a page shown while it arrives,
  * several connections at once, SSL (https), cookies, tables, frames,
  * and JavaScript (Navigator 2).
  *
  * evolution:
- * The engines, from Netscape's to today's. Microsoft's Internet
- * Explorer (1995), given with Windows, took Netscape's users: the
- * browser wars. Netscape published its source in 1998 (Mozilla, its
- * old code name) and was bought by AOL; its engine was written
- * again as Gecko, which is Firefox's (2004). The KDE project's
- * KHTML (begun in 1998) became Apple's WebKit for Safari (2003), and Google's
- * Chrome (2008) was built on WebKit, forked as Blink in 2013. The
- * pipeline drawn above, a tree, a cascade, boxes, then painting, is
- * the one those engines share; what they add is doing it again for
- * the part of a page that changed only, on several threads and
- * processes, with the graphics processor.
+ * Here is how the engines went from Netscape's to today's. Microsoft's
+ * Internet Explorer (1995), given with Windows, took Netscape's users:
+ * the browser wars. Netscape published its source in 1998 (as Mozilla,
+ * its old code name) and was bought by AOL; its engine was written
+ * again as Gecko, which is Firefox's (2004). The KDE project's KHTML
+ * (begun in 1998) became Apple's WebKit for Safari (2003), and Google's
+ * Chrome (2008) was built on WebKit, which it forked as Blink in 2013.
+ * The pipeline drawn above (a tree, a cascade, boxes, then painting)
+ * is the one those engines share. What they add is redoing it only for
+ * the part of a page that changed, on several threads and processes,
+ * with the graphics processor.
  *
  * why-study:
- * A browser is today's largest program most people run, tens of
- * millions of lines, and a second operating system on top of the
+ * A browser is today's largest program that most people run, with tens
+ * of millions of lines, and a second operating system on top of the
  * first: it loads programs from the network, isolates them from one
- * another (Cors), schedules them (Event_loop), gives them storage
- * and a screen. Small, it can be read whole, and it is where the
+ * another (Cors), schedules them (Event_loop), and gives them storage
+ * and a screen. A small one can be read whole, and it is where the
  * rest of ix meets: the network's stack and its cryptography, the
  * pictures' decoders, a parser and an interpreter, a layout and a
  * window.
@@ -147,23 +155,30 @@
  * References: plan_browser.md (the stages, what was copied and what
  * was cut). Pavel Panchekha and Chris Harrelson, "Web Browser
  * Engineering" (browser.engineering): a browser built chapter by
- * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
- * Browsers Work" (2011): WebKit's and Gecko's seen from above.
+ * chapter, with the same pipeline. Tali Garsiel and Paul Irish, "How
+ * Browsers Work" (2011): WebKit and Gecko seen from above.
  *
  * usage: mini-netscape [-v] [address | url=address] [worker=wait|off] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
- *   (a file's path is an address; worker: the window waits for each
- *   piece of a page the worker does (the tests'), or does them itself,
- *   where they are done beside it (The worker, below); console=on: what the page's scripts
- *   print, and their errors, on the standard error; strict=on: a
- *   script that does not parse refused whole, a DOM method missing a
- *   TypeError, where they are passed over with a warning; helpers=off:
- *   no program run for what the browser does not show; keep=off: a
- *   connection a request; profile: where the cookies and the zooms are
- *   kept, the history and the bookmarks too, ~/.config/mini-netscape if
- *   not said, off for nowhere; window:
- *   the window's size at first, the one it had last if not said; -v:
- *   the files read and written, the addresses fetched and what came,
- *   the programs run, on the standard error) *)
+ *   - a file's path is an address;
+ *   - worker: with wait, the window waits for each piece of a page that
+ *     the worker does (as the tests do); with off, the window does the
+ *     pieces itself, where they are otherwise done beside it (see The
+ *     worker, below);
+ *   - console=on: what the page's scripts print, and their errors, go
+ *     to standard error;
+ *   - strict=on: a script that does not parse is refused whole, and a
+ *     missing DOM method is a TypeError, where otherwise they are
+ *     passed over with a warning;
+ *   - helpers=off: no program is run for what the browser does not
+ *     show;
+ *   - keep=off: one connection for each request;
+ *   - profile: where the cookies and the zooms are kept, and the
+ *     history and the bookmarks too; ~/.config/mini-netscape if it is
+ *     not given, and nowhere for off;
+ *   - window: the window's size at first; the size it had last if it is
+ *     not given;
+ *   - -v: the files read and written, the addresses fetched and what
+ *     came, and the programs run, on standard error. *)
 
 module P = Playground
 

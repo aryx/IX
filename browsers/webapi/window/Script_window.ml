@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's mini-chrome's src/webapi/window/Script_window.ml (its 8af888e) (docs/plans/plan_browser.md) *)
+(* ix: copied from src/webapi/window/Script_window.ml in the author's
+ * mini-chrome (its 8af888e) (docs/plans/plan_browser.md) *)
 
 (* See Script_window.mli *)
 open Js_value

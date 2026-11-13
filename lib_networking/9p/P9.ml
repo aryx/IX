@@ -1,20 +1,20 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* 9P2000, Plan 9's file protocol (principia's fcall.h), as xix's
- * Protocol_9P designs it and mini-9pi's kernel has it
- * (kernels/9pi/files/P9: the client's half, with the kernel's types): a
- * message is its tag and a request (T) or a response (R), each a
- * variant. For a program: a file server (P9_server), or a client. A
- * file's entry is Sys_plan9's dir, as a program gets it from the
- * kernel. Offsets, counts and fids are ints (arm's 31 bits: no file
- * past 1 GB).
+(* This is 9P2000, Plan 9's file protocol (principia's fcall.h), as
+ * xix's Protocol_9P designs it and as mini-9pi's kernel has it
+ * (kernels/9pi/files/P9, which is the client's half, with the kernel's
+ * types). A message is its tag and a request (T) or a response (R),
+ * each a variant. This module is for a program: a file server
+ * (P9_server), or a client. A file's entry is Sys_plan9's dir, as a
+ * program gets it from the kernel. Offsets, counts and fids are ints
+ * (31 bits on arm, so no file can go past 1 GB).
  *
- * Thirteen requests, and they are the whole interface of a Plan 9
- * system to a file: what open, read, write and stat become when the
- * file is not the kernel's own. cat /mnt/wsys/label, the file served
- * by another program over a pipe, the kernel (its Devmnt) speaking
- * for cat:
+ * There are thirteen requests, and they are the whole interface of a
+ * Plan 9 system to a file: they are what open, read, write and stat
+ * become when the file is not the kernel's own. Here is cat
+ * /mnt/wsys/label, a file served by another program over a pipe, with
+ * the kernel (its Devmnt) speaking for cat:
  *
  *     kernel (the client)                 the file server
  *     Tversion 8216 "9P2000"      --->    once, when the pipe is mounted
@@ -34,9 +34,9 @@
  *                                 <---    Rclunk
  *
  * Three numbers carry it. A *fid* is the client's name for a file it
- * is looking at, chosen by the client (a file descriptor's other
- * end: Twalk makes one, Tclunk forgets it); the server only keeps a
- * table of them. A *qid* is the server's name for the file itself:
+ * is looking at, chosen by the client (it is the other end of a file
+ * descriptor: Twalk makes one, and Tclunk forgets it); the server only
+ * keeps a table of them. A *qid* is the server's name for the file itself:
  * two fids are the same file if their qids are, and the version in
  * it changes when the file does, which is what a cache needs. A *tag*
  * names a request, so that answers may come back in any order and a
@@ -48,11 +48,11 @@
  * so a new server needs no entry in anyone's table of errors.
  *
  * Where it stands: the windows' file server (a window's /dev/cons,
- * /dev/mouse and the rest are files rio serves) and the DOS file
- * system's (Dossrv) are P9_server's functions; on the other side
- * mini-9pi's kernel turns a system call on a mounted file into these
- * messages. The two halves have each their own types and
- * meet in the bytes (P9_wire here, the kernel's own there).
+ * /dev/mouse and the rest are files that rio serves) and the DOS file
+ * system's (Dossrv) are functions given to P9_server. On the other
+ * side, mini-9pi's kernel turns a system call on a mounted file into
+ * these messages. The two halves each have their own types, and they
+ * meet in the bytes (P9_wire here, the kernel's own P9_wire there).
  *
  * plan9-is-cleaner:
  * Unix grew a system call, or a family of them, for each new kind of
@@ -67,10 +67,11 @@
  *
  * cs-history:
  * 9P is as old as Plan 9 (Bell Labs; shown in 1990, released in
- * 1992). 9P2000, with the fourth edition (2002), is the revision
- * every implementation speaks: longer names, a message's size agreed
- * at the start (Tversion), authentication moved out of the protocol
- * into a file read and written (Tauth's fid).
+ * 1992). 9P2000, which came with the fourth edition (2002), is the
+ * revision that every implementation speaks. It has longer names, a
+ * message size agreed at the start (Tversion), and authentication
+ * moved out of the protocol into a file that is read and written
+ * (Tauth's fid).
  *
  * modern:
  * It outlived its system as the simple way to show a host's files to
@@ -80,14 +81,14 @@
  * Each wanted Unix's semantics on top, hence the dialects 9P2000.u
  * and 9P2000.L; this is the plain one.
  *
- * (No P9.mli: the module is the messages' types; their bytes are
- * P9_wire's.)
+ * (There is no P9.mli, because the module is only the messages' types;
+ * their bytes are P9_wire's work.)
  *
  * References: intro(5) of the Plan 9 manual, the protocol as a
  * whole, and the pages after it, one per message; Rob Pike, Dave
  * Presotto, Ken Thompson, Howard Trickey and Phil Winterbottom, "The
- * Use of Name Spaces in Plan 9" (1992), why one protocol; principia's
- * fcall.h. *)
+ * Use of Name Spaces in Plan 9" (1992), on why there is one protocol;
+ * principia's fcall.h. *)
 
 type fid = int
 type tag = int

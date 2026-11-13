@@ -1,14 +1,14 @@
-(* Hit: from a point on the page to what is drawn there -- the link a
-   click follows -- and from a #fragment's name to where it is.
+(* Hit: from a point on the page to what is drawn there (the link that a
+   click follows), and from a #fragment's name to where it is.
 
-   Layout goes from the tree to places; a click goes back, from a
-   place to the tree. **Hit testing** walks the boxes the layout made,
-   down to the line whose top and bottom hold the point, and along it
-   to the fragment whose left and right do; the fragment's look knows
-   the link it is in (Looks.t.link: the href of the nearest <a href>
+   Layout goes from the tree to places; a click goes back, from a place
+   to the tree. **Hit testing** walks the boxes the layout made, down to
+   the line whose top and bottom hold the point, and along that line to
+   the fragment whose left and right hold it. The fragment's look knows
+   the link it is in (Looks.t.link is the href of the nearest <a href>
    around it, inherited like a colour). The page's coordinates are the
-   layout's (x right, y down from the page's top); the app adds the
-   scroll and turns its y over.
+   layout's (x goes right, y goes down from the page's top); the app
+   adds the scroll and turns its y over.
 
      <p>the <a href=recipes.html>recipes</a>   (the tests' metrics: a
                                                character 10, a space 10)
@@ -16,29 +16,30 @@
                              "the" 8..38, "recipes" 48..118 <- here
                              -> its link: "recipes.html"
 
-   A link of several words is several fragments with spaces between
-   them; a point in a space between two fragments of the same link is
+   A link of several words is several fragments, with spaces between
+   them. A point in a space between two fragments of the same link is
    in the link too (Mosaic underlined the spaces and made them
-   clickable), a space between two links is not.
+   clickable); a space between two links is not.
 
-   Browsers do the same, the other way up: each box knows its element,
-   and the element its ancestors, so a click finds the <a> by walking up
-   the tree (and the event bubbles up it, for scripts). Ours finds the
-   link in the look because a look is all a fragment keeps.
+   Browsers do the same the other way up: each box knows its element,
+   and the element knows its ancestors, so a click finds the <a> by
+   walking up the tree (and the event bubbles up it, for scripts). Ours
+   finds the link in the look, because a look is all that a fragment
+   keeps.
 
-   The other lookup, **anchors**: "#people" in a URL names a place in
-   the page -- an <a name="people"> (HTML 2.0), or any element's
-   id="people" (HTML 4) -- and the browser scrolls to it. The layout
-   keeps each anchor on its line (a block's id is the block itself), so
-   the place is the line's top, or the block's.
+   The other lookup is for **anchors**. "#people" in a URL names a place
+   in the page, an <a name="people"> (HTML 2.0) or any element's
+   id="people" (HTML 4), and the browser scrolls to it. The layout keeps
+   each anchor on its line (a block's id is the block itself), so the
+   place is the line's top, or the block's.
 
-   In the system: Tab asks here at each click of mini-netscape (a
-   link to follow, a control to give the keys to) and for the
-   #fragment of an address; a page's scripts are told the click on
-   the element found ([element_at], webapi's Browser_script). The
-   same question is asked one level down by a window system
-   (mini-rio here), which finds the window under the pointer before
-   the program in it finds the link.
+   In the system: Tab asks here at each click of mini-netscape (for a
+   link to follow, or a control to give the keys to) and for the
+   #fragment of an address; a page's scripts are told of the click on
+   the element found ([element_at], with webapi's Browser_script). The
+   same question is asked one level down by a window system (here
+   mini-rio), which finds the window under the pointer before the
+   program in it finds the link.
 
    Reference: Web Browser Engineering, chapter 7 ("Handling Buttons and
    Links"); WHATWG HTML, "Scrolling to a fragment" (which looks for an
@@ -48,15 +49,15 @@
 (* the href of the link at a point of the page, if any *)
 val link_at : Html_layout.box -> x:float -> y:float -> string option
 
-(* the fragment at a point of the page, if any: a word, a picture, a
- * form's control (a click on a control is the control's) *)
+(* the fragment at a point of the page, if any: a word, a picture, or a
+ * form's control (a click on a control goes to the control) *)
 val fragment_at : Html_layout.box -> x:float -> y:float -> Html_layout.fragment option
 
 (* the element at a point of the page, if any: the one its word,
- * picture or control is in, else the innermost block around the point
- * -- what a click is dispatched to (Browser_script) *)
+ * picture or control is in, else the innermost block around the point.
+ * This is what a click is dispatched to (Browser_script) *)
 val element_at : Html_layout.box -> x:float -> y:float -> Dom.element option
 
-(* where the page's anchor named so is (its y), if it has one: the
+(* where the page's anchor of that name is (its y), if it has one: the
  * first in the page, an element's id or an <a name> *)
 val anchor : Html_layout.box -> string -> float option

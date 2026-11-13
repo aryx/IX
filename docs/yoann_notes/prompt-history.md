@@ -73472,3 +73472,50 @@ Claude moved the "The system as a whole" section closer to the big table of drop
 Claude confirmed the line count was unchanged and checked the seam between the section and the table.
 Claude found nothing linking to the old section anchor, so the move broke no references.
 Claude then rewrote the section's first line to explain how it relates to the table.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:57
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude pushed commit `e99fbf44` to main with three changes to the ix docs.
+Claude moved "The system as a whole" into its own subsection right after the big table.
+Claude removed calc and temp from the big table and fixed tiny-debug's missing source-level debugging in `TinyDebugger.mli` and the table.
+Claude made tiny-debug's missing source-level debugging the first item of its `dropped:` list.
+Claude left the playground exercise fix ("circles and polygons, once KGraphics draws them") undone and offered to make it.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 15:58
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended rewording the TinyLibPlayground.mli exercise, since KGraphics.ml draws neither circles nor polygons.
+Claude suggested cutting the two repeated twists under "The system as a whole" to one-line pointers at their table rows.
+Claude proposed matching the program names in tiny/README.md's "What each keeps, changes and drops" table to the programs table's tiny-build style.
+Claude pointed out that the top README's t-IX row mixes libraries with the window system, and suggested giving libraries their own row like m-IX.
+Claude also flagged that the four-column table may need checking on GitHub, and suggested starting with the playground fix.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:14
+
+**Yoann:**
+
+> let's do 1, 2, 3, and 5
+
+**Claude (summary):**
+
+Claude fixed the big table's program names to match the tables, adding `tiny-db` and `tiny-vcs` host names that the sed missed.
+Claude took the host names from the dune files rather than inventing any, so the names are real.
+Claude also updated the explanatory sentence under the column so it now covers the four programs missing from the tables (emacs, play, debug, trace).
+Claude started with item 1, the playground exercise, but the answer does not show its outcome.

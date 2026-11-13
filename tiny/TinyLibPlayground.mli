@@ -104,7 +104,8 @@
  * - the mouse: a fourth function, reading the program's descriptor 4;
  * - redraw only what changed, for every shape and not just the
  *   background, by comparing the shapes of two models;
- * - circles and polygons, using KGraphics.ml's;
+ * - circles and polygons, once KGraphics.ml draws them (its exercises:
+ *   ellipses and filled polygons, for these shapes);
  * - a second game: a Snake, or a Pong;
  * - record and replay: a game is pure and init takes a seed, so the
  *   seed and the keys by frame reproduce a whole game (demos, bug

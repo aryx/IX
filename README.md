@@ -188,7 +188,8 @@ built for tiny-kernel and for the host.
 | **the kernel** | tiny-kernel: processes, files, graphics, sound, network | 5,720 |
 | **the tools** | tiny-shell, tiny-editor, tiny-build, tiny-db, tiny-vcs, tiny-prof | 4,340 |
 | **the toolchain**, with which tiny-kernel rebuilds its own image | tiny-cc, tiny-ml, tiny-as, tiny-ld | 6,390 |
-| **the window system**, its programs and the libraries under them | tiny-windows, tiny-tetris, tiny-calculator, tiny-office, tiny-troff, tiny-browser | 7,410 |
+| **the window system** and its programs | tiny-windows, tiny-tetris, tiny-calculator, tiny-office, tiny-troff, tiny-browser | 6,250 |
+| **the libraries** under the programs | TinyLibCore (the standard library), TinyLibSystem, tiny-playground, tiny-gui...; the runtimes of C and ML | 7,460 |
 
 The programs, their `.mli` files included, with their C (tiny-cc's
 and tiny-ml's runtimes, tiny-kernel's programs in C) and tiny-machine's

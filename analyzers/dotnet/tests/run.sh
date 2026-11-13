@@ -35,10 +35,24 @@ AN=$(realpath ${DUNEANALYZE:-$B/analyzers/Main.exe})
 CC=${DUNECC:-$B/languages/c/Main.exe}
 P=_mk/7/languages/c
 # (WORK=dir: the assemblies made kept there)
-W=${WORK:-$(mktemp -d)}; [ -n "${WORK:-}" ] || trap 'rm -rf $W' EXIT
+W=${WORK:-$(mktemp -d)}; [ -n "${WORK:-}" ] || trap 'rm -rf $W' EXIT; mkdir -p $W
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
-[ -f $P/Parser.ml ] || { echo "skipped: $P/Parser.ml not built (mini-mk in languages/c)"; exit 0; }
+# A front end's Parser.ml and Lexer.ml, mini-yacc's and mini-lex's in
+# _mk/7. With -build they are made here: mini-9pi's card needs the
+# assemblies, and a skip left its make card without them. Else the test
+# is skipped.
+parser() {
+  [ -f _mk/7/$1/Parser.ml ] && return
+  if [ -n "$build" ]; then
+    (cd $1 && MKSHELL=mini-rc PATH=$PWD/../../bin:$PATH mini-mk B=../../_mk/7 \
+       ../../_mk/7/$1/Parser.ml ../../_mk/7/$1/Lexer.ml > $W/parser.log 2>&1) ||
+      { echo "FAIL $1's parser and lexer by mini-mk"; tail -3 $W/parser.log; exit 1; }
+  else
+    echo "skipped: _mk/7/$1/Parser.ml not built (mini-mk in $1)"; exit 0
+  fi
+}
+parser languages/c
 
 # analyze_rt.dll: mini-cc's front end (its mkfile's order), Facts,
 # C_front; mini-ml's front end (Ast to Typing, mlpp's Pp), Closure_facts,
@@ -47,7 +61,7 @@ fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 # units: mini-cc's copied with theirs renamed C_parser and C_lexer, and
 # what names them (dune's wrapped copy of them, analyzers/c, by hand)
 M=_mk/7/languages/ml
-[ -f $M/Parser.ml ] || { echo "skipped: $M/Parser.ml not built (mini-mk in languages/ml)"; exit 0; }
+parser languages/ml
 mkdir -p $W/c
 cp lib_core/parallel/Parallel.mli $W/
 cp lib_core/parallel/host/single.ml.in $W/Parallel.ml

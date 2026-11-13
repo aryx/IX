@@ -195,5 +195,16 @@ test, make -C tiny/TinyKernel check, the link on a disk; make self
 with the install committed before it ended (the author: "CI will
 catch a problem if there is one").
 
-Next, apart: the boot's work out of the kernel, a `boot.rc` with
-`mount` and `bind` system calls (What it becomes).
+2026-11-13: closed, moved to done/ (the author: "let's postpone
+boot.rc. Maybe we can then move the plan to done/"). Its steps 0 to 5
+done above. Left:
+- **Publishing the assets**: make website, the assets pushed, then
+  docs/t-ix.html (81c58dc1, its `disk2` and `?v=11`), so that the
+  website's page finds `disk.img` and `src.img`.
+- **`boot.rc`, postponed**: the boot's work out of the kernel, Plan 9's
+  way, a script run by the image's rc that mounts the disks and binds
+  the root, with `mount` and `bind` as system calls (What it becomes).
+- **A create in a union**: `cp` to a name the disk's directory lacks
+  but the image's has (`/bin/ls`, the disk's removed) writes the
+  image's copy, in memory, not the disk's; the link looks in the
+  union's first directory alone (step 5), a create could too.

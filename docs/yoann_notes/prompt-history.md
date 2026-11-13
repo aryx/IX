@@ -72778,3 +72778,42 @@ Claude had left make self running in the worktree /Users/pad/github/ix-self, exp
 Claude had gated the step 5 commit on make self, after make check and make test passed with 35 jobs.
 Claude had made self.keys run build install and compare each installed file against _make/system.
 Claude had committed t-ix.html as 81c58dc1 without pushing, and fixed sys_link in KCalls.ml.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 08:47
+
+**Yoann:**
+
+> make self is too slow; we must not wait for it to commit; CI will catch a problem if there is one and we can fix it later
+
+------------------------------------------------------------------------
+
+## 2026-11-13 08:47
+
+**Yoann:**
+
+> but self-quick-tix can be useful to run before commit if it does not take too long
+
+**Claude (summary):**
+
+Claude ran `self-quick-tix` on the committed tree (e4f316f2), noting that `make test` takes about 6 minutes.
+Claude recommended running `make test` and then `self-quick-tix` before each kernel or toolchain commit.
+Claude proposed leaving the full `make self` run to the nightly CI rather than running it locally.
+Claude saved that pre-commit workflow to memory so it persists across sessions.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 08:48
+
+**Yoann:**
+
+> let's postpone boot.rc. Maybe we can then move the plan to done/ ? wiht remaining stuff in it marked at the end?
+
+**Claude (summary):**
+
+Claude moved the plan into `docs/plans/done/plan_tiny_boot_disk.md`, staged but not committed.
+Claude appended a closing Status paragraph listing the work still open after the move.
+That list covers publishing the assets with `make website`, the postponed `boot.rc` moving boot work into a script.
+Claude also flagged a union bug: `cp` to a removed `/bin/ls` writes to memory, not the disk, so creates may need the same check.
+Claude left `ints.c` and `strings.c` out of the commit and reported `self-quick-tix` passing on e4f316f2.

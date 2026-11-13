@@ -8,14 +8,14 @@ Makefiles use, so it can stand in for `qemu-system-arm` or
 `qemu-system-aarch64`. Everything in it is OCaml you can read: every
 instruction, device access, USB transfer and network frame. That makes
 it a machine you can look inside, which QEMU is not. This manual covers
-how to run it and how to look inside it. How it works is the tutorial
-[notes_pi.md](../tutorials/notes_pi.md); what it must do and why is
-[plan_pi.md](../plans/plan_pi.md).
+how to run it and how to look inside it. The tutorial
+[notes_pi.md](../tutorials/notes_pi.md) explains how it works, and
+[plan_pi.md](../plans/plan_pi.md) says what it must do and why.
 
 ## 1. The quick way: mini-pi
 
-`mini-pi` (at ix's top, and `bin/mini-pi`) builds and boots a kernel
-without the long command line:
+`mini-pi` (at the top of ix, and also `bin/mini-pi`) builds and boots
+a kernel without the long command line:
 
     ./mini-pi mini-9pi          # ix's Plan 9 kernel in OCaml, Pi1, alone: ix's own
                                 # programs in its image (mini-rc, ed, ls...), no SD card
@@ -49,7 +49,7 @@ Options:
 | `-P` | mini-9pi2: the Pi 2's four cores each on a core of the host's (mini-qemu's `-cores-parallel`, by the mini-qemu OCaml 5 builds, in `_build5`) |
 
 `./mini-pi` alone lists the kernels; `./mini-pi --help` prints the
-full usage, the options too. Quit with Ctrl-A then x, or
+full usage, including the options. Quit with Ctrl-A then x, or
 close the window.
 
 ## 2. The command line
@@ -76,22 +76,31 @@ QEMU's options that mini-qemu takes:
 | `-qmp unix:PATH,server,nowait` | the machine protocol (section 4.3) |
 
 It accepts and ignores `-cpu`, `-monitor`, `-append`, `-D`,
-`-no-reboot`, `-S` and `-netdev`. A usb-net's network is always
-mini-qemu's own user-mode one (`Usernet.ml`). The guest is 10.0.2.15,
-the host and gateway 10.0.2.2, and TCP to 10.0.2.2 reaches the host's
-127.0.0.1. Beyond the gateway, as QEMU's (2026-10-11): a TCP connection
-to any other address is one of the host's to that address, a UDP
-datagram goes out from a socket of the host's and its answers come
-back, and 10.0.2.3 is the name server (the host's own, from
-`/etc/resolv.conf`). So a guest with a default route by 10.0.2.2 and
-10.0.2.3 for its names reaches the Internet: on mini-9pi, `echo add 0
-0 10.0.2.2 > /net/iproute`, `echo 'dns=10.0.2.3' > /net/ndb`, `curl
-http://example.com/`. A connection is waited for with the board
-stopped (10 s at most). No ping beyond the gateway, no connection
-from the host.
+`-no-reboot`, `-S` and `-netdev`. The network behind a usb-net is
+always mini-qemu's own user-mode network (`Usernet.ml`). The guest is
+10.0.2.15, the host and gateway are 10.0.2.2, and TCP to 10.0.2.2
+reaches the host's 127.0.0.1.
 
-Options only mini-qemu has (`-h`, `-help`, `--help`: the usage and
-examples):
+Since 2026-10-11 the network also goes beyond the gateway, as QEMU's
+does:
+
+- a TCP connection to any other address becomes a connection from the
+  host to that address;
+- a UDP datagram goes out from a socket on the host, and its answers
+  come back;
+- 10.0.2.3 is the name server (the host's own, from
+  `/etc/resolv.conf`).
+
+So a guest whose default route goes through 10.0.2.2, and which uses
+10.0.2.3 for its names, reaches the Internet. On mini-9pi, run
+`echo add 0 0 10.0.2.2 > /net/iproute`,
+`echo 'dns=10.0.2.3' > /net/ndb`, then `curl http://example.com/`.
+While mini-qemu waits for a connection to open, the board is stopped
+(for 10 s at most). Ping does not work beyond the gateway, and the
+host cannot open a connection to the guest.
+
+Options that only mini-qemu has (`-h`, `-help` and `--help` print the
+usage and examples):
 
 | option | meaning |
 |---|---|
@@ -111,51 +120,55 @@ examples):
   (a pipe, a test script), the input is read to its end and then
   closed. The tests drive the console this way
   (`kernels/lib_machine/session.py`).
-- **The window** (SDL, when `$DISPLAY` is set and there is no
-  `-nographic`): the framebuffer, redrawn when it changes. Keys go to
-  the USB keyboard. A click grabs the host's pointer for the USB
-  mouse, which moves relatively, as a real one does, and Ctrl-Alt-G
-  releases it.
+- **The window** (SDL) opens when `$DISPLAY` is set and there is no
+  `-nographic`. It shows the framebuffer, redrawn when it changes.
+  Keys go to the USB keyboard. A click grabs the host's pointer for
+  the USB mouse, which moves relatively, as a real one does, and
+  Ctrl-Alt-G releases it.
 - **Random numbers.** The board's generator (the Pi 1's BCM2835 at
-  0x20104000, the Pi 4's RNG200 at 0xfe104000) gives the host's
-  `/dev/urandom`: what mini-9pi's `/dev/random` is, the secrets of a
-  TLS connection. They are the one thing of a run without a window
-  that is not the same every time.
-- **Sound.** The Pi 1's jack is its PWM (two channels at
-  0x2020c000, their clock in the clock manager at 0x201010a0), fed by
-  hand through its FIFO or by the DMA controller, a word each time
-  the FIFO asks (request line 5): a block of samples lasts what its
-  samples last, in the board's time. `-audiodev wav,path=F` keeps what
-  is played and writes it as a WAV file at exit (16 bits, two
-  channels, the rate the guest set: 44,099 for a range of 5,669 of a
-  250 MHz clock): a second of the file is a second the guest played,
-  however long the emulator took, and the same every run. In a window
-  the samples also go to the host's sound card (SDL), at our clock:
-  a guest too busy to keep up is heard broken there, and whole in the
-  file. QEMU has no such device (a guest's writes go nowhere). Not
-  yet: the Pi 4's (its second PWM).
-- **The clock.** Without a window, the board's time is the
-  instructions' (`-ips`): a run is deterministic, with the same
-  output and the same screens every time. The tests rely on that.
-  With a window, the board's time is paced to the host's: an idle
-  kernel's WFI skips ahead to the host's time, but it is never let
-  run ahead of it (a key's repeat depends on it). A busy kernel falls
-  behind, as a slower machine would.
-- **The cores.** The Pi 2's four (and the Pi 4's with `-smp`) take
-  turns in one thread, a batch of instructions each: the same run each
-  time, and four busy cores four times slower than one. With
-  `-cores-parallel` a Pi 2's started cores are each on a domain of
-  OCaml 5, so on a core of the host's: four busy cores take about
-  one's time, and the run is no longer the same each time (which core
-  gets the kernel's lock first is the host's scheduler's). It needs a
+  0x20104000, the Pi 4's RNG200 at 0xfe104000) returns bytes from the
+  host's `/dev/urandom`. mini-9pi's `/dev/random` reads from it, and
+  so do the secrets of a TLS connection. In a run without a window,
+  these numbers are the only thing that differs from one run to the
+  next.
+- **Sound.** The Pi 1's jack is its PWM (two channels at 0x2020c000,
+  with their clock in the clock manager at 0x201010a0). The guest
+  feeds it either by hand through its FIFO or with the DMA controller,
+  which writes a word each time the FIFO asks for one (request line
+  5). A block of samples lasts as long as its samples do in the
+  board's time. `-audiodev wav,path=F` keeps what is played and writes
+  it as a WAV file at exit (16 bits, two channels, at the rate the
+  guest set: 44,099 for a range of 5,669 of a 250 MHz clock). A second
+  of the file is a second the guest played, however long the emulator
+  took, and the file is the same on every run. In a window the samples
+  also go to the host's sound card (SDL), in real time: a guest too
+  busy to keep up sounds broken there, but whole in the file. QEMU has
+  no such device (a guest's writes go nowhere). The Pi 4's jack (its
+  second PWM) is not emulated yet.
+- **The clock.** Without a window, the board's time is counted in
+  instructions (`-ips`). A run is then deterministic, with the same
+  output and the same screens every time, and the tests rely on that.
+  With a window, the board's time is paced to the host's. When an idle
+  kernel waits at a WFI, the board's time skips ahead to the host's,
+  but it is never allowed to run ahead of it (a key's repeat depends
+  on this). A busy kernel falls behind, as a slower machine would.
+- **The cores.** The Pi 2's four cores (and the Pi 4's, with `-smp`)
+  take turns in one thread, each running a batch of instructions at a
+  time. The run is then the same each time, but four busy cores are
+  four times slower than one. With `-cores-parallel`, each started
+  core of a Pi 2 runs in its own OCaml 5 domain, and so on its own
+  core of the host. Four busy cores then take about the time of one,
+  but the run is no longer the same each time (which core gets the
+  kernel's lock first is up to the host's scheduler). This needs a
   mini-qemu built by OCaml 5:
 
       opam exec --switch=5.5.1 -- dune build --build-dir _build5 --profile release ./raspberry/Main.exe
 
-  or `./mini-pi -P mini-9pi2`, which does it. Built by OCaml 4.14,
-  mini-qemu says it cannot and the cores take turns. The board's
-  clock is then the instructions of the first core that does not
-  wait; `-prof` counts the first core only.
+  or `./mini-pi -P mini-9pi2`, which does that build for you. A
+  mini-qemu built by OCaml 4.14 says it cannot run the cores in
+  parallel, and they take turns instead. In parallel, the board's
+  clock is the instruction count of the first core that is not
+  waiting, and `-prof` counts the first core only.
 
 ## 4. Looking inside
 
@@ -167,15 +180,16 @@ fatally:
     mini-qemu: unassigned read at 0x20215040
     mini-qemu: undefined instruction e7f000f0 at 0x80012345
 
-An **unassigned** access is a device register that mini-qemu does not
-emulate, at that physical address (Pi1 I/O at 0x20000000, Pi4 at
-0xfc000000), logged once per address and direction. Reads return 0
-and writes are dropped. When a new kernel
-hangs at boot, this is usually the first thing to look at: it names
-the device the driver is waiting on. An **undefined instruction** is
-logged before the guest takes its exception: either the kernel's bug
-or one of mini-qemu's missing instructions (then see
-`machine/tests/census_*.txt`, the instructions the corpus uses).
+An **unassigned** access is an access to a device register that
+mini-qemu does not emulate, at that physical address (the Pi1's I/O
+is at 0x20000000, the Pi4's at 0xfc000000). It is logged once per
+address and direction. Reads return 0 and writes are dropped. When a
+new kernel hangs at boot, this is usually the first thing to look at:
+it names the device the driver is waiting on. An **undefined
+instruction** is logged before the guest takes its exception. It is
+either a bug in the kernel or an instruction mini-qemu is missing; in
+the second case, see `machine/tests/census_*.txt`, which lists the
+instructions the corpus uses.
 
 ### 4.2 The instruction trace: `-trace N` (the Pi4)
 
@@ -186,15 +200,15 @@ Each line is `[core] pc elN instruction`, disassembled:
 
     ffff000000080010 el1 msr vbar_el1, x0
 
-The first form is for the boot, up to the MMU turned on and the first
-exception level change. The second is a cheap sampling profile: which
-code a long run is in.
+The first form is for the boot, up to where the MMU is turned on and
+the exception level first changes. The second is a cheap sampling
+profile: it shows which code a long run is in.
 
 ### 4.3 The machine protocol: `-qmp`
 
 As in QEMU, `-qmp unix:/tmp/q.sock,server,nowait` opens a socket that
-takes JSON commands, one a line. mini-qemu polls it between batches of
-instructions, so it never blocks. It knows:
+takes JSON commands, one per line. mini-qemu polls it between batches
+of instructions, so it never blocks. It knows:
 
 | command | effect |
 |---|---|
@@ -219,21 +233,21 @@ how the graphics are tested: `raspberry/tests/graphics.py` for xv6,
 
 ### 4.4 Comparing with QEMU
 
-Most bugs are found by running the same thing under both and
-diffing: the console (`session.py ... -- mini-qemu ...` then
-`-- qemu-system-arm ...`), the screens (screendump), and for the
-Pi4, the instruction trace against QEMU's `-d in_asm,exec`. `mini-pi
--q` runs QEMU with mini-pi's arguments. The techniques, bug by bug,
-are in
+Most bugs are found by running the same thing under both and diffing
+the results: the console (`session.py ... -- mini-qemu ...` then
+`-- qemu-system-arm ...`), the screens (screendump) and, for the Pi4,
+the instruction trace against QEMU's `-d in_asm,exec`. `mini-pi -q`
+runs QEMU with mini-pi's arguments. The techniques are described bug
+by bug in
 [notes_debugging_techniques.md](../notes/notes_debugging_techniques.md).
 
 ### 4.5 A guest profile: `-prof F`
 
 `-prof F` counts the PC of every 1024th instruction the guest runs and
-writes the counts to F at exit, one line each: `pc count`, in
-hexadecimal, the most sampled first. Any exit works: Ctrl-A x, QMP's
-`quit`, closing the window, or SIGTERM. `pcprof.py` maps them to the
-kernel's functions:
+writes the counts to F at exit, one line per PC in the form
+`pc count`, in hexadecimal, with the most sampled first. Any exit
+works: Ctrl-A x, QMP's `quit`, closing the window, or SIGTERM.
+`pcprof.py` maps them to the kernel's functions:
 
     mini-qemu -M raspi1ap ... -prof /tmp/prof.txt
     kernels/9pi/tests/perf/pcprof.py /tmp/prof.txt _make/9pi/pi1-ocaml/kernel.elf
@@ -245,19 +259,20 @@ kernel's functions:
 
 Samples below the kernel's first symbol are counted as `(user)`: the
 user programs. On the Pi4, only the AArch64 state is sampled (the
-kernel), not the AArch32 programs. When off, the cost is one test per
-instruction. The case that earned the option, mini-9pi's OCaml pixels
-6 times slower than the C ones, is
-[notes_performance.md](../notes/notes_performance.md), case 1.
+kernel), not the AArch32 programs. When the option is off, it costs
+one test per instruction. The case that led to the option, where
+mini-9pi's OCaml pixels were 6 times slower than the C ones, is case 1
+in [notes_performance.md](../notes/notes_performance.md).
 
 ### 4.6 Where is it? `-status N` (and `mini-pi -v`)
 
-A boot that prints nothing more: is the kernel stuck in a loop, waiting
-for a device, or only slow? `-status N` prints a line on standard error
-every N seconds of the host's (`raspberry/observe/Status.mli`); `-symbols ELF`
-names the PCs from the kernel's ELF. `mini-pi -v` passes both (`-status
-2`), and also shows each build step's output and time (a first build
-of ocaml-light takes about 5 minutes, silent without `-v`):
+When a boot stops printing, is the kernel stuck in a loop, waiting for
+a device, or only slow? `-status N` prints a line on standard error
+every N seconds of the host's time (`raspberry/observe/Status.mli`);
+`-symbols ELF` names the PCs from the kernel's ELF. `mini-pi -v`
+passes both (`-status 2`), and also shows each build step's output
+and time (the first build of ocaml-light takes about 5 minutes, and it
+is silent without `-v`):
 
     ./mini-pi -v mini-9pi
     ...
@@ -266,55 +281,65 @@ of ocaml-light takes about 5 minutes, silent without `-v`):
     %
     mini-qemu: [12s] board 26.9s (+11.2s), idle 97%: 1% svc Proc_fun_281; waiting at svc wait_interrupt+0x4
 
-The host's time; the board's (and how far it went since the last
-line); the share of the board's time the CPU waited at a WFI (the time
-skipped to its next interrupt); where the rest went, the most first,
-each with the CPU's mode (Pi1: usr, svc, irq, ...; Pi4: el0, el1, or
-a32 for an AArch32 program). A sample is taken after each batch of
-instructions, the batch charged to its last PC. User programs are
-counted as one, `(user)`.
+Each line gives:
+
+- the host's time;
+- the board's time, and how far it went since the last line;
+- the share of the board's time the CPU waited at a WFI (the time
+  skipped to its next interrupt);
+- where the rest of the time went, the most first, each with the
+  CPU's mode (Pi1: usr, svc, irq, ...; Pi4: el0, el1, or a32 for an
+  AArch32 program).
+
+A sample is taken after each batch of instructions, and the whole
+batch is charged to its last PC. User programs are counted as one,
+`(user)`.
 
 Reading it:
 
-- **booting**: idle near 0%, the kernel's functions (above: the boot's
-  OCaml heap, `mark_slice`, and copies).
-- **at a prompt, waiting for input**: idle near 100%, `waiting at` the
-  kernel's WFI, the board's time running ahead of the host's (no
-  window: an idle kernel's time skips to its next tick).
-- **waiting forever for a device**: the same line, but no prompt: the
-  console's last lines say what it was doing.
-- **stuck in a loop**: idle 0%, one function near 100%, line after
-  line.
+- **booting**: idle is near 0%, and the line shows the kernel's
+  functions (above: the collector of the boot's OCaml heap,
+  `mark_slice` and `sweep_slice`, and copies, `memmove`).
+- **at a prompt, waiting for input**: idle is near 100%, the line
+  ends with `waiting at` the kernel's WFI, and the board's time runs
+  ahead of the host's (without a window, an idle kernel's time skips
+  to its next tick).
+- **waiting forever for a device**: the same line, but no prompt
+  appears; the console's last lines say what the kernel was doing.
+- **stuck in a loop**: idle is 0%, and one function is near 100%, line
+  after line.
 
 
 ## 5. The meters, and the activity monitor to come
 
-A window has **meters** (2026-10-11; `Monitor.ml`): a strip of 40
-rows under the guest's screen and the numbers in the window's title,
-both of the last half second.
+Since 2026-10-11, a window has **meters** (`Monitor.ml`): a strip of
+40 rows under the guest's screen, and numbers in the window's title.
+Both show the last half second.
 
     mini-qemu  cpu 43%, user 12%,  11.2 Mips  x1.00  net in 120 KB/s out 3 KB/s  2 tcp 1 udp  tcp 93.184.216.34:80
 
-- **cpu**: the share of the board's time the processor ran (the rest
-  it waited at a WFI); **user**: the part of it in user mode.
-- **Mips**: the instructions the host ran a second; **x1.00**: the
-  board's clock against the host's (below 1: the board is late, a
-  busy kernel on a slow host).
-- **net**: the frames' bytes a second to the guest and from it; the
-  TCP connections and UDP conversations open; the last thing the
-  network did.
-- The strip: at the left the processor, a column a half second, the
-  user programs' part light green over the kernel's dark; at the
-  right the network, the bytes in blue upward and the bytes out
-  orange downward, on a scale of tens (the full height 1 MB/s).
+- **cpu** is the share of the board's time the processor ran (it
+  waited at a WFI the rest of the time); **user** is the part of it
+  spent in user mode.
+- **Mips** is the instructions the host ran per second; **x1.00** is
+  the board's clock against the host's (below 1, the board is late:
+  a busy kernel on a slow host).
+- **net** is the frames' bytes per second to the guest and from it,
+  then the open TCP connections and UDP conversations, then the last
+  thing the network did.
+- The strip shows the processor at the left, one column per half
+  second, with the user programs' part in light green over the
+  kernel's dark part. At the right it shows the network: the bytes in
+  go upward in blue and the bytes out downward in orange, on a scale
+  of tens (the full height is 1 MB/s).
 
 `-meters off` leaves the window as it was. Without a window, `-meters`
-writes the line each second on standard error (not under a script
-that waits for a prompt: the line comes between). The numbers are the
-emulator's, not the guest's: a wedged kernel is a full dark column.
-`raspberry/tests/Monitor_strip.exe W out.ppm` draws the strip from
-made-up samples.
+writes the line each second on standard error (do not use it under a
+script that waits for a prompt: the line would come in between). The
+numbers are the emulator's, not the guest's, so a wedged kernel shows
+as a full dark column. `raspberry/tests/Monitor_strip.exe W out.ppm`
+draws the strip from made-up samples.
 
-[plan_monitor.md](../plans/plan_monitor.md) has the rest: the
-counters (exceptions, device accesses, USB transfers, SD sectors),
-a panel beside the screen with its own text, QMP's `query-stats`.
+[plan_monitor.md](../plans/plan_monitor.md) describes the rest: the
+counters (exceptions, device accesses, USB transfers, SD sectors), a
+panel beside the screen with its own text, and QMP's `query-stats`.

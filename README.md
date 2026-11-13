@@ -66,8 +66,8 @@ Each program in IX comes in two versions:
   make are the ones Plan 9's compiler and linker make. Together, the
   mini programs are **m-IX** (a nod to Knuth's MIX computer).
 - **tiny** (`tiny-build`, `tiny-shell`, `tiny-cc`, ...): a free
-  variant, in a file under [`tiny/`](tiny/) (the largest
-  with their parts in a directory beside it). It is named after
+  variant, in a file under [`tiny/`](tiny/) (the largest ones also
+  have a directory of parts beside their file). It is named after
   what it does, not after the original. It keeps the idea of the
   original and redesigns the rest, now that compatibility no longer
   matters. Together, the tiny programs are **t-IX**.
@@ -89,16 +89,17 @@ slow), and **[t-IX](https://aryx.github.io/IX/t-ix.html)** is
 tiny-machine compiled to JavaScript, booting tiny-kernel, its window
 system and tetris. And most programs of both sizes also run natively
 on Linux or macOS (the shell, the editors, the compilers, the browser,
-the games...): a program asks its system through one interface, with
-an implementation for each, so the same file is a program of both.
+the games...). A program talks to its system through a single
+interface, which has an implementation for each system, so the same
+source file builds a program for both.
 
 ## The code map
 
 [IX's code map](https://aryx.github.io/IX/codemap.html) shows the
-whole repository as a map, in the browser: each folder a region, each
-file a block the size of its code, each block the code itself once you
-zoom in. Every folder and file carries a one-line summary, the X-ray
-(`x`) shows each part's skeleton, a click on a name shows its
+whole repository as a map, in the browser. Each folder is a region and
+each file a block sized by its code, and when you zoom in, a block
+shows the code itself. Every folder and file has a one-line summary.
+The X-ray (`x`) shows each part's skeleton, a click on a name shows its
 definition, and `h` lists the other keys.
 
 [![IX's code map: every folder a region, every file a block](docs/pics/codemap.png)](https://aryx.github.io/IX/codemap.html)
@@ -107,7 +108,7 @@ A link can open it on any part of the code:
 [a folder](https://aryx.github.io/IX/codemap.html?focus=version_control),
 [a file](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml),
 [a definition](https://aryx.github.io/IX/codemap.html?focus=version_control&def=diff);
-the tables below link each program so.
+the tables below link each program this way.
 
 ## m-IX: the mini programs
 
@@ -165,22 +166,25 @@ not in Principia Softwarica).
 | **mini-analyze** | IX's code analysed in Datalog: dead code, exceptions that escape, capabilities, bugs | 4,600 | | [`analyzers/`](analyzers/) ([map](https://aryx.github.io/IX/codemap.html?focus=analyzers)) |
 | **the other kernels** | mini-xv6, Oberon, Singularity, Squeak | 14,300 | xv6 | [`kernels/`](kernels/) ([map](https://aryx.github.io/IX/codemap.html?focus=kernels)) |
 
-The system, m-IX, its rows above and two small libraries (lib_code,
-lib_mime), is **about 170,400 lines** (203,600 with the header
-comments). A system a person can read needs a limit set before it is
-full, and m-IX's is 175,000 of those lines: what is added has to fit,
-or something is trimmed first (today it is 4,600 under;
-[docs/loc.md](docs/loc.md) logs the numbers and what moved them).
-Beyond the system, about 105,300 more, outside the budget.
+The system, m-IX, is made of the rows of the first table and two small
+libraries (lib_code and lib_mime). It is **about 170,400 lines**, or
+203,600 with the header comments. A system a person can read needs a
+limit, set before the system is full, and m-IX's limit is 175,000 of
+those lines: whatever is added has to fit, or something else is trimmed
+first. Today m-IX is 4,600 lines under it, and
+[docs/loc.md](docs/loc.md) logs the numbers and what moved them. The
+programs beyond the system add about 105,300 lines, which are not
+counted in the budget.
 
 ## t-IX: the tiny programs
 
-Each program is a `.ml` file in [`tiny/`](tiny/) (the largest with a
-directory of their parts beside it), with an `.mli` that is where to
-start reading ([map](https://aryx.github.io/IX/codemap.html?focus=tiny)).
-[tiny/README.md](tiny/README.md) has each program's table, what idea
-it keeps from its original and what it redesigns, and how a program is
-built for tiny-kernel and for the host.
+Each program is a `.ml` file in [`tiny/`](tiny/), and the largest ones
+also have a directory of parts beside their file. Each has an `.mli`,
+which is where to start reading
+([map](https://aryx.github.io/IX/codemap.html?focus=tiny)).
+[tiny/README.md](tiny/README.md) has a table of the programs, says
+what idea each one keeps from its original and what it redesigns, and
+explains how a program is built for tiny-kernel and for the host.
 
 | | programs | lines |
 |---|---|---:|
@@ -191,10 +195,11 @@ built for tiny-kernel and for the host.
 | **the window system** and its programs | tiny-windows, tiny-tetris, tiny-calculator, tiny-office, tiny-troff, tiny-browser | 6,250 |
 | **the libraries** under the programs | TinyLibCore (the standard library), TinyLibSystem, tiny-playground, tiny-gui...; the runtimes of C and ML | 7,460 |
 
-The programs, their `.mli` files included, with their C (tiny-cc's
-and tiny-ml's runtimes, tiny-kernel's programs in C) and tiny-machine's
-assembly, are **about 34,400 lines** (`make loc`, 2026-11-13, without
-the header comments), past t-IX's budget of 30,000.
+Counting their `.mli` files, their C (tiny-cc's and tiny-ml's
+runtimes, and tiny-kernel's programs written in C) and tiny-machine's
+assembly, the tiny programs are **about 34,400 lines** without the
+header comments (`make loc`, 2026-11-13). That is more than t-IX's
+budget of 30,000.
 
 ## Build and run
 
@@ -208,10 +213,10 @@ make test
 ./tiny-machine -window tiny-kernel   # tiny-kernel and its screen: type windows, then tetris in a window
 ```
 
-`./configure` wants OCaml, opam and make, and says what does without
-the rest. The other projects' checkouts (`~/ocaml-light`,
-`~/principia`, `~/xv6`) are optional: `./mini-pi mini-9pi` needs
-nothing but IX.
+`./configure` needs OCaml, opam and make. For any other tool that is
+missing, it tells you what works without it. The other projects'
+checkouts (`~/ocaml-light`, `~/principia`, `~/xv6`) are optional:
+`./mini-pi mini-9pi` needs nothing but IX.
 
 mini-9pi under mini-qemu, running Plan 9's own `rio`:
 
@@ -221,7 +226,8 @@ tiny-kernel on tiny-machine, Tetris in a window of tiny-windows:
 
 ![tiny-kernel on tiny-machine: a window of tiny-windows, Tetris played in it](docs/pics/tiny-tetris.png)
 
-The tests, short and whole ([docs/testing.md](docs/testing.md): which one when):
+The tests, from the quick ones to the whole suite
+([docs/testing.md](docs/testing.md) says which one to run when):
 
 ```bash
 make test           # = make test-lite
@@ -241,11 +247,12 @@ machines (real ARM, or our own) and what runs on each.
 ## Bootstrapping
 
 IX builds itself. The first build needs a compiler from outside:
-`make` uses dune, OCaml 4.14 and, under OCaml, gcc. After it, IX's own
-tools are enough: mini-mk runs the mkfiles, mini-ml, mini-lex and
-mini-yacc compile the OCaml, mini-cc and mini-asm the C library and
-mini-ml's runtime, mini-ar and mini-ld link. No OCaml compiler, gcc,
-GNU binutils or glibc is run or linked; the results are under `_mk/`.
+`make` uses dune, OCaml 4.14 and, under OCaml, gcc. After that first
+build, IX's own tools are enough. mini-mk runs the mkfiles; mini-ml,
+mini-lex and mini-yacc compile the OCaml code; mini-cc and mini-asm
+compile the C library and mini-ml's runtime; and mini-ar and mini-ld
+link. No OCaml compiler, gcc, GNU binutils or glibc is run or linked,
+and the results are under `_mk/`.
 
 ```bash
 make                   # stage 0: IX built by OCaml and dune (bin/)

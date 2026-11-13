@@ -12,9 +12,10 @@ build but cannot work. mini-rio is the clearest case: a window system
 that *is* a file server for its windows.
 
 This page says which programs are which, and why. "Verified" rows were
-read in the code (the file is named); the few marked *inferred* were
-reasoned out and not run. Its survey is of 2026-10-29, the .NET
-programs and the languages added 2026-11-02.
+checked by reading the code, and the row names the file; the few
+marked *inferred* were reasoned out and not run. The survey dates from
+2026-10-29; the .NET programs and the languages were added on
+2026-11-02.
 
 ## 1. The two ways a program reaches a host
 
@@ -29,8 +30,8 @@ Three facts decide the rest:
 - **Off Plan 9, the namespace calls fail.** `Sys_plan9` (lib_core) has
   two sides. On Linux and macOS, `bind`, `mount` and `unmount` raise
   `ENOSYS`, `rfork` is `fork`, and a child's last words and times are
-  empty (`lib_core/commons/Sys_plan9.ml`); the real calls are
-  `lib_core/system/plan9/`'s.
+  empty (`lib_core/commons/Sys_plan9.ml`). The real calls are in
+  `lib_core/system/plan9/`.
 - **The graphics library is the client of Plan 9's draw device.**
   lib_graphics opens `/dev/draw/new`, `/dev/mouse` and `/dev/cons`
   (`Display.ml`, `Keyboard.ml`), which only mini-9pi serves. A program
@@ -38,9 +39,9 @@ Three facts decide the rest:
   instead, which only dune builds (SDL is outside what mini-ml
   compiles: `lib_playground/platforms/sdl/dune`).
 - **mini-mk builds a graphical program for Linux without a window.**
-  The top mkfile picks the playground's platform by the system:
-  `draw` and `software` for Plan 9, `ppm` otherwise
-  (`mkfile`'s `PLATFORMS`): such an ELF writes its frames to files.
+  The top mkfile picks the playground's platform by the system
+  (`mkfile`'s `PLATFORMS`): `draw` and `software` for Plan 9, `ppm`
+  otherwise. So such an ELF writes its frames to files.
 
 ## 2. m-ix
 
@@ -96,18 +97,18 @@ None. No `Win32`, Cygwin or MinGW case is in any dune file, mkfile,
 only. The programs use Unix's calls (fork, pipes, a terminal's modes),
 which a native Windows OCaml does not have, so a port would need a
 side of its own for those. *Inferred*: WSL is Linux, and the Linux
-builds may well run there; nothing has tried. The two pages of the
-website run anywhere a browser does: mini-qemu and tiny-machine
-compiled to JavaScript. And the .NET assemblies ix's compilers write
-(above): *inferred*, Microsoft's `dotnet` runs them on Windows as on
-Linux, the same files; not tried.
+builds may well run there; nobody has tried. The website's two pages,
+mini-qemu and tiny-machine compiled to JavaScript, run anywhere a
+browser does. As for the .NET assemblies that ix's compilers write
+(see above), *inferred*: Microsoft's `dotnet` runs the same files on
+Windows as on Linux. This has not been tried.
 
 ## 5. What is not settled
 
-- macOS: the SDL programs are built by dune there, but no run of them
-  is recorded; only the netscape bug and the notes of
+- On macOS, dune builds the SDL programs, but no run of them is
+  recorded. Only the netscape bug and the notes of
   `plan_tiny_utilities.md` show macOS in use.
-- ix's own programs as Mach-O need a libc for macOS's system calls
-  beside Linux's and Plan 9's; none is planned.
-- mini-dossrv's and mini-fdisk's use on a host (a disk image) was not
-  tried.
+- To build ix's own programs as Mach-O, ix needs a libc for macOS's
+  system calls beside Linux's and Plan 9's; none is planned.
+- Nobody has tried mini-dossrv or mini-fdisk on a host (on a disk
+  image).

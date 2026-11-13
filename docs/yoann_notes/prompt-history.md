@@ -73574,3 +73574,52 @@ Claude did not commit or push the rewrite yet, and asked whether Yoann wanted it
 **Yoann:**
 
 > yes, far clearer! so much clearer! Are there other really abusive use of this clipped style elsewhere in tiny/ in more generally in IX ?
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:25
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude pushed the commit as `aa5bf8ed`, then started surveying the docs for a particular writing pattern.
+Claude said `tiny/README.md` has several instances of that pattern in its opening sections.
+Claude planned to sample other places in IX to see how widespread the pattern is.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:28
+
+**Yoann:**
+
+> I think it's fine in commit messages and can arguably be ok in some headers in some context. But let's try to not use it in user documentation like the README! the toplevel one, the tiny/ one, and the docs/manuals/
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:28
+
+**Yoann:**
+
+> (later we can do a multi agent phase on the headers, but let;s focus on the .md for now)
+
+**Claude (summary):**
+
+Claude rewrote the clipped prose in tiny/README.md and the top README.md, leaving tables, facts, and links unchanged.
+Claude reviewed the mini-qemu.md agent's riskiest readings and made the boot-heap and `mark_slice` example explicit.
+Claude checked the m-ix.md and hosts.md `heap=` readings against the table and was still working on the section reference.
+Claude left the READMEs and manuals uncommitted until the remaining agent work was reviewed.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:35
+
+**Yoann:**
+
+> let's remember that I don't like this clipped style for .mli, .md. It's maybe ok commit and changes.txt, but elsewhere we should really prefer sentences that are easy to read, not this clipped style
+
+**Claude (summary):**
+
+Claude said the t-ix.md diff touched about 1,000 lines for roughly 60 sentences, so it would check that no code block, command, or table row changed by accident.

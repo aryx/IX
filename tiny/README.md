@@ -1,94 +1,106 @@
 # tiny/
 
-The tiny programs of ix (t-IX): the free variants of its mini programs
-(m-IX), what is left of a program when compatibility is dropped and only
-its idea is kept, written after its faithful twin and from what that one
-taught. Together they are a whole system: a CPU and its machine
-(tiny-machine), a kernel in ML (tiny-kernel), its toolchain, its shell,
+This directory holds the tiny programs of ix (t-IX). Each one is a free
+variant of one of ix's mini programs (m-IX): what is left of a program
+when compatibility is dropped and only its idea is kept. Each was
+written after its faithful twin, and from what that twin taught.
+Together they make a whole system: a CPU and its machine
+(tiny-machine), a kernel in ML (tiny-kernel), and its toolchain, shell,
 utilities, editors, window system and applications. Each program runs
-on tiny-kernel, in `/bin` by a short name (`build`, `rc`...), and on the
-host as `tiny-build`, `tiny-shell`... for its tests.
+on tiny-kernel, where it is in `/bin` under a short name (`build`,
+`rc`...), and on the host as `tiny-build`, `tiny-shell`... for its
+tests.
 
 ## Reading a program
 
-A program is `TinyXxx.ml`, and its `.mli` is where to start: its
-header (the idea, a diagram, its twin, what it keeps, drops and adds:
-`docs/tags.md`), then `main` and the functions at its heart, with their
-types; the `.ml` is the code alone. Where a program is a pipeline, its
-`.mli` says so, a stage a function (`TinyAssembler.mli`, `TinyC.mli`,
-`TinyML.mli`). Once it grows past some 700 lines, a program has a
-directory of its parts beside it, its units, each with its own `.mli`:
+A program is a file `TinyXxx.ml`, and its `.mli` is where to start
+reading. The `.mli` begins with a header comment that explains the idea,
+often with a diagram, names the program's twin, and says what it keeps,
+drops and changes (the labels are in `docs/tags.md`). Then come `main`
+and the functions at the program's heart, with their types. The `.ml`
+holds the code alone. When a program is a pipeline, its `.mli` says so,
+and each stage is a function (`TinyAssembler.mli`, `TinyC.mli`,
+`TinyML.mli`). Once a program grows past about 700 lines, its parts
+move into a directory beside it, each part a unit with its own `.mli`:
 `TinyC/`, `TinyML/`, `TinyOffice/`, `TinyBrowser/`, `TinyMachine/`. The
-kernel is a directory alone, `TinyKernel/`, its boot `TinyKernel.ml`
-beside its parts.
+kernel has a directory of its own, `TinyKernel/`, where `TinyKernel.ml`
+boots it and its parts sit beside it.
 
 ## What is where
 
-- `TinyLibXxx` is a library several programs share, a whole library in
-  one file: `TinyLibSystem.mli` (the system, below), `TinyLibDraw`,
-  `TinyLibPlayground` and `TinyLibGUI` (drawing, a game's loop,
-  widgets), `TinyLibRegex` (Plan 9's regular expressions, for grep and
-  the line editor), `TinyLibMachine` (libmach: the instructions, the
-  objects, the labels, for the toolchain, prof and debug).
-  `TinyLibCore/` is tiny-ml's standard library: OCaml's modules as a
-  tiny program names them (`Stdlib`, `List`, `Hashtbl`...), each a
-  subset that OCaml checks.
-- `TinyAppXxx.ml` is an application on the playground or the widgets
-  (`calc`, `temp`, `tetris`, `square`); `user/` has each program's main
-  on tiny-kernel: an ML program's one line, a C program whole (`sh.c`,
-  `ping.c`, `paint.c`...).
-- `runtime/` is what every compiled program is linked with, each
-  language's in its directory, as the disk's `/lib/c` and `/lib/ml`:
-  `c/`, C's start, its division, its library, the system's calls
-  (`user.h`, `sys.s`), drawing and dialing (`draw.c`, `net.c`); `ml/`,
-  ML's allocator and collector (`ml.c`), its glue to the system
-  (`mlsys.c`) and the program's end (`end.s`).
-- `TinyKernel/` is the kernel and only it: its parts in ML, its
-  assembly and C, its Buildfile, and `Makefile`, which
-  builds the image and the disk and runs the tests on tiny-machine;
-  `steps/` has what ran before it (a C program on the bare CPU, `v0/` in
-  assembly, `t6/` in C).
-- `TinyMachine.ml` and `TinyMachine/` are the machine on the host: the
-  CPU (`TinyMachineCPU`, which `TinyCPU.ml`, tiny-cpu, runs alone), the
-  devices, the other end of the wire, and its window, its socket and
-  its web page (`./tiny-machine -web dir tiny-kernel`).
-- `examples/` is tiny-kernel's `/examples`, the same files: small
-  programs to read, build and run, in C and ML.
+- `TinyLibXxx` is a library that several programs share, each a whole
+  library in one file: `TinyLibSystem.mli` (the system, described
+  below); `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`, for
+  drawing, for a game's loop and for widgets; `TinyLibRegex`, Plan 9's
+  regular expressions, for grep and the line editor; and
+  `TinyLibMachine`, which plays the role of Plan 9's libmach: it knows
+  the instructions, the objects and the labels, for the toolchain,
+  prof and debug. `TinyLibCore/` is tiny-ml's standard library. It has
+  OCaml's modules under the names a tiny program uses (`Stdlib`,
+  `List`, `Hashtbl`...), each a subset of OCaml's that OCaml checks.
+- `TinyAppXxx.ml` is an application written on the playground or on
+  the widgets (`calc`, `temp`, `tetris`, `square`). `user/` has each
+  program's main for tiny-kernel: one line for an ML program, the
+  whole program for a C one (`sh.c`, `ping.c`, `paint.c`...).
+- `runtime/` is what every compiled program is linked with, one
+  directory per language, as `/lib/c` and `/lib/ml` are on the disk.
+  `c/` has C's start-up code, its division, its library, the system
+  calls (`user.h`, `sys.s`), and the calls for drawing and dialing
+  (`draw.c`, `net.c`). `ml/` has ML's allocator and collector (`ml.c`),
+  its glue to the system (`mlsys.c`) and the code that ends a program
+  (`end.s`).
+- `TinyKernel/` holds the kernel and nothing else: its parts in ML,
+  its assembly and C, its Buildfile, and a `Makefile` that builds the
+  image and the disk and runs the tests on tiny-machine. `steps/` has
+  what ran before tiny-kernel: a C program on the bare CPU, `v0/` in
+  assembly, and `t6/` in C.
+- `TinyMachine.ml` and `TinyMachine/` are the machine, which runs on
+  the host. They hold the CPU (`TinyMachineCPU`, which `TinyCPU.ml`,
+  tiny-cpu, also runs alone), the devices, the other end of the network
+  wire, and the machine's window, socket and web page (`./tiny-machine
+  -web dir tiny-kernel`).
+- `examples/` holds the same files as tiny-kernel's `/examples`: small
+  programs in C and ML to read, build and run.
 - `tests/` has each program's tests, `tests/TinyXxx_test.sh`.
 
 ## Conventions
 
-- A program's parts are named for what they are, their directory saying
-  whose: `TinyML/Lexer.ml`, `TinyBrowser/Http.ml`, not `TinyMLLexer`.
-  Two programs' parts may share a name (`Lexer`), since each program is
-  compiled with its own `-I`'s (the Buildfile's `X_INCLUDES`). The
-  kernel's parts, which other programs link too, carry a `K` (`KFS`,
-  `KProcs`), and its assembly and C a `k` (`kentry.s`, `kruntime.c`):
-  what goes in the kernel's image, not a program's.
+- A program's parts are named for what they are, and their directory
+  says which program they belong to: `TinyML/Lexer.ml`,
+  `TinyBrowser/Http.ml`, not `TinyMLLexer`. Two programs may each have
+  a part with the same name (`Lexer`), since each program is compiled
+  with its own `-I` options (the Buildfile's `X_INCLUDES`). The
+  kernel's parts, which other programs link too, start with a `K`
+  (`KFS`, `KProcs`), and its assembly and C files with a `k`
+  (`kentry.s`, `kruntime.c`), so you can tell what goes into the
+  kernel's image rather than a program's.
 - Names are qualified, not opened: `Compile.bind`, `KFS.fs_read`,
-  `Strings.find`. A file opens `Common` (`|||`, `let*`, `Error`), and a
-  program its core vocabulary, the types all its parts speak: office's
-  `Model`, the kernel's `KProcs`, the browser's `Lines`. The apps'
-  libraries go by a letter, `module P = TinyLibPlayground`, `G =
-  TinyLibGUI`, `D = TinyLibDraw` (`P.Move (x, y, P.Rect ...)`, `msg
-  G.widget`). A test may open what it tests.
-- Another module's record or constructor is found by its type, given by
-  an annotation where nothing else says it (`(sc : Screen.screen)`,
-  `let fds : (int * KFiles.file) list = ...`), rather than by a prefix
-  on each label. tiny-ml takes no `_` in a type.
-- Lines at 80 columns, 85 now and then.
+  `Strings.find`. Every file opens `Common` (`|||`, `let*`, `Error`),
+  and a program also opens its core vocabulary, the module whose types
+  all its parts use: `Model` in the office, `KProcs` in the kernel,
+  `Lines` in the browser. The applications refer to their libraries by
+  a one-letter name, `module P = TinyLibPlayground`, `G = TinyLibGUI`,
+  `D = TinyLibDraw` (`P.Move (x, y, P.Rect ...)`, `msg G.widget`). A
+  test may open the module it tests.
+- A record field or constructor from another module is found by its
+  type, given by an annotation where nothing else says it
+  (`(sc : Screen.screen)`, `let fds : (int * KFiles.file) list =
+  ...`), rather than by a module prefix on each label. tiny-ml does not
+  accept `_` in a type.
+- Lines are at most 80 columns, occasionally 85.
 
 ## One program, two systems
 
-A program never names its system: it names one interface,
-`TinyLibSystem.mli`, implemented for each in
-[`TinyLibSystem/`](TinyLibSystem/README.md): `unix/` over OCaml's Unix
-and `lib_core/`, for the tools on the host; `tinykernel/` over the
-kernel's calls; `sdl/`, a window on the host, for the graphical
-programs; `teststub/`, the tests'. So the same file is tiny-kernel's
-`rc` and the host's tiny-shell, and a graphical program draws on its
-`fd_draw` whether it runs on tiny-kernel or in a window on the host
-(tiny-calc, tiny-tetris, tiny-www...).
+A program never names the system it runs on. It names one interface,
+`TinyLibSystem.mli`, which has an implementation for each system in
+[`TinyLibSystem/`](TinyLibSystem/README.md): `unix/`, built on OCaml's
+Unix and `lib_core/`, for the tools on the host; `tinykernel/`, built
+on the kernel's calls; `sdl/`, which opens a window on the host, for
+the graphical programs; and `teststub/` for the tests. So the same
+file is both tiny-kernel's `rc` and the host's tiny-shell, and a
+graphical program draws on its `fd_draw` whether it runs on
+tiny-kernel or in a window on the host (tiny-calc, tiny-tetris,
+tiny-www...).
 [docs/projects.md](../docs/projects.md#what-a-tiny-program-stands-on)
 has the picture of what each kind of program stands on.
 
@@ -126,10 +138,11 @@ the programs share (`TinyLibCore/`, `TinyLibSystem/`, `TinyLibMachine`,
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 970 | mini-git | [`TinyVCS.ml`](TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
 | **tiny-prof** | a profiler: every instruction counted by its address, the kernel's and each program's apart, named by the linker's map | 170 | mini-prof | [`TinyProfiler.ml`](TinyProfiler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyProfiler.ml)) |
 
-**The toolchain**, in tiny-kernel's `/bin` too (`cc`, `ml`, `as`,
-`ld`), where each makes what the host's makes, byte for byte;
-[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md)'s
-step 8 has t-IX built there.
+**The toolchain**, also in tiny-kernel's `/bin` (`cc`, `ml`, `as`,
+`ld`). There, each tool makes byte for byte what the same tool makes on
+the host, and step 8 of
+[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md)
+builds t-IX with them.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
@@ -207,51 +220,60 @@ The table above says, for each program, what it keeps of its twin,
 what it drops, and its twist. The same can be said of t-IX as a whole,
 with the same labels a program's `.mli` uses:
 
-twin: m-ix, the mini programs, each a faithful twin of its Plan 9 or
-Unix program, on Linux and on the Pi. t-ix is what remains of the whole
-system when compatibility is dropped: its CPU, its machine, its kernel,
-its formats are its own, and each program is its twin's idea.
+twin: m-IX, the mini programs, each a faithful twin of its Plan 9 or
+Unix program, running on Linux and on the Pi. t-IX is what remains of
+the whole system when compatibility is dropped: its CPU, its machine,
+its kernel and its formats are its own, and each program keeps its
+twin's idea.
 
 kept:
-- **Plan 9's ideas.** What a program uses is a file: it draws by
-  messages written on its descriptor 3 and reads its mouse on 4, a
-  window system passes them on as a pipe would; the disk is the root, in
-  a union with the boot image's files; rc is the shell, build is mk's
-  language, cc, as and ld make Plan 9's kind of a.out.
-- **Unix's conventions outside.** An object is a `.o`, a library a
-  `.a`, assembly a `.s`; programs in `/bin`, what they link in `/lib`,
-  the sources in `/src`; `start.o`, crt0, linked first and seen in every
-  link line. Inside the tools, anything simpler.
+- **Plan 9's ideas.** Everything a program uses is a file. A program
+  draws by writing messages on its descriptor 3 and reads its mouse on
+  descriptor 4, and a window system passes them on as a pipe would.
+  The disk is the root, in a union with the boot image's files. rc is
+  the shell, build reads mk's language, and cc, as and ld make Plan 9's
+  kind of a.out.
+- **Unix's conventions, as seen from outside.** An object is a `.o`, a
+  library a `.a`, and assembly a `.s`. Programs are in `/bin`, what
+  they link with is in `/lib`, and the sources are in `/src`.
+  `start.o`, the C start-up code (crt0), is linked first and appears in
+  every link line. Inside the tools, anything simpler goes.
 - **The system builds itself.** tiny-kernel rebuilds its own image
-  from `/src` with its own tools, by the same Buildfile as the host, to
-  the same bytes ([Bootstrapping](#bootstrapping)).
-- **One language.** The kernel, the tools and the programs are ML;
-  C is the runtime and a few programs; assembly is what ML cannot say
-  (`TinyKernel/kentry.s`, the traps and the switch).
+  from `/src` with its own tools, using the same Buildfile as the host,
+  and gets the same bytes ([Bootstrapping](#bootstrapping)).
+- **One language.** The kernel, the tools and the programs are written
+  in ML. C is used for the runtime and a few programs, and assembly
+  only for what ML cannot express (`TinyKernel/kentry.s`: the traps and
+  the context switch).
 
 dropped:
-- **Generated code.** No lex, no yacc, no tiny-lex or tiny-yacc: every
-  lexer and parser is written by hand, recursive descent (tiny-cc,
-  tiny-ml, rc, build...), so no build step makes a source.
-- **Configuration.** No configure, no install prefix: one Buildfile,
-  `build install` a copy into `/lib`.
+- **Generated code.** There is no lex or yacc, and no tiny-lex or
+  tiny-yacc: every lexer and parser is written by hand, by recursive
+  descent (tiny-cc, tiny-ml, rc, build...), so no build step generates
+  a source file.
+- **Configuration.** There is no configure script and no install
+  prefix: there is one Buildfile, and `build install` copies the
+  results into `/lib`.
 - **Dynamic linking and ELF.** Programs are linked statically into an
-  a.out whose header is three words; an object is tiny-as's items,
+  a.out whose header is three words. An object file is tiny-as's items,
   marshalled (`TinyLibMachine`), not ELF.
-- **Compatibility.** No POSIX: the system calls are the kernel's own,
-  the instructions TinyCPU's. tiny-ml has no floats, functors, labels
-  or objects (`TinyML.mli`).
-- **What the tools leave out of their twins**, each said in its
-  `.mli`: mk's backquotes in a variable (`TinyBuildSystem.mli`), a
-  naming pass in the compiler (`TinyML.mli`'s design)...
+- **Compatibility.** There is no POSIX: the system calls are the
+  kernel's own, and the instructions are TinyCPU's. tiny-ml has no
+  floats, functors, labeled arguments or objects (`TinyML.mli`).
+- **What the tools leave out of their twins.** Each `.mli` says what
+  its program leaves out, for example mk's backquotes in a variable
+  (`TinyBuildSystem.mli`), or a separate naming pass in the compiler
+  (`TinyML.mli`'s design section).
 
 twist:
 - **The machine is designed with the system.** TinyCPU and its
   devices were made for this kernel and its programs, not inherited:
-  a screen of messages, a relocating window, a wire to the host.
-- **One program, two systems.** A program names `TinyLibSystem.mli`
-  alone, so it runs on tiny-kernel and on the host (its tests, a
-  window); the Buildfiles run on both, `TINY=tiny-` on the host.
+  the screen is driven by messages, protection is a relocating window
+  of memory, and the network is a wire to the host.
+- **One program, two systems.** A program names only
+  `TinyLibSystem.mli`, so it runs both on tiny-kernel and on the host,
+  for its tests or in a window. The Buildfiles run on both too, with
+  `TINY=tiny-` on the host.
 - **The same input gives the same bytes.** tiny-ar keeps no dates,
   so a library made twice is the same file; build's stamps are digests
   of contents; tiny-prof counts instead of sampling; a graphical session
@@ -264,32 +286,34 @@ twist:
 
 ## Building and testing
 
-A file is built three ways:
+A file is built in three ways:
 
-- by tiny-build for tiny-kernel, from [`Buildfile`](Buildfile), the
-  same file on the host (`tiny-build TINY=tiny-`) and on tiny-kernel,
-  which rebuilds its own image from `/src`;
-  `make -C TinyKernel run` builds the image and boots it, `make -C
+- by tiny-build, for tiny-kernel, from the [`Buildfile`](Buildfile).
+  The same Buildfile is used on the host (`tiny-build TINY=tiny-`) and
+  on tiny-kernel, which rebuilds its own image from `/src`. `make -C
+  TinyKernel run` builds the image and boots it, and `make -C
   TinyKernel check` runs the system's tests on tiny-machine;
-- by dune with OCaml for the host's programs and their tests;
+- by dune with OCaml, for the host's programs and their tests;
 - by ix's `mini-mk` (`mkfile`), on `lib_core/`, as a test of m-IX's
   compiler.
 
-`make test` here runs every `tests/TinyXxx_test.sh` and the system's
-smaller checks; TinyC's tests are compared with the host's cc, TinyML's
-(`../languages/ml/tests/tiny/`, `tests/TinyML_fuzz.py`) with OCaml.
+`make test` in this directory runs every `tests/TinyXxx_test.sh` and
+the system's smaller checks. TinyC's tests compare its output with the
+host's cc, and TinyML's tests (`../languages/ml/tests/tiny/`,
+`tests/TinyML_fuzz.py`) compare it with OCaml.
 
 ## Bootstrapping
 
-t-IX builds itself, on its own system. The first build is the host's:
-dune and OCaml make the tools (`tiny-ml`, `tiny-cc`, `tiny-as`,
-`tiny-ld`, `tiny-build`...), and those tools, by the
+t-IX builds itself, on its own system. The first build happens on the
+host: dune and OCaml make the tools (`tiny-ml`, `tiny-cc`, `tiny-as`,
+`tiny-ld`, `tiny-build`...), and those tools, following the
 [`Buildfile`](Buildfile), make tiny-kernel's image and its system:
 `/bin`, `/lib`, and a disk with the sources in `/src`. Then tiny-kernel,
-on tiny-machine, runs the same Buildfile in `/src` with its own `/bin`'s
-tools, the ones the host's made, and gives the same files: the image
-and every file of the system the host's, byte for byte. A difference is
-a bug of tiny-kernel's tools, of the runtime or of the kernel.
+running on tiny-machine, runs the same Buildfile in `/src` with the
+tools in its own `/bin`, which the host's tools made. It produces the
+same files: the image and every file of the system are byte for byte
+the host's. A difference means a bug in tiny-kernel's tools, in the
+runtime or in the kernel.
 
 ```bash
 make -C TinyKernel self-quick   # a few targets (ping, the library) rebuilt on tiny-kernel, 3 minutes

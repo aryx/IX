@@ -2,15 +2,14 @@
 
 m-ix is the mini half of ix: the programs that are twins of real ones
 (mini-netscape, mini-office, mini-doom, mini-quake,
-mini-virtuaracing, mini-emacs, DrScheme, the games), run on Linux in
-a window or under mini-9pi on the Pi. This
-manual gathers what can be changed when one is started, without
-editing a source: the `name=value` flags, the options, the
-environment, and the device files of mini-9pi that switch a
-behaviour. Most of these switches are there to measure: a speed's
-gain is seen by turning it off
-([notes_opti_inventory.md](../notes/notes_opti_inventory.md) says what each
-one buys). The programs' headers and usage lines are the first
+mini-virtuaracing, mini-emacs, DrScheme, the games). They run on
+Linux in a window, or under mini-9pi on the Pi. This manual gathers
+what you can change when you start one, without editing a source: the
+`name=value` flags, the options, the environment, and the device files
+of mini-9pi that switch a behaviour. Most of these switches are there
+for measuring: you see what an optimization gains by turning it off
+([notes_opti_inventory.md](../notes/notes_opti_inventory.md) says what
+each one buys). The programs' headers and usage lines are the first
 source; where this manual and a header differ, the header is right.
 
 The author, 2026-10-22: "maybe we can have a docs/manual/m-ix.md where
@@ -18,24 +17,25 @@ we document all those heap=mode, redraw=top, etc."
 
 ## 1. How a flag is written
 
-A program of the playground takes options (`-frames n`, ...), then
-words: a word `name=value` is a flag, a word without `=` a flag of
-value "" (`Playground.flags_of_strings`). A program sees its flags in
-`computer.flags`; the platform it runs on reads some of them too.
+A playground program takes options (`-frames n`, ...) followed by
+words. A word `name=value` is a flag, and a word without `=` is a flag
+whose value is "" (`Playground.flags_of_strings`). A program sees its
+flags in `computer.flags`; the platform it runs on reads some of them
+too.
 
 On Linux, `bin/` holds the SDL builds:
 
     bin/mini-doom map=E1M2 scale=3
     dune exec games/arcade/TinyCameltry.exe -- rotation=off
 
-Under mini-9pi, `=` is rc's: each flag is quoted.
+Under mini-9pi, `=` means something to rc, so each flag is quoted.
 
     cameltry 'stats=on'
     netscape 'stats=on' 'redraw=top' news.ycombinator.com
     tronscroll 'net=join' 'host=192.168.9.1'
 
 The platform reads its flags from the command line, not from the ones
-the program passes on (section 8 says where that differs).
+the program passes on (section 9 says where that differs).
 
 ## 2. Every playground program
 
@@ -76,10 +76,11 @@ Flags of the platforms:
 | `letters=bits` | smoothed letters, a byte a pixel | a bit a pixel, ragged | draw |
 | `kscale=off` | the device scales | a picture at its own size made larger by the program, k by k, not by the draw device's 'z' (F5: the largest whole multiple that fits, centred) | draw |
 
-"draw" is the draw platform, mini-9pi's default (the kernel draws);
-"mini-9pi" is it and the software platform (the program draws, the
-kernel copies). The scripts that use these: kernels/9pi/tests/perf/
-(`frames.sh`, `hover.sh`, `redraw.sh`).
+In the "where" column, "draw" means the draw platform, mini-9pi's
+default, where the kernel draws. "mini-9pi" means both the draw
+platform and the software platform, where the program draws and the
+kernel copies. The scripts that use these flags are in
+kernels/9pi/tests/perf/ (`frames.sh`, `hover.sh`, `redraw.sh`).
 
 ## 4. The programs' own flags
 
@@ -100,12 +101,12 @@ kernel copies). The scripts that use these: kernels/9pi/tests/perf/
 | `draw=all` | lazy | a line's shapes built at once, not when first shown (Browser_draw.lazily) |
 | `view=each` | kept | the view made again at each frame, not kept while what it shows is the same |
 
-Its helpers are given the file only: mini-page sees none of these
+Its helpers are given only the file, so mini-page sees none of these
 flags.
 
 **mini-page**: `mini-page file`, `-t file` (text), `-ppm n file out`.
-**mini-office**, **DrScheme**: no flag of their own; the platform's
-apply.
+**mini-office** and **DrScheme** have no flags of their own; the
+platform's flags apply.
 
 **mini-doom**:
 
@@ -163,7 +164,7 @@ apply.
 | ReBirth | `skin=NAME` | rb-338, night, plain |
 | ReBirth | `meters=off` | no spectrum, no scope |
 
-**Two players** (Multiplayer: TinyTronscroll):
+**Two players** (the Multiplayer module, used by TinyTronscroll):
 
 | flag | default | what |
 |---|---|---|
@@ -175,10 +176,11 @@ apply.
 | `bind=`, `host=`, `port=` | 127.0.0.1, 127.0.0.1, 7777 | the addresses (`bind=0.0.0.0`: a LAN; not on mini-9pi) |
 | `ticks=on` | off | each second, the tick and whether the two agree, on the standard error |
 
-**mini-emacs** is not a playground program: options, not flags. On
-Linux `-q` (no configuration), `-scale n` (2), `-rows n` (40), `-cols n`
-(100), `-nocache`; on mini-9pi `-q`, `-time` (each painting's ms on
-the console), `-nocache`.
+**mini-emacs** is not a playground program, so it takes options, not
+flags. On Linux it takes `-q` (no configuration), `-scale n` (2),
+`-rows n` (40), `-cols n` (100) and `-nocache`. On mini-9pi it takes
+`-q`, `-time` (each painting's time in ms, on the console) and
+`-nocache`.
 
 ## 5. The environment
 
@@ -189,11 +191,12 @@ the console), `-nocache`.
 | `IX_LOG=level` | the log's level of a program that sets one up (mini-netscape) |
 | `HOME`, `PATH`, `TMPDIR` | mini-netscape's helpers: ~/.mailcap, where they are found, where a file is written for them |
 
-Chosen when the kernel or the card is built, not when a program
-starts: `PIXEL=ocaml|c` (the kernel's pixels: ours, or principia's C),
-`COMPILER=ocaml` (the kernel by OCaml, not mini-ml), `BOARD=`
-(kernels/9pi/Makefile); on the card's FAT, `config.txt` (the board's
-clock) and `ip.txt` (its address).
+Some settings are chosen when the kernel or the card is built, not
+when a program starts. kernels/9pi/Makefile takes `PIXEL=ocaml|c`
+(the kernel's pixel code: ours, or principia's C), `COMPILER=ocaml`
+(the kernel compiled by OCaml, not mini-ml) and `BOARD=`. On the
+card's FAT, `config.txt` sets the board's clock and `ip.txt` its
+address.
 
 ## 6. mini-9pi's device files
 
@@ -204,10 +207,10 @@ clock) and `ip.txt` (its address).
 
 ## 7. Switched in the source only
 
-Each optimization keeps its slow way in an `old:` comment, and some a
-switch, but a ref set in the source, not by a flag: `Opti.enabled`
-(lib_graphics), the draw platform's `fast`, the kernel's
-`Memdraw.fast` and its `fast_*` (each path of the pixels),
+Each optimization keeps its slow way in an `old:` comment. Some also
+keep a switch, but it is a ref set in the source, not a flag:
+`Opti.enabled` (lib_graphics), the draw platform's `fast`, the
+kernel's `Memdraw.fast` and its `fast_*` (one for each pixel path),
 `Swcursor.enabled`, `Mini_opti.enabled` and `compiled` (mini-netscape's
 JavaScript), `Synth.band_limited`, `Space.ears_apart`, `Mixer.stereo`.
 
@@ -215,10 +218,11 @@ JavaScript), `Synth.band_limited`, `Space.ears_apart`, `Mixer.stereo`.
 
 The author, 2026-10-29: "let's explain those register allocation (and
 what 'gives to allocator' mean) in m-ix.md", "a section on the
-toolchain in addition to sections on hardware". Every program of m-ix
-is compiled by ix's own tools: its ML by mini-ml, its C (mini-ml's
-runtime, the C library, the kernels' C) by mini-cc, then mini-asm,
-mini-ar and mini-ld.
+toolchain in addition to sections on hardware".
+
+Every program of m-ix is compiled by ix's own tools. mini-ml compiles
+its ML, mini-cc compiles its C (mini-ml's runtime, the C library, the
+kernels' C), and then mini-asm, mini-ar and mini-ld finish the job.
 
 ### The compilers' levels
 
@@ -231,21 +235,25 @@ mini-ar and mini-ld.
 | mini-cc | `-simple -O` | Opti's passes on it, variables in registers by loop weight (regs), Peep | |
 | mini-cc | `-O3` | `-simple -O -ssa`: values in registers by SSA form's coloring (languages/c/ssa/) | lib_core's mkfile (the runtime, the libc's C), the kernels' mkkernel (`COPT=-O3`; `COPT=` for compat's) |
 
-The tests' switches of the same: `RUNTIME_FLAGS` (mini-ml's
-tests/run.sh: mini-cc's flags for the runtime, `-O3` by default, empty
-for compat's), `CC_FLAGS` (languages/c/tests/bench.sh), `SIMPLE_FLAGS`
-(languages/c/tests/simple.sh), `ML_FLAGS` (mini-ml's tests).
+The tests have their own switches for the same levels:
+
+- `RUNTIME_FLAGS` in mini-ml's tests/run.sh: mini-cc's flags for the
+  runtime, `-O3` by default, empty for compat's code;
+- `CC_FLAGS` in languages/c/tests/bench.sh;
+- `SIMPLE_FLAGS` in languages/c/tests/simple.sh;
+- `ML_FLAGS` in mini-ml's tests.
 
 ### The registers on arm
 
 A register allocator decides which values of a function live in the
-machine's registers, and which in its frame (a slot, loaded at each
-use and stored where the value is made). "The allocator's registers"
-are those it may give a value; a scratch register is one the code
-generator keeps for itself, to load a value that lives in a slot just
-for the instruction that reads it, or to compute a value that goes to
-a slot; a reserved register has a role of its own for the whole
-program, which no compiler touches. Plan 9's arm convention (5c's
+machine's registers, and which live in its frame, in a slot that is
+loaded at each use and stored where the value is made. "The
+allocator's registers" are those it may give a value. A scratch
+register is one the code generator keeps for itself: it loads into it
+a value that lives in a slot, just for the instruction that reads it,
+or computes in it a value that goes to a slot. A reserved register
+has a role of its own for the whole program, and no compiler touches
+it. Plan 9's arm convention (5c's
 txt.c, 5l's 5.out.h) gives each register its role:
 
 | register | role | mini-cc -O3 (ssa/) |
@@ -262,56 +270,62 @@ txt.c, 5l's 5.out.h) gives each register its role:
 | F1-F6 | floating point (VFP) | the allocator's |
 | F0, F7 | | the scratch |
 
-The conventions between the ML code and the C, and what each
-assumes (written in full, numbered, in mini-ml's ssa/Emit.ml, which
-both of mini-ml's back ends follow):
+Below are the conventions between the ML code and the C, and what
+each side assumes. They are written in full, and numbered, in
+mini-ml's ssa/Emit.ml, and both of mini-ml's back ends follow them:
 
 1. While ML code runs, its value stack's top is in R10 (R26 on
    arm64), and R9 (R16) is a temporary of a few instructions.
 2. At each call of C, the ML code stores R10 to `ml_vsp` (the
    runtime's global) and loads it back after. While C runs, `ml_vsp`
-   is the value stack's top (the collector reads it; C that pushes ML
-   values or switches threads changes it), and the C may use every
-   register: so mini-cc's `-O3` gives R9 and R10 to its allocator,
-   R26 and R27 on arm64. No C in ix declares an `extern register`.
+   is the value stack's top: the collector reads it, and C that
+   pushes ML values or switches threads changes it. The C may use
+   every register, so mini-cc's `-O3` gives R9 and R10 to its
+   allocator (R26 and R27 on arm64). No C in ix declares an `extern
+   register`.
 3. Calls of mini-ml's own assembly (the start object's `ml_modify`,
-   `ml_try`) keep R10 in place; a raise sets it from the handler's
+   `ml_try`) keep R10 in place. A raise sets R10 from the handler's
    record.
-4. C calling ML (`ml_callback`, a kernel's trap) loads R10 from
-   `ml_vsp` first.
-5. compat, 5c's code byte for byte, still never allocates R9 and R10,
-   5c's extern registers; nothing relies on that.
+4. When C calls ML (`ml_callback`, a kernel's trap), it loads R10
+   from `ml_vsp` first.
+5. compat, which is 5c's code byte for byte, still never allocates R9
+   and R10, since they are 5c's extern registers. Nothing relies on
+   that.
 
-Before 2026-10-29 the ML code never loaded R10 back after a call of
-C, and C left R9 and R10 alone only because 5c's rule reserves them:
-an assumption nothing declared (the author: "seems bad to leave this
-R10 implicit instead of enforced", then "What I want is clearer code,
-less hidden assumptions about register"). An `extern register`
-declaration, Plan 9's way, was the other design
-(docs/plans/plan_extern_register.md, postponed).
+Before 2026-10-29, the ML code never loaded R10 back after a call of
+C, and C left R9 and R10 alone only because 5c's rule reserves them.
+Nothing declared that assumption (the author: "seems bad to leave
+this R10 implicit instead of enforced", then "What I want is clearer
+code, less hidden assumptions about register"). The other design was
+an `extern register` declaration, Plan 9's way; it is postponed
+(docs/plans/plan_extern_register.md).
 
-No register is saved across a call by the one called (Plan 9's
-convention: the caller saves): a value live across a call is either
-in a slot for its whole life, or in a register stored to its slot
-where it is made and loaded after each call, whichever costs fewer
-instructions by the loops they are in (languages/c/ssa/Alloc.mli).
-On arm64 the allocator has R1-R15 and R19-R27, F1-F15 and F17-F23;
-R0 and R16 are the scratch. mini-ml's back end has its own: its
-values live on a value stack the collector scans
+The function called saves no register across a call; in Plan 9's
+convention, the caller saves. So a value live across a call either
+stays in a slot for its whole life, or lives in a register that is
+stored to its slot where the value is made and loaded back after each
+call. The allocator picks whichever costs fewer instructions, counted
+by the loops they are in (languages/c/ssa/Alloc.mli). On arm64 the
+allocator has R1-R15 and R19-R27, and F1-F15 and F17-F23; R0 and R16
+are the scratch registers. mini-ml's back end has its own allocator:
+its values live on a value stack that the collector scans
 (languages/ml/ssa/Alloc.mli).
 
 ## 9. What does not hold yet
 
-Found while writing this page (2026-10-22), not changed:
-- A flag of the platform is read from the command line on SDL, the
-  draw platform and Plan9_loop (`stats`, `late`, `keys`), but from the
-  program's flags for `heap`, `window` and the ppm platform's. So
-  mini-doom's `size=320n`, given for mini-9pi, reaches only ppm; and
-  TinyWolfenstein, which passes no flag, takes none of ppm's.
-- `heap=` is `modest` on mini-9pi, `game` on ppm, nothing on SDL.
+These were found while writing this page (2026-10-22), and have not
+been changed:
+- SDL, the draw platform and Plan9_loop read their flags (`stats`,
+  `late`, `keys`) from the command line. But `heap`, `window` and the
+  ppm platform's flags are read from the flags the program passes on.
+  So mini-doom's `size=320n`, which it passes for mini-9pi, reaches
+  only ppm; and TinyWolfenstein, which passes no flag, gets none of
+  ppm's.
+- `heap=` takes `modest` on mini-9pi, `game` on ppm, and nothing on
+  SDL.
 - `stats=` and `late=` exist only on mini-9pi; `fps=`, `font=` and
-  `letters=` only on the draw platform; `size=` not on the software
-  platform.
-- Said, not read: `letters=segments` (Mini_opti.mli), `netcode=server`
-  (Multiplayer.mli).
-- `-dump-audio` writes a WAV on Linux, raw samples on mini-9pi.
+  `letters=` exist only on the draw platform; `size=` does not exist
+  on the software platform.
+- Two flags are documented but never read: `letters=segments`
+  (Mini_opti.mli) and `netcode=server` (Multiplayer.mli).
+- `-dump-audio` writes a WAV on Linux, but raw samples on mini-9pi.

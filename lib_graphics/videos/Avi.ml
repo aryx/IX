@@ -2,7 +2,9 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Avi.mli *)
-(* ix: the author's playground's libs/graphics/videos/avi/Avi.ml; reading only, the sound as its file has it *)
+(* ix: from the author's playground's libs/graphics/videos/avi/Avi.ml.
+ * Only the reading is here, and the sound is given at the rate its
+ * file has *)
 
 type header = { width : int; height : int; rate : int * int; codec : string }
 

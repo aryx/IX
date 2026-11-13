@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/juice/Emitter.ml; its optional arguments are said *)
+(* ix: copied from libs/juice/Emitter.ml in the author's playground,
+ * with its optional arguments made required *)
 
 (* See Emitter.mli *)
 

@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the playground's libs/graphics/core/Framebuffer.ml, its pixels a
- * Bytes in place of a Bigarray of SDL's (mini-ml has no Bigarray; and
- * the bytes are the draw device's, see the .mli); the rest as it was. *)
+(* ix: the playground's libs/graphics/core/Framebuffer.ml, with its
+ * pixels in a Bytes in place of SDL's Bigarray (mini-ml has no Bigarray,
+ * and the bytes are the draw device's; see the .mli). The rest is as it
+ * was. *)
 
 (*****************************************************************************)
 (* Types *)

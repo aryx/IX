@@ -7,9 +7,9 @@
  * $home/lib/desktop/settings (Prefs), which the panel and the desk look at
  * again; the mouse and the volume are also written to their devices.
  *
- *     settings          the window
- *     settings -apply   the file's mouse and volume told to the kernel, and
- *                       the end: desktop's start says it first
+ *     settings          opens the window
+ *     settings -apply   tells the kernel the file's mouse and volume, then
+ *                       ends; desktop's start runs it first
  *
  *     Wallpaper  [#] [#] [#] [#] [#]
  *     Picture    [/usr/pad/lib/sea.jpg_____]  [Use]
@@ -20,8 +20,9 @@
  *     ----------------------------------------
  *     memory 512 MB, 21% of the programs' taken; 1 core; screen 1024x768
  *
- * No toolkit: a row of boxes, each a rectangle and what a press on it does,
- * on lib_graphics as the panel. It waits for the mouse and the keys. *)
+ * There is no toolkit: there is a row of boxes, each one a rectangle and
+ * what a press on it does, drawn with lib_graphics as the panel is. It
+ * waits for the mouse and the keys. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.keyboard; Cap.fork; Cap.env; Cap.open_in; Cap.open_out >
 

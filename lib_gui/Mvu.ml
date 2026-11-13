@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/gui/Mvu.ml; button's and field's enabled is said, where it was optional (true) (docs/plans/plan_gui.md) *)
+(* ix: copied from libs/gui/Mvu.ml in the author's playground
+ * (docs/plans/plan_gui.md). The enabled argument of button and field
+ * must be given here; there it was optional (true). *)
 
 (* See Mvu.mli *)
 

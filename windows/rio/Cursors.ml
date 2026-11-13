@@ -3,7 +3,8 @@
 
 (* The window system's cursors: rio's own (principia's
  * windows/rio/data.c: crosscursor, sightcursor, boxcursor, corners;
- * xix's Cursors), their bits as they are there. No Cursors.mli: data. *)
+ * xix's Cursors), with their bits as they are there. There is no
+ * Cursors.mli, since this is only data. *)
 
 let bytes l = String.init (List.length l) (fun k -> Char.chr (List.nth l k))
 

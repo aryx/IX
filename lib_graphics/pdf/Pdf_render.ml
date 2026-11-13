@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_render.ml; render's options and stroke_glyph are said, where they were optional (full, and hershey, which the interface gives now; hershey draws a curved quote and a dash as ASCII's) (docs/plans/done/plan_pdf.md) *)
+(* ix: from mini-chrome's libs/pdf/Pdf_render.ml. render's options and
+ * stroke_glyph are given explicitly, where they were optional with
+ * full and hershey as defaults; the interface now gives hershey.
+ * hershey draws a curved quote and a dash as ASCII's
+ * (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_render.mli *)
 

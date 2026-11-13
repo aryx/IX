@@ -1,4 +1,5 @@
-(* An icon as a text file: a character a pixel, its colours named first.
+(* An icon as a text file, with one character per pixel and its colours
+ * named first.
  *
  *     # a folder
  *     y e8b84a
@@ -7,14 +8,16 @@
  *     .oooo...........
  *     .oyyyo..........
  *
- * A palette line is a character, a blank, six hexadecimal digits; '.' is
- * no colour at all; # starts a comment. Each row as wide as the first.
+ * A palette line is a character, a blank and six hexadecimal digits.
+ * '.' is no colour at all, and # starts a comment. Each row is as wide
+ * as the first.
  *
  * design:
- * Text, for the same reason as Cursors: a diff shows what changed, a
- * person with an editor can draw one, and no program running all the time
- * has to link a picture decoder. This is how a 1983 icon was made anyway,
- * squares on graph paper (Icons, in apps/files, says more of that). *)
+ * Icons are text for the same reason as Cursors: a diff shows what
+ * changed, a person with an editor can draw one, and no program running
+ * all the time has to link a picture decoder. This is how a 1983 icon
+ * was made anyway, as squares on graph paper (Icons, in apps/files, says
+ * more about that). *)
 
 type t = {
   w : int;
@@ -23,8 +26,10 @@ type t = {
   pixels : string;
 }
 
-(* None when the text is no icon: an unknown character, rows of two widths *)
+(* None when the text is not an icon: it has an unknown character, or
+ * rows of two widths *)
 val parse : string -> t option
 
-(* twice as wide and as high, each pixel four: the desk's *)
+(* the icon twice as wide and as high, each pixel made four: the size the
+ * desk shows *)
 val doubled : t -> t

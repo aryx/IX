@@ -1,19 +1,21 @@
 (* Letter_strokes: a run of letters (Playground's Letters) as the
- * strokes of their pen, each a thin rectangle turned to its angle --
- * what a platform draws when it keeps no letter (the PDF writer, the
- * draw device for now), and what a letter it keeps is made of once
- * (Shape_render_software's masks; docs/notes/notes_font.md).
+ * strokes of their pen, each stroke a thin rectangle turned to its
+ * angle. A platform that keeps no letter draws these strokes (the PDF
+ * writer, and the draw device for now); a platform that keeps letters
+ * makes each one from them, once (Shape_render_software's masks;
+ * docs/notes/notes_font.md).
  *
- * A letter is Hershey's (Hershey.mli), or Glyph_unicode's beyond
- * ASCII; its look a pen: a sixteenth of its size wide, a seventh for
- * bold, and its points slanted by a fifth of their height for italic.
+ * A letter comes from Hershey (Hershey.mli), or from Glyph_unicode
+ * beyond ASCII. Its look is a pen's: the pen is a sixteenth of the
+ * letter's size wide, or a seventh for bold, and for italic the points
+ * are slanted by a fifth of their height.
  * The rectangles are those Stroke_text.glyph made, moved here from the
  * browser's and the word processor's Stroke_text when their text
  * became a shape of its own (2026-10-20). *)
 
-(* [letter color ~size ~bold ~italic s ~x ~baseline]: [s], one letter,
- * its left at [x] on [baseline] *)
+(* [letter color ~size ~bold ~italic s ~x ~baseline]: the strokes of
+ * [s], one letter, with its left at [x] on [baseline] *)
 val letter : Playground.color -> size:float -> bold:bool -> italic:bool -> string -> x:float -> baseline:float -> Playground.shape list
 
-(* a run's letters, each at its place *)
+(* the strokes of a run's letters, each letter at its place *)
 val shapes : Playground.color -> Playground.letters -> Playground.shape list

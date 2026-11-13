@@ -13,7 +13,7 @@ type t = float * float * float
 val add : t -> t -> t
 val sub : t -> t -> t
 
-(* [scale s v]: v stretched s times *)
+(* [scale s v] is v stretched s times *)
 val scale : float -> t -> t
 
 (* ax*bx + ay*by + az*bz: how much two directions agree; 0 when they're

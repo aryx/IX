@@ -6,8 +6,11 @@
 # the lists behind the README.md of each directory copied from it
 # (lib_playground/, lib_gui/, lib_playground/physics/, games/...).
 #
-#   scripts/playground_copies.sh [-p dir] [group...]
+#   scripts/playground_copies.sh [-c] [-p dir] [group...]
 #
+#   -c:    compare the code only: an OCaml file's comments are left out
+#          of both sides (scripts/strip_comments.py), so that comments
+#          rewritten in ix do not count as differences
 #   dir:   the playground (default: ~/playground)
 #   group: a directory of ix's of the table below (default: all of them)
 #
@@ -23,9 +26,17 @@
 # name: ix's file is counted its own).
 
 P=$HOME/playground
-[ "$1" = -p ] && { P=$2; shift 2; }
+nocomments=
+while :; do
+  case "$1" in
+    -c) nocomments=1; shift;;
+    -p) P=$2; shift 2;;
+    *) break;;
+  esac
+done
 [ -d $P/playground ] || { echo "no $P/playground"; exit 1; }
 cd $(dirname $0)/..
+IX=$(pwd)
 
 # ix's directory, then the playground's directories it comes from
 groups='lib_playground playground libs/core libs/random
@@ -65,7 +76,12 @@ apps/pim libs/core/time appkits/pim appkits/money'
 files() { # the source files under the directories given
   find "$@" -type f \( -name '*.ml' -o -name '*.mli' -o -name '*.mll' -o -name '*.st' -o -name '*.scm' -o -name '*.pas' -o -name '*.jhf' -o -name '*.sh' -o -name '*.expected' \) | sort
 }
-code() { grep -v '^ *$' $1; }
+code() { # a file's lines but the blank ones (with -c, an OCaml file's comments too)
+  case "$nocomments:$1" in
+    1:*.ml|1:*.mli|1:*.mll) $IX/scripts/strip_comments.py $1 | grep -v '^ *$';;
+    *) grep -v '^ *$' $1;;
+  esac
+}
 
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
 echo "$groups" | while read ix dirs; do

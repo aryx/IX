@@ -1,12 +1,13 @@
 (* Particles: many small things, each born, moving and dying by itself.
 
    William Reeves named them, for the Genesis effect of Star Trek II
-   (1982): a wall of fire spreading over a planet, "a class of fuzzy
-   objects" -- fire, smoke, water, sparks -- that no surface can model,
-   made instead of thousands of points, each with a few numbers, none
-   of them designed ("Particle Systems", SIGGRAPH 1983). Every game
-   engine has one since, and a game's sparks, dust and debris are
-   still his model:
+   (1982), a wall of fire spreading over a planet. They are for "a
+   class of fuzzy objects" -- fire, smoke, water, sparks -- that no
+   surface can model. Such an object is made instead of thousands of
+   points, each with a few numbers, none of them designed ("Particle
+   Systems", SIGGRAPH 1983). Every game engine has had a particle
+   system since, and the sparks, dust and debris of a game still
+   follow his model:
 
      born      at a place, at once or at a rate, with a speed, a
                direction within a cone, a life, a size, a spin -- each
@@ -25,30 +26,32 @@
    physics engine's step, semi-implicit Euler (physics/2d/Integrate.mli):
    the velocity first, then the position with the new velocity.
 
-   Randomness is a seed. Each draw is Hash.mli's number for the seed
+   Randomness comes from a seed. Each draw is Hash.mli's number for the seed
    and a count of draws so far, so the same seed and the same bursts
    give the same particles, frame for frame -- in a replay, and in a
    golden frame test.
 
-   A cap. Each particle is a shape to draw, and the software rasterizer
-   and the SVG backend pay per shape: a burst past [cap] drops the
-   oldest particles first.
+   There is a cap. Each particle is a shape to draw, and the software
+   rasterizer and the SVG backend pay per shape, so a burst past [cap]
+   drops the oldest particles first.
 
-   Worked example (checked by the tests). A particle thrown straight
-   up at 400 pixels a second, gravity 800 down: in the real world it
-   rises 100 pixels in half a second and is back at 0 after one; stepped
-   at 60 frames a second it rises to 96.67 (frames 29 and 30) and is at
-   -6.67 after one second -- Euler's error, which is 1/120 of a second's
-   worth of speed each step, and invisible in a spark. With a drag of 2
-   a second and no gravity, a particle at 100 is at 36.2 after half a
-   second (exactly: 100 e^-1 = 36.8), having gone 30.9 pixels.
+   Worked example (checked by the tests). A particle is thrown straight
+   up at 400 pixels a second, with a gravity of 800 down. In the real
+   world it rises 100 pixels in half a second and is back at 0 after
+   one second. Stepped at 60 frames a second, it rises to 96.67 (frames
+   29 and 30) and is at -6.67 after one second. That is Euler's error,
+   which is 1/120 of a second's worth of speed each step, and it is
+   invisible in a spark. With a drag of 2 a second and no gravity, a
+   particle at a speed of 100 is at 36.2 after half a second (exactly:
+   100 e^-1 = 36.8), having gone 30.9 pixels.
 
-   Honest about scale: a few hundred particles, as shapes; a GPU
-   particle system draws millions, as points, in a shader. *)
-(* ix: the author's playground's libs/juice/Emitter.mli; its optional arguments are said *)
+   Honest about scale: this draws a few hundred particles, as shapes; a
+   GPU particle system draws millions, as points, in a shader. *)
+(* ix: copied from libs/juice/Emitter.mli in the author's playground,
+ * with its optional arguments made required *)
 
-(* what a burst makes; every pair is (least, most), each particle's
- * value drawn between them *)
+(* what a burst makes. Every pair is (least, most), and the value of
+ * each particle is drawn between them. *)
 type recipe = {
   count : int;
   speed : float * float; (* pixels a second *)
@@ -61,7 +64,7 @@ type recipe = {
   drag : float; (* a second: 0 none, 2 loses 2% a frame *)
 }
 
-(* a particle, and ['a], what the caller made of its [tone] (a color) *)
+(* a particle; ['a] is what the caller made of its [tone] (a color) *)
 type 'a particle = {
   x : float;
   y : float;
@@ -79,17 +82,18 @@ type 'a particle = {
 
 type 'a t
 
-(* [empty ~cap ~seed ()]: no particle; at most [cap]
+(* [empty ~cap ~seed ()] has no particle, and will hold at most [cap]
  * (ix: cap was optional, 400) *)
 val empty : cap:int -> seed:int -> unit -> 'a t
 
-(* [burst recipe ~data x y t]: [recipe.count] particles born at (x, y);
- * [data tone] makes each one's ['a] from a number in [0, 1] drawn for
- * it (e.g. a color out of a palette) *)
+(* [burst recipe ~data x y t] adds [recipe.count] particles born at
+ * (x, y). [data tone] makes the ['a] of each one from a number in
+ * [0, 1] drawn for it (e.g. a color out of a palette). *)
 val burst : recipe -> data:(float -> 'a) -> float -> float -> 'a t -> 'a t
 
-(* [step ~dt t]: [dt] seconds later: each particle moved (velocity,
- * then position), older, and gone if its life is spent *)
+(* [step ~dt t] is [t] [dt] seconds later: each particle has moved
+ * (velocity, then position) and is older, and it is gone if its life
+ * is spent *)
 val step : dt:float -> 'a t -> 'a t
 
 (* the particles alive, the oldest first *)

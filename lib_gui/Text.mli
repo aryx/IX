@@ -1,5 +1,6 @@
-(* A string as the person sees it: characters, and the cells they sit
- * in -- which are two different things from the bytes it is made of.
+(* This module handles a string as the person sees it: as characters,
+ * and as the cells they sit in. Both are different things from the
+ * bytes the string is made of.
  *
  * A character is not a byte. The playground hands a field whatever
  * the keyboard layout produced (Playground.keyboard's [typed]), and
@@ -27,10 +28,10 @@
  * decoding: the top two bits of a byte say whether a character
  * starts there.
  *
- * Where it stands: Text_edit is the same care over a piece table,
- * for texts of several lines; Utf8 is the whole encoding (a
- * character's number from its bytes and back), which a font needs
- * and a caret does not.
+ * Where it stands: Text_edit takes the same care over a piece table,
+ * for texts of several lines. Utf8 handles the whole encoding (it
+ * turns a character's bytes into its number and back), which a font
+ * needs and a caret does not.
  *
  * cs-history:
  * That a caret can find its way with two bits is by design, and the
@@ -48,31 +49,33 @@
  * References: Rob Pike and Ken Thompson, "Hello World or ...",
  * USENIX Winter 1993 (UTF-8 in Plan 9); RFC 3629 (2003). *)
 
-(* [prev_char s i], [next_char s i]: the byte index a character before
- * or after [i], never inside one, never outside the string *)
+(* [prev_char s i] and [next_char s i] give the byte index one
+ * character before or after [i]. The index is never inside a
+ * character and never outside the string. *)
 val prev_char : string -> int -> int
 val next_char : string -> int -> int
 
-(* [chars s]: the characters of [s], each one still a string (a cell
+(* [chars s] gives the characters of [s], each one still a string (a cell
  * holds a character, not a byte). ["caf\xc3\xa9"] gives four. *)
 val chars : string -> string list
 
-(* [column s i]: how many characters come before the byte index [i] --
- * which cell the caret is in *)
+(* [column s i] is how many characters come before the byte index
+ * [i], which is the cell the caret is in. *)
 val column : string -> int -> int
 
-(* [byte_of_column s col]: the other way round, for a click *)
+(* [byte_of_column s col] goes the other way round, for a click. *)
 val byte_of_column : string -> int -> int
 
-(* [edit ~typed ~pressed text caret]: the text and the caret after one
- * frame of typing -- the characters the platform says were typed
- * inserted at the caret, and the keys that produce no character at
- * all (Backspace, Delete, the arrows, Home, End) doing what they do.
+(* [edit ~typed ~pressed text caret] gives the text and the caret
+ * after one frame of typing. The characters that the platform says
+ * were typed are inserted at the caret, and the keys that produce no
+ * character at all (Backspace, Delete, the arrows, Home, End) do what
+ * they do.
  *
  * It is here rather than in a widget because every architecture needs
  * it and none of them should differ in it: what a field does with a
  * key press is not an architectural question (notes_gui.md section
- * 4). [pressed] answers "did this key go down at this frame", which
- * *is* one -- each architecture knows where it keeps the frame
- * before. *)
+ * 4). [pressed] answers "did this key go down at this frame?", which
+ * *is* an architectural question: each architecture knows where it
+ * keeps the frame before. *)
 val edit : typed:string -> pressed:(string -> bool) -> string -> int -> string * int

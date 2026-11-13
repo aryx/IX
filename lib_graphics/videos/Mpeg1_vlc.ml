@@ -2,7 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Mpeg1_vlc.mli *)
-(* ix: the author's playground's libs/graphics/videos/mpeg1/Mpeg1_vlc.ml; its Bits is Bitstream *)
+(* ix: from the author's playground's
+ * libs/graphics/videos/mpeg1/Mpeg1_vlc.ml; its Bits is Bitstream here *)
 
 (*****************************************************************************)
 (* The tables (ISO/IEC 11172-2, annex B) *)

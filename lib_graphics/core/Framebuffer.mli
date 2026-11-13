@@ -1,6 +1,6 @@
 (* A framebuffer: the grid of pixels an image is made of, as one big
- * array of numbers in memory -- the thing every other module in graphics/
- * writes into, and the thing the screen displays.
+ * array of numbers in memory. It is the thing every other module in
+ * graphics/ writes into, and the thing the screen displays.
  *
  * Pixel (x, y) is column x, row y, with (0, 0) the top-left corner and
  * y going *down* (the convention of screens, image files, and SDL --
@@ -24,47 +24,49 @@
  *     pixel (x, y) is at 4 * (y * width + x)
  *
  * (In the playground a pixel is one integer, 0xAARRGGBB, in SDL's
- * memory: the same four bytes on a machine that stores the low byte
- * first, the alpha byte there because that is the layout SDL's
- * window surface has, and always 0xFF.)
+ * memory. These are the same four bytes on a machine that stores the
+ * low byte first. The alpha byte is there because that is the layout
+ * of SDL's window surface, and it is always 0xFF.)
  *
- * Where it stands: the bottom of ix's other way to draw. The top
- * level of lib_graphics asks the kernel (Display, Draw: the pixels
- * are the kernel's); here they are the program's, found by Line,
- * Fill, Circle, Stroke and Blit, and shown whole: given to the draw
- * device as an image's rows (Display.load_sub; the format is the
- * screen's, x8r8g8b8, so no byte is converted), written as a file,
- * or handed to SDL. A PDF page (Pdf_canvas) and an SVG picture (Svg)
- * are painted in one too. A picture read from a file is not one: it
- * has an alpha and its bytes are red first (Rgba_image).
+ * Here is where it stands: this is the bottom of ix's other way to
+ * draw. The top level of lib_graphics asks the kernel to draw
+ * (Display, Draw), and the pixels are the kernel's. Here the pixels
+ * are the program's: Line, Fill, Circle, Stroke and Blit find them,
+ * and they are shown whole. They are given to the draw device as an
+ * image's rows (Display.load_sub; the format is the screen's,
+ * x8r8g8b8, so no byte is converted), written as a file, or handed to
+ * SDL. A PDF page (Pdf_canvas) and an SVG picture (Svg) are painted in
+ * a framebuffer too. A picture read from a file is not a framebuffer:
+ * it has an alpha, and its bytes are red first (Rgba_image).
  *
  * cs-history:
- * A frame's buffer: memory that holds a whole picture, read out to
+ * A frame's buffer is memory that holds a whole picture, read out to
  * the screen sixty times a second while the program writes in it at
  * its own pace. The first displays had none; they steered the beam
- * along each line of the drawing (Sketchpad's, 1963), since a bit a
- * point of the screen was more memory than a machine had. Richard
- * Shoup's SuperPaint at Xerox PARC (1973) had eight bits a pixel,
- * and the Alto, the same year and place, a bit a pixel for every
- * user: from then on drawing is writing numbers in an array, and
- * the algorithms are those of this directory. *)
+ * along each line of the drawing (Sketchpad's, 1963), since a bit for
+ * each point of the screen was more memory than a machine had. Richard
+ * Shoup's SuperPaint at Xerox PARC (1973) had eight bits for each
+ * pixel, and the Alto, in the same year and place, had a bit for each
+ * pixel for every user. From then on, drawing is writing numbers in an
+ * array, and the algorithms are those of this directory. *)
 (* ix: the author's playground's libs/graphics/core/Framebuffer.mli (docs/plans/done/plan_playground.md) *)
 
-(* ix: the playground's has SDL's memory here (a Bigarray of 32-bit
- * integers, the window's surface). This one has the bytes Plan 9's
- * draw device takes for an image of format x8r8g8b8 (a pixel's 32
- * bits, the low byte first): rows from the top, pixel (x, y) at offset
- * 4 * (y * width + x). So a frame is given to the device as it is, no
- * copy made of it (Display.load). *)
+(* ix: the playground's framebuffer has SDL's memory here (a Bigarray of
+ * 32-bit integers, the window's surface). This one has the bytes that
+ * Plan 9's draw device takes for an image of format x8r8g8b8 (a pixel's
+ * 32 bits, the low byte first): rows from the top, with pixel (x, y) at
+ * offset 4 * (y * width + x). So a frame is given to the device as it
+ * is, with no copy made of it (Display.load). *)
 type pixels = Bytes.t
 
-(* ix: [left], [top] and the window's size: a part of a window (a
- * frame drawn again where it changed only, Redraw), its pixels the
- * window's from (left, top), width by height. The functions take the
- * window's coordinates, and those that draw bound what they compute
- * by the window's size, not the part's: a shape's pixels are then the
- * same numbers in a part and in the whole, only those outside the part
- * not written. For a framebuffer of its own: 0, 0, its size. *)
+(* ix: [left], [top] and the window's size describe a part of a window
+ * (for a frame drawn again only where it changed, in Redraw). Its
+ * pixels are the window's, from (left, top), width by height. The
+ * functions take the window's coordinates, and those that draw bound
+ * what they compute by the window's size, not the part's. So a shape's
+ * pixels are the same numbers in a part and in the whole; only those
+ * outside the part are not written. A framebuffer of its own has 0, 0
+ * and its size. *)
 type t = {
   width : int;
   height : int;
@@ -81,7 +83,7 @@ val create : width:int -> height:int -> t
 (* A framebuffer on top of existing memory: 4 * width * height bytes *)
 val of_pixels : width:int -> height:int -> pixels -> t
 
-(* ix: [part ~window:(w, h) ~at:(x, y) ~width ~height]: a new
+(* ix: [part ~window:(w, h) ~at:(x, y) ~width ~height] makes a new
  * framebuffer, all white, for that part of a window of w by h *)
 val part : window:int * int -> at:int * int -> width:int -> height:int -> t
 
@@ -101,7 +103,7 @@ val get_rgb : t -> x:int -> y:int -> int
  * is already there (see [blend]). *)
 val fill_span : t -> y:int -> x0:int -> x1:int -> rgb:int -> alpha:float -> unit
 
-(* One pixel: fill_span of length 1; skipped if outside *)
+(* Paints one pixel: a fill_span of length 1, skipped if outside *)
 val plot : t -> x:int -> y:int -> rgb:int -> alpha:float -> unit
 
 (* [blend ~src ~dst ~alpha] is the color you get by painting [src] with

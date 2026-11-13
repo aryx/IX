@@ -1,5 +1,6 @@
-(* What the panel knows and decides, without a screen: the windows as rio
- * says them, where each button goes, what a press on one asks.
+(* What the panel knows and decides, computed without a screen: the
+ * windows as rio describes them, where each button goes, and what a
+ * press on one asks for.
  *
  *     /dev/wsys/N/{wctl,label} --window_of--> window --layout--> buttons
  *                                                        |
@@ -30,35 +31,40 @@ type window = {
   label : string;
   current : bool;
   hidden : bool;
-  (* wctl's last word: "" for a normal one, else desk, panel, popup *)
+  (* wctl's last word: "" for a normal window, else desk, panel or popup *)
   layer : string;
 }
 
-(* [window_of id label wctl]: from a wctl file's read *)
+(* [window_of id label wctl] is the window, from what its wctl file
+ * reads *)
 val window_of : int -> string -> string -> window option
 
-(* the ones that get a button: the normal ones *)
+(* the windows that get a button: the normal ones *)
 val tasks : window list -> window list
 (* the window of the start button: a popup labelled startmenu *)
 val menu : window list -> window option
 
 type part = Start | Overview | Task of window | Clock
 
-(* [layout r tasks clock_width]: the panel's rectangle cut in buttons: the
- * start button on the left and the overview's beside it (expose: all the
- * windows at once), the clock on the right, a button a task between, the
- * same width, narrower when there are many *)
+(* [layout r tasks clock_width] cuts the panel's rectangle into buttons:
+ * the start button on the left, with the overview's beside it (expose:
+ * all the windows at once), the clock on the right, and between them a
+ * button for each task. Those buttons all have the same width, which is
+ * narrower when there are many. *)
 val layout : Rectangle.t -> window list -> int -> (part * Rectangle.t) list
 val at : (part * Rectangle.t) list -> Point.t -> part option
 
-(* [shorten width_of room text]: as much of it as fits, with ... after when
- * not all does *)
+(* [shorten width_of room text] is as much of the text as fits, followed
+ * by ... when not all of it does *)
 val shorten : (string -> int) -> int -> string -> string
 
-(* [press windows part]: a press on a part: the lines for wctl, and the
- * windows as they will be, so that the button changes at once and not
- * at the next look at rio's. On a task: to the front, or hidden when it
- * has the keyboard already, or back when hidden. On the overview's: expose
- * started, in a popup of all the room. The menu's shown one goes whatever
- * is pressed but the start button, which shows or hides it. *)
+(* [press windows part] is what a press on a part asks: the lines for
+ * wctl, and the windows as they will be, so that the button changes at
+ * once and not at the next look at rio's files.
+ * - A press on a task brings it to the front, or hides it when it has
+ *   the keyboard already, or brings it back when it is hidden.
+ * - A press on the overview's button starts expose, in a popup that
+ *   takes all the room.
+ * - When the menu is shown, a press on anything but the start button
+ *   hides it; the start button shows or hides it. *)
 val press : window list -> part -> string list * window list

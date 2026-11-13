@@ -3,7 +3,7 @@
 
 (* ix: the author's playground's libs/graphics/3d/geometry/
  * Camera.ml (docs/plans/plan_virtuaracing.md);
- * [basis]'s [up] not optional (mini-ml has no optional arguments) *)
+ * [basis]'s [up] is not optional (mini-ml has no optional arguments) *)
 
 (* See Camera.mli *)
 

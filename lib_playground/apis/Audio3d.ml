@@ -3,7 +3,10 @@
 
 (* See Audio3d.mli *)
 
-(* ix: the author's playground's playground/apis/Audio3d.ml; the listener from an eye, a target and an up, or a yaw ([facing]), where from a Playground3d.camera; the optional arguments said *)
+(* ix: copied from playground/apis/Audio3d.ml in the author's
+ * playground. Here the listener is made from an eye, a target and an
+ * up, or from a yaw ([facing]), where the playground makes it from a
+ * Playground3d.camera. The optional arguments are made required. *)
 
 open Playground
 

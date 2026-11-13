@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/gui/Look.ml (docs/plans/plan_gui.md) *)
+(* ix: copied from libs/gui/Look.ml in the author's playground
+ * (docs/plans/plan_gui.md) *)
 
 (* See Look.mli *)
 

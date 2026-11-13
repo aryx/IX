@@ -1,5 +1,6 @@
-(* Where things go, which is the part courses skip (notes_gui.md
- * section 5). One idea, Flutter's (2017), and three rules:
+(* This module says where things go, which is the part courses skip
+ * (notes_gui.md section 5). It is one idea, Flutter's (2017), with
+ * three rules:
  *
  *        parent
  *          |  "you may be 0..400 wide, 0..200 tall"   constraints DOWN
@@ -9,20 +10,20 @@
  *          v
  *        parent places it at (10, 10)                 the PARENT positions
  *
- * Two passes and nothing else: [measure] walks down with the room
- * available and comes back with sizes, [arrange] walks down again
- * with the rectangle each thing got. Rows, columns, spacing,
- * centering and "as wide as there is room" all fall out of those
- * three rules -- which is the reason to teach this one rather than
- * the alternatives:
+ * There are two passes and nothing else: [measure] walks down with
+ * the room available and comes back with sizes, and [arrange] walks
+ * down again with the rectangle each thing got. Rows, columns,
+ * spacing, centering and "as wide as there is room" all fall out of
+ * those three rules, which is the reason to teach this one rather
+ * than the alternatives:
  *
  *   - Tk's *geometry managers* (Ousterhout; Tcl 1988, Tk 1991, and
  *     [grid] later still, Tk 4.1 in 1996): a separate object owns
- *     placement, which is why Tk code never computes a coordinate --
- *     but also why two managers in one window fight. Worth being
- *     precise about, since Tk is both older and more influential:
- *     for one row or column, [pack] and the code below are the *same
- *     algorithm* under different names --
+ *     placement, which is why Tk code never computes a coordinate,
+ *     but also why two managers in one window fight. This is worth
+ *     being precise about, since Tk is both older and more
+ *     influential: for one row or column, [pack] and the code below
+ *     are the *same algorithm* under different names:
  *
  *       Tk's cavity, shrinking as each slave takes its parcel   the walk below
  *       -expand 1, dividing the leftover cavity                 expand, spacer
@@ -31,22 +32,22 @@
  *       -padx, -pady                                            pad
  *
  *     What really differs is the *order*, and one thing follows from
- *     it: Tk computes a widget's requested size first, and it cannot
- *     depend on the room allotted -- which is why a wrapping label
- *     there needs -wraplength set by hand, or the old
+ *     it: Tk computes a widget's requested size first, and that size
+ *     cannot depend on the room allotted. That is why a wrapping
+ *     label there needs -wraplength set by hand, or the old
  *     [bind . <Configure>] trick. Constraints going down first is
  *     what lets a child answer "given 300 wide, I am 80 tall" in the
  *     same pass, and that is the shape of every text layout,
  *     Knuth-Plass included.
  *
  *     What Tk has and this does not is [grid]: weights, spans and
- *     sticky edges, aligning columns *across* rows, which rows of
- *     rows cannot do. A spreadsheet and a dialog both want it, so it
+ *     sticky edges, which align columns *across* rows, as rows of
+ *     rows cannot. A spreadsheet and a dialog both want it, so it
  *     comes back when TinyVisiCalc does;
  *   - NeXT's and Cocoa's *springs and struts* (1988): each widget
  *     says which of its edges and which of its dimensions are
- *     elastic, and resizing squeezes them. Direct, and hopeless once
- *     a window gets small;
+ *     elastic, and resizing squeezes them. It is direct, and hopeless
+ *     once a window gets small;
  *   - CSS *flexbox* (2009-2018): the same constraint idea as here,
  *     with twenty years of vocabulary on it (flex-grow, flex-shrink,
  *     flex-basis, align-items, justify-content...) and a sizing
@@ -56,21 +57,22 @@
  *     changes size.
  *
  * cs-history:
- * And the ancestor of the whole family: TeX's *boxes and glue*
- * (Knuth, 1978). A line of type is boxes (the letters) with glue
+ * The ancestor of the whole family is TeX's *boxes and glue* (Knuth,
+ * 1978). A line of type is boxes (the letters) with glue
  * between them (spaces that can stretch and shrink by stated
  * amounts); a paragraph is those lines stacked. [spacer] below is
  * glue with infinite stretch, and [row] is an hbox.
  *
- * Honest about what it buys here: the playground's screen is 1000 x
- * 1000 whatever the window, and its [Resized] message is a TODO, so
- * today this arranges (a column that spaces itself, a panel that fits
- * its contents, buttons of one width) rather than resizes. The day
+ * To be honest about what it buys here: the playground's screen is
+ * 1000 x 1000 whatever the window, and its [Resized] message is a
+ * TODO, so today this arranges (a column that spaces itself, a panel
+ * that fits its contents, buttons of one width) rather than resizes. The day
  * the window's size arrives, these same three rules are what will
  * make it work, unchanged.
  *
- * Worked example, the panel of examples/GuiWidgets.ml -- three rows
- * of 200 x 40, 10 apart, in a 400 x 400 area centered on the origin:
+ * Here is a worked example, the panel of examples/GuiWidgets.ml: three
+ * rows of 200 x 40, 10 apart, in a 400 x 400 area centered on the
+ * origin:
  *
  *   let panel = center (column ~gap:10. [ leaf A s; leaf B s; leaf C s ])
  *   measure (loose 400. 400.) panel  =  (200., 140.)   (3*40 + 2*10)
@@ -81,31 +83,32 @@
  * downwards; without the [center] the column would start at the top
  * of the 400 x 400 area instead, at y = 180.)
  *
- * One rule to keep in mind, since it is what makes the two passes fit
- * on a page: **a leaf takes exactly the rectangle its parent gives
- * it**. Its measured size is what it *asks* for; a row, a column or a
- * [center] grants it, while [pad] and [expand] hand over what is
- * left. So a button at its own size inside a big empty area is
+ * There is one rule to keep in mind, since it is what makes the two
+ * passes fit on a page: **a leaf takes exactly the rectangle its
+ * parent gives it**. Its measured size is what it *asks* for; a row,
+ * a column or a [center] grants it, while [pad] and [expand] hand over
+ * what is left. So a button at its own size inside a big empty area is
  * [pad 20. (center (leaf Save size))], and not [pad 20. (leaf ...)],
  * which fills.
  *
- * The same ideas elsewhere in ix, at full size: a page of the
- * browser is laid out by these two walks, widths going down and
- * heights coming up (Box_layout); Flex_layout is the flexbox of the
- * list above, with its grow, shrink and basis; Linebreak is Knuth
- * and Plass's paragraphs, glue with penalties; and Grid.mli is the
- * [grid] this module said would come back.
+ * The same ideas are elsewhere in ix, at full size:
+ *   - a page of the browser is laid out by these two walks, with
+ *     widths going down and heights coming up (Box_layout);
+ *   - Flex_layout is the flexbox of the list above, with its grow,
+ *     shrink and basis;
+ *   - Linebreak is Knuth and Plass's paragraphs, glue with penalties;
+ *   - Grid.mli is the [grid] this module said would come back.
  *
  * road-not-taken:
  * A layout can also be *solved* rather than walked. Each rule is a
  * linear equation or inequality between edges ("this button's left
  * is the label's right plus 8", "at least 100 wide"), with a
  * strength to say which gives way, and a simplex solver finds the
- * rectangles: Cassowary (Greg Badros, Alan Borning and Peter
- * Stuckey, University of Washington, the late 1990s), which
- * is what Apple's Auto Layout (2011) runs. It says things a tree of
- * rows and columns cannot -- two widgets in different panels kept
- * the same width -- and it costs a solver, rules that can contradict
+ * rectangles. That solver is Cassowary (Greg Badros, Alan Borning
+ * and Peter Stuckey, University of Washington, the late 1990s), and
+ * it is what Apple's Auto Layout (2011) runs. It says things a tree
+ * of rows and columns cannot, such as two widgets in different panels
+ * kept the same width. It costs a solver, rules that can contradict
  * each other, and an error at run time when they do. Flutter chose
  * the one walk for the opposite reason: each widget is measured
  * once.
@@ -116,13 +119,15 @@
 (*****************************************************************************)
 
 (* How much room a parent offers: a width between [min_w] and
- * [max_w], a height between [min_h] and [max_h] *)
+ * [max_w], and a height between [min_h] and [max_h]. *)
 type constraints = { min_w : float; max_w : float; min_h : float; max_h : float }
 
-(* [loose w h]: anything up to w x h -- what a parent usually offers *)
+(* [loose w h] allows anything up to w x h, which is what a parent
+ * usually offers. *)
 val loose : float -> float -> constraints
 
-(* [tight w h]: exactly w x h, no choice -- what a stretched child gets *)
+(* [tight w h] allows exactly w x h, with no choice, which is what a
+ * stretched child gets. *)
 val tight : float -> float -> constraints
 
 (*****************************************************************************)
@@ -130,23 +135,23 @@ val tight : float -> float -> constraints
 (*****************************************************************************)
 
 (* A tree of things to place. The leaves carry whatever you want to
- * find them by afterwards -- a variant, a string, an int -- since
+ * find them by afterwards (a variant, a string, an int), since
  * [arrange] hands back ['a * box] pairs and a program looks up the
  * widget it is about to ask for. *)
 type 'a t
 
-(* [leaf key (w, h)]: something that knows its size, e.g. a button
- * (Immediate.button_size gives that size) *)
+(* [leaf key (w, h)] is something that knows its size, e.g. a button
+ * (Immediate.button_size gives that size). *)
 val leaf : 'a -> float * float -> 'a t
 
 (* fixed empty space, e.g. before a "Quit" button *)
 val space : float -> 'a t
 
-(* empty space that takes whatever is left: TeX's glue, Flutter's
- * Spacer. Two of them around a thing center it; one before it pushes
- * it to the end.
+(* empty space that takes whatever is left, like TeX's glue and
+ * Flutter's Spacer. Two of them around a thing center it; one before
+ * it pushes it to the end.
  *
- * With one warning, since it catches everybody once: a spacer takes
+ * There is one warning, since it catches everybody once: a spacer takes
  * whatever room it is *offered*, so a row containing one is as wide
  * as the room, and a [center] offers all of it. Centring a column
  * that contains a row with a spacer therefore makes the column as
@@ -156,27 +161,28 @@ val space : float -> 'a t
 val spacer : 'a t
 
 (* [expand child]: the child takes the room left over along the axis
- * it is in, shared with the other flexible children (Flutter's
- * Expanded, CSS's flex-grow) *)
+ * it is in, shared with the other flexible children (like Flutter's
+ * Expanded and CSS's flex-grow). *)
 val expand : 'a t -> 'a t
 
-(* [stretch child]: the child fills the *other* axis -- all the width
- * of the column it is in, all the height of its row (Flutter's
- * CrossAxisAlignment.stretch). This is how a panel's buttons come out
+(* [stretch child]: the child fills the *other* axis, that is all the
+ * width of the column it is in, or all the height of its row (like
+ * Flutter's CrossAxisAlignment.stretch). This is how a panel's buttons come out
  * the same width. *)
 val stretch : 'a t -> 'a t
 
-(* [pad n child]: n of empty space on all four sides *)
+(* [pad n child] puts n of empty space on all four sides of the
+ * child. *)
 val pad : float -> 'a t -> 'a t
 
-(* [center child]: the child at the size it asked for, in the middle
- * of the room given *)
+(* [center child] puts the child, at the size it asked for, in the
+ * middle of the room given. *)
 val center : 'a t -> 'a t
 
-(* [row ~gap children] left to right, [column ~gap children] top to
- * bottom, with [gap] between them (0 by default). Across the axis a
- * child keeps the size it asked for and is centered, unless it is
- * [stretch]ed. *)
+(* [row ~gap children] places the children left to right, and
+ * [column ~gap children] top to bottom, with [gap] between them. Across
+ * the axis a child keeps the size it asked for and is centered, unless
+ * it is [stretch]ed. *)
 val row : gap:float -> 'a t list -> 'a t
 val column : gap:float -> 'a t list -> 'a t
 
@@ -184,13 +190,13 @@ val column : gap:float -> 'a t list -> 'a t
 (* {1 The two passes} *)
 (*****************************************************************************)
 
-(* Pass one, constraints down and sizes up: how big [t] wants to be in
- * the room [constraints] offers *)
+(* Pass one sends constraints down and sizes up. It says how big [t]
+ * wants to be in the room [constraints] offers. *)
 val measure : constraints -> 'a t -> float * float
 
-(* Pass two, the parent positions: the rectangle each leaf ends up
- * with, given the rectangle [t] itself gets, in the order the leaves
- * were written.
+(* In pass two the parent positions. It gives the rectangle each leaf
+ * ends up with, given the rectangle [t] itself gets, in the order the
+ * leaves were written.
  *
  *   let places = Layout.arrange panel (Layout.column ~gap:10. rows) in
  *   let b = List.assoc Reset places in

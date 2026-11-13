@@ -4,11 +4,12 @@
  * Resolve fixes one contact at a time. In a pile, each fix undoes a
  * bit of another: pushing the top box up pushes the one below down,
  * which then sinks into the floor... Solved one by one, once, a pile
- * jitters and sinks. The fix, sequential impulses (Erin Catto, Box2D
- * Lite, 2006): go over all the contact points again and again
- * ([iterations]), each time correcting each one's impulse a little, and
- * the whole pile converges -- Gauss-Seidel, the old method for linear
- * systems, applied to contacts. Two details make it work:
+ * jitters and sinks. The fix is sequential impulses (Erin Catto, Box2D
+ * Lite, 2006): the solver goes over all the contact points again and
+ * again ([iterations]), each time correcting each one's impulse a
+ * little, and the whole pile converges. This is Gauss-Seidel, the old
+ * method for linear systems, applied to contacts. Two details make it
+ * work:
  *
  * - The impulses add up over the iterations (one per contact point),
  *   and it's the *sum* that must never pull (>= 0): one iteration may
@@ -17,8 +18,8 @@
  *
  * - Warm starting: a pile is still from one step to the next, so each
  *   contact point starts from its impulses of the previous step (found
- *   again by where it is: within [matching]), already nearly right;
- *   the iterations only fix the difference.
+ *   again by where it is, within [matching]), which are already nearly
+ *   right; the iterations only fix the difference.
  *
  *     step 1:  top  0 -> 0.5 -> 0.8 -> 0.95 ...     (iterations)
  *     step 2:  top  0.95 -> 0.99 -> ...             (warm started)
@@ -39,9 +40,10 @@
  * already has it.
  *
  * Joints (Joint2d) are solved in the same loop, their rows before the
- * contacts' at each iteration: a pin, a rod, a rope, a pulley. Left
- * out, compared to Box2D: sleeping (bodies still for a while skipped
- * until something touches them), and warm starting for the joints.
+ * contacts' at each iteration; the joints are a pin, a rod, a rope and
+ * a pulley. Compared to Box2D, two things are left out: sleeping
+ * (bodies that are still for a while are skipped until something
+ * touches them), and warm starting for the joints.
  *
  * Where it stands: this is the middle of a step, and the step is
  * where the whole engine is seen at once. The playground's Physics
@@ -66,9 +68,9 @@
  * every step before it is taken out.
  *
  * cs-history:
- * Game physics before this was mostly the penalty method -- a
- * spring pushing two overlapping bodies apart, stiff, and unstable
- * as soon as things pile -- or exact solvers too slow for a frame.
+ * Before this, game physics mostly used the penalty method (a stiff
+ * spring pushing two overlapping bodies apart, unstable as soon as
+ * things pile), or exact solvers too slow for a frame.
  * Catto's talks (2005, 2006) showed that the crudest iteration,
  * with the clamp on the sum and the warm start, was enough for
  * boxes to stack, in a thousand lines one could read. Box2D (2007)
@@ -88,7 +90,9 @@
  * Coherence", GDC 2005, and Box2D Lite (2006, 1000 lines); J.
  * Baumgarte, "Stabilization of constraints and integrals of motion in
  * dynamical systems", 1972. *)
-(* ix: the author's playground's libs/physics/2d/Solver.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
+(* ix: copied from libs/physics/2d/Solver.mli in the author's playground.
+ * Where it has optional arguments, they are required here
+ * (docs/plans/done/plan_playground.md). *)
 
 type options = {
   (* how many times to go over the contacts per step *)
@@ -121,9 +125,9 @@ val nothing : memory
 (* [solve options ~dt ?joints bodies pairs memory]: the bodies with
  * their velocities changed by the contacts and the joints (not their
  * positions: the caller moves them after, with the new velocities),
- * and the memory for the next step. [joints]: the bodies' angles
- * (radians, which Body.t doesn't have and the joints' anchors need),
- * and the joints. *)
+ * and the memory for the next step. [joints] holds the bodies' angles
+ * (in radians, which Body.t doesn't have and the joints' anchors
+ * need), and the joints. *)
 val solve :
   options -> dt:float -> joints:(float array * Joint2d.t list) option -> Body.t array -> pair list -> memory -> Body.t array * memory
 

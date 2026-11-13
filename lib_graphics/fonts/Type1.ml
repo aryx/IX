@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/fonts/Type1.ml; of_string's clear is said (0: not known), where it was optional; glyph's depth, which only glyph gave itself, is glyph_at's (docs/plans/done/plan_pdf.md) *)
+(* ix: copied from libs/fonts/Type1.ml in mini-chrome
+ * (docs/plans/done/plan_pdf.md). The clear argument of of_string must
+ * be given (0 when it is not known), where it was optional. The depth
+ * of glyph, which only glyph itself gave, is now an argument of
+ * glyph_at. *)
 
 (* See Type1.mli *)
 

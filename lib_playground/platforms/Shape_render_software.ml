@@ -1,13 +1,16 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the playground's playground/platforms/software/Shape_render_software.ml,
- * less: a picture by its file's name (Image: drawn here as its box, grey:
- * no file is fetched), its debug views (bounding boxes, wireframe: the
- * playground's "b" and "f" keys), render_region (a framebuffer that is
- * a part of the window instead: Framebuffer.part). And its optional
- * arguments said (the options and the scale of render, Fill's rule);
- * pixel_bounds takes the scale too. *)
+(* ix: copied from playground/platforms/software/Shape_render_software.ml
+ * in the author's playground, without:
+ * - a picture by its file's name (an Image is drawn here as its box, in
+ *   grey, because no file is fetched);
+ * - its debug views (bounding boxes and wireframe, the playground's "b"
+ *   and "f" keys);
+ * - render_region (here a framebuffer that is a part of the window,
+ *   Framebuffer.part, is used instead).
+ * Its optional arguments are required here (the options and the scale
+ * of render, and Fill's rule), and pixel_bounds takes the scale too. *)
 
 (*****************************************************************************)
 (* Prelude *)

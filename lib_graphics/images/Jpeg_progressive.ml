@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/graphics/images/jpeg/Jpeg_progressive.ml; block's four readers are one record (source), its parameters 6 where they were 9: mini-ml's arm code takes 7 at most (docs/plans/done/plan_pdf.md) *)
+(* ix: copied from libs/graphics/images/jpeg/Jpeg_progressive.ml in
+ * the author's playground (docs/plans/done/plan_pdf.md). The four
+ * readers of block are one record (source), so it has 6 parameters
+ * where it had 9, because mini-ml's arm code takes 7 at most. *)
 
 (* See Jpeg_progressive.mli *)
 

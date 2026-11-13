@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/layers/Camera2d.ml (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/layers/Camera2d.ml in the author's
+ * playground (docs/plans/done/plan_playground.md) *)
 open Playground
 open Basics (* float arithmetics *)
 

@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* startmenu: what the start button shows (plan_desktop.md): the programs of
- * /lib/desktop/apps by their groups (Apps says why a table), each with its
- * icon. In a window of rio's popup layer, started hidden with the session:
+(* startmenu: what the start button shows (plan_desktop.md). It lists the
+ * programs of /lib/desktop/apps by their groups (Apps says why there is a
+ * table), each with its icon. It runs in a window of rio's popup layer,
+ * started hidden with the session:
  *
  *     window -popup -hide -label startmenu startmenu
  *
@@ -18,21 +19,22 @@
  * The mouse on a group opens it, in the same window: a second window for a
  * submenu would be one more thing to keep above the panel. A press on a
  * program opens it and hides this window; a press elsewhere is rio's, which
- * hides it. So the click is a wctl's line and no program loaded from the
- * card, and a window hidden draws as before and comes back at once.
+ * hides it. So a click is a line written to a wctl, and no program is loaded
+ * from the card. A hidden window is still there, so it comes back at
+ * once, drawn as it was.
  *
- * Why a window and not rio's Menu: a menu on the screen's own image would be
- * drawn over by a game running below it, and then copied back wrong; a
- * window is a layer of the kernel's.
+ * Why a window and not rio's Menu? A menu on the screen's own image would be
+ * drawn over by a game running below it, and then copied back wrong, while
+ * a window is a layer of the kernel's.
  *
  * It takes the size its table needs, at the bottom left of what the screen
  * has for windows, and asks rio for it. A program that is not on the card
  * is not listed.
  *
- * startmenu -try seconds [group]: no menu; each program of the table, or
- * of that group, opened as the menu opens it, left that long, and deleted:
- * all of them looked at once (plan_desktop.md's shakedown), from rio -i or
- * a window. *)
+ * startmenu -try seconds [group] shows no menu. It opens each program of the
+ * table, or of that group, as the menu opens it, leaves it open that long,
+ * and deletes it, so that all of them are looked at in one go
+ * (plan_desktop.md's shakedown). It runs from rio -i or from a window. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.readdir; Cap.open_in; Cap.open_out >
 

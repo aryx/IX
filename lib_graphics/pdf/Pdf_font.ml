@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_font.ml; two types, where they were polymorphic variants (a ToUnicode table's entries, a font's file); Type1's clear is said (docs/plans/done/plan_pdf.md) *)
+(* ix: from mini-chrome's libs/pdf/Pdf_font.ml. Two types replace what
+ * were polymorphic variants (a ToUnicode table's entries, and a font's
+ * file), and Type1's clear is given explicitly
+ * (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_font.mli *)
 

@@ -6,22 +6,23 @@
  *
  *     window -desk desk
  *
- * Its icons are the lines of /lib/desktop/desk, or of a person's
- * $home/lib/desktop/desk before it: the same form as the start menu's table
- * (Apps), the group always top. A click selects one, a double click
- * opens it. The right button is rio's: a desk does not get it, so its menu
- * stays where it always was.
+ * Its icons are the lines of a person's $home/lib/desktop/desk, or, when
+ * there is none, of /lib/desktop/desk. The lines have the same form as the
+ * start menu's table (Apps), with the group always top. A click selects
+ * an icon, and a double click opens it. The right button is rio's: a desk
+ * does not get it, so rio's menu stays where it always was.
  *
- * It draws when something changes and waits for the mouse otherwise, and
- * looks at the settings (Prefs) every two seconds: their wallpaper, a colour
- * or a picture. The wallpaper is made once, in an image of its own, and
- * what an icon uncovers is copied back from there.
+ * It draws when something changes and waits for the mouse otherwise. It
+ * looks at the settings (Prefs) every two seconds for their wallpaper, a
+ * colour or a picture. The wallpaper is made once, in an image of its own,
+ * and what an icon uncovers is copied back from there.
  *
  * cs-history:
  * The desktop as a surface with icons on it is the Xerox Star's (1981), and
- * its double click too: one click says which, a second what to do with it.
- * The Star's documents were on it because a person's documents were on a
- * desk; here, as on most since, what is mostly there is programs. *)
+ * so is its double click: one click says which icon, and a second one says
+ * what to do with it. The Star's documents were on it because a person's
+ * documents were on a desk; here, as on most desktops since, what is mostly
+ * there is programs. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.env; Cap.open_in; Cap.open_out >
 

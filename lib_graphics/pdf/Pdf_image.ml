@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_image.ml; a JPEG's pixels are a Bytes (Rgba_image's here); paint's canvas and clip are a pair and its fill, alpha and shown a triple, its parameters 7 where they were 10: mini-ml's arm code takes no more (docs/plans/done/plan_pdf.md) *)
+(* ix: from mini-chrome's libs/pdf/Pdf_image.ml. A JPEG's pixels are a
+ * Bytes (Rgba_image's type here). paint's canvas and clip are a pair,
+ * and its fill, alpha and shown are a triple, so it has 7 parameters
+ * where it had 10, because mini-ml's arm code takes no more
+ * (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_image.mli *)
 

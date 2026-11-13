@@ -1,4 +1,5 @@
-(* ix: the author's playground's libs/core/Basics.ml (docs/plans/done/plan_playground.md) *)
+(* ix: copied from libs/core/Basics.ml in the author's playground
+ * (docs/plans/done/plan_playground.md) *)
 let log s =
   Printf.printf "%s" s
 

@@ -10,17 +10,17 @@
  *        [clip]         Cohen and Sutherland, 1967: the part of the
  *          |            segment that is on the screen, or none
  *          v
- *     [bresenham]       1965: a pixel a column, chosen by integer
+ *     [bresenham]       1965: one pixel per column, chosen by integer
  *      or [wu]          additions alone: a staircase
- *          |            1991: two pixels a column, which share the
- *          v            line's ink by how near each is: smooth
+ *          |            1991: two pixels per column, which share the
+ *          v            line's ink by how near each one is: smooth
  *     Framebuffer.plot
  *
- * Where it stands: what lib_playground's software platform draws a
- * thin line with (Shape_render_software). A line with a width is not
- * drawn here: it is an area, made a polygon and filled (Stroke,
- * Fill). The draw device's lines (Draw.line) are found in the kernel
- * by the same stepping (mini-9pi's Memshape).
+ * Where it stands: lib_playground's software platform draws a thin
+ * line with this module (Shape_render_software). A line with a width
+ * is not drawn here: it is an area, which is made a polygon and
+ * filled (Stroke, Fill). The kernel finds the draw device's lines
+ * (Draw.line) by the same stepping (mini-9pi's Memshape).
  *
  * cs-history:
  * Jack Bresenham wrote his at IBM in 1962, for a pen plotter whose
@@ -32,20 +32,20 @@
  *
  * design:
  * Do not compute, update. The line's height at each column is a
- * multiplication and a division; the difference between two columns
- * is a constant, so an addition does. The same idea is in Circle
- * (the midpoint's test, updated), in Fill (an edge's crossing moves
- * by a constant from a row to the next) and in Blit (the place in
- * the picture of a pixel of the screen, from its neighbour's): what
- * the books call a digital differential analyzer, after a machine
- * that integrated by adding.
+ * multiplication and a division, but the difference between two
+ * columns is a constant, so an addition is enough. The same idea is
+ * in Circle (the midpoint's test is updated), in Fill (an edge's
+ * crossing moves by a constant from one row to the next) and in Blit
+ * (the place in the picture of a pixel of the screen is found from
+ * its neighbour's). The books call this a digital differential
+ * analyzer, after a machine that integrated by adding.
  *
  * modern:
- * A graphics card has no line of this kind: it fills triangles, and
- * a line is a thin rectangle, two of them, its edges smoothed by how
- * much of each pixel is covered. That is Stroke and Fill.polygons_aa
- * here; [wu] is the same result for a width of one pixel at a
- * fraction of the work. *)
+ * A graphics card has no line of this kind. It fills triangles, and
+ * a line is a thin rectangle made of two of them, whose edges are
+ * smoothed by how much of each pixel is covered. Here that is Stroke
+ * and Fill.polygons_aa; [wu] gives the same result for a width of
+ * one pixel at a fraction of the work. *)
 (* ix: the author's playground's libs/graphics/2d/Line.mli (docs/plans/done/plan_playground.md) *)
 
 (* [bresenham fb (x0, y0) (x1, y1) ~rgb ~alpha] lights the pixels of
@@ -84,9 +84,9 @@
  * (At x = 4 the exact line is at height 1.5, exactly between rows 1
  * and 2: a tie, which "> 8" rather than ">= 8" resolves by staying.)
  *
- * Lines that go more up or down than right are the same with the roles
- * of x and y swapped, and lines going left or up the same with -1 steps
- * instead of +1.
+ * Lines that go more up or down than right are drawn the same way with
+ * the roles of x and y swapped, and lines going left or up are drawn
+ * with -1 steps instead of +1.
  *
  * Pixels outside the framebuffer are skipped, but still visited (see
  * [clip] for why that matters, and [draw]).
@@ -132,18 +132,20 @@ val clip :
   width:float -> height:float -> float * float -> float * float ->
   ((float * float) * (float * float)) option
 
-(* [draw fb p0 p1 ~rgb ~alpha]: the line between two points in pixel
- * coordinates (x right, y down): [clip] to the framebuffer, then
- * [bresenham] between the pixels containing the two ends *)
+(* [draw fb p0 p1 ~rgb ~alpha] draws the line between two points in
+ * pixel coordinates (x right, y down). It calls [clip] to keep the
+ * part in the framebuffer, then [bresenham] between the pixels
+ * containing the two ends. *)
 val draw : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:float -> unit
 
-(* [wu fb p0 p1 ~rgb ~alpha]: an antialiased line, Xiaolin Wu's way.
- * Like Bresenham, one column at a time (for a mostly horizontal line),
- * but instead of choosing *one* pixel per column, light the two pixels
- * the exact line passes between, sharing the intensity by distance:
- * the closer pixel gets more. With pixel centers at integer
- * coordinates here (pixel (x, y)'s center, as for Bresenham), the line
- * from (0, 1) to (4, 3), whose height goes up by 0.5 per column:
+(* [wu fb p0 p1 ~rgb ~alpha] draws an antialiased line, Xiaolin Wu's
+ * way. Like Bresenham, it goes one column at a time (for a mostly
+ * horizontal line), but instead of choosing *one* pixel per column, it
+ * lights the two pixels the exact line passes between, sharing the
+ * intensity by distance: the closer pixel gets more. Pixel centers
+ * are at integer coordinates here ((x, y) is pixel (x, y)'s center, as
+ * for Bresenham). This is the line from (0, 1) to (4, 3), whose height
+ * goes up by 0.5 per column:
  *
  *        x:  0    1    2    3    4
  *   y = 1   1.0  0.5                   at x = 1 the line is at 1.5,
@@ -159,5 +161,5 @@ val draw : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:f
  * SIGGRAPH '91 (Computer Graphics 25(4):143-152). *)
 val wu : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:float -> unit
 
-(* [draw_aa]: [draw] with [wu] instead of [bresenham] *)
+(* [draw_aa] is [draw] with [wu] instead of [bresenham]. *)
 val draw_aa : Framebuffer.t -> float * float -> float * float -> rgb:int -> alpha:float -> unit

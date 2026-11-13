@@ -20,18 +20,19 @@
    is transparent. The sprite is centered on (0, 0), like every shape, so
    [crab |> move x y] puts its center at (x, y).
 
-   Two techniques, each in its own function:
+   There are two techniques, each in its own function:
      - run-length encoding ([runs]): a row's consecutive pixels of the
        same color are drawn as one rectangle, not one square each (the
-       crab: 46 pixels, but only 18 rectangles); the classic compression
-       of pictures, from fax machines (1980) to the PCX and BMP formats;
+       crab has 46 pixels, but only 18 rectangles). It is the classic
+       compression of pictures, from fax machines (1980) to the PCX and
+       BMP formats;
      - animation ([cycle], [frame]): a character is a few pictures shown
        one after the other, like a flip book.
 
-   This module is a layer on top of Playground: only its rectangles, so
-   it works on every backend. (Images, [Playground.image], are the other
-   way to draw a sprite, and animated GIFs animate by themselves: see
-   making_sprites.mld; [frame] picks among images too.)
+   This module is a layer on top of Playground: it uses only its
+   rectangles, so it works on every backend. (Images, [Playground.image],
+   are the other way to draw a sprite, and animated GIFs animate by
+   themselves: see making_sprites.mld; [frame] picks among images too.)
 
    cs-history:
    A bit of history. The name "sprite" is usually credited to people
@@ -47,35 +48,38 @@
    style: pixel art is still a genre of its own (Celeste, Shovel Knight).
 
    Alternatives, and why strings:
-     - image files ([Playground.image], PNGs, GIFs): the way to go for
-       real artwork, drawn in an editor (Aseprite, Piskel), but a file
-       per picture, loaded at run time, and not editable in the code;
-       a sprite *sheet* (all the frames in one image, PICO-8's and most
-       engines' way) would need [image] to draw a part of an image, a
-       change to Playground itself and every backend
-       (plan_playground_other.md section 4);
-     - vector shapes (polygons, circles): Asteroids' and Battlezone's
-       way (their vector displays had no pixels at all), and already
-       the playground's; fine for geometry, not for a face;
-     - bitmaps as numbers: what the games really stored, e.g. a Space
-       Invaders row as one byte, the NES's CHR data as two bit planes
-       (2 bits per pixel: 4 colors), PICO-8's sprites as hexadecimal
-       digits; compact, but unreadable in source code;
-     - strings (ours): readable, editable in any editor, and the picture
-       is visible in the code itself.
-   And for drawing them, beyond [runs]: merging rectangles across rows
-   too (the "greedy meshing" of voxel games, Mikola Lysenko, "Meshing in
-   a Minecraft Game", 0fps.net, 2012: fewer, bigger rectangles), or
-   drawing the sprite once into an offscreen image and reusing it (the
-   fastest, but it needs a backend API, like playground3d's cached3d).
+     - image files ([Playground.image], PNGs, GIFs). They are the way to
+       go for real artwork, drawn in an editor (Aseprite, Piskel), but
+       each picture is a file, loaded at run time, and not editable in
+       the code. A sprite *sheet* (all the frames in one image, the way
+       of PICO-8 and most engines) would need [image] to draw a part of
+       an image, which is a change to Playground itself and to every
+       backend (plan_playground_other.md section 4);
+     - vector shapes (polygons, circles). This was the way of Asteroids
+       and Battlezone (their vector displays had no pixels at all), and
+       it is already the playground's. It is fine for geometry, not for
+       a face;
+     - bitmaps as numbers, which is what the games really stored: e.g. a
+       Space Invaders row as one byte, the NES's CHR data as two bit
+       planes (2 bits per pixel: 4 colors), PICO-8's sprites as
+       hexadecimal digits. They are compact, but unreadable in source
+       code;
+     - strings (ours): they are readable and editable in any editor, and
+       the picture is visible in the code itself.
+   And for drawing them, there is more than [runs]: merging rectangles
+   across rows too (the "greedy meshing" of voxel games, Mikola Lysenko,
+   "Meshing in a Minecraft Game", 0fps.net, 2012, which gives fewer,
+   bigger rectangles), or drawing the sprite once into an offscreen
+   image and reusing it (the fastest, but it needs a backend API, like
+   playground3d's cached3d).
 
    Where it stands: a picture written as text in the source is an
-   old habit of this system's too. X's XPM is a C array of strings,
-   a character a pixel and a palette before them, which Xpm reads;
-   Plan 9's cursor is bytes typed in the source (Cursor), the
+   old habit of this system too. X's XPM is a C array of strings, with
+   a character for each pixel and a palette before them, and Xpm reads
+   it. Plan 9's cursor is bytes typed in the source (Cursor), the
    compact and unreadable way. And [runs] is the run-length idea of
-   Packbits, a row at a time and kept as rectangles to draw where
-   Packbits keeps bytes.
+   Packbits, applied a row at a time, and kept as rectangles to draw
+   where Packbits keeps bytes.
 
    others:
    Related work:
@@ -87,12 +91,14 @@
      - STOS Basic (François Lionet, Constantin Sotiropoulos, Mandarin
        Software, 1988) on the Atari ST, and its Amiga successor AMOS
        (1990): a BASIC for writing games, with a sprite editor, a map
-       editor, and sprites moved by commands, a generation's first game
-       programming environment -- what the playground wants to be;
+       editor, and sprites moved by commands. It was a generation's
+       first game programming environment, which is what the playground
+       wants to be;
      - Pyxel (Python), a retro engine in the same spirit, whose images
        are also defined from strings.
 *)
-(* ix: the author's playground's playground/layers/Sprite.mli (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/layers/Sprite.mli in the author's
+ * playground (docs/plans/done/plan_playground.md) *)
 
 open Playground
 
@@ -100,26 +106,27 @@ open Playground
 (* {1 Pixel art} *)
 (*****************************************************************************)
 
-(* [pixels size palette rows]: the sprite whose pixels are the [rows],
- * from the top, each character a [size] x [size] square of its color
- * in [palette], or transparent if it's not in the palette; drawn with
- * [runs]. Short rows are completed with transparent pixels. *)
+(* [pixels size palette rows] is the sprite whose pixels are the [rows],
+ * from the top. Each character is a [size] x [size] square of its color
+ * in [palette], or is transparent if it's not in the palette. The
+ * sprite is drawn with [runs]. Short rows are completed with
+ * transparent pixels. *)
 val pixels : number -> (char * color) list -> string list -> shape
 
-(* [pixels_squares size palette rows]: the same picture, but one square
- * per pixel, without [runs]: the simple version, to compare (same
- * pixels, more shapes to draw) *)
+(* [pixels_squares size palette rows] is the same picture, but with one
+ * square per pixel, without [runs]. It is the simple version, to
+ * compare (the same pixels, more shapes to draw). *)
 val pixels_squares : number -> (char * color) list -> string list -> shape
 
-(* [runs row]: the row's runs, (first column, length, character), the
- * transparent ones included, e.g. "..###.#" -> [(0, 2, '.'); (2, 3,
- * '#'); (5, 1, '.'); (6, 1, '#')]. *)
+(* [runs row] is the list of the row's runs, (first column, length,
+ * character), the transparent ones included, e.g. "..###.#" ->
+ * [(0, 2, '.'); (2, 3, '#'); (5, 1, '.'); (6, 1, '#')]. *)
 val runs : string -> (int * int * char) list
 
-(* [flip rows]: the rows mirrored left-right, e.g. "##.." -> "..##": a
- * character facing the other way, without drawing it twice (as the
- * NES's sprite attribute bit did, and PICO-8's flip_x). Short rows are
- * completed first, so the columns stay aligned. *)
+(* [flip rows] is the rows mirrored left-right, e.g. "##.." -> "..##".
+ * It makes a character face the other way, without drawing it twice (as
+ * the NES's sprite attribute bit did, and PICO-8's flip_x). Short rows
+ * are completed first, so the columns stay aligned. *)
 val flip : string list -> string list
 
 (*****************************************************************************)
@@ -146,9 +153,10 @@ val flip : string list -> string list
    A game with two looks reads the flag once, in its view, and says in
    its header which one is its default and why. *)
 
-(* [artwork ~default flags]: whether to draw the pixel art, the flag
- * artwork=sprites or artwork=shapes deciding, and [default] (the
- * original's own medium) when the flag is absent or is neither. *)
+(* [artwork ~default flags] tells whether to draw the pixel art. The
+ * flag artwork=sprites or artwork=shapes decides, and [default] (the
+ * original's own medium) decides when the flag is absent or is
+ * neither. *)
 val artwork : default:bool -> flags -> bool
 
 (*****************************************************************************)
@@ -156,45 +164,51 @@ val artwork : default:bool -> flags -> bool
 (*****************************************************************************)
 
 (* A sprite drawn in an editor is saved as an XPM file (graphics/images/
- * xpm/Xpm.mli): a palette and rows of characters, what [pixels] takes,
- * and a file GIMP and ImageMagick open too. A game embeds the file at
- * build time (games/README-tools.md), e.g.
+ * xpm/Xpm.mli). Such a file is a palette and rows of characters, which
+ * is what [pixels] takes, and GIMP and ImageMagick open it too. A game
+ * embeds the file at build time (games/README-tools.md), e.g.
  *
  *   let palette, rows = Sprite.of_xpm Mario_sprites.stand
  *   let stand = Sprite.pixels 4. palette rows
  *)
 
-(* [of_xpm text]: the palette and the rows of an XPM file, for [pixels];
- * the transparent colors (None) are left out of the palette, so their
- * characters draw nothing. Raises Failure (see Xpm.parse). *)
+(* [of_xpm text] returns the palette and the rows of an XPM file, for
+ * [pixels]. The transparent colors (None) are left out of the palette,
+ * so their characters draw nothing. Raises Failure (see Xpm.parse). *)
 val of_xpm : string -> (char * color) list * string list
 
-(* [of_rgba size img]: a decoded picture (graphics/images/rgba/
- * Rgba_image.mli: what Png, Gif and Jpeg give) as shapes, as [pixels]
- * draws a sprite: each pixel a [size] x [size] square, a row's runs of
- * one color one rectangle, the transparent pixels nothing, the others
- * faded by their alpha; centered on (0, 0). For small pictures: a 64 x
- * 48 photograph is a few thousand rectangles, a sprite a few dozen. *)
+(* [of_rgba size img] is a decoded picture (graphics/images/rgba/
+ * Rgba_image.mli, which is what Png, Gif and Jpeg give) as shapes, the
+ * way [pixels] draws a sprite:
+ * - each pixel is a [size] x [size] square;
+ * - each run of one color in a row is one rectangle;
+ * - the transparent pixels draw nothing, and the others are faded by
+ *   their alpha.
+ * The picture is centered on (0, 0). It is for small pictures: a 64 x
+ * 48 photograph is a few thousand rectangles, and a sprite a few
+ * dozen. *)
 val of_rgba : number -> Rgba_image.t -> shape
 
-(* [to_xpm name palette rows]: the XPM file, the C array called [name];
- * the characters of [rows] not in [palette] are written as transparent
- * (None), first, and short rows completed with '.'. [of_xpm] gives the
- * palette and rows back. *)
+(* [to_xpm name palette rows] is the XPM file, with the C array called
+ * [name]. The characters of [rows] that are not in [palette] are written
+ * first, as transparent (None), and short rows are completed with '.'.
+ * [of_xpm] gives the palette and rows back. *)
 val to_xpm : string -> (char * color) list -> string list -> string
 
 (*****************************************************************************)
 (* {1 Animation} *)
 (*****************************************************************************)
 
-(* [cycle n frames]: frame [n] of an animation that loops, e.g. [cycle 5
- * [a; b]] = b, the frame for the n-th step of something moving step by
- * step (an alien marching, a character walking one tile). *)
+(* [cycle n frames] is frame [n] of an animation that loops, e.g.
+ * [cycle 5 [a; b]] = b. It gives the frame for the n-th step of
+ * something moving step by step (an alien marching, a character walking
+ * one tile). *)
 val cycle : int -> 'a list -> 'a
 
-(* [frame fps time frames]: the frame of a looping animation at [time],
- * showing [fps] frames per second, e.g. at 4 fps, the time 1.3 seconds
- * (5.2 frames since 0) gives frame 5, the second of [a; b]: for things
- * animated by the clock rather than by steps (a flame, a coin turning).
- * [frames] can be shapes, or image urls for [Playground.image]. *)
+(* [frame fps time frames] is the frame of a looping animation at
+ * [time], showing [fps] frames per second. E.g. at 4 fps, the time 1.3
+ * seconds (5.2 frames since 0) gives frame 5, the second of [a; b]. It
+ * is for things animated by the clock rather than by steps (a flame, a
+ * coin turning). [frames] can be shapes, or image urls for
+ * [Playground.image]. *)
 val frame : number -> time -> 'a list -> 'a

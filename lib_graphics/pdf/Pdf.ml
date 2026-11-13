@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf.ml; Pdf_object's parse_with where parse had a length; a for's variable named (docs/plans/done/plan_pdf.md) *)
+(* ix: from mini-chrome's libs/pdf/Pdf.ml. It calls Pdf_object's
+ * parse_with where it called parse with a length, and a for loop's
+ * variable is given a name (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf.mli *)
 

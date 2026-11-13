@@ -73833,3 +73833,43 @@ Claude split the next batch of about 306 header files, mostly kernels/9pi and li
 Claude fixed the facts reported in lib_core/commons and the 9pi devices, files, and memory groups, such as Prelude.mli's `-L` flag and Devcons.mli's `start` behavior.
 Claude corrected Machine.mli, Kusb.mli, Kproc.mli, Proc.mli, and Mkpixdata.ml, and restored the cut-off Filename comments.
 Claude checked 163 files, all reporting "same", and is confirming that Printf.mli differs only in docstrings.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 21:35
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude pushed commit `0e759069` and said the next step is the graphics batch.
+Claude measured it at about 7,250 header lines across 296 files, slightly larger than the last batch.
+Claude planned to use seven agents for the graphics batch.
+Claude proposed telling those agents to skip the Linux host directories `sdl/` and `tty/`.
+Claude's reason for skipping them was that they are not part of m-IX.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 21:41
+
+**Yoann:**
+
+> it's fine to differ from the playground project
+
+------------------------------------------------------------------------
+
+## 2026-11-13 21:41
+
+**Yoann:**
+
+> playground_copies.sh can maybe have a flag to not care about comment differences
+
+**Claude (summary):**
+
+Claude fixed comment inaccuracies across the graphics, software and lib_graphics groups.
+Claude reported that all seven review groups were done and the checks had run.
+Claude found 29 new lines over 80 columns and planned to look at those first.
+Claude noted that Playground.mli's parse tree differed only in its doc comment text.
+Claude then turned to the code bug an agent had reported in Time.ml.

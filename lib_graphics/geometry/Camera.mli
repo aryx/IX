@@ -30,13 +30,13 @@
  * projection, and homogeneous coordinates, for computer graphics). *)
 (* ix: the author's playground's libs/graphics/3d/geometry/
  * Camera.mli (docs/plans/plan_virtuaracing.md);
- * [basis]'s [up] not optional (mini-ml has no optional arguments) *)
+ * [basis]'s [up] is not optional (mini-ml has no optional arguments) *)
 
 type t = {
   eye : Vec3.t;
   target : Vec3.t;
-  (* claude: which way is up on the screen, a hint: (0, 1, 0), the
-   * world's up, for a camera that doesn't roll; tilted, the picture
+  (* which way is up on the screen, as a hint: (0, 1, 0), the world's
+   * up, for a camera that doesn't roll. When it is tilted, the picture
    * turns the other way (a plane banking, Descent's ship). Only its
    * part across [forward] counts (see [basis]). *)
   up : Vec3.t;
@@ -92,12 +92,13 @@ type t = {
  * roll *)
 val up_hint : Vec3.t
 
-(* The camera's (right, up, forward) unit vectors, "up" being as close
- * to [up] ([up_hint], the world's (0, 1, 0), for most cameras) as
- * possible (a camera looking along [up] has no right: out of scope) *)
+(* The camera's (right, up, forward) unit vectors, with "up" as close
+ * as possible to [up] ([up_hint], the world's (0, 1, 0), for most
+ * cameras). A camera looking along [up] has no right; that case is out
+ * of scope. *)
 val basis : up:Vec3.t -> eye:Vec3.t -> target:Vec3.t -> Vec3.t * Vec3.t * Vec3.t
 
-(* [view camera point]: [point] in view coordinates, (along right,
+(* [view camera point] is [point] in view coordinates (along right,
  * along up, along forward = depth) *)
 val view : t -> Vec3.t -> Vec3.t
 
@@ -105,11 +106,11 @@ val view : t -> Vec3.t -> Vec3.t
  * orthographic camera, which has none) *)
 val focal : t -> float
 
-(* [ndc camera ~aspect (x, y, z)]: a point already in view coordinates,
- * divided by its depth (or, for an orthographic camera, not divided at
- * all) to normalized device coordinates, x and y in
- * -1..1 for what's in view; [aspect] is the screen's width / height (x
- * is squeezed by it, so a square stays square). None when its depth z
- * is not between [near] (included: where Clip puts the points it
- * creates) and [far] (excluded). *)
+(* [ndc camera ~aspect (x, y, z)] takes a point already in view
+ * coordinates and divides it by its depth (for an orthographic camera,
+ * it does not divide at all), giving normalized device coordinates,
+ * with x and y in -1..1 for what's in view. [aspect] is the screen's
+ * width / height (x is squeezed by it, so a square stays square). It
+ * returns None when the depth z is not between [near] (included: this
+ * is where Clip puts the points it creates) and [far] (excluded). *)
 val ndc : t -> aspect:float -> Vec3.t -> (float * float) option

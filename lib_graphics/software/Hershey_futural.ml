@@ -1,6 +1,7 @@
-(* The Hershey font of Hershey.ml: the playground's libs/graphics/font/fonts/futural.jhf
- * as it is (its dune made this file of it there; here it is kept, so that
- * neither dune nor mini-mk has a rule for it). *)
+(* The Hershey font of Hershey.ml: the playground's
+ * libs/graphics/font/fonts/futural.jhf as it is. In the playground, its
+ * dune made this file from the .jhf; here the file is kept, so that
+ * neither dune nor mini-mk has a rule for it. *)
 let jhf = {|
 12345  1JZ
 12345  9MWRFRT RRYQZR[SZRY

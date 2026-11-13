@@ -1,7 +1,12 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/graphics/images/svg/Svg.ml; a path's tokens and its last control point are types, where they were polymorphic variants; render's colour is said, in render_in; the pixels are a Bytes (docs/plans/plan_browser.md) *)
+(* ix: copied from libs/graphics/images/svg/Svg.ml in the author's
+ * playground (docs/plans/plan_browser.md), with these changes:
+ * - a path's tokens and its last control point are types, where they
+ *   were polymorphic variants;
+ * - the colour of render must be given, in render_in;
+ * - the pixels are a Bytes. *)
 
 (* See Svg.mli *)
 

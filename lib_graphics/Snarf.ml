@@ -1,8 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Snarf.mli. The capability is the mouse's, as Cursor's: the file
- * is the window system's, beside /dev/mouse and /dev/cursor *)
+(* See Snarf.mli. The capability is the mouse's, as for Cursor, because
+ * the file is the window system's, beside /dev/mouse and /dev/cursor *)
 
 let read (_ : < Cap.mouse ; .. >) : string =
   try

@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Multiplayer.ml; its optional arguments are said, the network's capability one that forks too (Transport.mli), and netcode=server is not here (its Snapshot and Prediction, and the server's screen of net=simulate) *)
+(* ix: copied from playground/apis/Multiplayer.ml in the author's
+ * playground, with its optional arguments made required. The network
+ * capability is one that can fork too (Transport.mli), and
+ * netcode=server is not here (nor its Snapshot and Prediction, nor the
+ * server's screen of net=simulate). *)
 
 open Playground
 

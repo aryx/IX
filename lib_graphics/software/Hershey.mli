@@ -4,11 +4,11 @@
  * than drawing lines: Line for thin text, Stroke for thick text.
  *
  * Each glyph is stored as text, one line per glyph, in the "JHF"
- * format: every coordinate is one character, its distance from the
- * letter 'R' ("R" is 0, "S" is 1, "Q" is -1, ...), and " R" lifts the
- * pen. After an 8-character header (a number and the count of pairs),
- * the first pair is the glyph's left and right side, then come the
- * points. For "A":
+ * format. Every coordinate is one character, and its value is its
+ * distance from the letter 'R' ("R" is 0, "S" is 1, "Q" is -1, ...);
+ * " R" lifts the pen. After an 8-character header (a number and the
+ * count of pairs), the first pair is the glyph's left and right side,
+ * then come the points. For "A":
  *
  *   12345  9I[RFJ[ RRFZ[ RMTWT
  *           ^^ left = I = -9, right = [ = +9: 18 units wide
@@ -24,37 +24,40 @@
  *               /      \           see [units_per_em])
  *        (-8,9)          (8,9)
  *
- * The font data, fonts/futural.jhf, and its (free) use conditions:
- * see fonts/README.md.
+ * For the font data, fonts/futural.jhf, and its (free) use
+ * conditions, see fonts/README.md.
  *
  * Where it stands: in ix the font's file is a string in a module
- * (Hershey_futural), and this is the font of everything that draws
- * its own pixels: a game's words (lib_playground), the text of the
- * word processor and of the browser, bold by a thicker pen and
- * italic by a slant (their Stroke_text), and a PDF file's text when
- * the file names a font and does not carry it (Pdf_render's
- * Strokes). The same strokes go as paths into a PDF that is written
- * (Shape_render_pdf, by Pdf_write). Font.mli tells ix's two other
- * kinds of font.
+ * (Hershey_futural). This is the font of everything that draws its
+ * own pixels:
+ * - a game's words (lib_playground);
+ * - the text of the word processor and of the browser, where bold is
+ *   a thicker pen and italic is a slant (their Stroke_text);
+ * - a PDF file's text, when the file names a font and does not carry
+ *   it (Pdf_render's Strokes).
+ * The same strokes go as paths into a PDF file that ix writes
+ * (Shape_render_pdf, by Pdf_write). Font.mli tells about ix's two
+ * other kinds of font.
  *
  * cs-history:
  * Allen Hershey, a physicist at the Naval Weapons Laboratory, drew
- * some two thousand characters in the 1960s, Roman,
- * Greek, Cyrillic, Japanese, mathematics and maps' symbols, each as
- * the short straight moves of a plotter's pen or of the beam of a
- * cathode ray tube, and gave the coordinates away. They were for
- * twenty years the letters of plotted drawings and of the graphs in
- * scientific papers. The format read here, the coordinates as
- * letters around R, is the one they went round Usenet in in the
- * 1980s (James Hurt's).
+ * some two thousand characters in the 1960s: Roman, Greek, Cyrillic
+ * and Japanese letters, and symbols for mathematics and maps. He drew
+ * each one as the short straight moves of a plotter's pen or of the
+ * beam of a cathode ray tube, and gave the coordinates away. For
+ * twenty years they were the letters of plotted drawings and of the
+ * graphs in scientific papers. The format read here, which writes
+ * the coordinates as letters around R, is the one in which they went
+ * round Usenet in the 1980s (James Hurt's).
  *
  * why-study:
- * A font with nothing to it: no curve, no inside to fill, no hint,
- * no table to find a letter, 96 lines of text for ASCII. A letter is
- * scaled, turned and slanted by doing so to its points, and drawn
- * with whatever draws a line. Outline fonts (Outline.mli) are better
- * letters and need a file's parser, curves made lines and a filler
- * with a rule for holes before the first one shows.
+ * This is a font with nothing to it. It has no curve, no inside to
+ * fill, no hint and no table to find a letter, and it is 96 lines of
+ * text for ASCII. A letter is scaled, turned and slanted by doing so
+ * to its points, and it is drawn with whatever draws a line. Outline
+ * fonts (Outline.mli) are better letters, but before the first one
+ * shows they need a file's parser, curves made into lines, and a
+ * filler with a rule for holes.
  *
  * Reference: A. V. Hershey, "Calligraphy for Computers", NWL Report
  * No. 2101, U.S. Naval Weapons Laboratory, Dahlgren, Virginia, 1967. *)
@@ -72,15 +75,15 @@ type glyph = {
  * "I[RFJ[ RRFZ[ RMTWT" for "A" *)
 val decode_glyph : string -> glyph
 
-(* The glyph for a character of the font (ASCII 32 to 127); '?' for
- * the others *)
+(* The glyph for a character of the font (ASCII 32 to 127). The other
+ * characters get the glyph of '?'. *)
 val glyph : char -> glyph
 
 (* The size of the font's "em" square, in font units: text of font
  * size s is drawn scaled by s / units_per_em. *)
 val units_per_em : float
 
-(* [layout str]: the strokes of the whole string, in font units, glyph
- * after glyph starting at x = 0 (y as in the glyphs), and the total
- * width. *)
+(* [layout str] is the strokes of the whole string, in font units,
+ * placed glyph after glyph starting at x = 0 (y is as in the glyphs),
+ * and the total width. *)
 val layout : string -> (float * float) list list * float

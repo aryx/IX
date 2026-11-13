@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/ways/Bigbang.ml; big_bang's handlers and its tick_rate are a record (handlers: none, every frame), where they were optional arguments (docs/plans/plan_scheme.md) *)
+(* ix: copied from playground/ways/Bigbang.ml in the author's
+ * playground (docs/plans/plan_scheme.md). The handlers of big_bang and
+ * its tick_rate are a record, where they were optional arguments; the
+ * record [handlers] has no handler and ticks every frame. *)
 open Playground
 
 (* See Bigbang.mli *)

@@ -79,15 +79,15 @@
  * - Adobe Systems, "PostScript Language Reference Manual",
  *   Addison-Wesley, 1985 (curveto, and flattening with a tolerance).
  *
- * Users: gamekits/shmup/Path.ml (the curves shmup enemies fly along).
- * Depends on nothing, like its neighbors Vec2 and Affine.
+ * It is used by gamekits/shmup/Path.ml (the curves shmup enemies fly
+ * along). It depends on nothing, like its neighbors Vec2 and Affine.
  *
- * Where it stands in ix: [flatten] is the one door between curves
- * and pixels. A letter's outline (Outline.polygons: TrueType's
- * quadratics, raised to cubics, and PostScript's cubics), a path of
- * an SVG picture (Svg: its C, S, Q and T commands) and the c operator
- * of a PDF page (Pdf_render) all become points here, and the points
- * go to Fill (Fill.mli draws the whole way).
+ * Here is where it stands in ix: [flatten] is the one door between
+ * curves and pixels. A letter's outline (Outline.polygons: TrueType's
+ * quadratics, raised to cubics, and PostScript's cubics), a path of an
+ * SVG picture (Svg, with its C, S, Q and T commands) and the c operator
+ * of a PDF page (Pdf_render) all become points here, and the points go
+ * to Fill (Fill.mli draws the whole way).
  *
  * De Casteljau's cut, for t = 1/2, with nothing but midpoints:
  *
@@ -98,22 +98,22 @@
  *       p0                       p3     last one: mid, on the curve
  *
  * and the two halves are cubics again, p0 m01 . mid and mid . m23 p3
- * (the dots: the two middles of the second round), so the cut can be
- * done to each in turn.
+ * (the dots are the two middles of the second round), so the cut can
+ * be done to each in turn.
  *
  * cs-history:
- * Two French car makers, a few years apart and each in secret.
- * Paul de Casteljau, a mathematician at Citroen, had the curves and
- * the algorithm of midpoints in 1959, in internal reports that the
- * firm did not let out. Pierre Bezier, an engineer at Renault, came
- * to the same curves for the same purpose, a car body's surface
- * said by a few points a draughtsman could move instead of a clay
- * model measured by hand, and published in the 1960s: so the curves
- * have his name and the algorithm the other's. They went from there
- * to PostScript (1984), whose curveto is a cubic one, and from
- * PostScript to every font and drawing format since.
+ * The curves came from two French car makers, a few years apart and
+ * each in secret. Paul de Casteljau, a mathematician at Citroen, had
+ * the curves and the algorithm of midpoints in 1959, in internal
+ * reports that the firm did not let out. Pierre Bezier, an engineer at
+ * Renault, came to the same curves for the same purpose: to describe a
+ * car body's surface by a few points that a draughtsman could move,
+ * instead of a clay model measured by hand. He published in the 1960s,
+ * so the curves have his name and the algorithm has the other's. They
+ * went from there to PostScript (1984), whose curveto draws a cubic,
+ * and from PostScript to every font and drawing format since.
  *)
-(* ix: the author's playground's libs/graphics/2d/geometry/Curve.mli; flatten's tolerance and through's steps are said, where they were optional (0.1 and 16) (docs/plans/done/plan_pdf.md) *)
+(* ix: the author's playground's libs/graphics/2d/geometry/Curve.mli; flatten's tolerance and through's steps must be given, where they were optional (0.1 and 16) (docs/plans/done/plan_pdf.md) *)
 
 type point = float * float
 
@@ -121,7 +121,7 @@ type point = float * float
 (* {1 Evaluating} *)
 (*****************************************************************************)
 
-(* [cubic p0 p1 p2 p3 t]: the point at [t] (0 to 1) on the Bézier curve
+(* [cubic p0 p1 p2 p3 t] is the point at [t] (0 to 1) on the Bézier curve
  * from p0 to p3 pulled by p1 and p2:
  *   (1-t)^3 p0 + 3(1-t)^2 t p1 + 3(1-t) t^2 p2 + t^3 p3
  * At t = 0, p0; at t = 1, p3. E.g. with the two control points at the
@@ -130,15 +130,15 @@ type point = float * float
  * the curve is pulled, it doesn't reach. *)
 val cubic : point -> point -> point -> point -> float -> point
 
-(* [quadratic p0 p1 p2 t]: the same with one control point,
+(* [quadratic p0 p1 p2 t] is the same with one control point,
  *   (1-t)^2 p0 + 2(1-t) t p1 + t^2 p2
  * TrueType's curves (and so most of the text on a screen) are these.
  * E.g. (0, 0) (50, 100) (100, 0) is at (50, 50) in its middle: half
  * way up to its control point. *)
 val quadratic : point -> point -> point -> float -> point
 
-(* [catmull_rom p0 p1 p2 p3 t]: the point at [t] (0 to 1) on the curve
- * from p1 to p2, p0 and p3 their neighbors:
+(* [catmull_rom p0 p1 p2 p3 t] is the point at [t] (0 to 1) on the
+ * curve from p1 to p2, with p0 and p3 as their neighbors:
  *   0.5 (2 p1 + (p2 - p0) t + (2 p0 - 5 p1 + 4 p2 - p3) t^2
  *        + (3 p1 - p0 - 3 p2 + p3) t^3)
  * At t = 0, p1; at t = 1, p2. E.g. with points in a line, (0, 0) (100,
@@ -159,20 +159,21 @@ val cubic_of_catmull_rom : point -> point -> point -> point -> point * point * p
 (* {1 Flattening} *)
 (*****************************************************************************)
 
-(* [flatten p0 p1 p2 p3]: the polyline of the Bézier curve, from p0 to
- * p3 included, by de Casteljau subdivision: split until each piece is
- * within [tolerance] (default 0.1, a tenth of a pixel) of its chord.
- * A curve whose control points sit on its chord is already straight,
- * and comes back as its two ends. *)
+(* [flatten p0 p1 p2 p3] is the polyline of the Bézier curve, from p0
+ * to p3 included, by de Casteljau subdivision: the curve is split until
+ * each piece is within [tolerance] of its chord (in pixels; there is no
+ * default). A curve whose control points sit on its chord is already
+ * straight, and comes back as its two ends. *)
 val flatten : tolerance:float -> point -> point -> point -> point -> point list
 
-(* [through points]: the polyline of the smooth curve through
+(* [through points] is the polyline of the smooth curve through
  * [points] (at least 2; the first and the last are their own
  * neighbors), Catmull-Rom sampled at [steps] points per segment
- * (default 16). Fixed steps rather than [flatten]'s measured ones:
- * cheap, and enough when the points are a screen apart. E.g. through
- * (0, 0) (100, 0) (200, 0), the 33 points of the straight line
- * between the ends. *)
+ * (there is no default). It uses fixed steps rather than [flatten]'s
+ * measured ones: they are cheap, and enough when the points are a
+ * screen apart.
+ * E.g. through (0, 0) (100, 0) (200, 0) with 16 steps, it gives the 33
+ * points of the straight line between the ends. *)
 val through : steps:int -> point list -> point list
 
 (*****************************************************************************)
@@ -183,17 +184,17 @@ val through : steps:int -> point list -> point list
  * start: the table a walk reads *)
 type t = { pts : point array; lengths : float array }
 
-(* [measure polyline]: its points and the lengths along it (0 at the
- * first point) *)
+(* [measure polyline] gives its points and the lengths along it (0 at
+ * the first point) *)
 val measure : point list -> t
 
-(* its length: the last of [lengths], e.g. 300 for the polyline of
+(* the curve's length, the last of [lengths], e.g. 300 for the polyline of
  * (0, 0) (100, 0) (200, 0) (300, 0) *)
 val length : t -> float
 
-(* [at c s]: where the curve is [s] pixels from its start, and the
- * direction it heads in there (radians, as Float.atan2 gives them):
- * between the two points around [s], in proportion. E.g. the 300-long
- * line above: (150, 0) at 150, heading 0. Before the start, or past
- * the end, the first or last point. *)
+(* [at c s] is where the curve is [s] pixels from its start, and the
+ * direction it heads in there (radians, as Float.atan2 gives them),
+ * found between the two points around [s], in proportion. E.g. on the
+ * 300-long line above, it is (150, 0) at 150, heading 0. Before the
+ * start, or past the end, it is the first or last point. *)
 val at : t -> float -> point * float

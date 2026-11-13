@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/netcode/Rollback.ml; its optional arguments are said *)
+(* ix: copied from libs/networking/netcode/Rollback.ml in the author's
+ * playground. Its optional arguments are required here. *)
 
 (* See Rollback.mli *)
 

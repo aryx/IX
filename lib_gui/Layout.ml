@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/gui/Layout.ml; row's and column's gap is said, where it was optional (0.) (docs/plans/plan_gui.md) *)
+(* ix: copied from libs/gui/Layout.ml in the author's playground
+ * (docs/plans/plan_gui.md). The gap of row and column must be given
+ * here; there it was optional (0.). *)
 
 (* See Layout.mli *)
 

@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/protocols/Transport.ml, and its libs/networking/unix/Udp.ml's host and join over ix's Udp; no relay, no TLS; connect is called, not installed by a platform *)
+(* ix: copied from libs/networking/protocols/Transport.ml in the author's
+ * playground, with the host and join of its libs/networking/unix/Udp.ml
+ * written over ix's Udp. There is no relay and no TLS. A program calls
+ * connect; no platform installs it. *)
 
 (* See Transport.mli *)
 

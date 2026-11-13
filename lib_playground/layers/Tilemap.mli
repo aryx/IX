@@ -1,8 +1,8 @@
 (* Tile maps: worlds as grids of tiles, written as strings.
 
-   Most 2D games' worlds are grids: a level is rows of cells, each cell
-   one tile from a small set (a wall, a floor, a brick, a coin), and the
-   level's author types it like text:
+   The worlds of most 2D games are grids: a level is rows of cells, each
+   cell holding one tile from a small set (a wall, a floor, a brick, a
+   coin), and the author of the level types it like text:
 
      let level = Tilemap.of_strings 50. [
        "#                  #";
@@ -13,17 +13,17 @@
    A tile map gives a game three things for the price of a few strings:
      - the world's picture: [view] draws each character with a shape;
      - the world's data: which tile is at a point ([tile_at]), where the
-       player starts ([find] '@'), a coin taken ([set] ' ');
+       player starts ([find] '@'), and taking a coin ([set] ' ');
      - collisions, cheaply: a box can only hit the few tiles under it
-       ([hits]), found by a division, where a world of polygons would
-       have to test them all (what the physics plan calls the broad
-       phase, here for free).
+       ([hits]), which are found by a division, where a world of
+       polygons would have to test them all (what the physics plan calls
+       the broad phase, here for free).
 
    Coordinates: the map is centered on (0, 0), like the playground's
    screen, so a map that fits on the screen needs no camera. Cells are
-   numbered by (col, row), from the top-left, the order they are typed
-   in, rows going down while the world's y goes up; e.g. the 6x3 map
-   below, with tiles of size 10, is 60 wide, 30 high:
+   numbered by (col, row), from the top-left, in the order they are
+   typed in, with rows going down while the world's y goes up. E.g. the
+   6x3 map below, with tiles of size 10, is 60 wide and 30 high:
 
         x = -30   -20   -10    0     10    20    30
      y = 15 +-----+-----+-----+-----+-----+-----+
@@ -51,31 +51,33 @@
    pac-dot is a tile; the NES's "name tables" are 32x30 tiles, which the
    scroll registers (see Camera2d) slide across. Super Mario Bros.
    (1985) builds its levels from 16x16 blocks of tiles (a brick, a '?'
-   block, a pipe), The Legend of Zelda (1986) its overworld from screens
-   of 16x11 of them.
+   block, a pipe), and The Legend of Zelda (1986) builds its overworld
+   from screens of 16x11 of them.
 
    cs-history:
    Levels as text are as old: Rogue (1980) *is* its map of characters
-   ('#' a corridor, '@' the player), and Sokoban (Thinking Rabbit, 1982)
-   levels are still exchanged in its text format, the one of our
-   example: '#' a wall, '@' the player, '$' a box, '.' a goal.
+   ('#' is a corridor, '@' the player), and Sokoban (Thinking Rabbit,
+   1982) levels are still exchanged in its text format, the one of our
+   example: '#' is a wall, '@' the player, '$' a box, '.' a goal.
 
-   Alternatives: a grid of numbers (the hardware's way, and Tiled's:
-   more than 256 kinds of tiles, several layers, but unreadable in
-   source code); a list of objects with positions (what a level editor
-   outputs for non-grid worlds: any shape anywhere, but collisions must
-   test them all, see the physics plan's broad phase); a picture whose
-   colors are the tiles (a level drawn in a paint program, one pixel
-   per tile, a common trick of game jams). Strings are the readable
-   ones, for small levels typed by hand.
+   Alternatives:
+     - a grid of numbers (the hardware's way, and Tiled's), which allows
+       more than 256 kinds of tiles and several layers, but is
+       unreadable in source code;
+     - a list of objects with positions (what a level editor outputs for
+       non-grid worlds), which allows any shape anywhere, but collisions
+       must test them all (see the physics plan's broad phase);
+     - a picture whose colors are the tiles (a level drawn in a paint
+       program, one pixel per tile, a common trick of game jams).
+   Strings are the readable ones, for small levels typed by hand.
 
    Where it stands: TinyWolfenstein's maze is a Tilemap looked at
-   from inside (a ray walks its cells, a cell a step), and
-   TinyCameltry's is strings of the same kind made bodies for the
-   physics. And a tile map is the oldest screen there is: a text
-   terminal is a grid of cells, each a character's number, drawn
-   from a font's few patterns -- the hardware trick below before
-   games had it (Vt keeps such a grid).
+   from inside (a ray walks its cells, one cell a step), and
+   TinyCameltry's maze is strings of the same kind, made into bodies
+   for the physics. And a tile map is the oldest screen there is: a
+   text terminal is a grid of cells, each holding a character's number,
+   drawn from a font's few patterns. It is the hardware trick above,
+   before games had it (Vt keeps such a grid).
 
    others:
    Related work:
@@ -85,36 +87,38 @@
        and a camera following a sprite (scene.cameraFollowSprite);
      - Thomas Ball, Shannon Kao, et al., "TileCode: Creation of Video
        Games on Gaming Handhelds" (Microsoft Research, 2020): a game is
-       a tile map plus rules, each rule a 3x3 pattern around a sprite
-       ("when") and what the sprite then does ("do"), inspired by board
-       games like checkers; 10-15 rules suffice for a variety of games.
-       Close to PuzzleScript (Stephen Lavelle, 2013), whose games are
-       text levels plus rewrite rules;
+       a tile map plus rules, where each rule is a 3x3 pattern around a
+       sprite ("when") and what the sprite then does ("do"), inspired by
+       board games like checkers; 10-15 rules suffice for a variety of
+       games. It is close to PuzzleScript (Stephen Lavelle, 2013), whose
+       games are text levels plus rewrite rules;
      - PICO-8's map, mget(x, y), mset(x, y, tile) (our [view], [get],
        [set]), and its sprite flags to tell which tiles are solid (our
        [hits]' predicate);
-     - Tiled (Thorbjørn Lindeijer, 2008), the map editor most engines
-       read the maps of, and its TMX format: layers of tile numbers;
+     - Tiled (Thorbjørn Lindeijer, 2008), the map editor whose maps most
+       engines read, and its TMX format, which is layers of tile numbers;
      - Rodrigo Monteiro, "The guide to implementing 2D platformers"
        (2012): tile-based collisions, from the simplest to Mario's;
      - Maddy Thorson, "Celeste and TowerFall Physics": moving one
        pixel at a time against a grid (see TinyMario.ml).
 *)
-(* ix: the author's playground's playground/layers/Tilemap.mli (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/layers/Tilemap.mli in the author's
+ * playground (docs/plans/done/plan_playground.md) *)
 
 open Playground
 
 type t
 
-(* [of_strings size rows]: a map with square tiles of [size], one row per
- * string, from the top; short rows are completed with ' ' *)
+(* [of_strings size rows] is a map with square tiles of [size], one row
+ * per string, from the top; short rows are completed with ' ' *)
 val of_strings : number -> string list -> t
 
-(* [of_xpm size text]: the map in an XPM file (Sprite.of_xpm, and
- * graphics/images/xpm/Xpm.mli), one character per cell as one character
- * per pixel: a level drawn in a map editor (TinyAseprite's sibling,
- * apps/gamedev/TinyTiled), or in GIMP, and embedded in the game at
- * build time (games/README-tools.md). The file's palette, which says
+(* [of_xpm size text] is the map in an XPM file (Sprite.of_xpm, and
+ * graphics/images/xpm/Xpm.mli), with one character per cell where the
+ * file has one character per pixel. It is a level drawn in a map editor
+ * (TinyAseprite's sibling, apps/gamedev/TinyTiled), or in GIMP, and
+ * embedded in the game at build time (games/README-tools.md). The
+ * file's palette, which says
  * what color each character is drawn in while it is edited, is not
  * this module's business: the game draws its own tiles ([view]). *)
 val of_xpm : number -> string -> t
@@ -131,26 +135,29 @@ val bounds : t -> Camera2d.rect
 (* {1 Cells} *)
 (*****************************************************************************)
 
-(* [get map col row]: the tile in cell (col, row), [None] outside the map;
- * [set map col row c]: a new map, with [c] in that cell (the map is a
- * value, like the rest of a model); outside the map, the same map *)
+(* [get map col row] is the tile in cell (col, row), or [None] outside
+ * the map. [set map col row c] is a new map, with [c] in that cell (the
+ * map is a value, like the rest of a model); outside the map, it is the
+ * same map. *)
 val get : t -> int -> int -> char option
 val set : t -> int -> int -> char -> t
 
-(* [to_strings map]: the map's rows, as given to [of_strings] (short rows
- * completed with ' '): to save a level, print it, or draw it another
- * way, e.g. with Sprite.pixels (a tile per pixel, merged in runs) *)
+(* [to_strings map] returns the rows of the map, as given to
+ * [of_strings] (with short rows completed with ' '). It is for saving a
+ * level, printing it, or drawing it another way, e.g. with
+ * Sprite.pixels (a tile per pixel, merged in runs). *)
 val to_strings : t -> string list
 
-(* [find map c]: the cells holding [c], row after row, e.g. the player's
- * start ('@'), the enemies, the coins to count *)
+(* [find map c] returns the cells holding [c], row after row, e.g. the
+ * player's start ('@'), the enemies, the coins to count *)
 val find : t -> char -> (int * int) list
 
-(* [center map col row]: the world coordinates of the cell's center; the
- * other way round, [cell map x y] is the cell a world point is in (maybe
- * outside the map, e.g. (-1, 0) left of it); [tile_at map x y] its tile.
- * With the example map above: center (2, 1) = (-5, 0), cell (-9, 4) =
- * (2, 1), tile_at (-9, 4) = Some '@', tile_at (100, 0) = None.
+(* [center map col row] is the world coordinates of the cell's center.
+ * The other way round, [cell map x y] is the cell a world point is in
+ * (maybe outside the map, e.g. (-1, 0) left of it), and
+ * [tile_at map x y] is its tile. With the example map above,
+ * center (2, 1) = (-5, 0), cell (-9, 4) = (2, 1),
+ * tile_at (-9, 4) = Some '@', and tile_at (100, 0) = None.
  * A point on the border between two cells is in the right one, or the
  * lower one. *)
 val center : t -> int -> int -> number * number
@@ -161,21 +168,21 @@ val tile_at : t -> number -> number -> char option
 (* {1 Drawing} *)
 (*****************************************************************************)
 
-(* [view tile map]: the map's picture, [tile c] drawn centered on each
- * cell holding [c], e.g.
+(* [view tile map] is the map's picture, with [tile c] drawn centered on
+ * each cell holding [c], e.g.
  *
  *   Tilemap.view (function
  *     | '#' -> square brown 50.
  *     | '$' -> circle yellow 15.
  *     | _ -> group []) level
  *
- * ' ' is the empty tile: never drawn. *)
+ * ' ' is the empty tile, which is never drawn. *)
 val view : (char -> shape) -> t -> shape
 
-(* [view_visible rect tile map]: the same, but only the cells touching
- * [rect], e.g. [Camera2d.visible screen cam]: what's off-screen isn't
- * drawn at all ("culling"). A 200x20 level has 4000 cells, but a
- * 1000x1000 screen shows only 21x20 tiles of 50 (the partial ones
+(* [view_visible rect tile map] is the same, but draws only the cells
+ * touching [rect], e.g. [Camera2d.visible screen cam], so what's
+ * off-screen isn't drawn at all ("culling"). A 200x20 level has 4000
+ * cells, but a 1000x1000 screen shows only 21x20 tiles of 50 (the partial ones
  * included); drawing them all every frame is what makes a big level
  * slow, especially on the software rasterizer. *)
 val view_visible : Camera2d.rect -> (char -> shape) -> t -> shape
@@ -184,19 +191,19 @@ val view_visible : Camera2d.rect -> (char -> shape) -> t -> shape
 (* {1 Collisions} *)
 (*****************************************************************************)
 
-(* [hits solid map x y w h]: whether the w x h box centered on (x, y)
- * overlaps a cell whose tile is [solid]. Only the cells under the box
- * are looked at: a handful for a box the size of a tile, whatever the
- * map's size. A box touching a tile, but not entering it, doesn't hit
- * it: a player standing on the ground (their bottom = the ground's top)
- * isn't stuck in it. Outside the map, nothing is solid (a game falls off
- * a level, or walls it).
+(* [hits solid map x y w h] tells whether the w x h box centered on
+ * (x, y) overlaps a cell whose tile is [solid]. Only the cells under
+ * the box are looked at: a handful for a box the size of a tile,
+ * whatever the map's size. A box touching a tile, but not entering it,
+ * doesn't hit it, so a player standing on the ground (their bottom =
+ * the ground's top) isn't stuck in it. Outside the map, nothing is
+ * solid (a game falls off a level, or walls it).
  *
- * With the example map above and ((=) '#') as [solid], a 10x10 box: at
+ * Take the example map above, ((=) '#') as [solid], and a 10x10 box. At
  * (-5, 0), exactly on the '@' cell, it hits nothing (it touches the
- * floor below, and the walls are not next to it); at (-5, -1) it enters
- * the floor's row: it hits; at (-16, 0) it enters the left wall's
- * column: it hits.
+ * floor below, and the walls are not next to it). At (-5, -1) it enters
+ * the floor's row, so it hits; at (-16, 0) it enters the left wall's
+ * column, so it hits.
  *
  * What to do when a move hits is the game's business: a common answer,
  * e.g. Celeste's, is to move one pixel at a time, stopping before the

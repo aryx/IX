@@ -9,14 +9,14 @@
      (* your own: a laser, falling from high to low, dying away *)
      let zap = sawtooth 1200 |> sliding 200 |> lasting 0.2 |> fading
 
-   Three things to know:
+   There are three things to know:
 
    - [play] is called in [update], at the moment something happens (a
      bounce, a jump, a coin): fire and forget, the sound plays by itself
      until its end. It's the one impure thing in the playground:
      elsewhere [update] only computes the new model. (If [update] ran
      twice for the same frame -- a time-travel debugger replaying it --
-     the sound would play twice: the price of the simplicity. Elm's
+     the sound would play twice: that is the price of the simplicity. Elm's
      elm-audio avoids it by describing what's playing from the model,
      like [view] does for pictures.)
    - A sound that lasts as long as something goes on -- a ship's thrust,
@@ -26,7 +26,7 @@
      frame changes it smoothly.
    - Sounds combine like Paul Hudak's music values in Euterpea (The
      Haskell School of Music): [after] plays sounds one after the other,
-     [together] at the same time (his (:+:) and (:=:)):
+     and [together] plays them at the same time (his (:+:) and (:=:)):
        let coin = after [ square 1047 |> lasting 0.07; square 1568 |> fading ]
 
    Underneath is a small synthesizer written to be read, audio/ (see
@@ -36,7 +36,10 @@
    adding it all up (Mixer.mli).
 *)
 
-(* ix: the author's playground's playground/apis/Audio.mli; less the live effects not copied (chorus, flanger, phaser, rotary); a loop is rendered as it is played; play_ogg, an .ogg decoded as it plays (docs/plans/plan_audio.md) *)
+(* ix: copied from playground/apis/Audio.mli in the author's playground,
+   less the live effects that were not copied (chorus, flanger, phaser,
+   rotary). Here a loop is rendered as it is played, and play_ogg, which
+   decodes an .ogg as it plays, is added (docs/plans/plan_audio.md). *)
 
 open Playground
 
@@ -47,9 +50,9 @@ type sound
 (* {1 Making sounds} *)
 (*****************************************************************************)
 
-(* [tone frequency]: a pure tone, a sine wave, in hertz (440 is the A
-   orchestras tune to); like every sound here, 0.3 s long at half volume
-   until changed by the verbs below *)
+(* [tone frequency] is a pure tone, a sine wave, in hertz (440 is the A
+   orchestras tune to). Like every sound here, it is 0.3 s long at half
+   volume until changed by the verbs below. *)
 val tone : number -> sound
 
 (* the retro ones, the waveforms of the NES and the arcades: a square
@@ -59,28 +62,28 @@ val square : number -> sound
 val triangle : number -> sound
 val sawtooth : number -> sound
 
-(* [pluck frequency]: a plucked string, a guitar's or a harp's, bright
-   then mellow as it rings (Pluck.mli: noise in a delay line,
-   averaged as it goes round, Karplus and Strong's discovery):
+(* [pluck frequency] is a plucked string, a guitar's or a harp's, bright
+   then mellow as it rings (Pluck.mli: noise in a delay line, averaged
+   as it goes round, which is Karplus and Strong's discovery):
      let strum = together [ pluck 196; pluck 247; pluck 294 ] |> lasting 2 *)
 val pluck : number -> sound
 
-(* [noise roughness]: random, for explosions, hits, wind, drums;
-   [roughness] from 500 (a rumble) to 10,000 (a hiss) *)
+(* [noise roughness] is random, for explosions, hits, wind, drums;
+   [roughness] goes from 500 (a rumble) to 10,000 (a hiss) *)
 val noise : number -> sound
 
-(* [fm frequency ratio depth]: two sines, one wobbling the other (John
-   Chowning's FM, the Yamaha DX7's and the Sega Genesis's sound:
-   Fm.mli): [ratio] a whole number for an instrument (1 brass, 2
-   a clarinet), in between for a bell or a gong (1.4); [depth] from 0 (a
-   plain tone) to 10 (very bright). Fading, it gets darker as it dies
-   away, like a struck bell:
+(* [fm frequency ratio depth] is two sines, one wobbling the other (John
+   Chowning's FM, the sound of the Yamaha DX7 and of the Sega Genesis:
+   Fm.mli). [ratio] is a whole number for an instrument (1 for brass, 2
+   for a clarinet), and in between for a bell or a gong (1.4); [depth]
+   goes from 0 (a plain tone) to 10 (very bright). When it fades, it
+   gets darker as it dies away, like a struck bell:
      let bell = fm 440 1.4 5 |> lasting 2 |> fading *)
 val fm : number -> number -> number -> sound
 
-(* [note name]: the tone of a note, "A4" (440 Hz), "C4" (middle C),
-   "F#5", "Bb3" (audio/Music.mli: equal temperament); silent if it isn't
-   a note *)
+(* [note name] is the tone of a note, "A4" (440 Hz), "C4" (middle C),
+   "F#5", "Bb3" (audio/Music.mli: equal temperament); it is silent if
+   [name] isn't a note *)
 val note : string -> sound
 
 (*****************************************************************************)
@@ -90,52 +93,52 @@ val note : string -> sound
 (* [lasting seconds s] *)
 val lasting : number -> sound -> sound
 
-(* [fading s]: dies away over its length, like a plucked string or a
+(* [fading s] dies away over its length, like a plucked string or a
    drum, instead of stopping at once *)
 val fading : sound -> sound
 
-(* [louder k s]: [k] times as loud (0.5: half, 2: twice) *)
+(* [louder k s] is [k] times as loud (0.5 is half, 2 twice) *)
 val louder : number -> sound -> sound
 
-(* [sliding frequency s]: its pitch moving to [frequency] over its
-   length: up for a jump, down for a laser or a falling bomb *)
+(* [sliding frequency s] moves its pitch to [frequency] over its length:
+   up for a jump, down for a laser or a falling bomb *)
 val sliding : number -> sound -> sound
 
-(* [low_pass cutoff s], [high_pass cutoff s]: [s] with its frequencies
-   above [cutoff] (in hertz) taken away, or those below: muffled, or
-   thin. Noise low-passed is a rumble, an engine, an explosion; high-
-   passed, a hiss, a cymbal (Filter.mli):
+(* [low_pass cutoff s] and [high_pass cutoff s] are [s] with its
+   frequencies above [cutoff] (in hertz) taken away, or those below, so
+   it sounds muffled, or thin. Noise low-passed is a rumble, an engine,
+   an explosion; high-passed, it is a hiss, a cymbal (Filter.mli):
      let engine = noise 3000 |> low_pass 300 *)
 val low_pass : number -> sound -> sound
 val high_pass : number -> sound -> sound
 
-(* [wah from to_ s]: [s] through a low-pass that rings at its cutoff,
-   the cutoff moving from [from] to [to_] over the sound: the "wah" of
-   the analog synthesizers, sweeping through the harmonics of a rich
-   sound (a sawtooth, a square):
+(* [wah from to_ s] is [s] through a low-pass that rings at its cutoff,
+   with the cutoff moving from [from] to [to_] over the sound. It is the
+   "wah" of the analog synthesizers, sweeping through the harmonics of a
+   rich sound (a sawtooth, a square):
      let wow = sawtooth 110 |> lasting 1 |> wah 200 4000 *)
 val wah : number -> number -> sound -> sound
 
-(* [vibrato rate depth s]: the pitch wobbling [depth] semitones up and
-   down, [rate] times a second: 6 and 0.3 a singer, 8 and 2 a siren
-   (audio/Pitch_effect.mli) *)
+(* [vibrato rate depth s] makes the pitch wobble [depth] semitones up
+   and down, [rate] times a second: 6 and 0.3 make a singer, 8 and 2 a
+   siren (audio/Pitch_effect.mli) *)
 val vibrato : number -> number -> sound -> sound
 
-(* [arpeggio semitones step s]: the pitch stepping through [semitones]
+(* [arpeggio semitones step s] makes the pitch step through [semitones]
    above the note, [step] seconds each, around and around: [0; 4; 7] is
    a major chord played by a single voice, the chiptune trick of the
    NES and the C64, which had too few voices for real chords:
      let chord = square 262 |> arpeggio [ 0; 4; 7 ] 0.03 |> lasting 1 *)
 val arpeggio : number list -> number -> sound -> sound
 
-(* [echo delay feedback s]: [s] again [delay] seconds later, [feedback]
-   as loud (0 to 0.95), and again, and again, dying away: a cave, a
-   canyon (the sound lasts longer: until the echoes are silent) *)
+(* [echo delay feedback s] is [s] again [delay] seconds later, [feedback]
+   times as loud (0 to 0.95), and again, and again, dying away: a cave,
+   a canyon (the sound lasts longer, until the echoes are silent) *)
 val echo : number -> number -> sound -> sound
 
-(* [reverb seconds s]: [s] in a room whose echoes die away in [seconds]
-   (0.5 a bathroom, 2 a hall, 5 a cathedral): Schroeder's reverb,
-   Synth.mli; the sound that much longer *)
+(* [reverb seconds s] is [s] in a room whose echoes die away in
+   [seconds] (0.5 a bathroom, 2 a hall, 5 a cathedral): Schroeder's
+   reverb (Synth.mli). The sound is that much longer. *)
 val reverb : number -> sound -> sound
 
 (* The live effects of a synthesizer's rack (notes_synth.md section 8),
@@ -143,21 +146,21 @@ val reverb : number -> sound -> sound
 
      let guitar = pluck 110 |> lasting 1 |> drive 18
 
-   [drive gain s]: [s] pushed [gain] dB into a tanh, oversampled x2
-   (Drive.mli), and brought [gain] dB back down: an overdriven
-   amplifier at the sound's own level, a quiet sound passing as it was,
-   a loud one flattened (its peaks at most 1 / 10^(gain / 20): 0.25 for
-   12 dB), what's left the distortion *)
+   [drive gain s] is [s] pushed [gain] dB into a tanh, oversampled x2
+   (Drive.mli), and brought [gain] dB back down. It is an overdriven
+   amplifier at the sound's own level: a quiet sound passes as it was,
+   and a loud one is flattened (its peaks are at most 1 / 10^(gain / 20):
+   0.25 for 12 dB); what's left is the distortion. *)
 val drive : number -> sound -> sound
 
-(* [compressed threshold ratio s]: [s]'s loud parts turned down, above
-   [threshold] dB, [ratio] dB in for 1 out (4: a gentle compressor, 20:
-   nearly a limiter) (Dynamics.mli) *)
+(* [compressed threshold ratio s] turns down the loud parts of [s],
+   above [threshold] dB, by [ratio] dB in for 1 out (4 is a gentle
+   compressor, 20 nearly a limiter) (Dynamics.mli) *)
 val compressed : number -> number -> sound -> sound
 
-(* [naive s]: the square, triangle and sawtooth waves of [s] computed
-   the simple way, a formula, with their aliases: high notes whistle
-   out of tune (the default removes most of them: Oscillator.mli;
+(* [naive s] computes the square, triangle and sawtooth waves of [s] the
+   simple way, with a formula, aliases included: high notes whistle out
+   of tune (the default removes most of them: Oscillator.mli;
    examples/AudioAliasing.ml lets you hear both) *)
 val naive : sound -> sound
 
@@ -165,65 +168,66 @@ val naive : sound -> sound
 (* {1 Where it comes from} *)
 (*****************************************************************************)
 
-(* [pan p s]: [s] from the left (-1), the middle (0), the right (1), or
-   in between; its loudness the same wherever it is (audio/Space.mli:
+(* [pan p s] is [s] from the left (-1), the middle (0), the right (1), or
+   in between; its loudness is the same wherever it is (audio/Space.mli:
    the constant power law) *)
 val pan : number -> sound -> sound
 
-(* [from x y s]: [s] from that point of the screen, heard from its
-   centre: panned by x (the screen's edges, x = -500 and 500, the
-   speakers), and quieter off the screen, further than 700 (half as loud
-   at 1400: the inverse distance law):
+(* [from x y s] is [s] from that point of the screen, heard from its
+   centre. It is panned by x (the screen's edges, x = -500 and 500, are
+   the speakers), and quieter off the screen, further than 700 (half as
+   loud at 1400: the inverse distance law):
      Audio.play (explosion |> Audio.from asteroid.x asteroid.y) *)
 val from : number -> number -> sound -> sound
 
-(* [pitched k s]: every pitch of [s] times [k] (2: an octave up), its
-   length kept; with [faster k], a Doppler shift: [k] from
-   audio/Space.mli's [doppler], the pitch of a car rising as it comes
-   and falling as it goes *)
+(* [pitched k s] multiplies every pitch of [s] by [k] (2 is an octave
+   up), and keeps its length. With [faster k], it makes a Doppler shift:
+   [k] comes from audio/Space.mli's [doppler], and the pitch of a car
+   rises as it comes and falls as it goes. *)
 val pitched : number -> sound -> sound
 
-(* [together sounds]: at the same time, a chord; lasting as long as the
-   longest *)
+(* [together sounds] plays them at the same time, a chord, lasting as
+   long as the longest *)
 val together : sound list -> sound
 
-(* [after sounds]: one after the other, a tune *)
+(* [after sounds] plays them one after the other, a tune *)
 val after : sound list -> sound
 
-(* [abc text]: a tune written in ABC notation (audio/Abc.mli: letters
+(* [abc text] is a tune written in ABC notation (audio/Abc.mli: letters
    for notes, numbers for lengths, a key, voices), played by an 8-bit
    band (the melody on a square wave, the bass on a triangle, like the
    NES):
      let tune = abc "X:1\nL:1/8\nQ:1/4=120\nK:C\nC2 E2 G2 c2 | G8 |"
-   silent if the text isn't a tune (the reason printed on the error
-   output) *)
+   It is silent if the text isn't a tune (the reason is printed on the
+   error output). *)
 val abc : string -> sound
 
-(* [doremi text]: the same in solfège (audio/Doremi.mli): do ré mi fa
-   sol la si, a length in beats after a colon, a rest -:
+(* [doremi text] is the same in solfège (audio/Doremi.mli): do ré mi fa
+   sol la si, with a length in beats after a colon, and - for a rest:
      let lune = doremi "do do do re mi:2 re:2 | do mi re re do:4"
    (Au clair de la lune) *)
 val doremi : string -> sound
 
-(* [of_tune tune]: a tune already parsed (Abc.parse), or changed after
-   parsing -- a voice muted, a single note kept -- played the same way *)
+(* [of_tune tune] plays a tune already parsed (Abc.parse), or changed
+   after parsing -- a voice muted, a single note kept -- the same way *)
 val of_tune : Abc.tune -> sound
 
-(* [wav bytes]: a recording, a WAV file's sound (its bytes, as read from
-   a .wav file: 16-bit or 8-bit, mono or stereo, any sample rate;
-   audio/Wav.mli);
+(* [wav bytes] is a recording, a WAV file's sound (its bytes, as read
+   from a .wav file: 16-bit or 8-bit, mono or stereo, any sample rate;
+   audio/Wav.mli).
    [pitched] then plays it higher or lower, and shorter or longer with
-   it, as a tape would (Resample.mli) *)
+   it, as a tape would (Resample.mli). *)
 val wav : string -> sound
 
-(* [recorded s]: [s] frozen into a recording, its samples computed once:
-   from then on, like a WAV file's (pitched: faster and higher, as a
-   sampler plays one recording at every key; examples/AudioSampler.ml) *)
+(* [recorded s] is [s] frozen into a recording, its samples computed
+   once. From then on it is like a WAV file's sound ([pitched] makes it
+   faster and higher, as a sampler plays one recording at every key;
+   examples/AudioSampler.ml). *)
 val recorded : sound -> sound
 
-(* [midi bytes]: a Standard MIDI File's music (its bytes, as read from
-   a .mid file: audio/Midi.mli), General MIDI's instruments played by
-   our 8-bit ones, drums on noise (audio/Music.mli) *)
+(* [midi bytes] is a Standard MIDI File's music (its bytes, as read from
+   a .mid file: audio/Midi.mli). General MIDI's instruments are played
+   by our 8-bit ones, and the drums on noise (audio/Music.mli). *)
 val midi : string -> sound
 
 (*****************************************************************************)
@@ -243,19 +247,21 @@ val explosion : sound (* a long, falling noise *)
 val step : sound (* a soft, low tick: footsteps *)
 val powerup : sound (* a rising, warbling square *)
 
-(* [varied name seed]: the ready-made sound [name] ("blip", "coin", ...)
-   with its numbers nudged at random (sfxr's "mutate"), the same for the
-   same [seed]: ten shots in a row that don't all sound alike,
+(* [varied name seed] is the ready-made sound [name] ("blip", "coin",
+   ...) with its numbers nudged at random (sfxr's "mutate"), the same
+   for the same [seed]. It gives ten shots in a row that don't all sound
+   alike:
      Audio.play (Audio.varied "laser" shots_fired) *)
 val varied : string -> int -> sound
 
-(* [random_sound category seed]: sfxr's "random" buttons: a new sound of
-   that kind ("laser", "explosion", "coin", "jump", "powerup", "hit",
-   "blip"), its numbers drawn afresh, the same for the same [seed]: a
-   game's sounds found by pressing a button until one sounds right *)
+(* [random_sound category seed] is sfxr's "random" buttons: a new sound
+   of that kind ("laser", "explosion", "coin", "jump", "powerup", "hit",
+   "blip"), its numbers drawn afresh, the same for the same [seed]. A
+   game's sounds are found by pressing a button until one sounds
+   right. *)
 val random_sound : string -> int -> sound
 
-(* [sfx numbers]: your own, from sfxr's numbers (audio/Sfx.mli):
+(* [sfx numbers] is your own sound, from sfxr's numbers (audio/Sfx.mli):
      let zap = sfx { Sfx.laser with frequency = 2000.; echo = 0.1 } *)
 val sfx : Sfx.t -> sound
 
@@ -263,30 +269,31 @@ val sfx : Sfx.t -> sound
 (* {1 Playing them} *)
 (*****************************************************************************)
 
-(* [play s]: from now until its end (see the top) *)
+(* [play s] plays [s] from now until its end (see the top) *)
 val play : sound -> unit
 
-(* [play_at ~volume ~pan s]: play (s |> louder volume |> pan pan), the
- * same sound, but a recording (wav) is mixed from its own samples: no
- * copy of it made at each play (a game's sounds where they are heard) *)
+(* [play_at ~volume ~pan s] is play (s |> louder volume |> pan pan), the
+ * same sound, but a recording (wav) is mixed from its own samples, with
+ * no copy of it made at each play (for a game's sounds where they are
+ * heard) *)
 val play_at : volume:number -> pan:number -> sound -> unit
 
-(* claude: [silently f]: [f ()], the sounds it starts (play, loop,
- * keep_playing, instruments) not played -- tinybox runs a program's
- * update in its menu to preview it, and the preview is not heard *)
+(* [silently f] is [f ()], with the sounds it starts (play, loop,
+ * keep_playing, instruments) not played. tinybox runs a program's
+ * update in its menu to preview it, and the preview is not heard. *)
 val silently : (unit -> 'a) -> 'a
 
-(* [keep_playing name s]: [s] playing while this is called every frame
-   (its pan too, gliding when it changes: a car going by),
-   [name] saying it's the same sound from frame to frame (its length
-   and fading ignored: it lasts as long as it's kept); a filter's cutoff
-   may change from frame to frame, a ship's engine brighter as it
-   speeds up (a wah's sweep ignored: the cutoff is the frame's):
+(* [keep_playing name s] plays [s] while this is called every frame (its
+   pan follows too, gliding when it changes: a car going by). [name]
+   says it's the same sound from frame to frame (its length and fading
+   are ignored: it lasts as long as it's kept). A filter's cutoff may
+   change from frame to frame, so a ship's engine gets brighter as it
+   speeds up (a wah's sweep is ignored: the cutoff is the frame's):
      Audio.keep_playing "thrust" (Audio.noise 2000 |> Audio.low_pass (200 + speed)) *)
 val keep_playing : string -> sound -> unit
 
-(* [loop name s]: [s] played over and over, background music, until
-   [stop name]; calling it again (at every frame, say) while it plays
+(* [loop name s] plays [s] over and over, as background music, until
+   [stop name]. Calling it again (at every frame, say) while it plays
    does nothing, so a game can just say, in update:
      Audio.loop "music" tune
    (ix: its voices are rendered as the loop comes to them, the first
@@ -294,56 +301,57 @@ val keep_playing : string -> sound -> unit
 val loop : string -> sound -> unit
 val stop : string -> unit
 
-(* [faster k s]: [s] [k] times as fast, the same notes (1.5: half as
-   fast again): a tune's tempo *)
+(* [faster k s] is [s] [k] times as fast, with the same notes (1.5 is
+   half as fast again): a tune's tempo *)
 val faster : number -> sound -> sound
 
-(* [change_loop name s]: the loop [name] now plays [s], going on from
-   the same point of the tune (the same fraction of the way through),
-   not from its start: the music speeding up with the danger, as in
-   Space Invaders and Tetris,
+(* [change_loop name s] makes the loop [name] now play [s], going on
+   from the same point of the tune (the same fraction of the way
+   through), not from its start. So the music can speed up with the
+   danger, as in Space Invaders and Tetris:
      Audio.change_loop "music" (tune |> Audio.faster (1 + 0.1 * level)) *)
 val change_loop : string -> sound -> unit
 
-(* [fetch source k]: a file's or a URL's bytes, got as [loop_from] gets
-   them, given to [k] -- now natively, later in a browser, None if they
-   can't be had: for a program that edits a song rather than only
-   playing it (apps/music/TinySoundtracker.ml) *)
+(* [fetch source k] gets a file's or a URL's bytes, as [loop_from] gets
+   them, and gives them to [k]: now natively, later in a browser, and
+   None if they can't be had. It is for a program that edits a song
+   rather than only playing it (apps/music/TinySoundtracker.ml). *)
 val fetch : string -> (string option -> unit) -> unit
 
-(* [play_module name bytes]: a MOD file's song (its bytes, as read from
-   a .mod: audio/formats/mod/Mod.mli), its own instruments playing its
-   patterns on the Amiga's four channels (Mod_player.mli), looping until
-   [stop name]; nothing if it isn't a module (the reason printed on the
-   error output) *)
+(* [play_module name bytes] plays a MOD file's song (its bytes, as read
+   from a .mod: audio/formats/mod/Mod.mli), with its own instruments
+   playing its patterns on the Amiga's four channels (Mod_player.mli),
+   looping until [stop name]. It does nothing if it isn't a module (the
+   reason is printed on the error output). *)
 val play_module : string -> string -> unit
 
-(* [play_ogg name bytes]: an Ogg Vorbis file's sound (its bytes, as
+(* [play_ogg name bytes] plays an Ogg Vorbis file's sound (its bytes, as
    read from an .ogg: audio/formats/vorbis/Vorbis.mli), decoded as it
-   plays, a packet at a time (Vorbis_player.mli: never the whole file
-   at once, a track of minutes being hundreds of megabytes of
-   samples), looping until [stop name]; nothing if it isn't Ogg Vorbis
-   (the reason printed on the error output). A game's soundtrack, as
-   Quake's CD tracks are LibreQuake's .ogg files:
+   plays, a packet at a time (Vorbis_player.mli: never the whole file at
+   once, because a track of minutes is hundreds of megabytes of
+   samples), looping until [stop name]. It does nothing if it isn't Ogg
+   Vorbis (the reason is printed on the error output). It is for a
+   game's soundtrack, as Quake's CD tracks are LibreQuake's .ogg files:
      Audio.play_ogg "music" (read "track06.ogg")
-   (ix: not in the playground, whose Vorbis decodes a file whole) *)
+   (ix: this is not in the playground, whose Vorbis decodes a file
+   whole) *)
 val play_ogg : string -> string -> unit
 
-(* ix: [play_midi name bytes]: a MIDI file's song (its bytes), its notes
-   rendered as the mixer comes to them, looping until [stop name] (midi
-   renders a whole song before its first sample: minutes of samples).
-   Nothing if it isn't MIDI:
+(* ix: [play_midi name bytes] plays a MIDI file's song (its bytes), with
+   its notes rendered as the mixer comes to them, looping until
+   [stop name] (midi renders a whole song before its first sample:
+   minutes of samples). It does nothing if it isn't MIDI:
      Audio.play_midi "music" (read "e1m1.mid") *)
 val play_midi : string -> string -> unit
 
-(* [loop_from name source]: a tune from a file or a URL, looping once
-   it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,
-   a recording in .wav, a module in .mod, Ogg Vorbis in .ogg (ix's),
-   else solfège; a local path
-   natively, a URL anywhere (natively
-   downloaded, blocking the first time; in a browser fetched in the
-   background, from the page's own server for a plain name). Like
-   [loop], calling it again while it plays (or downloads) does nothing:
+(* [loop_from name source] plays a tune from a file or a URL, looping
+   once it's there. It is a MIDI file if [source] ends in .mid, an ABC
+   one in .abc, a recording in .wav, a module in .mod, Ogg Vorbis in
+   .ogg (ix's), and solfège otherwise. [source] is a local path
+   natively, or a URL anywhere (natively downloaded, blocking the first
+   time; in a browser fetched in the background, from the page's own
+   server for a plain name). Like [loop], calling it again while it
+   plays (or downloads) does nothing:
      Audio.loop_from "music" "https://example.com/tune.mid" *)
 val loop_from : string -> string -> unit
 
@@ -367,18 +375,18 @@ val loop_from : string -> string -> unit
 
 type instrument
 
-(* [instrument name make]: the instrument [name], made by [make ()] if
+(* [instrument name make] is the instrument [name], made by [make ()] if
    it isn't playing yet *)
 val instrument : string -> (unit -> Instrument.t) -> instrument
 
-(* [note_on i name]: the key of the note [name] ("C4", "F#5": see
-   [note]) pressed, at full velocity; [note_off i name] let go.
-   Nothing if [name] isn't a note. *)
+(* [note_on i name] presses the key of the note [name] ("C4", "F#5": see
+   [note]), at full velocity; [note_off i name] lets it go. Nothing
+   happens if [name] isn't a note. *)
 val note_on : instrument -> string -> unit
 val note_off : instrument -> string -> unit
 
-(* [set i knob value]: a knob turned ("volume", 0 to 1, for
-   Instrument.sine), smoothly: over the next few milliseconds, not at
+(* [set i knob value] turns a knob ("volume", 0 to 1, for
+   Instrument.sine) smoothly: over the next few milliseconds, not at
    once, so nothing clicks *)
 val set : instrument -> string -> number -> unit
 
@@ -386,7 +394,7 @@ val set : instrument -> string -> number -> unit
 (* {1 The music's own clock} *)
 (*****************************************************************************)
 
-(* [position name]: how far into the loop [name] the sound card has
+(* [position name] is how far into the loop [name] the sound card has
  * been fed, in seconds, counting every time round (so 35.2 for a 16 s
  * song on its third pass); None if it isn't playing.
 
@@ -417,31 +425,33 @@ val set : instrument -> string -> number -> unit
    player sets, subtracted from this one. *)
 val position : string -> number option
 
-(* [latency ()]: the seconds between a sound started by this frame's
+(* [latency ()] is the seconds between a sound started by this frame's
    [update] (a note played, [play]) and its first sample leaving the
-   sound card, as far as the program can know it: the sound queued
-   ahead of the card when it starts, plus the card's own buffer
-   (averaged over the last second). What an instrument's player feels:
-   a key pressed, the note late by this, plus the wait for the next
-   frame (half a frame, 8 ms, on average), plus what the operating
-   system and the speakers add, which no program sees. 0 when no card
-   plays (a golden run). *)
+   sound card, as far as the program can know it. It is the sound
+   queued ahead of the card when it starts, plus the card's own buffer
+   (averaged over the last second). An instrument's player presses a key
+   and feels the note late by this, plus the wait for the next frame
+   (half a frame, 8 ms, on average), plus what the operating system and
+   the speakers add, which no program sees. It is 0 when no card plays
+   (a golden run). *)
 val latency : unit -> number
 
 (**/**)
 
-(* claude: for the platforms (Playground_platform), not for games: the
- * next [n] samples of everything playing, at 44,100 a second, which the
- * native backend queues for SDL and a golden run writes to a WAV
+(* for the platforms (Playground_platform), not for games: [pull n] is
+ * the next [n] samples of everything playing, at 44,100 a second, which
+ * the native backend queues for SDL and a golden run writes to a WAV
  * (audio/Mixer.mli) *)
 val pull : int -> Signal.stereo
 
-(* claude: for the platforms too: how [loop_from] gets a file's bytes,
- * [fetch source k] calling [k] with them (None if it can't), now or
- * later; installed by Playground_platform.run_app (natively a file read
- * or a curl download, in a browser an XMLHttpRequest) *)
+(* for the platforms too: [set_fetcher] sets how [loop_from] gets a
+ * file's bytes, with [fetch source k] calling [k] with them (None if it
+ * can't), now or later. Playground_platform.run_app installs it
+ * (natively a file read or a curl download, in a browser an
+ * XMLHttpRequest). *)
 val set_fetcher : (string -> (string option -> unit) -> unit) -> unit
 
-(* claude: for the platforms too: this frame's latency, in seconds (see
- * [latency]), each time they give the card samples *)
+(* for the platforms too: [set_latency] sets this frame's latency, in
+ * seconds (see [latency]); they call it each time they give the card
+ * samples *)
 val set_latency : float -> unit

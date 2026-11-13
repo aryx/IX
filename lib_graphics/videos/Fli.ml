@@ -2,7 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Fli.mli *)
-(* ix: the author's playground's libs/graphics/videos/fli/Fli.ml; reading only: its writer is the tests' *)
+(* ix: from the author's playground's libs/graphics/videos/fli/Fli.ml.
+ * Only the reading is here; its writer is in the tests *)
 
 type format = Fli | Flc
 type header = { format : format; width : int; height : int; frames : int; delay : float }

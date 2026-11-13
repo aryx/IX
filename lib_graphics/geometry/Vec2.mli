@@ -7,7 +7,7 @@ type t = float * float
 val add : t -> t -> t
 val sub : t -> t -> t
 
-(* [scale s v]: v stretched s times *)
+(* [scale s v] is v stretched s times *)
 val scale : float -> t -> t
 
 (* ax*bx + ay*by: how much two directions agree; 0 when perpendicular *)
@@ -19,7 +19,7 @@ val dot : t -> t -> float
  * E.g. cross (1, 0) (0, 1) = 1. *)
 val cross : t -> t -> float
 
-(* [perp v]: v turned a quarter turn, (-y, x) *)
+(* [perp v] is v turned a quarter turn, (-y, x) *)
 val perp : t -> t
 
 val length : t -> float

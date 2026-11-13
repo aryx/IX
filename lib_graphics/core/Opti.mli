@@ -17,36 +17,38 @@
  * - Pixelate.nearest: a block's rows after its first copied whole, not
  *   pixel by pixel (Pixelate.nearest_simple).
  *
- * claude: and tinybox's code map (launcher/codemap/, flag opti=off;
- * timed by launcher/codemap/bench/codemap_bench.exe, OPTI=off):
- * - Code_names.resolve_include: an include among the files of its base
- *   name, each resolved once (resolve_include_simple: every C file);
- * - Codemap.map_of: the uses counted once for all the maps of the same
- *   sources (the simple way: each map its own, Code_map_base.rank_of);
- * - Code_anatomy.line_has: words tried where one can start, compared in
- *   place (line_has_simple);
- * - Map_names.capitals and unit_ties: what does not depend on the camera
- *   kept (capitals_chosen, ties_of); placed_of and entry_of: a table by
- *   path (placed_of_simple, entry_of_simple: a scan).
+ * And in tinybox's code map (launcher/codemap/, with the flag opti=off;
+ * timed by launcher/codemap/bench/codemap_bench.exe with OPTI=off):
+ * - Code_names.resolve_include: an include is resolved among the files
+ *   of its base name, each resolved once (resolve_include_simple tries
+ *   every C file);
+ * - Codemap.map_of: the uses are counted once for all the maps of the
+ *   same sources (the simple way is that each map counts its own, with
+ *   Code_map_base.rank_of);
+ * - Code_anatomy.line_has: words are tried only where one can start,
+ *   and compared in place (line_has_simple);
+ * - Map_names.capitals and unit_ties: what does not depend on the
+ *   camera is kept (capitals_chosen, ties_of); placed_of and entry_of
+ *   use a table by path (placed_of_simple and entry_of_simple scan).
  *
- * Where it stands in ix: the list above is the playground's. Here
- * the switch is read by Fill.polygons_aa and Blit.draw as there, by
- * Framebuffer.clear (a grey: one fill of the bytes), by
+ * Here is where it stands in ix. The list above is the playground's.
+ * Here the switch is read by Fill.polygons_aa and Blit.draw, as there,
+ * and also by Framebuffer.clear (a grey is one fill of the bytes), by
  * lib_playground's Redraw (only what changed between two frames is
- * painted again) and by mini-office (a page's lines and its letters'
- * shapes kept from one frame to the next: Office_page, Office_view).
- * Pixelate and the code map are not in ix.
+ * painted again) and by mini-office (a page's lines and the shapes of
+ * its letters are kept from one frame to the next: Office_page,
+ * Office_view). Pixelate and the code map are not in ix.
  *
  * design:
- * One switch for all of them, and the simple code never deleted. It
- * is the explanation, and it is the test: an optimized function
- * must give what the simple one gives, pixel for pixel, and a test
- * says so by running both (Blit's and Fill's). An optimization that
- * could not be switched off could not be measured either: the
- * number that justifies it is the two times, side by side. Elsewhere
- * in ix the same rule is a comment that starts with old: and keeps
- * the lines that were replaced. *)
+ * There is one switch for all of them, and the simple code is never
+ * deleted. It is the explanation, and it is the test: an optimized
+ * function must give what the simple one gives, pixel for pixel, and a
+ * test checks this by running both (Blit's and Fill's tests). An
+ * optimization that could not be switched off could not be measured
+ * either, because the number that justifies it is the two times, side
+ * by side. Elsewhere in ix, the same rule is a comment that starts with
+ * old: and keeps the lines that were replaced. *)
 (* ix: the author's playground's libs/graphics/core/Opti.mli (docs/plans/done/plan_playground.md) *)
 
-(* true: use the optimized versions (the default) *)
+(* when true (the default), the optimized versions are used *)
 val enabled : bool ref

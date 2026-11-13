@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/netcode/Sim_net.ml; two Option.value ~default written out *)
+(* ix: copied from libs/networking/netcode/Sim_net.ml in the author's
+ * playground. Its two calls of Option.value ~default are written out. *)
 
 (* See Sim_net.mli *)
 

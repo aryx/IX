@@ -37,5 +37,6 @@ val light_dir : Vec3.t
 (* The brightness of faces facing away from the light, 0.25 *)
 val ambient : float
 
-(* [brightness_of_normal n], for a unit normal [n]: from [ambient] to 1 *)
+(* [brightness_of_normal n], for a unit normal [n], goes from [ambient]
+ * to 1 *)
 val brightness_of_normal : Vec3.t -> float

@@ -1,6 +1,6 @@
 (* Circles and ellipses.
  *
- * Circles: Bresenham's midpoint circle algorithm, which finds the
+ * Circles use Bresenham's midpoint circle algorithm, which finds the
  * pixels of a circle with integer additions only, like Line.bresenham
  * for lines. It uses the circle's 8-fold symmetry: compute one eighth,
  * the "octant" from the top going right until the diagonal, and mirror
@@ -37,13 +37,13 @@
  * for ellipses exist too, but only for ellipses aligned with the x and
  * y axes -- and Playground ovals can be rotated.
  *
- * Where it stands: the second of the incremental algorithms, after
- * Line's (Line.mli tells what they share). [fill] and [outline] are
- * a game's circles with hard edges; with smooth ones a circle goes
- * the other way too, as a polygon ([ellipse_points]) filled by
- * Fill.polygons_aa, and so do the round ends and joins of a thick
- * line (Stroke). The draw device's ellipses are the kernel's
- * (Draw.ellipse).
+ * Where it stands: this is the second of the incremental algorithms,
+ * after Line's (Line.mli tells what they share). [fill] and [outline]
+ * draw a game's circles with hard edges. With smooth edges, a circle
+ * goes the other way too: it is made a polygon ([ellipse_points]) and
+ * filled by Fill.polygons_aa, and so are the round ends and joins of
+ * a thick line (Stroke). The draw device's ellipses are drawn by the
+ * kernel (Draw.ellipse).
  *
  * References:
  * - Jack E. Bresenham, "A linear algorithm for incremental digital
@@ -62,21 +62,23 @@
 val octant : int -> (int * int) list
 
 (* [fill fb ~cx ~cy ~r ~rgb ~alpha] fills the circle of radius r
- * centered on pixel (cx, cy): each row once, between the two pixels of
- * the circle on that row. *)
+ * centered on pixel (cx, cy). It fills each row once, between the two
+ * pixels of the circle on that row. *)
 val fill : Framebuffer.t -> cx:int -> cy:int -> r:int -> rgb:int -> alpha:float -> unit
 
-(* Only the pixels of the circle itself: the octant's, mirrored 8 ways *)
+(* Draws only the pixels of the circle itself: the octant's pixels,
+ * mirrored 8 ways. *)
 val outline : Framebuffer.t -> cx:int -> cy:int -> r:int -> rgb:int -> alpha:float -> unit
 
-(* [ellipse_points ~rx ~ry ~segments]: [segments] points on the ellipse
- * of radii rx (horizontally) and ry (vertically) centered on (0, 0),
- * evenly spaced in angle, to be drawn as a polygon *)
+(* [ellipse_points ~rx ~ry ~segments] is [segments] points on the
+ * ellipse of radii rx (horizontally) and ry (vertically) centered on
+ * (0, 0). They are evenly spaced in angle, to be drawn as a polygon. *)
 val ellipse_points : rx:float -> ry:float -> segments:int -> (float * float) list
 
 (* How many polygon sides a circle of [radius] pixels needs so that the
  * polygon is never more than 0.25 pixels inside
  * the true circle. The worst place is the middle of a side, where the
- * gap (the "sagitta") is radius * (1 - cos (pi / segments)); e.g. a
- * radius of 10 pixels needs 15 sides, 100 pixels 45, 400 pixels 89. *)
+ * gap (the "sagitta") is radius * (1 - cos (pi / segments)). For
+ * example, a radius of 10 pixels needs 15 sides, a radius of 100
+ * pixels needs 45, and a radius of 400 pixels needs 89. *)
 val segments_for_radius : float -> int

@@ -1,4 +1,4 @@
-(* Screen shake: the whole picture knocked about for a moment when
+(* Screen shake: the whole picture is knocked about for a moment when
    something big happens.
 
    Jan Willem Nijman's talk "The Art of Screen Shake" (2013, Vlambeer's
@@ -21,10 +21,10 @@
    is a new random offset every frame ([jitter] below, kept to compare):
    at 60 frames a second the picture jumps from anywhere to anywhere,
    which looks like a broken video signal, not like a camera knocked.
-   Eiserloh's fix is smooth noise: random values at a slower rate (25
-   a second here), and the shake gliding from one to the next along a
-   smooth curve -- Ease.smoothstep, the same shape as Ken Perlin's
-   interpolation:
+   Eiserloh's fix is smooth noise: the random values come at a slower
+   rate (25 a second here), and the shake glides from one to the next
+   along a smooth curve -- Ease.smoothstep, the same shape as Ken
+   Perlin's interpolation:
 
       jitter (a new value each frame)     noise (25 a second, smoothed)
         |  .   .     .                      |      .--.
@@ -32,14 +32,14 @@
         |.   .   ..    .                    |.-'         '---'   '-
         |     .      .                      |
 
-   And noise is a function of the time: the same time, the same shake,
-   so a replay and a golden frame see the same picture. Three noises of
-   different seeds make the three offsets: across, up, and a slight
-   turn.
+   And noise is a function of the time: the same time gives the same
+   shake, so a replay and a golden frame see the same picture. Three
+   noises of different seeds make the three offsets: across, up, and a
+   slight turn.
 
-   The random values themselves come from Hash.mli: a number from the
-   seed and the lattice point, the same every time, natively and in a
-   browser.
+   The random values themselves come from Hash.mli: each is a number
+   made from the seed and the lattice point, the same every time,
+   natively and in a browser.
 
    Worked example (checked by the tests): [Hash.hash ~seed:1] is -0.1084
    at point 0 and 0.5113 at point 1, so [noise ~seed:1] is -0.1084 at 0,
@@ -47,36 +47,38 @@
    0.156 of the way). A trauma of 0.5 falls to 0.25 in a quarter of a
    second at the default rate, 1 a second.
 
-   Honest about scale: 1D value noise, the simplest smooth noise; Perlin's
-   gradient noise (1985) is smoother still, and matters for terrain,
-   not for a shake that lasts half a second. *)
-(* ix: the author's playground's libs/juice/Trauma.mli; its optional arguments are said *)
+   Honest about scale: this is 1D value noise, the simplest smooth
+   noise. Perlin's gradient noise (1985) is smoother still, and it
+   matters for terrain, not for a shake that lasts half a second. *)
+(* ix: copied from libs/juice/Trauma.mli in the author's playground,
+ * with its optional arguments made required *)
 
-(* [add amount trauma]: after a hit, at most 1 *)
+(* [add amount trauma] is the trauma after a hit, at most 1 *)
 val add : float -> float -> float
 
-(* [decay ?per_second ~dt trauma]: [dt] seconds later, falling by
- * [per_second] (1 by default) a second, at least 0 *)
+(* [decay ?per_second ~dt trauma] is the trauma [dt] seconds later. It
+ * falls by [per_second] (1 by default) a second, and is at least 0. *)
 (* (ix: per_second was optional) *)
 val decay : per_second:float -> dt:float -> float -> float
 
-(* [shake trauma]: trauma squared *)
+(* [shake trauma] is trauma squared *)
 val shake : float -> float
 
-(* [noise ~seed x]: smooth, in [-1, 1]: [Hash.hash] at the whole numbers,
- * smoothstep between them *)
+(* [noise ~seed x] is smooth, in [-1, 1]: it is [Hash.hash] at the whole
+ * numbers, and smoothstep between them *)
 val noise : seed:int -> float -> float
 
-(* [jitter ~seed x]: [Hash.hash] at the whole number below [x]: a new random
- * value at each whole number, the simple shake *)
+(* [jitter ~seed x] is [Hash.hash] at the whole number below [x]: a new
+ * random value at each whole number, which is the simple shake *)
 val jitter : seed:int -> float -> float
 
 type offset = { dx : float; dy : float; angle : float (* degrees *) }
 
-(* [offset ?smooth ?max_offset ?max_angle ~seed ~trauma time]: where the
- * picture is at [time] (seconds), shaken by [trauma]: [shake trauma]
- * times [max_offset] (40 pixels) and [max_angle] (5 degrees), read
- * from [noise] at 25 points a second, or with [~smooth:false] from
- * [jitter] at 60, a new one each frame *)
+(* [offset ?smooth ?max_offset ?max_angle ~seed ~trauma time] is where
+ * the picture is at [time] (seconds), shaken by [trauma]. It is
+ * [shake trauma] times [max_offset] (40 pixels) and [max_angle] (5
+ * degrees), read from [noise] at 25 points a second, or, with
+ * [~smooth:false], from [jitter] at 60 points a second, a new one each
+ * frame. *)
 (* (ix: the three were optional: true, 40 and 5) *)
 val offset : smooth:bool -> max_offset:float -> max_angle:float -> seed:int -> trauma:float -> float -> offset

@@ -11,7 +11,9 @@
      let ball = body (circle red 20) |> at 0 300 |> moving 200 0
 
      (* in update, at every tick *)
-(* ix: the author's playground's playground/apis/Physics.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/apis/Physics.mli in the author's
+   playground, with its optional arguments made required, where it has
+   some (docs/plans/done/plan_playground.md) *)
      let ball = ball |> fall 800 |> step
 
      (* in view *)
@@ -22,7 +24,7 @@
    where it is, how fast it goes, which way it points. Everything else
    is verbs on bodies, used like move and rotate on shapes.
 
-   Three things to know:
+   There are three things to know:
 
    - [step] is one tick of time, 1/60 of a second: speeds are in pixels
      per second ([moving 100 0] crosses a 1000-pixel screen in 10
@@ -67,53 +69,55 @@ type body = {
 (* {1 Making bodies} *)
 (*****************************************************************************)
 
-(* [body shape]: a body looking like [shape], at (0, 0), not moving,
+(* [body shape] is a body looking like [shape], at (0, 0), not moving,
  * pointing right (angle 0) *)
 val body : shape -> body
 
-(* [at x y b]: [b] placed at (x, y) *)
+(* [at x y b] is [b] placed at (x, y) *)
 val at : number -> number -> body -> body
 
-(* [moving vx vy b]: [b] moving vx pixels per second to the right and
+(* [moving vx vy b] is [b] moving vx pixels per second to the right and
  * vy up *)
 val moving : number -> number -> body -> body
 
-(* [launched speed angle b]: [b] moving at [speed] in the direction
+(* [launched speed angle b] is [b] moving at [speed] in the direction
  * [angle] (degrees: 0 right, 90 up), like a cannonball or a bullet *)
 val launched : number -> number -> body -> body
 
-(* [shot_from speed distance shooter b]: [b] fired by [shooter]: placed
- * [distance] pixels ahead of it, the way it points, and moving at
+(* [shot_from speed distance shooter b] is [b] fired by [shooter]: it is
+ * placed [distance] pixels ahead of it, the way it points, and moves at
  * [speed] that way plus [shooter]'s own velocity -- a bullet leaving a
  * moving ship keeps the ship's motion (Galileo's ship, again) *)
 val shot_from : number -> number -> body -> body -> body
 
-(* [pointing angle b]: [b] turned to [angle] degrees *)
+(* [pointing angle b] is [b] turned to [angle] degrees *)
 val pointing : number -> body -> body
 
-(* [heavy mass b]: [b] with this mass (1 by default); a heavier body
+(* [heavy mass b] is [b] with this mass (1 by default); a heavier body
  * moves less when pushed (F = m a), but falls just as fast *)
 val heavy : number -> body -> body
 
-(* [bouncy e b]: how [b] bounces off things (the restitution): 0. not
- * at all, like clay (the default), 0.5 losing half its speed, 1. a
- * superball bouncing back as fast, and above 1 a pinball bumper,
+(* [bouncy e b] sets how [b] bounces off things (the restitution): 0.
+ * not at all, like clay (the default); 0.5 loses half its speed; 1. is
+ * a superball bouncing back as fast; and above 1 is a pinball bumper,
  * *adding* speed. When two bodies collide, the bouncier one decides. *)
 val bouncy : number -> body -> body
 
-(* [rough mu b]: friction, how much [b] grips what it slides against,
- * from 0. (ice, the default) to 1. (rubber): a ball hitting a rough
- * moving paddle is dragged along with it. Both bodies must be rough
- * for friction (their rough-nesses are multiplied, then the square root
- * taken, like Box2D) *)
+(* [rough mu b] sets the friction, how much [b] grips what it slides
+ * against, from 0. (ice, the default) to 1. (rubber): a ball hitting a
+ * rough moving paddle is dragged along with it. Both bodies must be
+ * rough for friction (their rough-nesses are multiplied, then the
+ * square root is taken, like Box2D). *)
 val rough : number -> body -> body
 
-(* [immovable b]: nothing it collides with moves it (an infinite mass):
- * walls, the floor, a paddle the game moves itself *)
+(* [immovable b] makes [b] a body that nothing it collides with moves
+ * (an infinite mass): walls, the floor, a paddle the game moves
+ * itself *)
 val immovable : body -> body
 
-(* [upright b]: collisions never make it turn (an infinite moment of
- * inertia): a platformer's hero, who shouldn't tip over on a ledge.
+(* [upright b] makes [b] a body that collisions never turn (an infinite
+ * moment of inertia): a platformer's hero, who shouldn't tip over on a
+ * ledge.
  * Otherwise a body hit off its center spins, like a real one: a box
  * landing on a corner tips over, a ball sliding on a rough floor
  * starts rolling. How hard it is to spin (its moment of inertia) comes
@@ -125,18 +129,20 @@ val immovable : body -> body
  * every rotation term of the collisions (physics/2d/Resolve.mli) is
  * multiplied by 1 / inertia = 0 -- the lever arms (r x n)^2 / I, the
  * torques -- and its spin stays 0, so its touching point moves at its
- * velocity: what's left are the formulas without rotation, bit for
+ * velocity. What's left are the formulas without rotation, bit for
  * bit. (The contact point, only used through the lever arms, then
- * doesn't matter either.) Drawn, its angle never changes. *)
+ * doesn't matter either.) When it is drawn, its angle never
+ * changes. *)
 val upright : body -> body
 
-(* [grouped n b]: [b] in the group [n] (a number of the game's choosing,
- * not 0: 0 is "no group", what [body] gives). Two bodies of the same
+(* [grouped n b] puts [b] in the group [n] (a number of the game's
+ * choosing, not 0: 0 is "no group", which is what [body] gives). Two
+ * bodies of the same
  * group never collide in [simulate]: they pass through each other, as
  * if the other were not there. Everything else still collides with
  * both.
  *
- * What it is for: things that overlap *by design*. A soldier seen
+ * It is for things that overlap *by design*. A soldier seen
  * from the side has its arms over its chest and one leg over the
  * other, all the time; a car's wheels sit inside its wheel arches;
  * the links of a chain cross at their pins. Made of bodies and
@@ -150,7 +156,7 @@ val upright : body -> body
  *
  * Before this there was one way to say "these two do not collide": a
  * joint between them (a seesaw sits on its pivot, see Joints below).
- * mini-soldat's ragdoll, ten limbs, had nine real joints and 36 ropes
+ * mini-soldat's ragdoll, of ten limbs, had nine real joints and 36 ropes
  * ten thousand pixels long, never taut, between every other pair,
  * only to say so. That is what this replaces.
  *
@@ -159,128 +165,136 @@ val upright : body -> body
  * categories with a mask each ("I am a bullet, I hit walls and
  * soldiers but not bullets"), which says more and takes two more
  * numbers a body; a category for each kind of thing is the next step
- * if a game needs "bullets go through bullets". Not asked by [bounce],
- * [bounce_all] or [touching]: there the game names the two bodies
- * itself, and can leave a pair out. *)
+ * if a game needs "bullets go through bullets". The group is not asked
+ * by [bounce], [bounce_all] or [touching], because there the game names
+ * the two bodies itself, and can leave a pair out. *)
 val grouped : int -> body -> body
 
 (*****************************************************************************)
 (* {1 What pushes it (until the next step)} *)
 (*****************************************************************************)
 
-(* [fall g b]: gravity, pulling down g pixels per second, per second,
- * whatever the mass (500 to 1000 feels right on a 1000-pixel screen) *)
+(* [fall g b] adds gravity, pulling down g pixels per second, per
+ * second, whatever the mass (500 to 1000 feels right on a 1000-pixel
+ * screen) *)
 val fall : number -> body -> body
 
-(* [push fx fy b]: a force: the wind, a spring, a jet; divided by the
- * mass *)
+(* [push fx fy b] adds a force (the wind, a spring, a jet), divided by
+ * the mass *)
 val push : number -> number -> body -> body
 
-(* [thrust f b]: a push of [f] forward, the way the body points: a
- * rocket, Asteroids' ship *)
+(* [thrust f b] adds a push of [f] forward, the way the body points, as
+ * for a rocket or Asteroids' ship *)
 val thrust : number -> body -> body
 
-(* [slow c b]: drag, a push against the motion, c times the velocity:
- * air, water, friction. Under a steady push, a body then stops speeding
- * up (at the push divided by c): a top speed, for free *)
+(* [slow c b] adds drag, a push against the motion, c times the
+ * velocity: air, water, friction. Under a steady push, a body then
+ * stops speeding up (at the push divided by c), so it gets a top speed,
+ * for free. *)
 val slow : number -> body -> body
 
-(* [attracted_by other b]: gravitation, [b] pulled towards [other] --
- * harder when [other] is heavier and nearer: other.mass / r^2 pixels
- * per second, per second, r the distance between them (Newton's law of
- * gravitation, with the constant G = 1 in the playground's units). A
- * star made [heavy 1000000.] keeps a body 100 pixels away going around
- * it at 100 pixels per second: on a circle, the speed is
- * sqrt (mass / r). Spacewar!'s star, a planet's moon. *)
+(* [attracted_by other b] adds gravitation: [b] is pulled towards
+ * [other], harder when [other] is heavier and nearer, by other.mass /
+ * r^2 pixels per second, per second, where r is the distance between
+ * them (Newton's law of gravitation, with the constant G = 1 in the
+ * playground's units). A star made [heavy 1000000.] keeps a body 100
+ * pixels away going around it at 100 pixels per second: on a circle,
+ * the speed is sqrt (mass / r). This is Spacewar!'s star, or a planet's
+ * moon. *)
 val attracted_by : body -> body -> body
 
-(* [pulled_to x y k b]: a spring from [b] to the point (x, y): pulled
- * towards it k times the distance, per second per second (Hooke's
- * law): a bungee, a grappling hook (Worms' ninja rope, Soldat's). Add
- * [slow] to calm it down; too stiff for the time step (k over 14,400),
- * it explodes (physics/2d/Springs.mli) *)
+(* [pulled_to x y k b] adds a spring from [b] to the point (x, y): [b]
+ * is pulled towards it by k times the distance, per second per second
+ * (Hooke's law), like a bungee or a grappling hook (Worms' ninja rope,
+ * Soldat's). Add [slow] to calm it down; when it is too stiff for the
+ * time step (k over 14,400), it explodes (physics/2d/Springs.mli). *)
 val pulled_to : number -> number -> number -> body -> body
 
-(* [turn speed b]: [b] turning at [speed] degrees per second (positive
- * counterclockwise, like rotate); 0 to stop *)
+(* [turn speed b] makes [b] turn at [speed] degrees per second (positive
+ * counterclockwise, like rotate); 0 stops it *)
 val turn : number -> body -> body
 
 (*****************************************************************************)
 (* {1 Moving} *)
 (*****************************************************************************)
 
-(* [step b]: [b] one tick (1/60 s) later: its velocity changed by what
- * pushed it, its position by its velocity, its angle by its spin; the
- * pushes are then used up. (Not called move, which moves shapes: a game
- * opens both.) *)
+(* [step b] is [b] one tick (1/60 s) later: its velocity is changed by
+ * what pushed it, its position by its velocity, and its angle by its
+ * spin; the pushes are then used up. (It is not called move, which
+ * moves shapes, because a game opens both.) *)
 val step : body -> body
 
 (* the length of a tick, 1/60 s *)
 val tick : number
 
-(* [wrap screen b]: [b] brought back on the other side when it goes off
+(* [wrap screen b] brings [b] back on the other side when it goes off
  * the screen, like Asteroids' ship *)
 val wrap : screen -> body -> body
 
-(* [bounce_in screen bounciness b]: [b] bouncing off the screen's edges
- * instead of leaving: its velocity reversed, times [bounciness] (1. a
- * superball, 0.5 loses half its speed, 0. stops dead), like Pong's
- * ball *)
+(* [bounce_in screen bounciness b] makes [b] bounce off the screen's
+ * edges instead of leaving: its velocity is reversed, times
+ * [bounciness] (1. is a superball, 0.5 loses half its speed, 0. stops
+ * dead), like Pong's ball *)
 val bounce_in : screen -> number -> body -> body
 
 (*****************************************************************************)
 (* {1 Collisions} *)
 (*****************************************************************************)
 
-(* [touching a b]: whether they overlap, exactly: the bodies' real
- * shapes, turned the way they point -- a bullet (a small circle) inside
- * an asteroid (a polygon, even a concave one), the corner of a rotated
- * box. The hitboxes come from the shapes themselves: a [circle] is a
- * circle, a [rectangle], [square], [image], [triangle], [hexagon] (the
- * regular polygons) or [polygon] a polygon, an [oval] a 16-sided polygon, [words] their box; a [group]'s
- * shapes each count, where they were moved. (See physics/2d/Collide.mli
- * for the tests, from circles to the separating axis theorem.) *)
+(* [touching a b] tells whether they overlap, exactly. It uses the
+ * bodies' real shapes, turned the way they point: a bullet (a small
+ * circle) inside an asteroid (a polygon, even a concave one), the
+ * corner of a rotated box. The hitboxes come from the shapes
+ * themselves:
+ * - a [circle] is a circle;
+ * - a [rectangle], [square], [image], [triangle], [hexagon] (the
+ *   regular polygons) or [polygon] is a polygon;
+ * - an [oval] is a 16-sided polygon;
+ * - [words] are their box;
+ * - each shape of a [group] counts, where it was moved.
+ * (See physics/2d/Collide.mli for the tests, from circles to the
+ * separating axis theorem.) *)
 val touching : body -> body -> bool
 
-(* [bounce a b]: if they touch, [a] and [b] bouncing off each other --
- * their velocities changed at once, like billiard balls, heavier
- * bodies moving less, and spinning when hit off their center (unless
- * [upright]), and pushed apart so they don't overlap anymore;
- * otherwise [a] and [b] unchanged. After [step]:
+(* [bounce a b] makes [a] and [b] bounce off each other, if they touch.
+ * Their velocities change at once, like billiard balls: heavier bodies
+ * move less, and a body spins when it is hit off its center (unless it
+ * is [upright]). They are also pushed apart so they don't overlap
+ * anymore. Otherwise [a] and [b] are unchanged. Call it after [step]:
  *   let (ball1, ball2) = bounce (step ball1) (step ball2)
- * The total momentum (mass times velocity) is the same after; the
- * speeds too if the bounciness is 1. For circles and convex polygons
- * (a concave one doesn't bounce: split it in convex pieces, a group).
- * (See physics/2d/Resolve.mli.) *)
+ * The total momentum (mass times velocity) is the same after, and so
+ * are the speeds if the bounciness is 1. It works for circles and
+ * convex polygons (a concave one doesn't bounce: split it in convex
+ * pieces, in a group). (See physics/2d/Resolve.mli.) *)
 val bounce : body -> body -> body * body
 
-(* [bounce_off wall b]: [b] bouncing off [wall], which doesn't move
- * (treated as [immovable]), for pipelines:
+(* [bounce_off wall b] makes [b] bounce off [wall], which doesn't move
+ * (it is treated as [immovable]), for pipelines:
  *   ball |> fall 800. |> step |> bounce_off floor |> bounce_off paddle *)
 val bounce_off : body -> body -> body
 
-(* [bounce_all bodies]: every two of them bouncing off each other, a
- * box of marbles. Only the pairs whose bounding boxes overlap are
- * tested exactly, found by [broad_phase] (sort and sweep by default,
+(* [bounce_all bodies] makes every two of them bounce off each other, as
+ * in a box of marbles. Only the pairs whose bounding boxes overlap are
+ * tested exactly; [broad_phase] finds them (sort and sweep by default,
  * see physics/2d/Broadphase.mli), so hundreds of bodies are fine. *)
 val bounce_all : broad_phase:Broadphase.method_ -> body list -> body list
 
-(* [broad_phase m bodies]: the pairs [bounce_all] would test exactly,
- * and how many box tests it took [m] to find them: to compare the
- * three methods (examples/PhysicsMarbles.ml) *)
+(* [broad_phase m bodies] returns the pairs [bounce_all] would test
+ * exactly, and how many box tests it took [m] to find them, to compare
+ * the three methods (examples/PhysicsMarbles.ml) *)
 val broad_phase : Broadphase.method_ -> body list -> Broadphase.result
 
-(* [went_through fast b]: whether [fast], during its last [step] (from
- * where it was a tick ago to where it is), went through [b] -- for
- * things too fast for [touching]: a bullet at 1500 pixels per second
+(* [went_through fast b] tells whether [fast], during its last [step]
+ * (from where it was a tick ago to where it is), went through [b]. It
+ * is for things too fast for [touching]: a bullet at 1500 pixels per second
  * moves 25 pixels a tick, and jumps over a 10-pixel wall without ever
  * touching it (tunneling). Its path is tested instead of its position
  * (physics/2d/Collide.mli's swept tests). *)
 val went_through : body -> body -> bool
 
-(* [debug b]: [b]'s hitboxes as translucent green shapes, and its
- * velocity as an arrow (a quarter of a second of motion): draw it over
- * the game to see what the physics sees *)
+(* [debug b] draws the hitboxes of [b] as translucent green shapes, and
+ * its velocity as an arrow (a quarter of a second of motion). Draw it
+ * over the game to see what the physics sees. *)
 val debug : body -> shape
 
 (*****************************************************************************)
@@ -303,14 +317,15 @@ type world = {
   joints : Joint2d.t list;
 }
 
-(* [world bodies]: the walls and floors among them [immovable] *)
+(* [world bodies] is a world of these bodies, with the walls and floors
+ * among them [immovable] *)
 val world : body list -> world
 
-(* [simulate ~gravity w]: one tick of the whole world: every body
+(* [simulate ~gravity w] is one tick of the whole world: every body is
  * pushed (by gravity, pixels per second per second, 0 by default, and
  * by what was added to it with fall, push...), then all the contacts
- * solved together, then every body moved -- [step] and [bounce_all]
- * in one, for piles:
+ * are solved together, then every body is moved. It is [step] and
+ * [bounce_all] in one, for piles:
  *   let w = w |> simulate ~gravity:800.
  * [iterations] (10 by default: more is stiffer, slower) and
  * [warm_starting] (true) are there to see what they do: with 1
@@ -348,9 +363,9 @@ val world : body list -> world
  * step finds it still inside and pushes again, harder; in a few
  * steps it leaves at 10,000 pixels a second. Nothing is wrong with
  * the solver: it was asked the wrong question, about where the stick
- * is rather than how it got there. (Found in mini-soldat, where a
- * rifle let go is exactly that stick; a box 4 thick is not thrown, 2
- * is.)
+ * is rather than how it got there. (This was found in mini-soldat,
+ * where a rifle let go is exactly that stick; a box 4 thick is not
+ * thrown, but one 2 thick is.)
  *
  * The cure is not to let a body go farther in a step than its
  * thinnest part: [~steps:4] cuts the tick into four steps of 1/240 of
@@ -360,9 +375,10 @@ val world : body list -> world
  *
  *   let w = w |> simulate ~gravity:800. ~steps:4
  *
- * Still one tick: speeds are per second as always, what was added
- * with fall, push... pushes during all four, and the world a tick
- * later comes back. What changes, besides that nothing is thrown:
+ * It is still one tick: speeds are per second as always, what was added
+ * with fall, push... pushes during all four steps, and the world comes
+ * back a tick later. Here is what changes, besides that nothing is
+ * thrown:
  *
  * - it costs [steps] times the work: use it where something is thin
  *   or fast, not everywhere;
@@ -390,8 +406,9 @@ val simulate : gravity:number -> iterations:int -> warm_starting:bool -> steps:i
 (* {1 Joints} *)
 (*****************************************************************************)
 (* A joint takes away some of the ways two bodies of a world can move
-   against each other (physics/2d/Joint2d.mli), solved in [simulate]'s
-   loop with the contacts; two bodies joined don't collide. The bodies
+   against each other (physics/2d/Joint2d.mli). Joints are solved in
+   [simulate]'s loop with the contacts, and two bodies joined don't
+   collide. The bodies
    are named by their place in the world's [bodies], and the joint is
    made from where they are now; a joint to the world is one to an
    [immovable] body:
@@ -399,29 +416,29 @@ val simulate : gravity:number -> iterations:int -> warm_starting:bool -> steps:i
      let w = world [ pivot; plank ] |> pin 0 1 ~at:(0., 0.)
 *)
 
-(* [pin ?motor a b ~at w]: [a] and [b] held together at the point [at],
-   free to turn about it (a seesaw, a wheel); [motor]: the spin of b
-   against a asked (degrees a second, counterclockwise) and the most
-   torque (a conveyor's roller) *)
+(* [pin ?motor a b ~at w] holds [a] and [b] together at the point [at],
+   free to turn about it (a seesaw, a wheel). [motor] is the spin of b
+   against a that is asked for (degrees a second, counterclockwise), and
+   the most torque (a conveyor's roller). *)
 val pin : motor:(number * number) option -> int -> int -> at:number * number -> world -> world
 
-(* [rod a b ~at_a ~at_b w]: those two points kept as far apart as they
+(* [rod a b ~at_a ~at_b w] keeps those two points as far apart as they
    are now *)
 val rod : int -> int -> at_a:number * number -> at_b:number * number -> world -> world
 
-(* [rope ?length a b ~at_a ~at_b w]: a rope between the two points,
+(* [rope ?length a b ~at_a ~at_b w] puts a rope between the two points,
    [length] long (as long as they are apart by default): it pulls when
    taut, and is slack when shorter *)
 val rope : length:number option -> int -> int -> at_a:number * number -> at_b:number * number -> world -> world
 
-(* [pulley a b ~at_a ~at_b ~ground_a ~ground_b w]: a rope from [at_a] up
-   over the fixed point [ground_a], across to [ground_b], down to
-   [at_b]: what one side gains, the other gives up *)
+(* [pulley a b ~at_a ~at_b ~ground_a ~ground_b w] puts a rope from
+   [at_a] up over the fixed point [ground_a], across to [ground_b], and
+   down to [at_b]: what one side gains, the other gives up *)
 val pulley :
   int -> int -> at_a:number * number -> at_b:number * number -> ground_a:number * number -> ground_b:number * number -> world -> world
 
-(* [set_motor i (speed, torque) w]: the [i]-th joint's motor, if it is a
-   pin (a switch turning a machine on) *)
+(* [set_motor i (speed, torque) w] sets the motor of the [i]-th joint,
+   if it is a pin (a switch turning a machine on) *)
 val set_motor : int -> number * number -> world -> world
 
 (* the [i]-th joint's length now (a rope's, a rod's, a pulley's two
@@ -436,14 +453,16 @@ val debug_joints : world -> shape list
 (* {1 Looking at bodies} *)
 (*****************************************************************************)
 
-(* [draw b]: its shape, where it is, turned the way it points *)
+(* [draw b] is its shape, where it is, turned the way it points *)
 val draw : body -> shape
 
-(* [distance a b]: between their centers, in pixels *)
+(* [distance a b] is the distance between their centers, in pixels *)
 val distance : body -> body -> number
 
-(* [speed b]: how fast, in pixels per second, whatever the direction *)
+(* [speed b] is how fast it goes, in pixels per second, whatever the
+ * direction *)
 val speed : body -> number
 
-(* [outside screen b]: [b]'s center is off the screen *)
+(* [outside screen b] tells whether the center of [b] is off the
+ * screen *)
 val outside : screen -> body -> bool

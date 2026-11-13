@@ -2,7 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Mpeg1.mli *)
-(* ix: the author's playground's libs/graphics/videos/mpeg1/Mpeg1.ml; its Bits is Bitstream *)
+(* ix: from the author's playground's
+ * libs/graphics/videos/mpeg1/Mpeg1.ml; its Bits is Bitstream here *)
 
 type kind = I | P | B
 type how = Intra | Forward | Backward | Both | Zero | Skipped

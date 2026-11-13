@@ -1,30 +1,33 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* expose: all the windows at once, shrunk side by side, live; a click on
- * one brings it to the front, and on none, back as before
- * (plan_desktop.md). Started by the panel's button, in a window of rio's
- * popup layer as large as what the screen has for windows:
+(* expose: all the windows at once, shrunk side by side and live. A click
+ * on one brings it to the front, and a click on none puts things back as
+ * they were (plan_desktop.md). The panel's button starts it, in a window
+ * of rio's popup layer as large as what the screen has for windows:
  *
  *     window -popup -max -label expose expose
  *
- * How it can be a program and not rio's: mini-9pi's draw device keeps each
- * window's pixels whole, covered or not, hidden or not (Memlayer: "its
- * content is always whole"), and each window's image has a name rio gives
- * in its winname file. So a program can open another's image by that name
- * and copy from it, as a compositor would: one draw message more, 'Z',
- * k times smaller (Draw.shrink). Plan 9's memlayer kept only a window's
- * hidden parts apart, and could not have shown a covered window.
+ * How can it be a program and not part of rio? mini-9pi's draw device
+ * keeps each window's pixels whole, covered or not, hidden or not
+ * (Memlayer: "its content is always whole"), and each window's image has a
+ * name, which rio gives in its winname file. So a program can open
+ * another's image by that name and copy from it, as a compositor would.
+ * This takes one draw message more, 'Z', which copies k times smaller
+ * (Draw.shrink). Plan 9's memlayer kept only a window's hidden parts
+ * apart, and could not have shown a covered window.
  *
- * Live: the thumbnails made again twice a second, in an image of its own
- * first and then all at once (no flicker), the windows' list read again
- * each time (one made or gone meanwhile has its place or loses it).
+ * It is live: the thumbnails are made again twice a second, first in an
+ * image of its own and then shown all at once (so there is no flicker),
+ * and the windows' list is read again each time (a window made or gone
+ * meanwhile gets its place or loses it).
  *
  * history:
- * Exposé is Apple's (Mac OS X 10.3, 2003), the first that a compositor
- * made cheap: each window was already drawn off the screen, into a buffer
- * of its own, so showing them small was copying. Windows Vista's Flip 3D
- * (2007), GNOME's Activities (2011) are the same idea. *)
+ * Exposé is Apple's (Mac OS X 10.3, 2003), the first such view that a
+ * compositor made cheap: each window was already drawn off the screen,
+ * into a buffer of its own, so showing them small was only copying.
+ * Windows Vista's Flip 3D (2007) and GNOME's Activities (2011) are the
+ * same idea. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.readdir; Cap.open_in; Cap.open_out >
 

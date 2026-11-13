@@ -1,8 +1,9 @@
-(* Elm's subscriptions: what a program asks to be told of (a frame,
- * a key, the mouse), each with the function that makes its message of
- * it. A platform has the events; [event_to_msgopt] is the meeting. *)
+(* Elm's subscriptions: they say what a program asks to be told of (a
+ * frame, a key, the mouse), each with the function that makes a message
+ * of it. A platform has the events, and [event_to_msgopt] is where the
+ * events and the subscriptions meet. *)
 (* ix: the playground has no interface for this module; ix has one for
- * each (what the .ml gives, no more). *)
+ * each module, which gives what the .ml gives and no more. *)
 
 type 'msg onesub =  
   | SubTick of (Time.posix -> 'msg)
@@ -14,22 +15,24 @@ type 'msg onesub =
   (* pad: not in Elm (its onMouseDown gives the event, with its button) *)
   | SubRightMouseDown of (unit -> 'msg)
   | SubRightMouseUp of (unit -> 'msg)
-  (* claude: the middle button (the wheel pressed), as the right one *)
+  (* the middle button (the wheel pressed), like the right one *)
   | SubMiddleMouseDown of (unit -> 'msg)
   | SubMiddleMouseUp of (unit -> 'msg)
   | SubKeyDown of (string -> 'msg)
   | SubKeyUp of (string -> 'msg)
-  (* claude: the three an application needs and a game never did (see
-   * docs/claude_notes/plans/plan_gui_teaching.md, phase 0): the
-   * characters a key press produces (a key name is not a character:
-   * shift, dead keys and layouts are the platform's business), the
-   * wheel, and the double click *)
+  (* the three subscriptions that an application needs and a game never
+   * did (see docs/claude_notes/plans/plan_gui_teaching.md, phase 0):
+   * - the characters that a key press produces (a key name is not a
+   *   character, because shift, dead keys and layouts are the
+   *   platform's business);
+   * - the wheel;
+   * - the double click. *)
   | SubTyped of (string -> 'msg)
   | SubMouseWheel of (float -> 'msg)
   | SubMouseDouble of (unit -> 'msg)
-  (* claude: the program's screen, its width and height, when the platform
-   * gives it one other than the default (Playground_platform.run_app's
-   * Playground.window's screen_size) *)
+  (* the width and height of the program's screen, when the platform
+   * gives it a screen other than the default one (the screen_size of the
+   * Playground.window given to Playground_platform.run_app) *)
   | SubResize of (int -> int -> 'msg)
 
 
@@ -61,11 +64,11 @@ type event =
   | EMouseMoveBy of (float * float) (* dx, dy, y up *)
   | EMouseButton of bool (* is_down = true *)
   | ERightMouseButton of bool (* is_down = true *)
-  | EMiddleMouseButton of bool (* claude: the same, for the middle button *)
+  | EMiddleMouseButton of bool (* the same, for the middle button *)
   | EKeyChanged of (bool (* down = true *) * string)
-  (* claude: the characters typed, not the keys pressed *)
+  (* the characters typed, not the keys pressed *)
   | ETyped of string
-  (* claude: notches up (positive) or down since the last frame *)
+  (* the notches turned up (positive) or down since the last frame *)
   | EMouseWheel of float
   | EMouseDouble
   | EResized of (int * int)

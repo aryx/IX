@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/fonts/Cff.ml; an Option.value ~default written as its match (docs/plans/done/plan_pdf.md) *)
+(* ix: copied from libs/fonts/Cff.ml in mini-chrome
+ * (docs/plans/done/plan_pdf.md). An Option.value ~default is written
+ * out as the match it stands for. *)
 
 (* See Cff.mli *)
 

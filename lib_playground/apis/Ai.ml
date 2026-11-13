@@ -3,7 +3,11 @@
 
 (* See Ai.mli *)
 
-(* ix: the author's playground's playground/apis/Ai.ml; its ways through a map, and aim_error with the wobble it stands on from libs/ai/bots/Bot.ml (Bot not copied); its optional arguments said, its functions annotated (lib_playground/ai/README.md) *)
+(* ix: copied from playground/apis/Ai.ml in the author's playground, with
+ * its ways through a map. aim_error, and the wobble it stands on, come
+ * from libs/ai/bots/Bot.ml (Bot itself is not copied). Its optional
+ * arguments are made required, and its functions are annotated with
+ * their types (lib_playground/ai/README.md). *)
 
 (*****************************************************************************)
 (* Ways through a map *)

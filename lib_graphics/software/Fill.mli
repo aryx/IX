@@ -1,7 +1,7 @@
 (* Filling polygons: which pixels are inside a polygon given by its
- * corners? The classic scanline algorithm, processing the pixels row
- * by row ("scanline" = one row, from CRT screens drawing the image one
- * line at a time):
+ * corners? The classic scanline algorithm processes the pixels row by
+ * row ("scanline" means one row, a word from CRT screens, which drew
+ * the image one line at a time):
  *
  *   for each row, look at the horizontal line through the centers of
  *   its pixels, find where it crosses the polygon's edges, sort those
@@ -18,26 +18,29 @@
  *     |  +---+  |
  *     +---------+
  *
- * Works for any polygon: convex, concave, or even self-intersecting,
- * for which "inside" needs a definition, the fill rule:
+ * It works for any polygon: convex, concave, or even self-intersecting.
+ * For a self-intersecting one, "inside" needs a definition, which is
+ * the fill rule:
  *
  * - Even_odd: a point is inside if a ray from it to infinity crosses
  *   the polygon's edges an odd number of times.
  * - Nonzero (the default in SVG, PostScript, Cairo, and so in the other
  *   Playground backends): count +1 for each edge crossed going down,
- *   -1 going up (the "winding number": how many times the polygon's
- *   outline winds around the point); inside if not 0.
+ *   and -1 for each one crossed going up (the "winding number": how
+ *   many times the polygon's outline winds around the point). The
+ *   point is inside if the count is not 0.
  *
- * They differ only for self-intersecting polygons. For a 5-pointed star
- * drawn in one stroke (a pentagram: each corner connected to the one
- * two corners further), the outline goes around each of the 5 tips once
- * but around the center pentagon twice: winding number 2, so Nonzero
- * fills the whole star, while Even_odd leaves a pentagon-shaped hole in
- * the middle (see the "star" test in tests/Unit_fill.ml).
+ * They differ only for self-intersecting polygons. Take a 5-pointed
+ * star drawn in one stroke (a pentagram: each corner is connected to
+ * the one two corners further). Its outline goes around each of the 5
+ * tips once but around the center pentagon twice, a winding number of
+ * 2. So Nonzero fills the whole star, while Even_odd leaves a
+ * pentagon-shaped hole in the middle (see the "star" test in
+ * tests/Unit_fill.ml).
  *
- * Where it stands: the one place in ix where a shape becomes pixels
- * of the program's own. Everything drawn with smooth edges is first
- * made polygons, by whoever knows the shape, and comes here:
+ * Where it stands: this is the one place in ix where a shape becomes
+ * pixels of the program's own. Everything drawn with smooth edges is
+ * first made polygons, by whoever knows the shape, and comes here:
  *
  *     a curve of a path      Curve.flatten  ---.
  *     a letter's outline     Outline.polygons --+
@@ -50,20 +53,22 @@
  *                                              |
  *                               Framebuffer.fill_span
  *
- * for a game's shapes (lib_playground's Shape_render_software), an
- * SVG picture (Svg) and a PDF page with its letters (Pdf_canvas). So
- * the rule of a path that crosses itself is decided once, here, for
- * the three. The draw device has its own filler in the kernel
- * (Draw.fillpoly; mini-9pi's Memshape), with hard edges.
+ * This is so for a game's shapes (lib_playground's
+ * Shape_render_software), for an SVG picture (Svg) and for a PDF page
+ * with its letters (Pdf_canvas). So the rule of a path that crosses
+ * itself is decided once, here, for the three. The draw device has
+ * its own filler in the kernel (Draw.fillpoly; mini-9pi's Memshape),
+ * with hard edges.
  *
  * others:
- * A filler that takes the exact area. FreeType's smooth rasterizer
- * (David Turner's, from ideas of Raph Levien's libart)
- * and those written after it walk each edge once and add, in every
- * pixel it crosses, the area it cuts off: no sub-rows, and the
- * coverage is exact in both directions where [polygons_aa] samples
- * four heights. More code and harder to check by hand; the sparse
- * cells of the optimized path here (Opti) are a step toward it.
+ * A filler can take the exact area. FreeType's smooth rasterizer
+ * (David Turner's, from ideas of Raph Levien's libart) and those
+ * written after it walk each edge once and add, in every pixel the
+ * edge crosses, the area it cuts off. There are no sub-rows, and the
+ * coverage is exact in both directions, where [polygons_aa] samples
+ * four heights. It is more code and harder to check by hand; the
+ * sparse cells of the optimized path here (Opti) are a step toward
+ * it.
  *
  * References:
  * - C. Wylie, G. W. Romney, D. C. Evans, A. Erdahl, "Half-tone
@@ -91,16 +96,16 @@ type fill_rule = Nonzero | Even_odd
 val polygon :
   rule:fill_rule -> Framebuffer.t -> (float * float) list -> rgb:int -> alpha:float -> unit
 
-(* Several polygons ("contours") filled as one shape: their edges all go
+(* Fills several polygons ("contours") as one shape: their edges all go
  * into the same edge table, so on each row the winding number counts
  * the crossings of all of them. With Nonzero, overlapping contours
  * turned the same way (all clockwise, or all counterclockwise) add up,
- * 1 + 1 = 2, still inside: filling them together paints their *union*,
- * each pixel once, even where they overlap -- no darker overlaps when
- * drawn half-transparent, unlike filling them one by one. (Contours
- * turned opposite ways subtract instead, 1 - 1 = 0: that's how a
- * letter "O" is an outer contour minus an inner one.) Stroke uses it to
- * draw thick lines. *)
+ * 1 + 1 = 2, and are still inside. Filling them together paints their
+ * *union*, each pixel once, even where they overlap. So there are no
+ * darker overlaps when they are drawn half-transparent, unlike when
+ * they are filled one by one. (Contours turned opposite ways subtract
+ * instead, 1 - 1 = 0: that's how a letter "O" is an outer contour
+ * minus an inner one.) Stroke uses it to draw thick lines. *)
 val polygons :
   rule:fill_rule -> Framebuffer.t -> (float * float) list list -> rgb:int -> alpha:float -> unit
 
@@ -115,14 +120,15 @@ val scan :
   on_span:(y:int -> float -> float -> unit) ->
   unit
 
-(* Like [polygons], with antialiasing: instead of "is the pixel's
- * center inside?", yes or no, compute *how much* of the pixel is
- * inside, from 0 to 1, and paint it that opaque. Edges then get
- * intermediate shades instead of "jaggies", the staircase effect of
- * all-or-nothing pixels (see the magnifier, "z", with "n" on and off).
+(* Like [polygons], with antialiasing: instead of asking "is the
+ * pixel's center inside?", yes or no, it computes *how much* of the
+ * pixel is inside, from 0 to 1, and paints the pixel that opaque.
+ * Edges then get intermediate shades instead of "jaggies", the
+ * staircase effect of all-or-nothing pixels (see the magnifier, "z",
+ * with "n" on and off).
  *
- * How much of a pixel is covered is estimated by scanning [subrows]
- * (default 4) rows per pixel row, and adding up, for each pixel, the
+ * How much of a pixel is covered is estimated by scanning 4 sub-rows
+ * per pixel row, and adding up, for each pixel, the
  * exact horizontal overlap of each sub-row's spans, divided by 4. E.g.
  * for 3 pixels with these spans on their 4 sub-rows:
  *
@@ -137,9 +143,9 @@ val scan :
  *
  * pixel 0: (0.5 + 0.4 + 0.2 + 0) / 4 = 0.275; pixel 2:
  * (0.5 + 0.6 + 0.8 + 1) / 4 = 0.725. Horizontally the coverage is
- * exact, vertically it's sampled 4 times: a middle ground between
- * sampling (as many samples as you can afford, e.g. 4x4 per pixel)
- * and computing exact areas.
+ * exact, and vertically it's sampled 4 times. This is a middle ground
+ * between sampling (as many samples as you can afford, e.g. 4x4 per
+ * pixel) and computing exact areas.
  *
  * References:
  * - Franklin C. Crow, "The aliasing problem in computer-generated

@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Physics.ml; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/apis/Physics.ml in the author's
+ * playground, with its optional arguments made required, where it has
+ * some (docs/plans/done/plan_playground.md) *)
 
 (* See Physics.mli *)
 

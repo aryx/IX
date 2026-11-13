@@ -1,6 +1,6 @@
 (* Gui: buttons, sliders and checkboxes, in the playground's own idiom.
 
-   A settings screen, whole:
+   Here is a whole settings screen:
 
    {[
      let update computer model =
@@ -41,13 +41,14 @@
    are values rather than a global, and where the three rival
    architectures will sit beside this one. *)
 
-(* [button computer ~at label]: a button centered at [at], true the
-   frame it is clicked -- pressed and released inside it *)
+(* [button computer ~at label] is a button centered at [at]. It is true
+   in the frame it is clicked, which means pressed and released inside
+   it. *)
 val button :
   enabled:bool -> Playground.computer -> at:Playground.number * Playground.number -> string -> bool
 
-(* [checkbox computer ~at label checked]: a tick box with [label]
-   beside it, and the value it has after this frame *)
+(* [checkbox computer ~at label checked] is a tick box with [label]
+   beside it; it returns the value it has after this frame *)
 val checkbox :
   Playground.computer ->
   at:Playground.number * Playground.number ->
@@ -55,8 +56,9 @@ val checkbox :
   bool ->
   bool
 
-(* [slider computer ~at ~from ~to_ v]: a slider showing [v], and the
-   value it has after this frame -- [v] unless it is being dragged *)
+(* [slider computer ~at ~from ~to_ v] is a slider showing [v]; it
+   returns the value it has after this frame, which is [v] unless it is
+   being dragged *)
 val slider :
   Playground.computer ->
   at:Playground.number * Playground.number ->
@@ -65,9 +67,10 @@ val slider :
   Playground.number ->
   Playground.number
 
-(* [knob computer ~at ~from ~to_ v]: a knob, as on a synthesizer's panel,
-   and its value after this frame: dragged up to turn it up, down to turn
-   it down, 200 pixels for its whole range (gui/Immediate.mli) *)
+(* [knob computer ~at ~from ~to_ v] is a knob, as on a synthesizer's
+   panel; it returns its value after this frame. It is dragged up to turn
+   it up and down to turn it down, 200 pixels for its whole range
+   (gui/Immediate.mli). *)
 val knob :
   Playground.computer ->
   at:Playground.number * Playground.number ->
@@ -76,16 +79,16 @@ val knob :
   Playground.number ->
   Playground.number
 
-(* [rocker computer ~at on]: a rocker switch, rocked by a click *)
+(* [rocker computer ~at on] is a rocker switch, rocked by a click *)
 val rocker : Playground.computer -> at:Playground.number * Playground.number -> bool -> bool
 
-(* [selector computer ~at labels i]: a rotary switch at the [i]th label,
-   and where it is after this frame: dragged a position at a time, or
-   clicked to the next *)
+(* [selector computer ~at labels i] is a rotary switch at the [i]th
+   label; it returns where it is after this frame. It is dragged a
+   position at a time, or clicked to the next. *)
 val selector : Playground.computer -> at:Playground.number * Playground.number -> string list -> int -> int
 
-(* [field computer ~at text]: a box to type in, and the text it holds
-   after this frame. Click it to give it the keys (or Tab to it), and
+(* [field computer ~at text] is a box to type in; it returns the text it
+   holds after this frame. Click it to give it the keys (or Tab to it), and
    the characters go there:
 
    {[
@@ -97,7 +100,7 @@ val selector : Playground.computer -> at:Playground.number * Playground.number -
 val field :
   enabled:bool -> Playground.computer -> at:Playground.number * Playground.number -> string -> string
 
-(* [text_area computer ~at edit]: several lines to type into, holding
+(* [text_area computer ~at edit] is several lines to type into, holding
    a {!Text_edit.t} -- a piece table, which carries its own caret, its
    own selection and every version of itself, so that undo (Control-Z)
    belongs to the text rather than to the toolkit *)
@@ -107,17 +110,17 @@ val text_area :
   Text_edit.t ->
   Text_edit.t
 
-(* [progress computer ~at fraction]: a bar filled [fraction] of the
+(* [progress computer ~at fraction] is a bar filled [fraction] of the
    way (0 to 1); it shows and answers nothing *)
 val progress : Playground.computer -> at:Playground.number * Playground.number -> Playground.number -> unit
 
-(* [menu computer ~at items chosen]: a dropdown, and which item is
-   chosen after this frame. While its items show, they take the mouse
+(* [menu computer ~at items chosen] is a dropdown; it returns which item
+   is chosen after this frame. While its items show, they take the mouse
    from every other widget. *)
 val menu :
   Playground.computer -> at:Playground.number * Playground.number -> string list -> int -> int
 
-(* [label computer ~at s]: [s], in the theme's color and size *)
+(* [label computer ~at s] draws [s], in the theme's color and size *)
 val label : Playground.computer -> at:Playground.number * Playground.number -> string -> unit
 
 (*****************************************************************************)
@@ -176,7 +179,8 @@ val text_area_in : Playground.computer -> Widget.box -> Text_edit.t -> Text_edit
 val progress_in : Playground.computer -> Widget.box -> Playground.number -> unit
 val menu_in : Playground.computer -> Widget.box -> string list -> int -> int
 
-(* a list box: which row is selected, if any; a click selects another *)
+(* a list box: it returns which row is selected, if any; a click selects
+   another *)
 val list_in : Playground.computer -> Widget.box -> string list -> int option -> int option
 
 (* what each widget asks for, in the current theme, to build the
@@ -204,14 +208,14 @@ val area : Playground.computer -> Widget.box
    click that was meant for a menu item. *)
 val modal : unit -> bool
 
-(* the shapes of the widgets this frame asked for, back to front; for
-   [view], and it ends the frame *)
+(* the shapes of the widgets that this frame asked for, back to front.
+   It is for [view], and it ends the frame. *)
 val draw : unit -> Playground.shape list
 
-(* ix's own: [draw]'s shapes in two layers, the widgets, then what is
-   over them all (an open menu's items): a program that covers the
-   widgets with its own pictures of them (a skin) draws the second
-   layer last *)
+(* ix's own: the shapes of [draw] in two layers, the widgets, then what
+   is over them all (an open menu's items). A program that covers the
+   widgets with its own pictures of them (a skin) draws the second layer
+   last. *)
 val draw_layers : unit -> Playground.shape list * Playground.shape list
 
 (*****************************************************************************)

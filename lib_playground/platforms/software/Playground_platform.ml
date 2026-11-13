@@ -1,50 +1,52 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The platform that computes its pixels, on Plan 9 (mini-9pi; in a
- * window of mini-rio's or on the bare screen): docs/plans/done/plan_playground.md,
- * stage 2. The playground's software platform, SDL's window become the
- * draw device's.
+(* The platform that computes its pixels, on Plan 9 (mini-9pi, in a
+ * window of mini-rio's or on the bare screen;
+ * docs/plans/done/plan_playground.md, stage 2). It is the playground's
+ * software platform, with the draw device's window in place of SDL's.
  *
  * A frame is drawn by the program, in its own memory
  * (Shape_render_software, in a Framebuffer: lib_graphics/software), and
- * given to the device as a picture: the bytes loaded into an image of
- * the kernel's (Display.load), which is then drawn on the window
+ * given to the device as a picture: the bytes are loaded into an image
+ * of the kernel's (Display.load), which is then drawn on the window
  * (Draw.draw) and shown (Display.flush). The device draws nothing but
- * that: the other platform (../draw) asks it for each shape.
+ * that, whereas the other platform (../draw) asks it for each shape.
  *
- * Not the whole picture each time: the parts of it that changed since
- * the frame before (Redraw). A whole frame of 480 by 480 is a second
- * under QEMU (the shapes 0.6 s, the load 0.2), and a key waited for it.
+ * The platform does not give the whole picture each time, only the
+ * parts of it that changed since the frame before (Redraw). A whole
+ * frame of 480 by 480 takes a second under QEMU (0.6 s for the shapes,
+ * 0.2 for the load), and a key had to wait for it.
  *
- * The picture is a square, the playground's 1000 units on the smaller
- * of the window's sides, in its middle.
+ * The picture is a square in the middle of the window, with the
+ * playground's 1000 units on the smaller of the window's sides.
  *
- * The loop is Plan9_loop's (the clock, the keys, the mouse: the same
- * for the platform that asks the device for each shape).
+ * The loop is Plan9_loop's (the clock, the keys and the mouse are the
+ * same for the platform that asks the device for each shape).
  *
  * The clock. A program's Tick is a sixtieth of a second of its world,
- * whatever the machine (a piece of Tetris falls by ticks): so the ticks
+ * whatever the machine (a piece of Tetris falls by ticks). So the ticks
  * due since the start are counted on the system's clock and all given,
  * then one frame is drawn. A machine that draws 5 frames a second plays
  * the same game as one that draws 60, less smoothly.
  *
  * The keys. Plan 9's console gives characters, as they are typed, and
  * no key's release. Where there is a /dev/kbd (mini-9pi's, and a window
- * of mini-rio's: the keys down, at each change), a key is down and up
- * as it is, and the console's characters are only what was typed
- * (Sub.on_typed). Where there is none, a key is down from its character
- * to the next tick: enough for a program that asks for presses, not for
- * one that asks whether a key is held. Ctrl-Q ends the program, as on
- * the playground's platforms, and so does Delete.
+ * of mini-rio's, which give the keys down at each change), a key is
+ * down and up as it really is, and the console's characters are only
+ * what was typed (Sub.on_typed). Where there is none, a key is down
+ * from its character to the next tick, which is enough for a program
+ * that asks for presses, but not for one that asks whether a key is
+ * held. Ctrl-Q ends the program, as on the playground's platforms, and
+ * so does Delete.
  *
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
- *   redraw=all  (a flag) each frame drawn whole, not what changed only:
+ *   redraw=all  (a flag) draws each frame whole, not only what changed,
  *               to see what Redraw saves
- *   redraw=top  (a flag) what changed looked for at the top only, a
- *               group whole (Redraw)
- *   -frames n   n frames at once, the script's keys in them, then the
- *               picture stays: a session that is the same each time,
+ *   redraw=top  (a flag) looks for what changed at the top only, a group
+ *               as a whole (Redraw)
+ *   -frames n   plays n frames at once, the script's keys in them, then
+ *               the picture stays: a session that is the same each time,
  *               for a test to compare its screen (Session.mli) *)
 
 (* where the program draws: the window, the picture's square in it, the

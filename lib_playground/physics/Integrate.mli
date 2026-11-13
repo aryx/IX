@@ -1,10 +1,11 @@
-(* One time step: from a body's state at time t, and the acceleration
- * the forces give it, its state at t + dt. Newton's laws say how
- * position and velocity *change*, continuously; a computer takes small
- * steps instead, and each way of stepping makes its own small error --
- * which, over thousands of steps, is the whole difference between a
- * planet staying on its orbit and a planet flying away. Four methods,
- * each a few lines, to compare (notes_2d_physics.md sections 4-5).
+(* One time step computes, from a body's state at time t and the
+ * acceleration the forces give it, its state at t + dt. Newton's laws
+ * say how position and velocity *change*, continuously; a computer
+ * takes small steps instead, and each way of stepping makes its own
+ * small error. Over thousands of steps, that error is the whole
+ * difference between a planet staying on its orbit and a planet flying
+ * away. Here are four methods, each a few lines long, to compare
+ * (notes_2d_physics.md sections 4-5).
  *
  * Worked example: a ball thrown up at 10 m/s, g = 10 m/s^2, dt = 0.1 s.
  * After 0.5 s the exact height is 10 * 0.5 - 5 * 0.5^2 = 3.75 m; after 5
@@ -18,23 +19,24 @@
  *     4    6     3.4         6     3.0
  *     5    5     4.0         5     3.5        Verlet, RK4: 3.75
  *
- * explicit Euler 0.25 m too high, semi-implicit 0.25 m too low (both
- * "first order": halve dt, halve the error), Verlet and RK4 exact (a
- * constant acceleration is their easy case).
+ * Explicit Euler is 0.25 m too high and semi-implicit Euler 0.25 m too
+ * low (both are "first order": halve dt and you halve the error);
+ * Verlet and RK4 are exact (a constant acceleration is their easy
+ * case).
  *
  * Over a long run, what matters is energy. On a circular orbit (gm =
  * 1,000,000, r = 100, v = 100, dt = 1/60 s: 377 steps per orbit),
  * explicit Euler gains energy at every step: after one orbit the
- * radius is 120, after ten 190 -- the planet spirals out. Semi-implicit
- * Euler and Verlet are "symplectic": their energy error oscillates
- * instead of accumulating, the radius stays within 0.01% of 100 after
- * ten orbits. RK4 is much more accurate per step (four accelerations
- * per step), but not symplectic: over very long runs it drifts too.
- * Games (Box2D, Chipmunk) use semi-implicit Euler: as cheap as Euler,
- * and stable.
+ * radius is 120, and after ten it is 190: the planet spirals out.
+ * Semi-implicit Euler and Verlet are "symplectic": their energy error
+ * oscillates instead of accumulating, and the radius stays within
+ * 0.01% of 100 after ten orbits. RK4 is much more accurate per step
+ * (four accelerations per step), but not symplectic: over very long
+ * runs it drifts too. Games (Box2D, Chipmunk) use semi-implicit Euler,
+ * which is as cheap as Euler, and stable.
  *
- * The two Eulers differ by one line's place, which is the whole of
- * the first table:
+ * The two Eulers differ only in the place of one line, and that
+ * explains the whole first table:
  *
  *   explicit        y += v dt;   v += a dt      the old velocity moves
  *   semi-implicit   v += a dt;   y += v dt      the new one does
@@ -55,18 +57,18 @@
  * which stays stable with stiff springs where the explicit methods
  * blow up. *Semi-implicit* Euler is explicit to compute; its name
  * is for the new velocity it uses, and it is also called symplectic
- * Euler. *Order*: how the error shrinks with dt, 1 for both Eulers,
- * 2 for Verlet, 4 for RK4.
+ * Euler. *Order*: how the error shrinks with dt; it is 1 for both
+ * Eulers, 2 for Verlet and 4 for RK4.
  *
  * cs-history:
- * Verlet's method has many fathers, each for a physics of his own:
- * Stormer (1907) for the paths of the electrons that make the
- * aurora, Verlet (1967) for the molecules of a fluid, 864 atoms
- * of argon on a computer; and Newton's own figure for the law of
+ * Verlet's method has many fathers, each for a physics of his own.
+ * Stormer (1907) used it for the paths of the electrons that make
+ * the aurora, and Verlet (1967) for the molecules of a fluid, 864
+ * atoms of argon on a computer. Newton's own figure for the law of
  * equal areas, in the Principia, steps a planet this way (Hairer,
  * Lubich and Wanner say so). Games took it from Thomas Jakobsen,
- * "Advanced Character Physics" (GDC 2001): Hitman's falling bodies,
- * points moved by Verlet and held together by sticks.
+ * "Advanced Character Physics" (GDC 2001): Hitman's falling bodies
+ * are points moved by Verlet and held together by sticks.
  *
  * References: Euler, Institutionum calculi integralis, 1768; Verlet,
  * "Computer 'Experiments' on Classical Fluids", Physical Review, 1967
@@ -74,7 +76,9 @@
  * Hairer, Lubich, Wanner, Geometric Numerical Integration, 2002 (why
  * symplectic methods keep orbits closed); Feynman, Lectures on
  * Physics, vol. 1, chapter 9 (an orbit stepped by hand). *)
-(* ix: the author's playground's libs/physics/2d/Integrate.mli; its optional arguments are said, where it has some (docs/plans/done/plan_playground.md) *)
+(* ix: copied from libs/physics/2d/Integrate.mli in the author's playground.
+ * Where it has optional arguments, they are required here
+ * (docs/plans/done/plan_playground.md). *)
 
 (* the four methods, to switch between them *)
 type method_ = Explicit_euler | Semi_implicit_euler | Verlet | Rk4
@@ -82,29 +86,31 @@ type method_ = Explicit_euler | Semi_implicit_euler | Verlet | Rk4
 (* in that order, the simplest first *)
 val methods : method_ list
 
-(* e.g. "semi-implicit Euler" *)
+(* a method's name, e.g. "semi-implicit Euler" *)
 val name : method_ -> string
 
 (* [step m ~force ~dt body]: [body] dt seconds later, under [force],
  * with the method [m] *)
 val step : method_ -> force:Force.t -> dt:float -> Body.t -> Body.t
 
-(* The methods, each on its own. With a the acceleration at (pos, vel): *)
+(* The methods, each on its own, where a is the acceleration at (pos,
+ * vel): *)
 
-(* pos += vel dt, then vel += a dt: the obvious one; gains energy *)
+(* pos += vel dt, then vel += a dt: the obvious one, which gains
+ * energy *)
 val explicit_euler : force:Force.t -> dt:float -> Body.t -> Body.t
 
 (* vel += a dt, then pos += vel dt (the *new* vel): the one games use *)
 val semi_implicit_euler : force:Force.t -> dt:float -> Body.t -> Body.t
 
 (* velocity Verlet: pos += vel dt + a dt^2 / 2, then vel += the average
- * of the old and the new accelerations times dt; second order, and
- * symplectic. (With a force depending on the velocity, like drag, the
+ * of the old and the new accelerations times dt. It is second order,
+ * and symplectic. (With a force depending on the velocity, like drag, the
  * new acceleration uses a predicted velocity, vel + a dt: then it's
  * only an approximation of the method.) *)
 val verlet : force:Force.t -> dt:float -> Body.t -> Body.t
 
-(* the classic fourth-order Runge-Kutta: the derivative (vel, a)
+(* the classic fourth-order Runge-Kutta: the derivative (vel, a) is
  * sampled at the start, twice in the middle, and at the end of the
- * step, averaged with weights 1, 2, 2, 1 *)
+ * step, and the samples are averaged with weights 1, 2, 2, 1 *)
 val rk4 : force:Force.t -> dt:float -> Body.t -> Body.t

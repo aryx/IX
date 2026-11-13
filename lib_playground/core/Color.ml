@@ -1,4 +1,5 @@
-(* ix: the author's playground's libs/core/Color.ml (docs/plans/done/plan_playground.md) *)
+(* ix: copied from libs/core/Color.ml in the author's playground
+ * (docs/plans/done/plan_playground.md) *)
 type t =
   | Hex of string
   | Rgb of int * int * int

@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/gui/Grid.ml; item's rowspan, colspan and sticky and make's gap and weights are said, where they were optional (1, 1, ""; 0., none) (docs/plans/plan_gui.md) *)
+(* ix: copied from libs/gui/Grid.ml in the author's playground
+ * (docs/plans/plan_gui.md). The rowspan, colspan and sticky of item,
+ * and the gap and weights of make, must be given here; there they
+ * were optional (1, 1 and ""; 0. and no weights). *)
 
 (* See Grid.mli *)
 

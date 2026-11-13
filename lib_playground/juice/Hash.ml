@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/juice/Hash.ml; on floats and Int32, for a machine whose ints have 31 bits *)
+(* ix: copied from libs/juice/Hash.ml in the author's playground. It
+ * computes on floats and Int32, for a machine whose ints have 31
+ * bits. *)
 
 (* See Hash.mli *)
 

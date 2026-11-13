@@ -1,13 +1,14 @@
-(* Where a toolkit's look lives: all its colors and sizes in one
- * record, so that changing what a button looks like is changing one
- * value and not thirty scattered constants.
+(* This module is where a toolkit's look lives. All its colors and
+ * sizes are in one record, so changing what a button looks like means
+ * changing one value and not thirty scattered constants.
  *
- * Every toolkit has this and gives it a different name -- X11 and
- * Motif's *resources* (a ~/.Xdefaults file, the 1980s), the web's CSS
- * (1996), Flutter's ThemeData, the "design tokens" of today. It is
- * also the only honest way to draw everything yourself: since we
- * refuse the system's widgets (notes_gui.md section 3), the system's
- * colors are not ours to read, so we must say what grey we mean.
+ * Every toolkit has this and gives it a different name: X11 and Motif
+ * have *resources* (a ~/.Xdefaults file, in the 1980s), the web has
+ * CSS (1996), Flutter has ThemeData, and today people speak of "design
+ * tokens". It is also the only honest way to draw everything
+ * yourself: since we refuse the system's widgets (notes_gui.md section
+ * 3), the system's colors are not ours to read, so we must say what
+ * grey we mean.
  *
  * A widget asks the theme for three faces, and that is the whole of
  * how a button feels alive under the mouse:
@@ -39,13 +40,13 @@ type t = {
   (* how wide a slider is, and how wide its knob *)
   slider_width : float;
   knob : float;
-  (* a text field: its own face, paler than a button's since it is a
-     hole to type into rather than a thing to press, and how wide it
-     is when nothing says otherwise *)
+  (* A text field has its own face, paler than a button's because a
+     field is a hole to type into rather than a thing to press, and a
+     width for when nothing says otherwise. *)
   field_face : Color.t;
   field_width : float;
-  (* a knob's or a rotary switch's diameter, its face, and the line on it
-     that says where it points *)
+  (* the diameter of a knob or a rotary switch, its face, and the
+     color of the line on it that says where it points *)
   dial : float;
   dial_face : Color.t;
   pointer : Color.t;

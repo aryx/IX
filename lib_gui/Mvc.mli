@@ -1,10 +1,10 @@
 (* Model-View-Controller: the model is the truth, and the views watch
  * it (notes_gui.md section 4).
  *
- * Trygve Reenskaug, visiting Xerox PARC, 1979, for Smalltalk --
- * the oldest name in this whole area, and the one most argued about
- * since, because almost nothing called MVC today is what he wrote
- * down. His arrangement:
+ * Trygve Reenskaug made it in 1979, for Smalltalk, while visiting
+ * Xerox PARC. It is the oldest name in this whole area, and the one
+ * most argued about since, because almost nothing called MVC today is
+ * what he wrote down. Here is his arrangement:
  *
  *        +---------+   changed!   +-------+
  *        |  model  | -----------> | view  |   the view asks the model
@@ -16,14 +16,15 @@
  *        |          controller            |
  *        +--------------------------------+
  *
- * The one idea worth keeping, and the reason it beat callbacks: the
- * count is in *one* place. A view never holds the truth, it shows it;
+ * The one idea worth keeping, and the reason it beat callbacks, is
+ * that the count is in *one* place. A view never holds the truth, it shows it;
  * when the model changes it says so, and every view that cares reads
  * it again. The bug of Retained.mli -- a label saying something the
  * program does not believe -- cannot be written, because the label is
  * not where the number lives.
  *
- * What it costs, and what MVU (the playground itself) answers:
+ * Here is what it costs, and what MVU (the playground itself)
+ * answers:
  *
  *   - **the notification graph**. Who is observing what is invisible
  *     in the code and only exists at run time. A change that touches
@@ -37,12 +38,12 @@
  *     it, which is a sign that it is not a real thing so much as
  *     "the rest".
  *
- * This module is only the model half -- a value, and who to tell when
+ * This module is only the model half: a value, and who to tell when
  * it changes. The views here are Retained widgets that re-read it,
  * and the controller is the callbacks on them, which is exactly
  * Smalltalk's arrangement with OCaml's spelling.
  *
- * Worked example, a count watched by two labels:
+ * Here is a worked example, a count watched by two labels:
  *
  *   let count = Mvc.create 0
  *   let show l () = Retained.set_text l (string_of_int (Mvc.get count))
@@ -50,8 +51,9 @@
  *   Mvc.on_change count (show small);
  *   Mvc.change count (fun n -> n + 1)
  *
- * and both labels say 1, neither named by whoever counted; a third
- * view is one more [on_change], with no line of the counting touched.
+ * Both labels then say 1, and the code that counted named neither of
+ * them. A third view is one more [on_change], and no line of the
+ * counting is touched.
  *
  * terminology:
  * The model's half has a name of its own, the *observer* pattern
@@ -59,9 +61,9 @@
  * *subject* keeps a list of *observers* and tells each when it
  * changes. Smalltalk-80 had it in every object, as its *dependents*
  * (changed: on one side, update: on the other). Publish and
- * subscribe, a signal's listeners, a spreadsheet's cells that
- * recompute when another does (Sheet): the same list of who to
- * tell.
+ * subscribe, the listeners of a signal, and the cells of a
+ * spreadsheet that recompute when another does (Sheet) all keep the
+ * same list of who to tell.
  *
  * evolution:
  * The three letters were kept and the arrangement was not. In
@@ -86,13 +88,13 @@ type 'model t
 val create : 'model -> 'model t
 val get : 'model t -> 'model
 
-(* [change t f]: the new model, and then everybody who is watching is
- * told, in the order they signed up *)
+(* [change t f] makes [f] of the model the new model, and then
+ * everybody who is watching is told, in the order they signed up. *)
 val change : 'model t -> ('model -> 'model) -> unit
 
 (* [on_change t f]: [f] is called after every change. There is no way
  * to stop watching, on purpose: a toolkit this size does not need it,
- * and its absence is the leak named above, in one line. *)
+ * and its absence shows the leak named above, in one line. *)
 val on_change : 'model t -> (unit -> unit) -> unit
 
 (* how many times the observers have been told, which is the number

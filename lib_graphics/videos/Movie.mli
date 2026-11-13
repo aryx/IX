@@ -1,28 +1,30 @@
-(* Movie: a video as a player sees it, whatever its format (a GIF's
- * frames, Y4M, FLI, AVI, and MPEG-1 in time) --
- * pictures, each with the time it starts, decoded when asked for.
+(* Movie is a video as a player sees it, whatever its format (a GIF's
+ * frames, Y4M, FLI, AVI, and MPEG-1 in time): pictures, each with the
+ * time it starts, decoded when they are asked for.
 
-   A minute of 320 x 240 is 1,800 pictures of 300 KB each: half a
-   gigabyte decoded, so a movie is not its pictures but what gives them
-   one at a time. And most formats can only go forward: a delta frame
-   (FLI's, MPEG's P frames) is the one before it plus what changed, so
-   frame 100 needs frame 99, which needs 98... back to the last frame
-   stored whole, a **key frame**. [sequential] keeps the decoder's
-   state at the last frame given, and goes on from there; it keeps the
-   frame before that one too, as decoders keep their reference frames
-   (and a player comparing a frame with the one before it needs):
+   A minute of 320 x 240 is 1,800 pictures of 300 KB each, which is
+   half a gigabyte decoded. So a movie is not its pictures but what
+   gives them one at a time. Also, most formats can only go forward. A
+   delta frame (FLI's frames, MPEG's P frames) is the one before it
+   plus what changed, so frame 100 needs frame 99, which needs 98, and
+   so on back to the last frame stored whole, a **key frame**.
+   [sequential] keeps the decoder's state at the last frame given, and
+   goes on from there. It keeps the frame before that one too, as
+   decoders keep their reference frames (and as a player that compares
+   a frame with the one before it needs):
 
      asked:    0   1   2   3   2   0      (seeks back)
      decoded:  0   1   2   3   -   0      the one before is kept; further
                                           back, from the start again
 
-   which is why a player seeks to key frames, and why a movie that is
+   This is why a player seeks to key frames, and why a movie that is
    only key frames (Motion JPEG) seeks anywhere at once.
 
-   When a frame plays is the times array's: times.(i) is when frame i
-   starts, in seconds, times.(0) = 0, and it lasts until the next one
-   (the last until [duration]). A fixed rate is times.(i) = i / rate; a
-   GIF's frames each have their own delay. *)
+   The times array says when a frame plays: times.(i) is when frame i
+   starts, in seconds, times.(0) = 0, and the frame lasts until the
+   next one (the last frame lasts until [duration]). A fixed rate gives
+   times.(i) = i / rate, and a GIF's frames each have their own
+   delay. *)
 
 type t = {
   width : int;
@@ -34,21 +36,22 @@ type t = {
 
 val frame_count : t -> int
 
-(* [of_frames frames]: pictures already decoded, each with how long it
- * shows, in seconds (a GIF's) *)
+(* [of_frames frames] is a movie of pictures already decoded, each with
+ * how long it shows, in seconds (as a GIF's are) *)
 val of_frames : (Rgba_image.t * float) list -> t
 
-(* [sequential ~width ~height ~times ~start ~next]: a movie decoded
- * forward only -- [start ()] the decoder's state before frame 0,
- * [next s] frame i from the state after frame i - 1, and the state
- * after it. Asking the frame just given again, or the one before it,
- * costs nothing; the next, one [next]; an earlier one, [start] again
- * and every frame up to it. *)
+(* [sequential ~width ~height ~times ~start ~next] is a movie decoded
+ * forward only. [start ()] is the decoder's state before frame 0, and
+ * [next s] gives frame i from the state after frame i - 1, and the
+ * state after frame i. Asking again for the frame just given, or for
+ * the one before it, costs nothing; asking for the next one costs one
+ * [next]; asking for an earlier one costs [start] again and every
+ * frame up to it. *)
 val sequential : width:int -> height:int -> times:float array -> duration:float -> start:(unit -> 's) -> next:('s -> 's * Rgba_image.t) -> t
 
-(* [index_at m t]: the frame showing at [t] seconds (the first before
- * 0, the last after [duration]) *)
+(* [index_at m t] is the frame showing at [t] seconds (the first frame
+ * before 0, and the last one after [duration]) *)
 val index_at : t -> float -> int
 
-(* [frame_at m t]: that frame *)
+(* [frame_at m t] is that frame's picture *)
 val frame_at : t -> float -> Rgba_image.t

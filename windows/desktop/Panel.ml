@@ -1,21 +1,22 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* panel: the bar along a side of the desktop (plan_desktop.md): the start
- * button, a button for each window, the clock. Under rio, in a window of
- * the panel layer:
+(* panel: the bar along a side of the desktop (plan_desktop.md), with the
+ * start button, a button for each window, and the clock. It runs under rio,
+ * in a window of the panel layer:
  *
  *     window -panel -edge bottom 28 panel
  *
- * -noclock: none (a recorded session's screens must not change with the
- * time). The clock says GMT, as date does: the system has no time zone. The
- * settings (settings, Prefs) say its form, 24 or 12 hours or none, and the
- * side the panel is on: it asks rio to move it when that changes.
+ * With -noclock there is no clock (a recorded session's screens must not
+ * change with the time). The clock says GMT, as date does, because the
+ * system has no time zone. The settings (settings, Prefs) say the clock's
+ * form, 24 or 12 hours or none, and the side the panel is on; the panel
+ * asks rio to move it when that changes.
  *
  * It looks at /dev/wsys once a second (Taskbar says what it does with
  * that), and draws only when what it would draw has changed. It waits
- * for the mouse and that second and for nothing else: a program always
- * on the screen must not cost a frame loop's processor. *)
+ * for the mouse and that second and for nothing else, because a program
+ * always on the screen must not cost as much processor as a frame loop. *)
 
 type caps = < Cap.draw; Cap.mouse; Cap.fork; Cap.env; Cap.readdir; Cap.open_in; Cap.open_out >
 

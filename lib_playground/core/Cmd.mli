@@ -16,31 +16,34 @@
    platform performing the command its own way.
 
    A command that reaches the network carries the program's capability
-   to do so (Cap.network, plan_caps.md): it was checked where the
-   command was built, in the program, and the platform only performs
-   it -- a program that wasn't given the network can't even write one.
+   to do so (Cap.network, plan_caps.md). The capability was checked
+   where the command was built, in the program, and the platform only
+   performs it: a program that wasn't given the network can't even
+   write one.
 
-   Programs build them with Playground.Http.get (Elm's spelling); the
-   constructors are here for the platforms. *)
-(* ix: the author's playground's libs/core/Cmd.mli (docs/plans/done/plan_playground.md) *)
+   Programs build commands with Playground.Http.get (Elm's spelling);
+   the constructors are here for the platforms. *)
+(* ix: copied from libs/core/Cmd.mli in the author's playground
+ * (docs/plans/done/plan_playground.md) *)
 
-(* ix: the playground's has two more, Http_get and Http_post, with their
- * types (a response, an error) and the program's Cap.network: left out, a
- * game on mini-9pi asks nothing of the network yet. So the text above
- * says what a command is for; here there is Msg only. *)
+(* ix: the playground's type has two more constructors, Http_get and
+ * Http_post, with their types (a response, an error) and the program's
+ * Cap.network. They are left out because a game on mini-9pi asks
+ * nothing of the network yet. So the text above says what a command is
+ * for, but here there is only Msg. *)
 type 'msg t =
   | None
-  (* the message given back to [update] at the next frame *)
+  (* the message, given back to [update] at the next frame *)
   | Msg of 'msg
   | Batch of 'msg t list
 
 (* nothing to do *)
 val none : 'msg t
 
-(* several commands, performed in parallel, their answers coming back
- * in any order: Elm's Cmd.batch *)
+(* several commands, performed in parallel; their answers come back in
+ * any order. This is Elm's Cmd.batch. *)
 val batch : 'msg t list -> 'msg t
 
-(* the commands of a batch, flattened, None dropped: what a platform
- * performs *)
+(* the commands of a batch, flattened, with None dropped: this is what a
+ * platform performs *)
 val to_list : 'msg t -> 'msg t list

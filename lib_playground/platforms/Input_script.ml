@@ -2,7 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See Input_script.mli *)
-(* ix: the playground's playground/platforms/native_common/Input_script.ml *)
+(* ix: copied from playground/platforms/native_common/Input_script.ml in
+ * the author's playground *)
 
 (* what the script says, and the first and last frames it says it for *)
 type entry =

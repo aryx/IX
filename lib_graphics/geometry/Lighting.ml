@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's libs/graphics/3d/geometry/
- * Lighting.ml (docs/plans/plan_virtuaracing.md); Float.max for
+ * Lighting.ml (docs/plans/plan_virtuaracing.md); Float.max in place of
  * Stdlib.max (mini-ml has no Stdlib) *)
 
 (* See Lighting.mli *)

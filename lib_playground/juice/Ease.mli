@@ -1,7 +1,8 @@
 (* Easing: how a thing gets from here to there, not only where it goes.
 
-   A curve is a function from [0, 1] to numbers, 0 at 0 and 1 at 1: the
-   time gone, as a fraction, to the way gone, as a fraction. The
+   A curve is a function from [0, 1] to numbers, which is 0 at 0 and 1
+   at 1: it maps the time gone, as a fraction, to the way gone, as a
+   fraction. The
    straight line, [linear], is what a program does when nobody thought
    about it -- a box that starts at full speed and stops dead, like a
    machine. Everything else is a choice of how it starts and stops:
@@ -22,8 +23,9 @@
    Flash (2002), with the names everyone still uses; every tween library
    since (jQuery's, CSS's, Unity's DOTween, Godot's Tween) copies them.
 
-   Penner's families come in three: [in] (starts slow: a curve of its
-   own), [out] (ends slow) and [in_out] (both). Only the [in] one needs
+   Each of Penner's families comes in three: [in] (it starts slow, and
+   is a curve of its own), [out] (it ends slow) and [in_out] (both).
+   Only the [in] one needs
    writing. The [out] one is the [in] one run backwards -- turned half a
    turn around the middle of the square:
 
@@ -44,22 +46,22 @@
                                    wobbles and settles)
      bounce   a ball's bounces     backwards: they grow
 
-   and [smoothstep], 3t^2 - 2t^3 (Perlin's, in shaders), close to
-   [in_out cubic] but gentler.
+   There is also [smoothstep], 3t^2 - 2t^3 (Perlin's, used in shaders),
+   which is close to [in_out cubic] but gentler.
 
    Worked example (checked by the tests). At t = 0.5, [quad] is 0.25:
-   a quarter of the way at half the time; [out quad] 0.75. [back]'s [s]
-   is Penner's 1.70158, a number that looks arbitrary and is not: it is
-   the one that makes [out back] overshoot by exactly 10% -- up to 1.1,
-   at t = 0.58, then back to 1. A button that pops in with it grows 10%
-   too big and settles, which reads as "alive"; with [s] = 0 it is just
-   [cubic].
+   a quarter of the way at half the time; [out quad] is 0.75. The [s]
+   of [back] is Penner's 1.70158, a number that looks arbitrary and is
+   not: it is the one that makes [out back] overshoot by exactly 10% --
+   up to 1.1, at t = 0.58, then back to 1. A button that pops in with it
+   grows 10% too big and settles, which reads as "alive"; with [s] = 0
+   it is just [cubic].
 
-   Honest about scale: these are the curves of a tween, the same
-   distance in the same time whatever happens. A thing that must react
+   Honest about scale: these are the curves of a tween, which covers the
+   same distance in the same time whatever happens. A thing that must react
    while it moves (follow a moving target, be pushed) needs a state
    stepped every frame -- a spring -- not a curve. *)
-(* ix: the author's playground's libs/juice/Ease.mli *)
+(* ix: copied from libs/juice/Ease.mli in the author's playground *)
 
 (* a curve, from [0, 1] (time) to how far along (0 at 0, 1 at 1; [back]
  * and [elastic] go outside [0, 1] in between) *)
@@ -77,11 +79,11 @@ val bounce : t
 
 val smoothstep : t
 
-(* [out f]: [f] run backwards, ending slow where [f] starts slow; [out
- * (out f)] is [f] again *)
+(* [out f] is [f] run backwards, which ends slow where [f] starts slow;
+ * [out (out f)] is [f] again *)
 val out : t -> t
 
-(* [in_out f]: [f] on the first half, [out f] on the second *)
+(* [in_out f] is [f] on the first half and [out f] on the second *)
 val in_out : t -> t
 
 (* every curve, by its usual name ("in_quad", "out_quad", "in_out_quad",

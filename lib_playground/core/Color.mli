@@ -1,7 +1,8 @@
-(* A colour: Elm's Color, as the playground's shapes take it. Its
- * named ones are Tango's palette (Elm's own choice). *)
+(* A colour, as the playground's shapes take it; this is Elm's Color.
+ * Its named colours come from the Tango palette, which was Elm's own
+ * choice. *)
 (* ix: the playground has no interface for this module; ix has one for
- * each (what the .ml gives, no more). *)
+ * each module, which gives what the .ml gives and no more. *)
 
 type t =
   | Hex of string (* "#cc0000" *)

@@ -1,4 +1,5 @@
-(* ix: the author's playground's libs/core/Time.ml (docs/plans/done/plan_playground.md) *)
+(* ix: copied from libs/core/Time.ml in the author's playground
+ * (docs/plans/done/plan_playground.md) *)
 type posix = float
 let millis_to_posix n =
   float_of_int n

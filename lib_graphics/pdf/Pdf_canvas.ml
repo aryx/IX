@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_canvas.ml; the paper's pixels are bytes, where they were floats (the type says why), and the picture's a Bytes (Rgba_image's here) (docs/plans/done/plan_pdf.md) *)
+(* ix: from mini-chrome's libs/pdf/Pdf_canvas.ml. The paper's pixels are
+ * bytes, where they were floats (the type says why), and the picture's
+ * pixels are a Bytes (Rgba_image's type here)
+ * (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_canvas.mli *)
 

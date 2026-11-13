@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/ai/movement/Pathfind.ml *)
+(* ix: copied from libs/ai/movement/Pathfind.ml in the author's
+ * playground *)
 
 type 'node problem = { neighbors : 'node -> ('node * float) list; goal : 'node -> bool; estimate : 'node -> float }
 type 'node result = { path : 'node list; cost : float; visited : 'node list }

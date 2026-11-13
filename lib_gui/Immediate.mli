@@ -1,8 +1,9 @@
-(* Immediate mode: widgets that do not exist (notes_gui.md section 3).
+(* In immediate mode, the widgets do not exist (notes_gui.md section
+ * 3).
  *
- * There is no button object, no tree, no callback: each frame, a
- * program *asks* for a button -- draw a rectangle here with this
- * label, and tell me whether it was clicked -- and the answer is a
+ * There is no button object, no tree, and no callback. Each frame, a
+ * program *asks* for a button ("draw a rectangle here with this
+ * label, and tell me whether it was clicked"), and the answer is a
  * bool that lasts as long as the [if] around it.
  *
  *   frame N     ask: draw it, test the mouse -> false
@@ -18,9 +19,10 @@
  *
  * The one thing that must survive between frames is *who has the
  * mouse*: press inside a slider and it keeps the mouse until you
- * release, even if you wander off it -- the "capture" of section 6,
- * two lines that nobody writes first and every dragging interface
- * needs. That, plus the theme, is the whole of [t].
+ * release, even if you wander off it. This is the "capture" of
+ * section 6, two lines that nobody writes first and that every
+ * dragging interface needs. That, plus the theme, is the whole of
+ * [t].
  *
  * A widget is told apart from its neighbours by its *rectangle*:
  *
@@ -29,16 +31,16 @@
  * Dear ImGui hashes the label instead, which is why two buttons
  * called "OK" in one window are its classic bug. Here two buttons
  * with the same label are fine and two buttons in the same place are
- * not -- a bug you can see on the screen, which is the better one to
- * have.
+ * not. That is a bug you can see on the screen, which is the better
+ * one to have.
  *
  * Everything here is a value: a widget takes the toolkit's state and
  * gives back a new one, plus its answer. The mutable frame buffer
- * that makes the playground's [Gui] read as it does is in
- * Gui.ml, and nowhere else.
+ * that makes the playground's [Gui] read as it does is in Gui.ml, and
+ * nowhere else.
  *
- * Worked example, a button at (0, 100) of 200 x 40, the mouse
- * resting at (0, 100) on it:
+ * Here is a worked example: a button at (0, 100) of 200 x 40, with
+ * the mouse resting on it at (0, 100):
  *
  *   frame  mdown  mclick   hot    held    button returns
  *     1    false  false    true   false   false
@@ -46,20 +48,20 @@
  *     3    false  TRUE     true   false   TRUE      (released in it)
  *     4    false  false    true   false   false
  *
- * and if between frames 2 and 3 the mouse leaves the button, frame
- * 3's answer is false: a press that ends outside is not a click,
- * which is how every toolkit since the Macintosh (1984) has let you
- * change your mind.
+ * If the mouse leaves the button between frames 2 and 3, frame 3's
+ * answer is false: a press that ends outside is not a click, which is
+ * how every toolkit since the Macintosh (1984) has let you change your
+ * mind.
  *
- * What it costs, honestly: state that must persist (a scroll
- * position, which field has focus) has no widget to live in and needs
- * a table like [capture] above; and nothing can be measured before it
+ * Here is what it costs, honestly. State that must persist (a scroll
+ * position, which field has focus) has no widget to live in, and needs
+ * a table like [capture] above. And nothing can be measured before it
  * is drawn, which is why layout (phase 2) is the hard part of
  * immediate mode and not of the others.
  *
  * Where it stands: the playground's Gui is this module with one
  * mutable [t] kept for the program, and so everything written with
- * Gui is immediate mode -- the 7GUIs of examples, the office suite,
+ * Gui is immediate mode: the 7GUIs of examples, the office suite, and
  * mini-drscheme. Retained, Mvc and Mvu are beside it for the
  * comparison (GuiFourWays).
  *
@@ -68,17 +70,17 @@
  * *immediate mode* a program calls the library to draw, each frame,
  * and the library keeps nothing: OpenGL's glBegin and glEnd. In
  * *retained mode* the program gives the library a scene once, the
- * library keeps it and draws it again by itself: a display list, a
- * scene graph, and Microsoft's Direct3D of 1996 shipped as two APIs
- * with exactly those two names. Muratori's point was that an
+ * library keeps it and draws it again by itself, as with a display
+ * list or a scene graph. Microsoft's Direct3D of 1996 shipped as two
+ * APIs with exactly those two names. Muratori's point was that an
  * interface could be the first kind too. A web page is the second:
  * the DOM is a retained tree (Dom), and React's virtual DOM is an
  * immediate-mode program written over it, the tree asked for again
  * at each change and compared with the one before.
  *
  * others:
- * Besides Dear ImGui: Nuklear (Micha Mettke), a single C header;
- * egui (Emil Ernerfeldt) in Rust. Unity's first interface for its
+ * Besides Dear ImGui, there are Nuklear (Micha Mettke), a single C
+ * header, and egui (Emil Ernerfeldt) in Rust. Unity's first interface for its
  * own editor, OnGUI, was immediate mode, which is where many game
  * programmers first met it.
  *)
@@ -87,34 +89,36 @@
  * the frame being built *)
 type t
 
-(* before the first frame: the default theme, nobody holding anything *)
+(* the state before the first frame: the default theme, and nobody
+ * holding anything *)
 val empty : t
 
-(* [frame input t]: start a frame -- [input] is what the person is
- * doing now, the paint of the last frame is dropped, the capture
- * survives *)
+(* [frame input t] starts a frame. [input] is what the person is doing
+ * now. The paint of the last frame is dropped, and the capture
+ * survives. *)
 val frame : Widget.input -> t -> t
 
 (* what the widgets of this frame drew, in the order they asked,
  * back to front *)
 val paint : t -> Widget.paint list
 
-(* ix's own: the two layers of [paint] apart, the widgets, and what is
- * over them all (an open menu's items): for a program that draws its
- * own picture of a widget over the toolkit's (a skin: mini-rebirth) and
- * still wants the menus on top *)
+(* These are ix's own. They give the two layers of [paint] apart: the
+ * widgets, and what is over them all (an open menu's items). They are
+ * for a program that draws its own picture of a widget over the
+ * toolkit's (a skin, as in mini-rebirth) and still wants the menus on
+ * top. *)
 val painted : t -> Widget.paint list
 val overlaid : t -> Widget.paint list
 
 val theme : t -> Theme.t
 val set_theme : Theme.t -> t -> t
 
-(* Is a popup showing -- and so has the toolkit taken the mouse?
+(* Is a popup showing, so that the toolkit has taken the mouse?
  *
  * The grab in [menu] protects the *widgets*: they ask [interact],
- * which knows. A program that reads [computer.mouse] itself -- a
+ * which knows. A program that reads [computer.mouse] itself (a
  * canvas, a spreadsheet's cells, anything drawn rather than asked
- * for -- is outside that, and would act on a click meant for a menu
+ * for) is outside that, and would act on a click meant for a menu
  * item. So it asks this first, which is the one line a drawn surface
  * needs to behave like a widget. *)
 val modal : t -> bool
@@ -123,34 +127,39 @@ val modal : t -> bool
 (* {1 The widgets} *)
 (*****************************************************************************)
 
-(* [label t box s]: [s], centered in [box]. No state, no answer: it is
- * here so that a label is themed like everything else. *)
+(* [label t box s] draws [s], centered in [box]. It has no state and
+ * no answer: it is here so that a label is themed like everything
+ * else. *)
 val label : t -> Widget.box -> string -> t
 
-(* [button t box s]: a button labelled [s], true the frame it is
- * clicked (pressed and released inside, above).
+(* [button t box s] is a button labelled [s]. It answers true in the
+ * frame it is clicked (pressed and released inside, as above).
  *
- * [~enabled:false] greys it and it answers false whatever the mouse
- * does -- what a form does with an action that is not available yet
- * (7GUIs' Flight Booker is the exercise for that). *)
+ * [~enabled:false] greys it, and then it answers false whatever the
+ * mouse does. That is what a form does with an action that is not
+ * available yet (7GUIs' Flight Booker is the exercise for that). *)
 val button : enabled:bool -> t -> Widget.box -> string -> t * bool
 
-(* [checkbox t box s checked]: a box with [s] beside it, and the value
- * it has after this frame -- [not checked] the frame it is clicked *)
+(* [checkbox t box s checked] is a box with [s] beside it. It answers
+ * the value it has after this frame, which is [not checked] in the
+ * frame it is clicked. *)
 val checkbox : t -> Widget.box -> string -> bool -> t * bool
 
-(* [field t box text]: a box to type in, and the text it holds after
- * this frame -- [text] unless it has the keys (Focus) and something
- * was typed into it.
+(* [field t box text] is a box to type in. It answers the text it
+ * holds after this frame, which is [text] unless the field has the
+ * keys (Focus) and something was typed into it.
  *
- * A field is the widget that needs everything at once: the focus (who
- * gets the keys), the characters the platform says were typed
- * (computer.keyboard.typed, which is not the same question as which
- * keys are down), the keys that produce no character at all
- * (backspace, the arrows, Home and End), and a caret, whose position
- * is the one piece of state that cannot live in the caller's model --
- * so the toolkit keeps it, for the focused field alone, which is the
- * only one that can have a caret.
+ * A field is the widget that needs everything at once:
+ *   - the focus (who gets the keys);
+ *   - the characters the platform says were typed
+ *     (computer.keyboard.typed, which is not the same question as
+ *     which keys are down);
+ *   - the keys that produce no character at all (backspace, the
+ *     arrows, Home and End);
+ *   - and a caret, whose position is the one piece of state that
+ *     cannot live in the caller's model. So the toolkit keeps it, for
+ *     the focused field alone, which is the only one that can have a
+ *     caret.
  *
  *   +--------------------+   clicking puts the caret where you clicked
  *   | hell|o             |   Tab moves to the next field, caret at its end
@@ -162,57 +171,60 @@ val checkbox : t -> Widget.box -> string -> bool -> t * bool
  * font where each glyph starts; we have no font to ask
  * (Widget.text_width is an average).
  *
- * What it does not do: selection (phase 5's Text_edit, with a piece
- * table under it), any editing shortcut, and key *repeat* -- holding
- * backspace deletes one character, because the playground's keyboard
- * is a set of keys held, and a repeat is an event the platform sends
- * that nothing forwards yet. *)
+ * What it does not do: selection (phase 5's Text_edit does, with a
+ * piece table under it), any editing shortcut, and key *repeat*.
+ * Holding backspace deletes one character, because the playground's
+ * keyboard is a set of keys held, and a repeat is an event the
+ * platform sends that nothing forwards yet. *)
 val field : enabled:bool -> t -> Widget.box -> string -> t * string
 
-(* [slider t box ~from ~to_ v]: a slider between [from] and [to_],
- * showing [v], and the value it has after this frame: [v] unless the
- * mouse is pressed in it, in which case the mouse's x says the value.
+(* [slider t box ~from ~to_ v] is a slider between [from] and [to_],
+ * showing [v]. It answers the value it has after this frame, which is
+ * [v] unless the mouse is pressed in it; then the mouse's x says the
+ * value.
  * The knob's center travels over [box.w - theme.knob] pixels, so a
  * 220-wide slider with an 18-wide knob puts [from] at x = -101 and
  * [to_] at x = 101, relative to its center. *)
 val slider : t -> Widget.box -> from:float -> to_:float -> float -> t * float
 
-(* [knob t box ~from ~to_ v]: a knob, a synthesizer's (Look.knob), and
- * the value it has after this frame. Turned by dragging it up (more) or
- * down (less), not around: a mouse moves in straight lines, and a
- * circular drag needs aiming -- every software synthesizer since the
- * 1990s does it this way. And *relatively*: while it's held, each
- * frame's move of the mouse turns it by that much, [knob_travel]
- * pixels for the whole range, so pressing it doesn't make it jump to
- * the mouse, as a slider's knob does. Worked example: a knob from 0 to
- * 1 at 0.3, pressed, the mouse then 20 pixels higher at each of the
- * next three frames: 0.3 (the press), 0.4, 0.5, 0.6. *)
+(* [knob t box ~from ~to_ v] is a knob like a synthesizer's
+ * (Look.knob). It answers the value it has after this frame. It is
+ * turned by dragging it up (more) or down (less), not around, because
+ * a mouse moves in straight lines and a circular drag needs aiming;
+ * every software synthesizer since the 1990s does it this way. It
+ * also turns *relatively*: while it is held, each frame's move of the
+ * mouse turns it by that much, [knob_travel] pixels for the whole
+ * range, so pressing it does not make it jump to the mouse, as a
+ * slider's knob does. For example, take a knob from 0 to 1 at 0.3,
+ * pressed, with the mouse then 20 pixels higher at each of the next
+ * three frames: it answers 0.3 (the press), 0.4, 0.5, 0.6. *)
 val knob : t -> Widget.box -> from:float -> to_:float -> float -> t * float
 
 (* the drag for a knob's whole range: 200 pixels *)
 val knob_travel : float
 
-(* [rocker t box on]: a rocker switch, on (its top half lit) or off, and
- * its state after this frame: a click rocks it *)
+(* [rocker t box on] is a rocker switch, on (its top half lit) or off.
+ * It answers its state after this frame; a click rocks it. *)
 val rocker : t -> Widget.box -> bool -> t * bool
 
-(* [selector t box labels i]: a rotary switch at the [i]th of [labels],
- * and where it is after this frame: dragged up a position every
- * [selector_step] pixels (down, back), stopping at the ends; clicked
- * without a drag, the next position, round to the first after the
- * last. A synthesizer's range and waveform switches. *)
+(* [selector t box labels i] is a rotary switch at the [i]th of
+ * [labels]. It answers where it is after this frame. Dragged up, it
+ * moves one position every [selector_step] pixels (dragged down, it
+ * moves back), stopping at the ends. Clicked without a drag, it goes
+ * to the next position, and round to the first after the last. A
+ * synthesizer's range and waveform switches are like this. *)
 val selector : t -> Widget.box -> string list -> int -> t * int
 
 (* the drag for a step: 24 pixels *)
 val selector_step : float
 
-(* [text_area t box edit]: several lines to type into, and what they
- * hold after this frame.
+(* [text_area t box edit] is several lines to type into. It answers
+ * what they hold after this frame.
  *
  * The difference from [field] is not the number of lines, it is where
  * the text lives: a field's is a string in the caller's model and the
  * toolkit keeps only the caret, while a text area's is a
- * {!Text_edit.t} -- a piece table that carries its own caret, its own
+ * {!Text_edit.t}: a piece table that carries its own caret, its own
  * selection and every version of itself. So undo is the text's, not
  * the toolkit's, and the caller can save, replay or scrub it without
  * asking anybody.
@@ -224,18 +236,18 @@ val selector_step : float
  * paste, and a font with real widths. *)
 val text_area : t -> Widget.box -> Text_edit.t -> t * Text_edit.t
 
-(* [progress t box fraction]: a bar filled [fraction] of the way (0 to
- * 1), which answers nothing: it is a widget that only shows. *)
+(* [progress t box fraction] is a bar filled [fraction] of the way (0
+ * to 1). It answers nothing: it is a widget that only shows. *)
 val progress : t -> Widget.box -> float -> t
 
-(* [menu t box items chosen]: a dropdown showing [items] when it is
- * open, and which item is chosen after this frame.
+(* [menu t box items chosen] is a dropdown that shows [items] when it
+ * is open. It answers which item is chosen after this frame.
  *
  * It is the first widget here that is *modal*: while its items are
  * showing they take the mouse from every other widget, wherever the
- * mouse goes -- the "grab" that every toolkit does with a popup, and
- * without which a click meant for an item also presses the button it
- * happens to land on.
+ * mouse goes. This is the "grab" that every toolkit does with a
+ * popup; without it, a click meant for an item also presses the
+ * button it happens to land on.
  *
  * The popup is painted where the menu is asked for, so a widget asked
  * for later is painted over it. A real toolkit keeps popups in a
@@ -243,31 +255,33 @@ val progress : t -> Widget.box -> float -> t
  * below it. *)
 val menu : t -> Widget.box -> string list -> int -> t * int
 
-(* [list t box items selected]: a list box, a row per item from the
- * top; a click on a row selects it (and the selection is yours to
- * keep, like a field's text). Rows past the bottom are not shown:
- * scrolling it with the wheel is left as an exercise *)
+(* [list t box items selected] is a list box, with a row per item from
+ * the top. A click on a row selects it (and the selection is yours to
+ * keep, like a field's text). Rows past the bottom are not shown;
+ * scrolling it with the wheel is left as an exercise. *)
 val list : t -> Widget.box -> string list -> int option -> t * int option
 
-(* [canvas t box]: what the mouse did in [box] this frame
- * (Widget.canvas_event) -- a press only if no widget asked before it
- * claimed it, so a popup asked first keeps its click. It draws
- * nothing: the program, having handled the events, draws what it now
- * knows with [draw] -- Dear ImGui's InvisibleButton and draw list, and
- * the reason a drawing is not a frame behind the click that changed
- * it. *)
+(* [canvas t box] answers what the mouse did in [box] this frame
+ * (Widget.canvas_event). It reports a press only if no widget asked
+ * for before it claimed the press, so a popup asked for first keeps
+ * its click. It draws nothing: the program, having handled the
+ * events, draws what it now knows with [draw]. That is Dear ImGui's
+ * InvisibleButton and draw list, and it is the reason a drawing is
+ * not a frame behind the click that changed it. *)
 val canvas : t -> Widget.box -> t * Widget.canvas_event list
 
-(* [draw t paint]: the program's own paint, over what was drawn so far *)
+(* [draw t paint] adds the program's own paint, over what was drawn so
+ * far. *)
 val draw : t -> Widget.paint list -> t
 
-(* [context_menu t at items]: a menu of [items] opened at the point
- * [at] (a right click's) -- the program keeps whether it is open, and
- * asks for it every frame it is. Asked for, it takes the mouse from
- * every widget asked after it, this frame (so ask for it first), and
- * is drawn over everything. [Chosen i] the frame an item is clicked,
- * [Dismissed] the frame a click lands anywhere else -- both mean the
- * program closes it -- and [Open] otherwise. *)
+(* [context_menu t at items] is a menu of [items] opened at the point
+ * [at] (where a right click was). The program keeps whether it is
+ * open, and asks for it in every frame where it is. When asked for, it
+ * takes the mouse from every widget asked for after it in this frame
+ * (so ask for it first), and it is drawn over everything. It answers
+ * [Chosen i] in the frame an item is clicked, [Dismissed] in the frame
+ * a click lands anywhere else (both mean the program closes it), and
+ * [Open] otherwise. *)
 type menu_answer = Open | Chosen of int | Dismissed
 
 val context_menu : t -> float * float -> string list -> t * menu_answer
@@ -275,18 +289,19 @@ val context_menu : t -> float * float -> string list -> t * menu_answer
 (*****************************************************************************)
 (* {1 How big a widget wants to be} *)
 (*****************************************************************************)
-(* The answer immediate mode can give without layout: from the theme
- * and the label alone. (What it cannot give is how big it wants to be
- * *given the room available* -- that is phase 2's constraints.) *)
+(* This is the answer immediate mode can give without layout, from the
+ * theme and the label alone. (What it cannot give is how big a widget
+ * wants to be *given the room available*; that is phase 2's
+ * constraints.) *)
 
-(* [button_size theme s]: wide enough for [s] plus padding on both
- * sides, one row high *)
+(* [button_size theme s] is wide enough for [s] plus padding on both
+ * sides, and one row high. *)
 val button_size : Theme.t -> string -> float * float
 
-(* [checkbox_size theme s]: the tick box, then the label *)
+(* [checkbox_size theme s] holds the tick box, then the label. *)
 val checkbox_size : Theme.t -> string -> float * float
 
-(* [slider_size theme]: the theme's, whatever the value *)
+(* [slider_size theme] is the theme's, whatever the value. *)
 val slider_size : Theme.t -> float * float
 
 (* a knob with its ticks; a rocker; a rotary switch with its labels
@@ -295,9 +310,9 @@ val knob_size : Theme.t -> float * float
 val rocker_size : Theme.t -> float * float
 val selector_size : Theme.t -> string list -> float * float
 
-(* [field_size theme]: the theme's, whatever the text -- a field is a
- * window onto its text and scrolls when it is too long, rather than
- * growing *)
+(* [field_size theme] is the theme's, whatever the text: a field is a
+ * window onto its text and scrolls when the text is too long, rather
+ * than growing. *)
 val field_size : Theme.t -> float * float
 
 (* a bar as wide as a slider, and shorter *)
@@ -306,7 +321,7 @@ val progress_size : Theme.t -> float * float
 (* wide enough to read a line in, and five rows deep *)
 val text_area_size : Theme.t -> float * float
 
-(* [menu_size theme items]: wide enough for the longest item, and the
- * arrow *)
+(* [menu_size theme items] is wide enough for the longest item and the
+ * arrow. *)
 val menu_size : Theme.t -> string list -> float * float
 val list_size : Theme.t -> float * float

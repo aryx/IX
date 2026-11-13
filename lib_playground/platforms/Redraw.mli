@@ -1,6 +1,7 @@
-(* A view drawn again where it changed only (docs/plans/done/plan_playground.md,
- * decision 8): the pixels a frame costs are the ones that differ from
- * the frame before, not the window's.
+(* A view drawn again only where it changed
+ * (docs/plans/done/plan_playground.md, decision 8): the pixels a frame
+ * costs are the ones that differ from the frame before, not all of the
+ * window's.
  *
  * A view is a list of shapes. The shapes of the last frame that are not
  * in this one, and those of this one that were not in the last, are
@@ -8,15 +9,15 @@
  * the shapes in each, and nothing else is touched. Tetris's falling
  * piece is four squares of some 230,000 pixels.
  *
- * Off ([enabled] false: the simple way), each frame is the whole
- * picture. The pixels are the same either way.
+ * When it is off ([enabled] is false, the simple way), each frame is
+ * the whole picture. The pixels are the same either way.
  *
  * Two groups at the same place are compared the same way, by their
- * members: lighting a link of a page drawn as one group is the link's
- * box, not the page's.
+ * members: lighting a link of a page drawn as one group redraws the
+ * link's box, not the page's.
  *
- * What it does not see: two shapes that stay as they are and change
- * places in the list, one over the other (which is on top changes, no
+ * It does not see two shapes that stay as they are but change places
+ * in the list, one over the other (which one is on top changes, but no
  * shape does).
  *
  * It is possible at all because a view is data (Playground.mli): two
@@ -25,8 +26,8 @@
  * the screen would have to say itself what it dirtied.
  *
  * terminology:
- * The boxes are what games call *dirty rectangles* and window
- * systems *damage*: the part of the screen that is no longer right.
+ * The boxes are what games call *dirty rectangles* and what window
+ * systems call *damage*: the part of the screen that is no longer right.
  * A window system does the same accounting from the other side --
  * it tells a program which part of its window was uncovered and
  * must be drawn again (X's Expose event; Plan 9's rio keeps the
@@ -41,13 +42,13 @@
 
 val enabled : bool ref
 
-(* false: the shapes compared at the top of the list only, a group
- * whole (old); true: inside the groups too, two groups at the same
- * place by their members *)
+(* false: the shapes are compared at the top of the list only, and a
+ * group as a whole (the old way); true: they are compared inside the
+ * groups too, and two groups at the same place by their members *)
 val groups : bool ref
 
-(* a platform's redraw= flag: "all" each frame whole, "top" the shapes
- * compared at the top only *)
+(* a platform's redraw= flag: "all" draws each frame whole, and "top"
+ * compares the shapes at the top only *)
 val choose : string option -> unit
 
 type t
@@ -57,18 +58,20 @@ type t
 val create : width:int -> height:int -> scale:float -> Shape_render_software.options -> t
 
 (* [frame t shapes]: the parts of the picture that are not what they
- * were at the last frame, each its box (x0, y0, x1, y1: x1 and y1 not
- * in it) and its pixels, a Framebuffer of the box's size. The first
- * frame is the whole picture; a frame like the one before is no part. *)
+ * were at the last frame, each as its box (x0, y0, x1, y1, where x1
+ * and y1 are not in it) and its pixels, a Framebuffer of the box's
+ * size. The first frame is the whole picture; a frame like the one
+ * before gives no part. *)
 val frame : t -> Playground.shape list -> ((int * int * int * int) * Framebuffer.t) list
 
 (* [changed t bounds shapes]: the same accounting without the pixels,
- * for a platform that draws them itself (the draw device): the boxes
- * that changed since the last frame, a shape's box by [bounds] (the
- * pixels it may paint, there); None: all of the picture (the first
- * frame, or most of it changed); Some []: nothing *)
+ * for a platform that draws them itself (the draw device). It returns
+ * the boxes that changed since the last frame, where a shape's box is
+ * given by [bounds] (the pixels it may paint, on that platform). None
+ * means all of the picture (the first frame, or a frame where most of
+ * it changed), and Some [] means nothing. *)
 val changed : t -> (Playground.shape -> (int * int * int * int) option) -> Playground.shape list -> (int * int * int * int) list option
 
-(* the parts copied where they go in a picture of the whole (a platform
- * that keeps one: the frame written to a file) *)
+(* copies the parts where they go in a picture of the whole (for a
+ * platform that keeps one, to write the frame to a file) *)
 val paste : Framebuffer.t -> ((int * int * int * int) * Framebuffer.t) list -> unit

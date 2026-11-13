@@ -2,9 +2,9 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The platform that asks the draw device for each shape, on Plan 9
- * (mini-9pi; in a window of mini-rio's or on the bare screen):
- * docs/plans/done/plan_playground.md, stage 3. The playground's native
- * platform, Cairo become Plan 9's draw device.
+ * (mini-9pi, in a window of mini-rio's or on the bare screen;
+ * docs/plans/done/plan_playground.md, stage 3). It is the playground's
+ * native platform, with Plan 9's draw device in place of Cairo.
  *
  * A frame is a list of messages: a rectangle to fill, a polygon, an
  * ellipse, the strokes of a word's letters as lines. The kernel has the
@@ -24,12 +24,13 @@
  *       v  Draw.draw: one copy
  *     the window
  *
- * What the device does not do, and so is not here: an edge is not
- * smoothed (a pixel is in a shape or is not; but a letter's, below,
- * the software renderer's mask given to it), and the device neither
- * scales nor turns a picture: a Bitmap's pixels are made here, at the
- * size shown, and given to it once (below, A picture); an Image, a
- * picture by its file's name, is its box, grey.
+ * Two things the device does not do, and so they are not here. First,
+ * an edge is not smoothed: a pixel is in a shape or it is not (but a
+ * letter's edge is smoothed, below, because the software renderer's
+ * mask is given to the device). Second, the device neither scales nor
+ * turns a picture, so a Bitmap's pixels are made here, at the size
+ * shown, and given to the device once (below, A picture); an Image, a
+ * picture by its file's name, is drawn as its box, in grey.
  * A shape that fades is drawn through its colour's opacity, which the
  * device knows.
  *

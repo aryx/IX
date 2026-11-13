@@ -1,15 +1,15 @@
-(* Big bang: the world programs of How to Design Programs, on top of the
-   Playground.
+(* Big bang brings the world programs of How to Design Programs on top
+   of the Playground.
 
    How to Design Programs (Matthias Felleisen, Robert Bruce Findler,
    Matthew Flatt and Shriram Krishnamurthi, MIT Press, 2001, second
    edition 2018, free at https://htdp.org) teaches programming with
-   pictures and games, in Racket, with two libraries: 2htdp/image, images
-   that compose -- a circle beside a square, above a text --, and
-   2htdp/universe, whose [big-bang] runs a "world program": a world (any
-   value), a function drawing it, and functions making the next world
-   when time passes, a key is pressed, the mouse moves. Its classic first
-   game, a rocket landing:
+   pictures and games, in Racket, with two libraries. 2htdp/image has
+   images that compose (a circle beside a square, above a text).
+   2htdp/universe has [big-bang], which runs a "world program": a
+   world (any value), a function that draws it, and functions that
+   make the next world when time passes, when a key is pressed, or
+   when the mouse moves. Its classic first game is a rocket landing:
 
      Racket:  (big-bang 0
                 [to-draw (lambda (y) (place-image ROCKET 50 y SCENE))]
@@ -18,18 +18,19 @@
 
      OCaml:   big_bang 0.
                 ~to_draw:(fun y -> place_image rocket 50. y scene)
-                ~on_tick:(fun y -> y +. 1.)
-                ~stop_when:(fun y -> y > 300.) ()
+                { handlers with on_tick = Some (fun y -> y +. 1.);
+                                stop_when = Some (fun y -> y > 300.) }
 
    (see examples/BigBangRocket.ml, and examples/BigBangWorm.ml, HtDP's
-   worm game). Like Logo.mli, a way of programming from elsewhere, taught
-   to children for decades, made a layer of the playground.
+   worm game). Like Logo.mli, this module takes a way of programming
+   from elsewhere, taught to children for decades, and makes it a
+   layer of the playground.
 
    Big-bang is Elm's architecture before Elm (it is in HtDP's
    teachpacks from 2004; Elm is from 2012): the world is the model,
-   [to_draw] the view, the handlers the update. So [big_bang] is a
-   thin layer over Playground.game, and what it adds is small but
-   real:
+   [to_draw] is the view, and the handlers are the update. So
+   [big_bang] is a thin layer over Playground.game, and what it adds
+   is small but real:
 
    - Images that know their size, and compose ([beside], [above],
      [overlay], [place_image]): the playground's shapes don't carry
@@ -39,18 +40,19 @@
    - Events rather than states: the playground says which keys are down
      (polling); big-bang calls [on_key] once when a key is pressed, with
      its name ("left", " ", "a"). The events come from comparing the keys
-     down now with the ones down at the last frame ([key_events]): the
-     same trick as Scene2d.pressed, and the way most event systems are
-     built on top of hardware that only has states.
+     down now with the ones down at the last frame ([key_events]). It
+     is the same trick as Scene2d.pressed, and the way most event
+     systems are built on top of hardware that only has states.
 
-   - HtDP's coordinates in a scene: from its top-left corner, y going
-     down, as on most screens and in most drawing programs -- not the
-     playground's, centered, y going up.
+   - HtDP's coordinates in a scene: they start from its top-left
+     corner, with y going down, as on most screens and in most drawing
+     programs. The playground's are centered, with y going up.
 
    Is the playground a superset of big-bang, then? Almost, for the game
    loop: to_draw and on_tick are view and update (a slower tick rate is a
-   counter), key and mouse events come from the states, stop_when is a
-   flag in the model. Not quite, for four things big-bang has:
+   counter), key and mouse events come from the states, and stop_when
+   is a flag in the model. But not quite, because big-bang has four
+   things:
      1. images measured, text included: HtDP can measure (text "Score"
         24 "black"); here a text's width is only estimated ([text]),
         because the playground's words are drawn by each backend's own
@@ -69,22 +71,23 @@
    And the playground has what big-bang doesn't: animations as functions
    of time (spin, wave), the screen's size, sound (Audio), 3D.
 
-   Worth it? For a reader of HtDP, yes: its book, exercises and courses
-   can be followed nearly line for line in OCaml. For others, it's a
-   second way to write the same programs as Playground.game, and a
-   beginner shouldn't learn both: pick one. The book's real value is its
-   design recipe (data definitions, signatures, examples written before
-   the code), a way of teaching, not a library; the library is the
-   small part, which is why this module is small, and not all of
-   2htdp: no pinholes, no alignment arguments ("top", "left"), colors as
-   the playground's rather than strings, modes as a variant rather than
-   "solid" and "outline".
+   Is it worth it? For a reader of HtDP, yes: its book, exercises and
+   courses can be followed nearly line for line in OCaml. For others,
+   it is a second way to write the same programs as Playground.game,
+   and a beginner should not learn both: pick one. The book's real
+   value is its design recipe (data definitions, signatures, examples
+   written before the code), which is a way of teaching, not a
+   library. The library is the small part, which is why this module
+   is small and is not all of 2htdp. It has no pinholes and no
+   alignment arguments ("top", "left"); its colors are the
+   playground's rather than strings, and its modes are a variant
+   rather than "solid" and "outline".
 
    Where it stands: BigBangRocket and BigBangWorm are written with
    it, and it is the screen of mini-drscheme (DrScheme), ix's small
-   DrRacket: a Scheme program's images are drawn by this module's
-   combinators, and its (big-bang ...) is run by the editor, the
-   handlers called on ticks, keys and the mouse.
+   DrRacket. A Scheme program's images are drawn by this module's
+   combinators, and its (big-bang ...) is run by the editor, which
+   calls the handlers on ticks, keys and the mouse.
 
    cs-history:
    The book came out of a project, TeachScheme! (Felleisen and his
@@ -123,32 +126,33 @@ val ellipse : number -> number -> mode -> color -> image (* width, height *)
 val rectangle : number -> number -> mode -> color -> image
 val square : number -> mode -> color -> image
 
-(* an equilateral triangle, pointing up, of this side *)
+(* an equilateral triangle, pointing up, with sides of this length *)
 val triangle : number -> mode -> color -> image
 
-(* [text str size color]: [size] pixels high; its width estimated, 0.6
- * of the size per character (see above) *)
+(* [text str size color] is [size] pixels high. Its width is
+ * estimated, at 0.6 of the size per character (see above). *)
 val text : string -> number -> color -> image
 
 (* a white scene framed in black, of this width and height, to place
  * images on *)
 val empty_scene : number -> number -> image
 
-(* [overlay top bottom]: [top] over [bottom], their centers together;
- * as big as the bigger one *)
+(* [overlay top bottom] puts [top] over [bottom], with their centers
+ * together. The result is as big as the bigger one. *)
 val overlay : image -> image -> image
 
-(* [beside a b]: [a] left of [b], their centers level; e.g. a 20 x 10
- * image beside a 30 x 40 one: 50 x 40 *)
+(* [beside a b] puts [a] left of [b], with their centers level. For
+ * example, a 20 x 10 image beside a 30 x 40 one is 50 x 40. *)
 val beside : image -> image -> image
 
-(* [above a b]: [a] over [b], their centers aligned; a 20 x 10 above a 30
- * x 40: 30 x 50 *)
+(* [above a b] puts [a] over [b], with their centers aligned. A
+ * 20 x 10 image above a 30 x 40 one is 30 x 50. *)
 val above : image -> image -> image
 
-(* [place_image i x y scene]: [i]'s center at (x, y) in [scene], from its
- * top-left corner, y going down; the result the scene's size (what
- * sticks out isn't cut, as HtDP does: the playground can't clip) *)
+(* [place_image i x y scene] puts [i]'s center at (x, y) in [scene],
+ * counted from the scene's top-left corner, with y going down. The
+ * result has the scene's size. What sticks out is not cut off, as
+ * HtDP does, because the playground cannot clip. *)
 val place_image : image -> number -> number -> image -> image
 
 val width : image -> number
@@ -161,35 +165,39 @@ val to_shape : image -> shape
 (* {1 Events} *)
 (*****************************************************************************)
 
-(* [key_events before now]: the keys pressed since [before], and the ones
- * released, by their HtDP names: "left", "right", "up", "down", " ",
- * "\r", "escape", and the letters as themselves. E.g. with "ArrowLeft"
- * down before, and "ArrowLeft" and "a" now: (["a"], []). *)
+(* [key_events before now] gives the keys pressed since [before], and
+ * the ones released, by their HtDP names: "left", "right", "up",
+ * "down", " ", "\r", "escape", and the letters as themselves. For
+ * example, with "ArrowLeft" down before, and "ArrowLeft" and "a" now,
+ * it gives (["a"], []). *)
 val key_events : keyboard -> keyboard -> string list * string list
 
-(* [mouse_event before now]: what the mouse did since [before], by its
- * HtDP name ("button-down", "button-up", "drag", "move"), if anything *)
+(* [mouse_event before now] says what the mouse did since [before], by
+ * its HtDP name ("button-down", "button-up", "drag", "move"), if it
+ * did anything *)
 val mouse_event : mouse -> mouse -> string option
 
 (*****************************************************************************)
 (* {1 The world} *)
 (*****************************************************************************)
 
-(* big_bang's model: the world, and what it keeps to make events *)
+(* big_bang's model holds the world, and what it keeps to make
+ * events *)
 type 'w world
 
-(* [big_bang init ~to_draw handlers]: the world program starting with
- * [init]: [to_draw] draws it (its image centered on the screen),
- * [on_tick] makes the next world every [tick_rate] seconds (1/60: every
- * frame; HtDP's default is 1/28), [on_key] and [on_release] when a key
- * is pressed and released, [on_mouse] when the mouse moves or its button
- * goes down or up ("button-down", "button-up", "drag", "move"), at (x, y)
- * in the scene's coordinates; [stop_when] ends it, drawing
- * [last_picture] if given.
- * ix: the handlers are a record, each Some f or None; [handlers] has
+(* [big_bang init ~to_draw handlers] is the world program starting with
+ * [init]. [to_draw] draws the world (its image centered on the
+ * screen). [on_tick] makes the next world every [tick_rate] seconds
+ * (1/60 means every frame; HtDP's default is 1/28). [on_key] and
+ * [on_release] are called when a key is pressed and released, and
+ * [on_mouse] when the mouse moves or its button goes down or up
+ * ("button-down", "button-up", "drag", "move"), at (x, y) in the
+ * scene's coordinates. [stop_when] ends it, drawing [last_picture] if
+ * it is given.
+ * ix: the handlers are a record, each Some f or None. [handlers] has
  * none and ticks every frame, so a program names the ones it has:
  *   big_bang 0. ~to_draw:draw { handlers with on_tick = Some next }
- * (the playground's are optional arguments: ~on_tick:next). *)
+ * (In the playground they are optional arguments: ~on_tick:next.) *)
 type 'w handlers = {
   on_tick : ('w -> 'w) option;
   tick_rate : number;

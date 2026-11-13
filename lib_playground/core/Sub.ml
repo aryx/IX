@@ -1,6 +1,7 @@
-(* ix: the playground's libs/core/Sub.ml; a key is a string here, where
- * it says Keyboard.key (which is string: its Keyboard has that one type,
- * and ix's Keyboard is lib_graphics's, Plan 9's). *)
+(* ix: copied from libs/core/Sub.ml in the playground. A key is a string
+ * here, where the playground says Keyboard.key. That type is a string
+ * too: the playground's Keyboard has only that one type, and ix's
+ * Keyboard is a different module, lib_graphics's, which is Plan 9's. *)
 type 'msg onesub =  
   | SubTick of (Time.posix -> 'msg)
   | SubMouseMove of (float * float -> 'msg)

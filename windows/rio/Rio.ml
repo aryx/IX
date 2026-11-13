@@ -2,48 +2,59 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-rio: a window system, Plan 9's rio in small (principia's
- * windows/rio, 8,170 lines of C; xix's windows/, the author's in
- * OCaml, are the models; plan_rio.md). It takes the screen, the mouse
- * and the keyboard, and gives each window what looks like a machine of
- * its own: a process started in a window has its own /dev/cons, which
- * is the window. The trick is Plan 9's: rio is a file server, and the
- * window's process has rio's files mounted before /dev.
+ * windows/rio, 8,170 lines of C, and xix's windows/, the author's rio
+ * in OCaml, are the models; plan_rio.md). It takes the screen, the
+ * mouse and the keyboard, and gives each window what looks like a
+ * machine of its own: a process started in a window has its own
+ * /dev/cons, which is the window. The trick is Plan 9's: rio is a file
+ * server, and the window's process has rio's files mounted before
+ * /dev.
  *
- * The right button's menu, rio's: New (then a rectangle swept out with
- * that button, the cursor a cross, the rectangle shown as it grows: a
- * window, rc in it), Resize (a window pointed at, the cursor a sight,
- * then its new rectangle swept), Move (a window dragged, its outline
- * shown), Delete (a window pointed at), Hide (the same: it is then a
- * name in the menu, which brings it back), and Exit. The left button
- * on a window gives it the keyboard; Delete (or Control-C) typed in one interrupts
- * its processes. A window's border is a handle (the cursor says so
- * when the mouse is on it): the left or the middle button there pulls
- * that corner or side (its size), the right one the window (its place). In a window's scroll bar the buttons scroll its text
- * (the arrows too); in its text the left button selects, and the
- * middle one's menu has snarf, paste, send, and scroll or noscroll
- * (noscroll: a window that is full holds what its program writes until
- * one scrolls: a pager). The text is not edited:
- * what is typed goes at its end (rio's is edited anywhere; the author:
- * "I rarely used that feature of rio").
+ * The right button's menu is rio's:
+ * - New: a rectangle is swept out with that button, with a cross as
+ *   the cursor, and shown as it grows; it becomes a window with rc in
+ *   it.
+ * - Resize: a window is pointed at, with a sight as the cursor, then
+ *   its new rectangle is swept.
+ * - Move: a window is dragged, and its outline is shown.
+ * - Delete: a window is pointed at.
+ * - Hide: the same; the window is then a name in the menu, which
+ *   brings it back.
+ * - Exit.
+ * The left button on a window gives it the keyboard, and Delete (or
+ * Control-C) typed in a window interrupts its processes. A window's
+ * border is a handle (the cursor says so when the mouse is on it): the
+ * left or the middle button there pulls that corner or side (to change
+ * the size), and the right one pulls the window (to change its place).
+ * In a window's scroll bar the buttons scroll its text (the arrows do
+ * too). In its text the left button selects, and the middle one's menu
+ * has snarf, paste, send, and scroll or noscroll. With noscroll, a
+ * window that is full holds what its program writes until one scrolls,
+ * as a pager does. The text is not edited: what is typed goes at its
+ * end (rio's text is edited anywhere; the author: "I rarely used that
+ * feature of rio").
  *
- * Its modules, as xix's: Wm (the windows, which is in front, what the
- * menu does to one), Mouse_action (a rectangle swept, a window pointed
- * at or dragged), Window (a window's thread) and Terminal (its text),
- * Processes_winshell (its process), Fileserver (its files, each a
- * Device: Virtual_cons, Virtual_mouse, Dev_wm, and Wctl, by which a
- * program does what the menu does), Cursors.
+ * Its modules are xix's:
+ * - Wm: the windows, which one is in front, and what the menu does to
+ *   a window;
+ * - Mouse_action: a rectangle swept, a window pointed at or dragged;
+ * - Window: a window's thread, and Terminal: its text;
+ * - Processes_winshell: its process;
+ * - Fileserver: its files, each a Device: Virtual_cons, Virtual_mouse,
+ *   Dev_wm, and Wctl, by which a program does what the menu does;
+ * - Cursors.
  *
- * Its threads, as rio's (Rob Pike's design: each is a small loop of
+ * Its threads are rio's (Rob Pike's design: each is a small loop of
  * its own, and they talk by channels):
- * - this one, the window system: the mouse and the keyboard, the menu,
- *   which window is in front; it sends the keys and the mouse to that
- *   window;
- * - the file server (Fileserver.serve): the windows' processes' requests,
- *   each sent to its window;
- * - a thread a window (Window.run).
- * None waits in a read: the mouse, the keyboard and the requests are
- * Sources (a process reads each), so a menu held open stops nothing
- * else.
+ * - this one, the window system, handles the mouse and the keyboard,
+ *   the menu, and which window is in front; it sends the keys and the
+ *   mouse to that window;
+ * - the file server (Fileserver.serve) takes the requests of the
+ *   windows' processes, and sends each one to its window;
+ * - each window has a thread (Window.run).
+ * None of them waits in a read: the mouse, the keyboard and the
+ * requests are Sources (a process reads each one), so a menu held open
+ * stops nothing else.
  *
  * Who talks to whom, for one window:
  *
@@ -60,12 +71,13 @@
  *     +----------------^-----------------------------------+
  *                      | 9P, on the pipe posted in /srv
  *     rc, in window 1: its name space has rio's files for
- *     that window before /dev's. It reads /dev/cons: a line
- *     typed in the window. It writes it: text in the window.
+ *     that window before /dev's. Reading /dev/cons gets a line
+ *     typed in the window; writing it puts text in the window.
  *
- * rio -i command: that command run at the start, in a process with no
- * window, whose /dev/wctl makes them: a session, as a script (Plan 9's
- * riostart; desktop is one, plan_desktop.md). rio alone starts nothing.
+ * rio -i command runs that command at the start, in a process with no
+ * window, whose /dev/wctl makes the windows. This gives a session as a
+ * script (Plan 9's riostart; desktop is one, plan_desktop.md). rio
+ * alone starts nothing.
  *
  * reframe:
  * A window system is a multiplexer: one screen, one mouse and one
@@ -79,25 +91,26 @@
  * cs-history:
  * The line is Rob Pike's, at Bell Labs. The Blit (with Bart
  * Locanthi, 1982) was a terminal with a bitmap screen and its own
- * processor, its windows each a process, all sharing one serial
- * line to Unix. For Plan 9 he wrote 8 1/2 (1991), the window system
- * as a file server, and showed that it could be small because the
- * system did the rest: no protocol of its own, no terminal
- * emulation, the name space for the plumbing. rio (2000) is 8 1/2
- * written again as threads that talk on channels, the style of his
- * "A Concurrent Window System" (1989), and over a new draw device
- * where a window is an image the kernel keeps and a program draws
- * in it without passing by rio.
+ * processor. Each of its windows was a process, and they all shared
+ * one serial line to Unix. For Plan 9 he wrote 8 1/2 (1991), the
+ * window system as a file server, and showed that it could be small
+ * because the system did the rest: it had no protocol of its own and
+ * no terminal emulation, and the name space did the plumbing. rio
+ * (2000) is 8 1/2 written again as threads that talk on channels, in
+ * the style of his "A Concurrent Window System" (1989), and over a
+ * new draw device, where a window is an image the kernel keeps and a
+ * program draws in it without passing by rio.
  *
  * others:
  * X (MIT, 1984; X11 in 1987) is a server too, but of its own
- * protocol, over a hundred kinds of requests on a socket, that
- * programs speak through a library; the window manager is one more
- * client; and text is not its business: a program that only prints
+ * protocol: over a hundred kinds of requests on a socket, which
+ * programs speak through a library. The window manager is one more
+ * client. And text is not its business: a program that only prints
  * runs in xterm, a client that pretends to be a terminal of the
- * 1970s on a pseudo-terminal. Three large mechanisms where Plan 9
- * has files it already had. The price is paid elsewhere: a window
- * here is a terminal and a rectangle of pixels, with no widgets.
+ * 1970s on a pseudo-terminal. These are three large mechanisms where
+ * Plan 9 has files it already had. The price is paid elsewhere: a
+ * window here is a terminal and a rectangle of pixels, with no
+ * widgets.
  *
  * References: Rob Pike, "8 1/2, the Plan 9 Window System" (USENIX,
  * Summer 1991), the paper to read first; his "The Blit: A

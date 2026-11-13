@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/pdf/Pdf_shading.ml; two Option.value ~default written as their match; paint's canvas and clip are a pair, its parameters 7 where they were 8 (mini-ml's arm code takes no more) (docs/plans/done/plan_pdf.md) *)
+(* ix: from mini-chrome's libs/pdf/Pdf_shading.ml. Two calls of
+ * Option.value ~default are written as their match. paint's canvas and
+ * clip are a pair, so it has 7 parameters where it had 8 (mini-ml's arm
+ * code takes no more) (docs/plans/done/plan_pdf.md) *)
 
 (* See Pdf_shading.mli *)
 

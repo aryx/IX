@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: mini-chrome's libs/fonts/Outline.ml; polygons' tolerance is said, where it was optional (Curve's 0.1) (docs/plans/done/plan_pdf.md) *)
+(* ix: copied from libs/fonts/Outline.ml in mini-chrome
+ * (docs/plans/done/plan_pdf.md). The tolerance of polygons must be
+ * given, where it was optional (Curve's 0.1). *)
 
 (* See Outline.mli *)
 

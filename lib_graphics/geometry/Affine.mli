@@ -20,25 +20,25 @@
  * matrices ([compose]). That's what makes a Playground [group] cheap:
  * moving a group of 100 shapes multiplies one matrix, not 100 shapes.
  *
- * Where it stands in ix: the six numbers are the ones the drawing
- * formats write, in this order. PostScript's matrix, PDF's operator
- * cm (Pdf_render: "200 0 0 150 50 400 cm" is a b c d tx ty, a
- * picture's unit square made 200 by 150 at (50, 400)), SVG's
- * transform="matrix(a b c d e f)" (Svg) and the web's canvas all
- * took PostScript's, so a file's transform is read into a [t] with
- * no arithmetic. The stack of them is the format's too: PDF's q and
- * Q, SVG's nested elements and a playground's groups each save a
+ * Here is where it stands in ix. The six numbers are the ones that the
+ * drawing formats write, in this order. PostScript's matrix, PDF's
+ * operator cm (in Pdf_render, "200 0 0 150 50 400 cm" is a b c d tx ty,
+ * which makes a picture's unit square 200 by 150 at (50, 400)), SVG's
+ * transform="matrix(a b c d e f)" (Svg) and the web's canvas all took
+ * PostScript's order, so a file's transform is read into a [t] with no
+ * arithmetic. The stack of transforms comes from the formats too: PDF's
+ * q and Q, SVG's nested elements and a playground's groups each save a
  * matrix, compose one more, and take the saved one back. Blit and
- * Pdf_canvas use [invert], to go from a pixel of the screen back to
- * the picture.
+ * Pdf_canvas use [invert] to go from a pixel of the screen back to the
+ * picture.
  *
  * design:
- * Why affine and no more. These six numbers keep lines straight and
- * parallels parallel, which is all a page or a sprite needs. The
- * bottom row 0 0 1 is what is given up: with numbers there, far
- * things get smaller (a projective transform, the perspective of
- * three dimensions), parallels meet, and every point costs a
- * division. PostScript chose not to have it, and paper has none.
+ * Why affine and no more? These six numbers keep lines straight and
+ * parallels parallel, which is all a page or a sprite needs. The bottom
+ * row 0 0 1 is what is given up. With numbers there, far things get
+ * smaller (a projective transform, the perspective of three
+ * dimensions), parallels meet, and every point costs a division.
+ * PostScript chose not to have it, and paper has none.
  *
  * References:
  * - Lawrence G. Roberts, "Homogeneous Matrix Representation and
@@ -58,18 +58,19 @@ type t = { a : float; b : float; c : float; d : float; tx : float; ty : float }
 (* (x, y) -> (x, y) *)
 val identity : t
 
-(* [translate dx dy]: (x, y) -> (x + dx, y + dy) *)
+(* [translate dx dy] maps (x, y) to (x + dx, y + dy) *)
 val translate : float -> float -> t
 
-(* [rotate radians]: counterclockwise around (0, 0), in a y-up world
- * like Elm's; e.g. rotate (pi/2) maps (1, 0) to (0, 1) *)
+(* [rotate radians] rotates counterclockwise around (0, 0), in a y-up
+ * world like Elm's; e.g. rotate (pi/2) maps (1, 0) to (0, 1) *)
 val rotate : float -> t
 
-(* [rotate_degrees deg]: rotate in degrees, a multiple of 90 exactly
- * (its cos and sin 0 or 1: the same bits on every machine) *)
+(* [rotate_degrees deg] rotates in degrees, and exactly for a multiple
+ * of 90 (its cos and sin are then 0 or 1, the same bits on every
+ * machine) *)
 val rotate_degrees : float -> t
 
-(* [scale sx sy]: (x, y) -> (sx * x, sy * y); e.g. scale 1. (-1.)
+(* [scale sx sy] maps (x, y) to (sx * x, sy * y); e.g. scale 1. (-1.)
  * flips upside down *)
 val scale : float -> float -> t
 

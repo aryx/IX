@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/gui/Immediate.ml; button's and field's enabled is said, where it was optional (true); a context menu's answer is a type (menu_answer), where it was a polymorphic variant; an Option.value written out (docs/plans/plan_gui.md) *)
+(* ix: copied from libs/gui/Immediate.ml in the author's playground
+ * (docs/plans/plan_gui.md). The enabled argument of button and field
+ * must be given here; there it was optional (true). A context menu's
+ * answer is a type (menu_answer), where it was a polymorphic variant.
+ * One call to Option.value is written out. *)
 
 (* See Immediate.mli *)
 

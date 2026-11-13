@@ -1,7 +1,8 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/networking/netcode/Inputs.ml *)
+(* ix: copied from libs/networking/netcode/Inputs.ml in the author's
+ * playground *)
 
 (* See Inputs.mli *)
 

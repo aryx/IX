@@ -10,17 +10,17 @@
 
    - **fixed sizes, a fixed byte order**: a u16 is two bytes, the most
      significant first (big-endian, "network byte order", RFC 1700);
-   - **variable-length integers** where sizes vary: 7 bits per byte,
-     the most significant first, the high bit set on every byte but the
-     last -- MIDI's delta times (1983, Midi.ml), the same idea as
-     UTF-8's continuation bytes and Protocol Buffers' varints. Small
-     numbers, the common case, take one byte:
+   - **variable-length integers** where sizes vary. Each byte holds 7
+     bits, the most significant first, and the high bit is set on every
+     byte but the last. These are MIDI's delta times (1983, Midi.ml),
+     the same idea as UTF-8's continuation bytes and Protocol Buffers'
+     varints. Small numbers, the common case, take one byte:
 
           0 -> 00        127 -> 7F        128 -> 81 00
         300 -> 82 2C   16383 -> FF 7F   16384 -> 81 80 00
 
-     at most 4 bytes (28 bits, MIDI's limit, and what an int holds in
-     a browser too);
+     A varint takes at most 4 bytes (28 bits, MIDI's limit, which an
+     int holds in a browser too);
    - **signed numbers zigzagged** first (Protocol Buffers' trick), so
      that small negative numbers stay small: 0, -1, 1, -2, 2... become
      0, 1, 2, 3, 4...;
@@ -47,7 +47,7 @@
        type tick  length, inputs
 
    Sent 20 times a second in UDP, each packet also carries 28 bytes of
-   IP and UDP headers: (7 + 28) x 20 = 700 bytes a second -- the
+   IP and UDP headers: (7 + 28) x 20 = 700 bytes a second. The
    headers, not the game, are most of the cost, which is why lockstep
    sends a few inputs per packet (the tutorial's arithmetic).
 
@@ -55,7 +55,8 @@
    File specification (1988), variable-length quantities; Protocol
    Buffers' encoding documentation (Google, 2008), varints and zigzag. *)
 
-(* ix: the author's playground's libs/networking/protocols/Wire.mli *)
+(* ix: copied from libs/networking/protocols/Wire.mli in the author's
+ * playground *)
 
 (*****************************************************************************)
 (* Writing *)
@@ -63,22 +64,24 @@
 
 type writer
 
-(* the bytes [write] puts *)
+(* [to_bytes write]: the bytes that [write] puts *)
 val to_bytes : (writer -> unit) -> string
 
-(* 0 to 255; raises Invalid_argument outside *)
+(* puts a number from 0 to 255; raises Invalid_argument outside *)
 val put_u8 : writer -> int -> unit
 
-(* 0 to 65535, big-endian; raises Invalid_argument outside *)
+(* puts a number from 0 to 65535, big-endian; raises Invalid_argument
+ * outside *)
 val put_u16 : writer -> int -> unit
 
-(* 0 to 2^28 - 1, in 1 to 4 bytes; raises Invalid_argument outside *)
+(* puts a number from 0 to 2^28 - 1, in 1 to 4 bytes; raises
+ * Invalid_argument outside *)
 val put_varint : writer -> int -> unit
 
-(* -2^27 to 2^27 - 1, zigzagged then as a varint *)
+(* puts a number from -2^27 to 2^27 - 1, zigzagged, then as a varint *)
 val put_signed : writer -> int -> unit
 
-(* its length as a varint, then its bytes *)
+(* puts the string's length as a varint, then its bytes *)
 val put_string : writer -> string -> unit
 
 (*****************************************************************************)
@@ -87,8 +90,8 @@ val put_string : writer -> string -> unit
 
 type reader
 
-(* [parse read bytes]: [read]'s value, if [read] took exactly all the
- * bytes; Error saying what was wrong and where otherwise *)
+(* [parse read bytes] returns [read]'s value if [read] took exactly all
+ * the bytes, and otherwise an Error saying what was wrong and where *)
 val parse : (reader -> 'a) -> string -> ('a, string) result
 
 val get_u8 : reader -> int
@@ -97,5 +100,6 @@ val get_varint : reader -> int
 val get_signed : reader -> int
 val get_string : reader -> string
 
-(* for a message's reader: refuse it (e.g., an unknown type) *)
+(* for a message's reader: refuses the message (e.g., for an unknown
+ * type) *)
 val fail : reader -> string -> 'a

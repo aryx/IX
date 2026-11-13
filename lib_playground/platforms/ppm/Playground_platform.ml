@@ -2,26 +2,29 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The platform without a window (docs/plans/done/plan_playground.md,
- * decision 4): the program is run a number of frames, its keys and its
- * mouse those of a script, and the last frame is written as a picture
- * (PPM). The playground's own tests run its games so (its platforms'
- * -dump-frame, -fixed-time and -script: the same words here, Session's,
- * so that a frame is compared with theirs), and ix's run on Linux with
- * no SDL.
+ * decision 4): the program is run for a number of frames, with the
+ * keys and the mouse of a script, and the last frame is written as a
+ * picture (PPM). The playground's own tests run its games this way
+ * (with its platforms' -dump-frame, -fixed-time and -script; Session
+ * takes the same words here, so that a frame can be compared with
+ * theirs), and ix's tests run on Linux with no SDL.
  *
- * The pixels are Shape_render_software's, in a Framebuffer of the
- * playground's screen, 1000 by 1000 (the flag size=n: n by n, the
- * picture scaled, as a platform with a smaller window draws it). The
- * flag redraw=each draws every frame, by what changed since the one
- * before (Redraw), as a platform with a window does: the same picture.
+ * The pixels are drawn by Shape_render_software, in a Framebuffer of
+ * the playground's screen, 1000 by 1000 (with the flag size=n, it is n
+ * by n, and the picture is scaled, as a platform with a smaller window
+ * draws it). The flag redraw=each draws every frame, by what changed
+ * since the one before (Redraw), as a platform with a window does; the
+ * picture is the same.
  *
  * usage: game -dump-frame n file.ppm [-fixed-time seconds] [-script script] [-dump-audio file.wav] [name=value]...
- *   -dump-audio   the sound of those frames, a sixtieth of a second each
- *   size=n        (a flag) the picture n pixels square, not 1000
- *   window=WxH    (a flag) the picture, and the program's screen, W by H
- *   pace=n        (a flag) n frames a second by the clock, not as fast as
- *                 they are computed: two programs that play together over
- *                 a network (games/tests/network.sh) *)
+ *   -dump-audio   writes the sound of those frames, a sixtieth of a second
+ *                 each
+ *   size=n        (a flag) makes the picture n pixels square, not 1000
+ *   window=WxH    (a flag) makes the picture, and the program's screen, W
+ *                 by H
+ *   pace=n        (a flag) plays n frames a second by the clock, not as
+ *                 fast as they are computed, for two programs that play
+ *                 together over a network (games/tests/network.sh) *)
 
 let flags (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse caps).args
 

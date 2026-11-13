@@ -1,20 +1,24 @@
-(* What a window says of itself to its program (rio's Qwinname,
- * Qwinid, Qlabel, Qtext, Qwindow, Qscreen, Qsnarf; xix's Virtual_draw, Dev_wm and
- * Dev_textual_window). *)
+(* The files in which a window tells its program about itself (rio's
+ * Qwinname, Qwinid, Qlabel, Qtext, Qwindow, Qscreen, Qsnarf; xix's
+ * Virtual_draw, Dev_wm and Dev_textual_window). *)
 
-(* its image's name: where a program draws (Display.screen reads it) *)
+(* the name of the window's image, which is where a program draws
+ * (Display.screen reads it) *)
 val winname : Device.t
-(* its number, as the kernel's files say numbers (11 characters and a space) *)
+(* the window's number, written as the kernel's files write numbers (11
+ * characters and a space) *)
 val winid : Device.t
-(* its name in the menu when hidden: read, or written anew *)
+(* the window's name in the menu when it is hidden; it can be read, or
+ * written anew *)
 val label : Device.t
-(* its text, all the lines kept; read only *)
+(* the window's text, with all the lines it keeps; it is read only *)
 val text : Device.t
-(* its picture, border and all, and the whole screen's, as Plan 9
- * writes an image in a file (Display.file); read only. A picture is
- * taken when the file is read from its start *)
+(* a picture of the window, border and all, and one of the whole
+ * screen, as Plan 9 writes an image in a file (Display.file). They are
+ * read only. A picture is taken when the file is read from its start. *)
 val window : Device.t
 val screen : Device.t
-(* the text kept by the windows' menu (Terminal's: one for all the
- * windows), read, or written anew (opened to be written, it is empty) *)
+(* the text kept by the windows' menu (Terminal's, one for all the
+ * windows). It can be read, or written anew: a file opened to be
+ * written is emptied first. *)
 val snarf : Device.t

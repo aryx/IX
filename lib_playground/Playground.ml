@@ -1,4 +1,7 @@
-(* ix: the author's playground's playground/Playground.ml; less its Http and any_app, its include and its Stdlib. said otherwise (each where it was) (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/Playground.ml in the author's playground
+ * (docs/plans/done/plan_playground.md), without its Http and any_app.
+ * Its include and its uses of Stdlib. are written another way, and a
+ * comment says so at each place. *)
 open Basics (* elm-core *)
 
 (*****************************************************************************)

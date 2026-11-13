@@ -1,7 +1,11 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Audio.ml; less the live effects not copied (chorus, flanger, phaser, rotary), a loop rendered as it is played, the platform's samples asked through Audio_source; play_ogg (docs/plans/plan_audio.md) *)
+(* ix: copied from playground/apis/Audio.ml in the author's playground,
+ * less the live effects that were not copied (chorus, flanger, phaser,
+ * rotary). Here a loop is rendered as it is played, the platform's
+ * samples are asked for through Audio_source, and play_ogg is added
+ * (docs/plans/plan_audio.md). *)
 
 (* See Audio.mli *)
 

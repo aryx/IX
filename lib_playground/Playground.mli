@@ -1,9 +1,11 @@
-(* Playground: Elm's Playground in OCaml -- pictures, animations and
-   games made of shapes, in three steps, each one function.
+(* Playground is Elm's Playground in OCaml: pictures, animations and
+   games made of shapes, in three steps, each of which is one
+   function.
 
-   A program says what is on the screen as a list of shapes, each a
-   value built by a function ([circle red 20]) and changed by others
-   ([move], [rotate], [fade]), the last on top. Then:
+   A program says what is on the screen as a list of shapes. Each
+   shape is a value built by a function ([circle red 20]) and changed
+   by others ([move], [rotate], [fade]), and the last one is on top.
+   Then:
 
      picture    shapes                                  a drawing
      animation  time -> shapes                          it moves
@@ -16,9 +18,9 @@
    keys, its screen, its clock). Nothing else is to be learned to
    write Pong, and Tetris here is no more than that.
 
-   Under the three is one type, [app] -- Elm's architecture: a model,
-   a view of it, an update that answers a message with a new model --
-   and the three are apps made for the program:
+   Under the three is one type, [app], which is Elm's architecture: a
+   model, a view of it, and an update that answers a message with a
+   new model. The three steps are apps made for the program:
 
       the platform (Playground_platform: a window, or none)
         |  a frame is due, a key went down, the mouse moved
@@ -33,7 +35,7 @@
 
    For a [game] the model is the memory with the computer beside it,
    the messages are the events above folded into the computer, and
-   the program's update is called at the tick with both: which is why
+   the program's update is called at the tick with both. That is why
    a game reads [computer.keyboard.kleft] and never sees a message
    (Mvu.mli and Immediate.mli say what follows from that for an
    interface).
@@ -42,23 +44,24 @@
    data. So the same program runs on every platform, a test compares
    two frames by comparing two lists, a platform may draw again only
    where the list changed (Redraw), and a layer can be written over
-   the library with no help from below -- a camera is a group moved
-   (Camera2d), a tile map is squares (Tilemap), a widget is rectangles
-   and words (Gui).
+   the library with no help from below: a camera is a moved group
+   (Camera2d), a tile map is squares (Tilemap), and a widget is
+   rectangles and words (Gui).
 
    Coordinates are the mathematician's and not the screen's: (0, 0)
    is the center, y goes up, and the screen is 1000 by 1000 units
-   whatever the window (Elm's is the window's pixels; 600 by 600 in
-   the first version of this port).
+   whatever the window. (Elm's screen is the window's pixels, and it
+   was 600 by 600 in the first version of this port.)
 
    Where it stands. Most of what ix shows on a screen beyond the
    terminal goes through this file: the games, the examples, the
    office suite, mini-drscheme, and mini-netscape, whose page is a
-   list of shapes too (Browser_draw). Below it, a platform; on
-   mini-9pi that is Plan 9's draw device, the kernel's, by way of
+   list of shapes too (Browser_draw). Below it is a platform; on
+   mini-9pi that is Plan 9's draw device, in the kernel, by way of
    Plan9_loop.
 
-   What is ours, from the port's own notes (Playground.ml's prelude):
+   Here is what is ours, from the port's own notes (Playground.ml's
+   prelude):
    Elm's Playground returns a tree of SVG and is run by the browser;
    here a view is the shapes and an [app] is a record that a platform
    runs, so that there is a platform without a browser. The parts of
@@ -67,33 +70,34 @@
    for Elm a short way from here.
 
    cs-history:
-   Elm's Playground is Evan Czaplicki's (the package
-   evancz/elm-playground), by the author of Elm,
-   for a first hour of programming: no type to declare, no message,
-   no HTML, and a triangle on the screen in three lines. Its three
+   Elm's Playground (the package evancz/elm-playground) is by Evan
+   Czaplicki, the author of Elm. It is made for a first hour of
+   programming: there is no type to declare, no message and no HTML,
+   and a triangle is on the screen in three lines. Its three
    functions are the lesson plan. This port is the author's
    ocaml-elm-playground, from which the playground repository and
    then this directory grew.
 
    others:
-   The same wish, other answers. Logo (Wally Feurzeig, Seymour Papert
-   and Cynthia Solomon, 1967) has a turtle that is told to move and
-   leaves a line: commands, where this is values. Processing (Casey
-   Reas and Ben Fry, 2001) and PICO-8 (2015) give the two functions
-   of a game's loop -- setup and draw, _update and _draw -- that
-   change variables and call the screen: immediate, and with no
-   model to replay. How to Design Programs' big-bang (2004) is the
-   nearest, a world and functions of it (Bigbang.mli builds it over
-   this module).
+   Others had the same wish and gave other answers. Logo (Wally
+   Feurzeig, Seymour Papert and Cynthia Solomon, 1967) has a turtle
+   that is told to move and leaves a line; those are commands, where
+   this module has values. Processing (Casey Reas and Ben Fry, 2001)
+   and PICO-8 (2015) give the two functions of a game's loop (setup
+   and draw, or _update and _draw), which change variables and call
+   the screen. That is immediate, and there is no model to replay.
+   How to Design Programs' big-bang (2004) is the nearest: a world,
+   and functions of it (Bigbang.mli builds it over this module).
 
-   References: Playground.elm's own documentation, which the comments
-   below are, example by example
+   References: Playground.elm's own documentation, from which the
+   comments below are taken, example by example
    (github.com/evancz/elm-playground); the Elm guide
    (guide.elm-lang.org) for the architecture; the author's
    github.com/aryx/ocaml-elm-playground. *)
 
 (*****************************************************************************)
-(* ix: the author's playground's playground/Playground.mli (docs/plans/done/plan_playground.md) *)
+(* ix: copied from playground/Playground.mli in the author's playground
+ * (docs/plans/done/plan_playground.md) *)
 (** {1 Entry points } *)
 (*****************************************************************************)
 
@@ -269,23 +273,25 @@ and form =
   | Letters of color * letters
   | Group of shape list
 
-(* ix: a run of text in Hershey's strokes (the browser's and the word
- * processor's: Stroke_text), each letter at its place on a baseline,
- * in a look: its size, bold (a wider pen), italic (a slant). A
- * platform knows it is text, and may keep a letter it has drawn (the
- * software renderer, a mask a letter; docs/notes/notes_font.md) *)
+(* ix: a run of text in Hershey's strokes, as the browser and the word
+ * processor draw it (Stroke_text). Each letter is at its place on a
+ * baseline, and the run has a look: its size, bold (a wider pen), and
+ * italic (a slant). A platform knows it is text, and may keep a
+ * letter it has drawn (the software renderer keeps a mask per letter;
+ * docs/notes/notes_font.md). *)
 and letters = { size : number; bold : bool; italic : bool; baseline : number; at : (number * string) list }
 
-(* ix: a picture of a palette's colours, a byte a pixel, row by row
- * from the top: each byte the index of its colour in the palette (256
- * of r g b, 768 bytes). A game that makes its own pixels this way
- * (mini-doom, mini-quake: 320 by 200 bytes) gives them as they are,
- * and each platform makes what its device wants of them, once: the
- * screen's own format on Plan 9's draw device (two bytes a pixel at
- * 16 bits, from a table of 256), RGBA elsewhere
- * (docs/plans/done/plan_playground_framebuffer.md, F2). Shown at a whole
- * multiple of its size, each pixel is that many by that many; at
- * another size it is scaled as a Bitmap is. *)
+(* ix: a picture in a palette's colours, one byte per pixel, row by
+ * row from the top. Each byte is the index of its colour in the
+ * palette (256 colours of r g b, so 768 bytes). A game that makes its
+ * own pixels this way (mini-doom and mini-quake, with 320 by 200
+ * bytes) gives them as they are, and each platform turns them, once,
+ * into what its device wants: the screen's own format on Plan 9's
+ * draw device (two bytes per pixel at 16 bits, from a table of 256),
+ * and RGBA elsewhere (docs/plans/done/plan_playground_framebuffer.md,
+ * F2). When it is shown at a whole multiple of its size, each pixel
+ * becomes that many by that many; at another size it is scaled as a
+ * Bitmap is. *)
 and pixels = { pwidth : int; pheight : int; indices : Bytes.t; palette : string }
 
 (** {2 Basic Shapes } *)
@@ -444,26 +450,29 @@ You provide the width, height, and then the URL of the image you want to show.
 *)
 val image : number -> number -> string -> shape
 
-(** claude: Show an image your program has in memory, its pixels
+(** Show an image that your program has in memory, its pixels
     ({!Rgba_image.t}: width x height RGBA bytes), stretched to the width
-    and height you give -- a video's frames (TinyMediaPlayer), a picture
-    your program decoded or computed, a web page's pictures (TinyMosaic):
+    and height you give. It can be a video's frames (TinyMediaPlayer), a
+    picture your program decoded or computed, or a web page's pictures
+    (TinyMosaic):
 {[
     let view computer movie = [ bitmap 704. 576. (Movie.frame_at movie computer.time.now) ]
 ]}
     Where {!image} fetches a file once, this is drawn from its pixels as
-    they are when shown: give a new image for a new picture (a backend
-    keeps the ones it converted, by the image itself, up to some
-    millions of pixels in all, and redoes the work for another: hundreds
-    of small pictures in a frame are fine, a page's letters). A small image enlarged is smoothed, like {!image}'s, unless
-    the program's [rendering] says [smooth_images = false]. On the web,
-    each new image is encoded as a PNG, fine for a picture, slow for a
-    video. *)
+    they are when it is shown, so give a new image for a new picture. (A
+    backend keeps the images it converted, keyed by the image itself,
+    up to some millions of pixels in all, and redoes the work for
+    another image. So hundreds of small pictures in a frame, such as a
+    page's letters, are fine.) A small image that is enlarged is
+    smoothed, like {!image}'s, unless the program's [rendering] says
+    [smooth_images = false]. On the web, each new image is encoded as a
+    PNG, which is fine for a picture but slow for a video. *)
 val bitmap : number -> number -> Rgba_image.t -> shape
 
-(* ix: [pixels w h p]: a picture of palette indices (the type pixels,
- * above) in a box of w by h; as a bitmap's, give a new value for a new
- * picture (a platform compares a frame's shapes with the last's) *)
+(* ix: [pixels w h p] is a picture of palette indices (the type
+ * pixels, above) in a box of w by h. As for a bitmap, give a new value
+ * for a new picture (a platform compares a frame's shapes with the
+ * last frame's). *)
 val pixels : number -> number -> pixels -> shape
 
 (** {2 Words } *)
@@ -483,13 +492,14 @@ You can use {!val:scale} to make the words bigger or smaller.
 *)
 val words : color -> string -> shape
 
-(* ix: a run of letters (above, [letters]) *)
+(* ix: a run of letters (see the type [letters] above) *)
 val letters : color -> letters -> shape
 
 (**/**)
-(* claude: the font size (in playground units) and font family used by the
- * backends to render {!val:words}; not meant to be used by applications
- * (use {!val:scale} to change the size of some words) *)
+(* The font size (in playground units) and font family that the
+ * backends use to render {!val:words}. They are not meant to be used
+ * by applications (use {!val:scale} to change the size of some
+ * words). *)
 val words_font_size : number
 val words_font_family : string
 (**/**)
@@ -772,10 +782,11 @@ You could draw a circle around the mouse with a program like this:
 You could also use [computer.mouse.down] to change the color of the circle
 while the mouse button is down.
 
-[mdown] is the left (main) button; [mrdown], not in the original Elm
-playground, is the right one (e.g. TinyMinecraft: left click
-removes a block, right click places one); [mmdown], not in it either,
-is the middle one, the wheel pressed (e.g. mini-soldat: a grenade).
+[mdown] is the left (main) button. [mrdown], which is not in the
+original Elm playground, is the right one (e.g. in TinyMinecraft, a
+left click removes a block and a right click places one). [mmdown],
+not in it either, is the middle one, the wheel pressed (e.g.
+mini-soldat throws a grenade with it).
 
 [mdx] and [mdy], not in the original Elm playground either, are how far
 the mouse moved since the last frame (y up, like [my]), for turning a
@@ -790,8 +801,8 @@ type mouse = {
   (** Whether the button was {i released} this frame: a click is a
       press and a release, and it is the release that means "do it"
       (so a press you drag away from and release elsewhere is not a
-      click on anything). A transient, like {!mdx}: the update that
-      follows the release sees it, and the next tick clears it. *)
+      click on anything). It is a transient, like {!mdx}: the update
+      that follows the release sees it, and the next tick clears it. *)
   mclick : bool;
   mrdown : bool;
   mmdown : bool;
@@ -799,8 +810,8 @@ type mouse = {
   mdy : number;
   (** How far the wheel turned since the last frame, in notches,
       positive when scrolling up (away from you), [0.] most frames.
-      Not in Evan's playground: a game never scrolls, an application
-      always does. *)
+      It is not in Evan's playground, because a game never scrolls,
+      and an application always does. *)
   mwheel : number;
   (** Whether this frame carried a double click. Like {!mclick}, but
       for the second click of a pair; the first one still arrives as an
@@ -854,7 +865,7 @@ type keyboard = {
   (** Every key held right now, by name. The names are the browser's
       ({{:https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values}this
       list}): ["a"], ["1"], ["ArrowUp"], ["Backspace"], ["Enter"],
-      ["Tab"], ["Shift"], ["Escape"] -- whatever backend the program
+      ["Tab"], ["Shift"], ["Escape"], whatever backend the program
       runs on, since a native SDL name ("Return", "Left Shift") is
       translated to it. The one exception is the space bar, which is
       ["space"] here and not [" "].
@@ -863,7 +874,7 @@ type keyboard = {
       down; the frame a key {i goes} down (its rising edge) takes
       remembering the frame before, which {!Scene2d.pressed} does. *)
   keys : string Set_.t;
-  (** The characters {i typed} this frame, in order -- [""] most
+  (** The characters {i typed} this frame, in order: [""] in most
       frames, ["a"] for one key, and more when a key repeats.
 
       This is not the same question as {!keys}, and the difference is
@@ -874,7 +885,7 @@ type keyboard = {
       dead key, whatever a non-US layout puts on that key. Only the
       platform knows that, so it tells us here.
 
-      A transient, consumed by the update that sees it:
+      It is a transient, consumed by the update that sees it:
       {[
         let update computer model =
           { model with name = model.name ^ computer.keyboard.typed }
@@ -1002,14 +1013,14 @@ type computer = {
     e.g. [[("level", "5"); ("fast", "")]] (a parameter given without a
     value has [""]). They come from outside the program, like Elm's
     flags: the program's [main] reads them with
-    [Playground_platform.flags ()] and gives them to
-    [Playground_platform.run_app ~flags]; then every [view] and
+    [Playground_platform.flags caps] and gives them to
+    [Playground_platform.run_app caps flags app]; then every [view] and
     [update] sees them in [computer.flags], unchanged from start to end.
 
     Natively, they are the command line's arguments without a dash,
-    [name=value] or [name] ([dune exec games/arcade/Snake.exe -- level=5 fast]),
-    the dashed ones being the playground's own ([-debug], ...); on the
-    web, the page's URL parameters ([Snake.html?level=5&fast]).
+    [name=value] or [name] ([dune exec games/arcade/Snake.exe -- level=5 fast]);
+    the dashed ones are the playground's own ([-debug], ...). On the
+    web, they are the page's URL parameters ([Snake.html?level=5&fast]).
 
     For example, a game running twice as fast with [speed=fast]:
 {[
@@ -1021,7 +1032,8 @@ type computer = {
       in
       ...
 
-    let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+    let main caps =
+      Playground_platform.run_app caps (Playground_platform.flags caps) app
 ]}
 *)
 and flags = (string * string) list
@@ -1029,17 +1041,19 @@ and flags = (string * string) list
 val initial_computer : computer
 
 (**/**)
-(* claude: [update_keyboard is_down key keyboard]: the keyboard after a
- * key went down or up, as the platforms make it from their events;
- * exported for tinybox's 3D previews, which make a computer themselves *)
+(* [update_keyboard is_down key keyboard] is the keyboard after a key
+ * went down or up, as the platforms make it from their events. It is
+ * exported for tinybox's 3D previews, which make a computer
+ * themselves. *)
 val update_keyboard : bool -> string -> keyboard -> keyboard
 (**/**)
 
 (**/**)
-(* claude: ["level=5"; "fast"] -> [("level", "5"); ("fast", "")] (split
- * at the first '=', empty strings skipped): how the backends turn
- * command-line arguments or URL parameters into flags; not meant to be
- * used by applications *)
+(* [flags_of_strings] turns ["level=5"; "fast"] into
+ * [("level", "5"); ("fast", "")], splitting at the first '=' and
+ * skipping empty strings. This is how the backends turn command-line
+ * arguments or URL parameters into flags; it is not meant to be used
+ * by applications. *)
 val flags_of_strings : string list -> flags
 (**/**)
 
@@ -1048,7 +1062,7 @@ val flags_of_strings : string list -> flags
 (** {1 Randomness} *)
 (*****************************************************************************)
 
-(** claude: random numbers kept in the model, Elm's [Random] without
+(** Random numbers are kept in the model, as in Elm's [Random] without
     the command: a {!seed} is a value, and each draw gives a number and
     the next seed, to keep for the next draw.
 {[
@@ -1066,24 +1080,25 @@ val flags_of_strings : string list -> flags
     backend, native or web: a game replays the same way (golden frames,
     a bug caught again), and two computers given one seed draw the same
     numbers (plan_networking_teaching.md). OCaml's [Random] gives none
-    of that: a hidden global state, seeded from the clock. The
+    of that: it has a hidden global state, seeded from the clock. The
     generator is random/Lehmer.mli (Park and Miller's minimal standard). *)
 type seed
 
-(** a seed from any number, e.g. the flag seed=n, or the clock at the
-    start for a game different each time -- read once, then kept in the
-    model *)
+(** [initial_seed n] makes a seed from any number, e.g. the flag
+    seed=n, or the clock at the start for a game that is different each
+    time. The seed is made once, then kept in the model. *)
 val initial_seed : int -> seed
 
-(** [random lo hi seed]: a number between [lo] and [hi] (up to [hi],
-    not included), and the next seed *)
+(** [random lo hi seed] gives a number between [lo] and [hi] ([hi] not
+    included), and the next seed. *)
 val random : number -> number -> seed -> number * seed
 
-(** [random_int lo hi seed]: an integer from [lo] to [hi], both
-    included *)
+(** [random_int lo hi seed] gives an integer from [lo] to [hi], both
+    included. *)
 val random_int : int -> int -> seed -> int * seed
 
-(** one of the list's elements (it must not be empty) *)
+(** [pick l seed] gives one of the list's elements (the list must not
+    be empty). *)
 val pick : 'a list -> seed -> 'a * seed
 
 (*****************************************************************************)
@@ -1098,10 +1113,11 @@ type ('model, 'msg) app = {
   subscriptions : 'model -> 'msg Sub.t;
 }
 
-(* ix: two things of the playground's are not here. Its any_app and
- * capture (a GADT, which mini-ml has not: a hook of its launcher's,
- * not for programs); and its module Http (Elm's: a command that asks a
- * server, with the program's Cap.network), until a game here asks the
+(* ix: two things of the playground are not here. One is its any_app
+ * and capture, a GADT, which mini-ml does not have; it is a hook for
+ * the playground's launcher, not for programs. The other is its
+ * module Http (Elm's: a command that asks a server, with the
+ * program's Cap.network), which waits until a game here asks the
  * network something. A program that names them does not compile. *)
 
 (** How to draw, for the backends that can honor it, given to
@@ -1117,15 +1133,18 @@ type ('model, 'msg) app = {
     filter, the web to SVG's [shape-rendering] and CSS's
     [image-rendering]), and the software rasterizer's debug keys can
     still change them while the app runs: these are the starting
-    values. *)
+    values.
+
+    In ix, [run_app] takes no [~rendering]: every platform starts from
+    [default_rendering]. *)
 type rendering = { antialiasing : bool; smooth_images : bool }
 
 (** Both on *)
 val default_rendering : rendering
 
-(** claude: How the program's window behaves, given to
-    [Playground_platform.run_app ~window]; a game's by default
-    ([default_window]), and what an application changes of it:
+(** How the program's window behaves, given to
+    [Playground_platform.run_app ~window]. A game uses the default
+    ([default_window]), and an application changes some of it:
 
     {[
       (* a game: nothing to say *)
@@ -1137,56 +1156,61 @@ val default_rendering : rendering
         ~window:{ Playground.default_window with follows_window = true; skip_same_view = true } app
     ]}
 
-    - [screen_size] (None: [default_width] by [default_height], 1000 by
-      1000; not [screen], which is [computer]'s field, and a program
-      that opens Playground writes [computer.screen]): the program's
-      screen, for a program made for another shape
-      (tinybox's menu, 16:9). The window starts at that shape and the
-      program is told its size at once ([Sub.on_resize], which [game]
-      follows: [computer.screen]). The window still scales the picture
-      to fit it, whatever its size. The native Cairo platform and the
-      web's (the browser letterboxing it), for now; the others keep
-      1000 by 1000.
-    - [follows_window] (false), for an application rather than a game:
-      the program's screen is the window itself, as large as the user
-      makes it, drawn 1 to 1 -- no scaling, no black bars. The program
-      is told its size before the first frame and each time the window
-      changes ([Sub.on_resize]), and lays itself out again (a browser's
-      page at its new width). [screen_size] is then the size the window
-      starts at. The native platforms (Cairo's and the software one,
-      whose window otherwise never changes size); the web's ignores it.
-    - [platform_keys] (true): the keys the native platforms keep for
-      themselves, all with Ctrl so that a plain key is always the
-      program's (a "q" typed in a field) -- Ctrl+Q quits, and with
-      -debug-keys Ctrl + a key is one of the software platform's debug
-      keys. False, for an application that wants every key (its own
-      Ctrl+Q): the platform keeps none, and -debug-keys and -keys do
-      nothing. Alt+Enter (full screen) and the window's close box are
-      the window's, either way. The web's ignores it: the page has no
-      such keys.
+    - [screen_size] is the program's screen, for a program made for
+      another shape (tinybox's menu, 16:9). None means [default_width]
+      by [default_height], 1000 by 1000. (It is not called [screen],
+      because that is [computer]'s field, and a program that opens
+      Playground writes [computer.screen].) The window starts at that
+      shape, and the program is told its size at once ([Sub.on_resize],
+      which [game] follows in [computer.screen]). The window still
+      scales the picture to fit it, whatever its size. For now, the
+      native Cairo platform and the web's (where the browser letterboxes
+      it) honor it; the others keep 1000 by 1000.
+    - [follows_window] (false) is for an application rather than a
+      game: the program's screen is the window itself, as large as the
+      user makes it, drawn 1 to 1, with no scaling and no black bars.
+      The program is told its size before the first frame and each time
+      the window changes ([Sub.on_resize]), and lays itself out again
+      (a browser's page at its new width). [screen_size] is then the
+      size the window starts at. The native platforms honor it (Cairo's
+      and the software one, whose window otherwise never changes size);
+      the web's ignores it.
+    - [platform_keys] (true) lets the native platforms keep some keys
+      for themselves, all with Ctrl, so that a plain key is always the
+      program's (a "q" typed in a field). Ctrl+Q quits, and with
+      -debug-keys, Ctrl and a key is one of the software platform's
+      debug keys. Set it to false for an application that wants every
+      key (its own Ctrl+Q): the platform then keeps none, and
+      -debug-keys and -keys do nothing. Alt+Enter (full screen) and the
+      window's close box are the window's, either way. The web's
+      platform ignores it, since the page has no such keys.
     - [skip_same_view] (false), for an application rather than a game:
       a frame whose view is the very list of the frame before
       (physically, [==]) is not drawn again, unless something happened
       to the window since (a key, the mouse, its size, its being
       uncovered). A game's view is a new list at each frame and is
-      always drawn; an application at rest (a page being read) then
-      costs no drawing at all, where it cost a whole frame's, sixty
-      times a second -- if its view takes the care to give back the
+      always drawn. An application at rest (a page being read) then
+      costs no drawing at all, instead of a whole frame's drawing sixty
+      times a second, provided its view takes the care to give back the
       same list when what it reads of its model is the same. The
       program promises with it that its picture depends on nothing
       else: no animated picture (a GIF's frames are the platform's to
       change), no picture still to come. -uncapped and -debug-keys
       (which measure, and draw their own overlays) draw every frame
-      anyway. The native platforms; the web's ignores it (vdom already
-      changes only what differs).
+      anyway. The native platforms honor it; the web's ignores it (vdom
+      already changes only what differs).
 
-    A record rather than as many arguments of [run_app]: they are set
-    together, once, by the few programs that are not games, and there
-    will be others. *)
+    It is a record rather than as many arguments of [run_app]: they are
+    set together, once, by the few programs that are not games, and
+    there will be others.
+
+    In ix, [run_app] takes no [~window], and no program uses this
+    record: a program that wants its screen to be the window asks for
+    it with the flag window (Session.window says how). *)
 type window = { screen_size : (int * int) option; follows_window : bool; platform_keys : bool; skip_same_view : bool }
 
-(** A game's: 1000 by 1000 scaled to the window, Ctrl+Q quits, every
-    frame drawn *)
+(** A game's window: 1000 by 1000 scaled to the window, Ctrl+Q quits,
+    and every frame is drawn *)
 val default_window : window
 
 (** What the mouse's cursor looks like over the window, set with

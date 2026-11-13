@@ -3,8 +3,9 @@
  * A click can say which widget it means -- it has a position, and the
  * hit test answers. A key press cannot: "e" belongs to whichever
  * field the person last pointed at, and that is the whole of what
- * focus is. Every application's keyboard experience is this, a ring
- * drawn around the focused thing, and the order Tab walks in.
+ * focus is. Every application's keyboard experience comes down to
+ * this: a ring drawn around the focused thing, and the order in which
+ * Tab walks.
  *
  *     click on a field      ->  it has the focus, its caret shows
  *     type                  ->  the characters go there and nowhere else
@@ -20,8 +21,8 @@
  * in an order, each frame, and that order is the tab order, for free
  * and in the source where you can see it.
  *
- * With one wrinkle worth knowing, because it is the price of having
- * no tree: when Tab arrives, this frame's order does not exist yet --
+ * There is one wrinkle worth knowing, because it is the price of
+ * having no tree: when Tab arrives, this frame's order does not exist yet --
  * the widgets have not been asked for. So the walk uses the *previous*
  * frame's order, which is the same order unless the interface changed
  * shape in that very frame, and then Tab lands one widget off, once.
@@ -52,7 +53,8 @@ val has : Widget.id -> t -> bool
 val give : Widget.id -> t -> t
 val clear : t -> t
 
-(* Tab and Shift-Tab: the next (previous) widget of the last frame's
- * order, wrapping round; with nobody focused, the first (last) *)
+(* Tab and Shift-Tab give the focus to the next (previous) widget in
+ * the last frame's order, wrapping round. When nobody has the focus,
+ * they give it to the first (last) one. *)
 val next : t -> t
 val previous : t -> t

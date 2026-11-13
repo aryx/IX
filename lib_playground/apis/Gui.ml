@@ -1,11 +1,13 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Gui.ml; a button's and a field's enabled is said, where it was optional (true) (docs/plans/plan_gui.md) *)
+(* ix: copied from playground/apis/Gui.ml in the author's playground.
+ * The enabled argument of a button and of a field is required, where it
+ * was optional (true) (docs/plans/plan_gui.md). *)
 open Playground
 
-(* See Gui.mli. The adapter between gui/ (rectangles and paint) and
- * the playground (a computer and shapes). *)
+(* See Gui.mli. This module is the adapter between gui/ (rectangles and
+ * paint) and the playground (a computer and shapes). *)
 
 (* The frame being built: the widgets update asks for, until view
  * takes them with [draw]. Dear ImGui calls this the context, and has

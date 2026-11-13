@@ -1,7 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/graphics/images/jpeg/Jpeg.ml; the pixels are a Bytes (Rgba_image's here); decode's three optional arguments are said, in decode_with, and decode is with what they were by default; the upsampling is a type, where it was `Box and `Triangle; decode_scan's tables and how are one record (mini-ml's arm code takes 7 parameters at most) (docs/plans/done/plan_pdf.md) *)
+(* ix: copied from libs/graphics/images/jpeg/Jpeg.ml in the author's
+ * playground (docs/plans/done/plan_pdf.md), with these changes:
+ * - the pixels are a Bytes (as in Rgba_image here);
+ * - the three optional arguments of decode must be given, in
+ *   decode_with, and decode uses the values they had by default;
+ * - the upsampling is a type, where it was `Box and `Triangle;
+ * - the tables of decode_scan, and how it decodes, are one record
+ *   (because mini-ml's arm code takes 7 parameters at most). *)
 
 (* See Jpeg.mli *)
 

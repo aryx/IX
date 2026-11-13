@@ -55,11 +55,12 @@
    font file addresses 65,535 glyphs at most), so a browser has none
    that is "the" font. For each character it asks the font the page
    named whether it has it (the font's cmap table, code point to
-   glyph); if not, the next of the page's list; then the system's
-   fonts, by the character's script -- font *fallback* -- down to a
-   font kept for the purpose (Google's Noto, 2012, is named for it:
-   "no tofu", tofu being the empty box drawn when everything fails,
-   our "?"). And a glyph for each character is not enough either:
+   glyph). If not, it asks the next font of the page's list, then the
+   system's fonts, chosen by the character's script -- font
+   *fallback* -- down to a font kept for the purpose (Google's Noto,
+   2012, is named for it: "no tofu", tofu being the empty box drawn
+   when everything fails, our "?"). And a glyph for each character is
+   not enough either:
 
      a letter and its mark   "e" then U+0301: the mark is placed by the
                              font's own table of anchors (GPOS), not
@@ -101,14 +102,15 @@
    Unicode Annexes #9 (bidirectional), #14 (line breaking), #29
    (segmentation); the OpenType specification (cmap, GSUB, GPOS). *)
 
-(* the glyph of a character given as its UTF-8 bytes (one of
- * Browser_text.characters') *)
+(* the glyph of a character given as its UTF-8 bytes (one of the
+ * strings of Browser_text.characters) *)
 val glyph : string -> Hershey.glyph
 
-(* whether it has one of its own: not the "?" given for what is unknown *)
+(* whether the character has a glyph of its own, and not the "?" given
+ * for what is unknown *)
 val known : string -> bool
 
-(* Hershey.layout for a UTF-8 string: a glyph a character, not a byte
- * (the same strokes for ASCII); what the playground's renderers draw
- * a Words with, so a field's "à midi" is not "?? midi" *)
+(* Hershey.layout for a UTF-8 string, with one glyph per character, not
+ * per byte (ASCII gets the same strokes). The playground's renderers
+ * draw a Words with it, so a field's "à midi" is not "?? midi". *)
 val layout : string -> (float * float) list list * float

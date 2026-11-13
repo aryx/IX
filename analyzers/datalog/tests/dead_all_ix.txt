@@ -90,6 +90,10 @@ kernels/oberon/texts/Fonts.ml:24: dead field: min_x stored in Fonts.read, nothin
 kernels/oberon/texts/TextFrames.ml:223: dead field: org stored in TextFrames.locate_pos, nothing live reads it
 kernels/oberon/texts/Texts.ml:184: dead field: col stored in Texts.open_reader, nothing live reads it
 kernels/oberon/texts/Texts.ml:184: dead field: voff stored in Texts.open_reader, nothing live reads it
+kernels/squeak/machine/Machine.ml:128: dead: Machine.panic, nothing names it
+kernels/squeak/machine/Machine.ml:139: dead: Machine.le16, in init but no call goes through the pointer
+kernels/squeak/machine/Machine.ml:141: dead: Machine.le32, nothing names it
+kernels/squeak/machine/Machine.ml:143: dead: Machine.get_le32, nothing names it
 languages/c/Emit.ml:293: dead field: op stored in Emit:fun at line 293, nothing live reads it
 languages/c/Emit.ml:293: dead field: suffixes stored in Emit:fun at line 293, nothing live reads it
 languages/c/highlight/Token_c.ml:12: dead: Token_c.show_kind, nothing names it
@@ -129,9 +133,60 @@ languages/scheme/Scheme_eval.ml:233: dead field: builtins stored in Scheme_eval.
 languages/scheme/Scheme_eval.ml:240: dead: Scheme_eval.defined, nothing names it
 languages/scheme/Scheme_step.ml:194: dead field: contractum stored in run, nothing live reads it
 languages/scheme/Scheme_step.ml:194: dead field: redex stored in run, nothing live reads it
+languages/smalltalk/Squeak.ml:157: dead: Squeak.picture, nothing names it
+languages/smalltalk/compiler/St_ast.ml:45: dead: St_ast.show_literal, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_ast.ml:63: dead: St_ast.show_message, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_ast.ml:71: dead: St_ast.show_expr, nothing names it
+languages/smalltalk/compiler/St_ast.ml:87: dead: St_ast.show_stmt, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:59: dead: St_bytecode.literals, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:63: dead: St_bytecode.literal, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:74: dead: St_bytecode.temp_names, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_bytecode.ml:76: dead: St_bytecode.pcmap, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_bytecode.ml:84: dead: St_bytecode.length_at, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_bytecode.ml:92: dead: St_bytecode.is_send, nothing names it
+languages/smalltalk/compiler/St_bytecode.ml:95: dead: St_bytecode.disassemble, nothing names it
+languages/smalltalk/compiler/St_chunk.ml:83: dead: St_chunk.chunk, in init but no call goes through the pointer
+languages/smalltalk/compiler/St_chunk.ml:89: dead: St_chunk.methods_chunk, nothing names it
+languages/smalltalk/compiler/St_lexer.ml:280: dead: St_lexer.to_string, nothing names it
+languages/smalltalk/compiler/St_parse.ml:323: dead: St_parse.selector_of, nothing names it
+languages/smalltalk/graphics/St_bitblt.ml:167: dead: St_bitblt.form, nothing names it
 languages/smalltalk/highlight/Highlight_st.ml:149: dead field: binds stored in Highlight_st.run, nothing live reads it
 languages/smalltalk/highlight/Highlight_st.ml:149: dead field: refs stored in Highlight_st.run, nothing live reads it
 languages/smalltalk/highlight/Highlight_st.ml:314: dead: Highlight_st.categorize, nothing names it
+languages/smalltalk/vm/St_class.ml:106: dead: St_class.class_var_names, in init but no call goes through the pointer
+languages/smalltalk/vm/St_class.ml:119: dead: St_class.definition, nothing names it
+languages/smalltalk/vm/St_class.ml:174: dead: St_class.categories, nothing names it
+languages/smalltalk/vm/St_class.ml:175: dead: St_class.category_selectors, nothing names it
+languages/smalltalk/vm/St_class.ml:261: dead: St_class.remove, nothing names it
+languages/smalltalk/vm/St_class.ml:45: dead: St_class.metaclass, nothing names it
+languages/smalltalk/vm/St_class.ml:60: dead: St_class.category, in init but no call goes through the pointer
+languages/smalltalk/vm/St_class.ml:65: dead: St_class.comment, nothing names it
+languages/smalltalk/vm/St_debug.ml:106: dead: St_debug.run_until, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:117: dead: St_debug.over_condition, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:140: dead: St_debug.step, nothing names it
+languages/smalltalk/vm/St_debug.ml:142: dead: St_debug.step_into, nothing names it
+languages/smalltalk/vm/St_debug.ml:151: dead: St_debug.restart, nothing names it
+languages/smalltalk/vm/St_debug.ml:180: dead: St_debug.proceed, nothing names it
+languages/smalltalk/vm/St_debug.ml:182: dead: St_debug.not_understood, nothing names it
+languages/smalltalk/vm/St_debug.ml:196: dead: St_debug.template, nothing names it
+languages/smalltalk/vm/St_debug.ml:21: dead: St_debug.dead, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:23: dead: St_debug.label, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:37: dead: St_debug.highlight, in init but no call goes through the pointer
+languages/smalltalk/vm/St_debug.ml:50: dead: St_debug.frames, nothing names it
+languages/smalltalk/vm/St_debug.ml:67: dead: St_debug.variables, nothing names it
+languages/smalltalk/vm/St_debug.ml:76: dead: St_debug.fields, nothing names it
+languages/smalltalk/vm/St_interp.ml:104: dead: St_interp.set_host, nothing names it
+languages/smalltalk/vm/St_interp.ml:106: dead: St_interp.set_extra_roots, nothing names it
+languages/smalltalk/vm/St_interp.ml:112: dead: St_interp.cache_stats, nothing names it
+languages/smalltalk/vm/St_interp.ml:120: dead: St_interp.is_closure_context, in init but no call goes through the pointer
+languages/smalltalk/vm/St_interp.ml:131: dead: St_interp.context_method, in init but no call goes through the pointer
+languages/smalltalk/vm/St_interp.ml:154: dead: St_interp.home_context, nothing names it
+languages/smalltalk/vm/St_interp.ml:604: dead field: id stored in St_interp.new_process, nothing live reads it
+languages/smalltalk/vm/St_interp.ml:684: dead: St_interp.run_until, in init but no call goes through the pointer
+languages/smalltalk/vm/St_interp.ml:686: dead: St_interp.resume, in init but no call goes through the pointer
+languages/smalltalk/vm/St_memory.ml:147: dead: St_memory.set_body, nothing names it
+languages/smalltalk/vm/St_memory.ml:162: dead: St_memory.float_of, nothing names it
+languages/smalltalk/vm/St_memory.ml:172: dead: St_memory.symbols, nothing names it
 languages/tiger/Tiger_semant.ml:266: dead field: aid stored in Tiger_semant:fun at line 266, nothing live reads it
 languages/tiger/Tiger_semant.ml:318: dead field: fid stored in Tiger_semant.program, nothing live reads it
 languages/tiger/Tiger_semant.ml:318: dead field: records stored in Tiger_semant.program, nothing live reads it

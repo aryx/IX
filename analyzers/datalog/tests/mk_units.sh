@@ -46,8 +46,9 @@ unit_file() { # directory, -I's, unit
   f=$(find $1 -name "$3.ml" 2> /dev/null | LC_ALL=C sort | head -1)
   [ -z "$f" ] && f=$(tests/ix_files.sh | grep -E "/$3\.ml$" | head -1)
   # (a unit made in another program's directory, that alone of its name:
-  # St_kernel.ml, made by mini-smalltalk's mkfile for mini-squeak too)
-  [ -z "$f" ] && [ "$(find $MK -name "$3.ml" 2> /dev/null | wc -l)" = 1 ] && f=$(find $MK -name "$3.ml")
+  # St_kernel.ml, made by mini-smalltalk's mkfile for mini-squeak too;
+  # compared as a number, since macOS's wc pads its count with spaces)
+  [ -z "$f" ] && [ $(find $MK -name "$3.ml" 2> /dev/null | wc -l) -eq 1 ] && f=$(find $MK -name "$3.ml")
   echo $f
 }
 

@@ -99,6 +99,12 @@ slow), and **[t-IX](https://aryx.github.io/IX/t-ix.html)** is
 tiny-machine compiled to JavaScript, booting tiny-kernel, its window
 system and tetris.
 
+Each size is made for its own system, mini-9pi or tiny-kernel, but
+most of its programs also run natively on the host, Linux or macOS:
+the shell, the editors, the compilers, the browser, the games... A
+program asks its system through one interface, with an implementation
+for each, so the same file is a program of both.
+
 ## The code map
 
 [IX's code map](https://aryx.github.io/IX/codemap.html) shows the
@@ -143,7 +149,7 @@ the windows, the browser, and the libraries under them.
 | **mini-asm** | the assembler for arm and arm64 | 1,200 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
 | **mini-ld** | the linker, to Plan 9's a.out, Linux's ELF and macOS's Mach-O (arm64); the same executables as the original's, byte for byte | 3,600 | `5l`, `7l` | [`linker/`](linker/) ([map](https://aryx.github.io/IX/codemap.html?focus=linker)) |
 | **mini-lex**, **mini-yacc** | the lexer and parser generators, of ocamllex's and ocamlyacc's languages, that make the front ends of mini-ml, mini-cc, mini-awk, mini-chidb's SQL... | 1,600 | `lex`, `yacc` | [`generators/`](generators/) ([map](https://aryx.github.io/IX/codemap.html?focus=generators)) |
-| **mini-acid**, **mini-prof** | the debugger, acid's language over a stopped program's memory and symbols, and the profiler; mini-stats, the machine's load | 4,100 | `acid`, `prof`, `stats` | [`debuggers/`](debuggers/), [`profilers/`](profilers/) ([map](https://aryx.github.io/IX/codemap.html?focus=debuggers)) |
+| **mini-acid**, **mini-prof** | the debugger, acid's language over a stopped program's memory and symbols, by mini-9pi's `/proc` and by Linux's `ptrace`; the profiler; mini-stats, the machine's load | 4,100 | `acid`, `prof`, `stats` | [`debuggers/`](debuggers/), [`profilers/`](profilers/) ([map](https://aryx.github.io/IX/codemap.html?focus=debuggers)) |
 | **mini-ed** | the line editor | 1,400 | `ed` | [`editors/ed/`](editors/ed/) ([map](https://aryx.github.io/IX/codemap.html?focus=editors/ed)) |
 | **mini-emacs** | the screen editor, written after efuns: buffers, windows, the minibuffer, the kill ring, searches, keyboard macros, dired, the languages' colors; in a terminal, a window on Linux, and one of mini-rio's | 3,500 | efuns (the author's Emacs in OCaml) | [`editors/emacs/`](editors/emacs/) ([map](https://aryx.github.io/IX/codemap.html?focus=editors/emacs)) |
 | **lib_graphics** | the graphics stack: points, rectangles, images and their formats, fonts, the display, the mouse, the keyboard and menus; the draw device itself is in mini-9pi | 13,600 | `libdraw`, `libmemdraw`, `devdraw` | [`lib_graphics/`](lib_graphics/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_graphics)) |

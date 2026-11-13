@@ -21,6 +21,9 @@
 #                the analyzer built first; 20 s)
 #   make loc     t-IX's lines alone (../scripts/stats/loc.py -t: the
 #                files git knows, those apart said at the end)
+#   make clean   what the targets above wrote here: TinyKernel/'s
+#                builds, the steps', and tiny-build's digests (dune's
+#                _build is the whole tree's: ../Makefile's clean)
 #
 # The tiny programs built by ix are the mkfile's (mini-mk); tiny-kernel
 # has its own Makefile (TinyKernel/: make run, make check).
@@ -39,5 +42,9 @@ check: all
 	$(MAKE) -C .. check-tix
 loc:
 	cd .. && scripts/stats/loc.py -t
+clean:
+	$(MAKE) -C TinyKernel clean
+	$(MAKE) -C TinyKernel/steps clean
+	find . -name .tiny-build -type f -exec rm -f {} +
 
-.PHONY: all test $(KERNEL_TARGETS) check loc
+.PHONY: all test $(KERNEL_TARGETS) check loc clean

@@ -203,6 +203,27 @@ A file is built three ways:
 smaller checks; TinyC's tests are compared with the host's cc, TinyML's
 (`../languages/ml/tests/tiny/`, `tests/TinyML_fuzz.py`) with OCaml.
 
+## Bootstrapping
+
+t-IX builds itself, on its own system. The first build is the host's:
+dune and OCaml make the tools (`tiny-ml`, `tiny-cc`, `tiny-as`,
+`tiny-ld`, `tiny-build`...), and those tools, by the
+[`Buildfile`](Buildfile), make tiny-kernel's image and its system:
+`/bin`, `/lib`, and a disk with the sources in `/src`. Then tiny-kernel,
+on tiny-machine, runs the same Buildfile in `/src` with its own `/bin`'s
+tools, the ones the host's made, and gives the same files: the image
+and every file of the system the host's, byte for byte. A difference is
+a bug of tiny-kernel's tools, of the runtime or of the kernel.
+
+```bash
+make -C TinyKernel self-quick   # a few targets (ping, the library) rebuilt on tiny-kernel, 3 minutes
+make -C TinyKernel self         # the whole image and system, hours
+make self-quick-tix             # the same, from the top directory
+```
+
+The plan and its history are in
+[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md).
+
 ## The system as a whole
 
 As a program's `.mli` says it of the program:
@@ -224,7 +245,7 @@ kept:
   link line. Inside the tools, anything simpler.
 - **The system builds itself.** tiny-kernel rebuilds its own image
   from `/src` with its own tools, by the same Buildfile as the host, to
-  the same bytes (`make -C TinyKernel self`).
+  the same bytes ([Bootstrapping](#bootstrapping)).
 - **One language.** The kernel, the tools and the programs are ML;
   C is the runtime and a few programs; assembly is what ML cannot say
   (`TinyKernel/kentry.s`, the traps and the switch).

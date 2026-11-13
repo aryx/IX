@@ -72929,3 +72929,180 @@ Claude recommended plan_tiny_twists.md as the main open tiny plan, to take up in
 Claude left the t6 and m-ix files out of today's assets commit because other sessions were editing their sources.
 Claude suggested publishing those files with make website once committed, including m-ix's ?v= page.
 Claude listed postponed items (boot.rc with mount and bind, and CORE in Buildfiles) and said to push abd38b0b first.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 12:57
+
+**Yoann:**
+
+> in the toplevel README.md, I think the Still to come section can be removed; the program it lists have been implemented
+
+**Claude (summary):**
+
+Claude said it would keep the Budget subsection, promoting it to its own `##` section and rewording its "What is still to come" sentence.
+Claude noted the Budget section's `#the-budget` anchor is linked from line 192, so the link must stay valid.
+Claude pointed out that the programs in the "Still to come" list are already covered in the tables above.
+Claude began editing the toplevel README.md to implement these changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 12:57
+
+**Yoann:**
+
+> also the toplevel README.md still feel too long ... analyze and propose what could be reduced, removed, or reformulated
+
+**Claude (summary):**
+
+Claude recommended shrinking the budget section from 22 lines to about 6 lines.
+Claude proposed dropping the parenthesis that lists every past budget, since docs/loc.md already logs that history.
+It would keep only the budget rule, its table, and the link to docs/loc.md.
+Claude's other proposals covered stale statements, the design section, repeated content, and table cells.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 12:58
+
+**Yoann:**
+
+> maybe the Budget does not need a section ... we can mention it 'en passant'
+
+**Claude (summary):**
+
+Claude removed the README's budget section and moved the budget into passing mentions at each size's line count.
+Claude rewrote m-IX's line-count note to state the 150,000-line budget, noting it is 20,400 lines over.
+Claude updated t-IX's count to about 34,400 lines, past its 30,000 budget, and dropped the OCaml subtotal.
+Claude removed the budget history, table, and the multicore "what is missing" entry, leaving README.md with a 45-line removal and 9 lines added.
+Claude has not committed anything and asked whether to proceed with the other proposed README cuts.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 13:06
+
+**Yoann:**
+
+> ok let's reduce the README.md like you suggested, by priorty starting with 1 and so on
+
+**Claude (summary):**
+
+Claude recommended trimming the ix README by priority, starting with priority 1, the stale Design section.
+Claude noted tiny/README.md already covers the three builds, TinyLibSystem and steps/, so those could be cut.
+Claude folded the stale Design section into "Tiny, not Toy", then moved on to the intro, "The goal" and "Two sizes".
+Claude then condensed the long table cells, the t-IX section, Build and run, and Bootstrapping.
+Claude finished with "Who wrote it" and "The name" as the last sections to reduce.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 13:59
+
+**Yoann:**
+
+> excellent!
+
+**Claude (summary):**
+
+Claude noted that the README changes were still uncommitted in the working tree.
+Claude asked whether Yoann wanted to commit the pending README changes now.
+Claude proposed including docs/yoann_notes/prompt-history.md in that commit as well.
+Claude recommended staging only explicit file paths, as it had done before.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:09
+
+**Yoann:**
+
+> the "
+>
+> Each size is made for its own system, mini-9pi or tiny-kernel, but
+> most of its programs also run natively on the host, Linux or macOS:
+> the shell, the editors, the compilers, the browser, the games... A
+> program asks its system through one interface, with an implementation
+> for each, so the same file is a program of both.
+>
+> " can probably be merged with the previous paragraph that already talks of the different way to experience m-ix and t-ix
+
+**Claude (summary):**
+
+Claude merged the two paragraphs, ending the m-IX/t-IX ways-to-run paragraph with the native-host sentence.
+Claude dropped the opening clause "Each size is made for its own system", since the paragraph's start already covers it.
+The merged sentence says most programs of both sizes also run natively on Linux or macOS, with one interface and an implementation per system.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:18
+
+**Yoann:**
+
+> in the t-ix table, we have "| **the machine**, the host's programs" but this is confusing because we said earlier most m-ix and t-ix program can run on the host
+
+**Claude (summary):**
+
+Claude changed the t-ix table row label to "**the machine**, what the rest runs on," replacing "the host's programs."
+The old wording implied only those programs run on the host, which conflicts with most mini-ix and tiny-ix programs running there too.
+The new label describes tiny-cpu and tiny-machine as the machine that the kernel, tools, and window system run on.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:19
+
+**Yoann:**
+
+> why mention "its /bin" in the table? since anyway the toolchain is also in /bin
+
+**Claude (summary):**
+
+Claude agreed that the "its /bin" mention in the table added nothing and removed it from both rows.
+Claude rewrote the rows to read "**the tools**" and "**the toolchain**, each making what the host's makes, byte for byte."
+Yoann then flagged that the "host's makes" wording might confuse the discussion of the host.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:19
+
+**Yoann:**
+
+> "**the toolchain**, each making what the host's makes, byte for byte" maybe confusing the talk about host here
+
+**Claude (summary):**
+
+Claude changed the toolchain row to "with which tiny-kernel rebuilds its own image," citing tiny/README.md's statement about rebuilding from `/src`.
+Claude said this keeps the self-hosting point without bringing the host into the row.
+Claude offered to drop the clause entirely if Yoann prefers a shorter row.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:20
+
+**Yoann:**
+
+> in **the window system** and its programs | tiny-windows, tiny-playground, tiny-gui, tiny-tetris, tiny-calculator, tiny-temperature, tiny-office, tiny-troff, tiny-browser   actually tiny-playground is not a program; neither tiny-gui, and tiny-temperature is not super important to list
+
+**Claude (summary):**
+
+Claude's answer was a single sentence saying it would note in the label that the 5,290 count still includes the playground and GUI libraries. Yoann's reaction is to the list of tiny programs in the window system, where he pointed out that tiny-playground and tiny-gui are libraries rather than programs. He also said tiny-temperature isn't important enough to list. Claude did not show the revised list, so the summary can only report the stated intent.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:22
+
+**Yoann:**
+
+> do we have a Bootstrapping section also in tiny/README.md for t-ix itself?
+
+**Claude (summary):**
+
+Claude found that tiny/README.md has no Bootstrapping section, with self-hosting mentioned only in passing.
+Claude offered a 10–15 line Bootstrapping section for tiny/README.md, mirroring the top-level README's version.
+The section would say the host builds t-IX first, using tiny-build, tiny-cc, tiny-ml, tiny-as and tiny-ld.
+It would describe tiny-kernel rebuilding its image from /src with the same Buildfile, to identical bytes.
+It would document make self (hours) and make self-quick (about 3 minutes), and link the self-hosting plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 14:23
+
+**Yoann:**
+
+> yes

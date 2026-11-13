@@ -1,20 +1,23 @@
-# mini-xv6, step 3, by ix's tools, on the Pi 4 or (mini-mk O=5) the
-# Pi 1 (plan_kernel_mini_ml.md, steps 4 and 9): the same Main.ml as the Makefile's (the Pi 1's, by
-# ocaml-light and gcc): three processes on their own kernel stacks, and
-# for mini-ml's runtime on their own value stacks, the collector
-# running between their turns. pi4/ and pi1/ have the machine: l.s (step 2's,
-# and swtch), machine.c (the contexts, the runtime told which stack
-# runs), user.s.
-#   mini-mk          _mk/7/kernels/steps/step3/kernel8.img
-#   mini-mk check    booted under mini-qemu, and under QEMU if it is
-#                    there: the Makefile's expected lines
+# mini-xv6, step 3, built by ix's tools, on the Pi 4 or (mini-mk O=5)
+# the Pi 1 (docs/plans/done/plan_kernel_mini_ml.md, steps 4 and 9). It
+# is the same Main.ml as the Makefile's (the Pi 1's, built by
+# ocaml-light and gcc). It runs three processes on their own kernel
+# stacks and, for mini-ml's runtime, on their own value stacks, with the
+# collector running between their turns. pi4/ and pi1/ have the machine:
+# l.s (step 2's, plus swtch), machine.c (the contexts, and telling the
+# runtime which stack runs), and user.s.
+#   mini-mk          builds _mk/7/kernels/steps/step3/kernel8.img
+#   mini-mk check    boots it under mini-qemu, and under QEMU if it is
+#                    there, and compares with the Makefile's expected
+#                    lines
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step3
 BD=`{if(~ $O 5) echo pi1; if not if(~ $O 7) echo pi4}
 ENTRY=`{if(~ $O 5) echo _start; if not if(~ $O 7) echo vectors}
-# (quoted: after a variable's =, mk reads a word before another = as attributes)
+# (The words are quoted because, after a variable's =, mk reads a word
+# before another = as attributes.)
 HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 
 all:V: $D/kernel8.img
@@ -40,10 +43,11 @@ $D/machine_c.$O: $BD/machine.c $TOP/languages/ml/runtime/mlvalues.h $TOP/languag
 $D/shim.$O: ../step0/shim.c
 	mkdir -p $D
 	$CC $CINC -o $target ../step0/shim.c
-# memmove and memset: port's C, a byte at a time, not libc's arm64
-# assembly (9front's), whose pairs of words fault at an address not
-# aligned with the MMU off, as here (QEMU's alignment fault; mini-qemu
-# does not check; old: libc's, since 7001c4be no boot under QEMU)
+# memmove and memset come from port's C, a byte at a time, and not from
+# libc's arm64 assembly (9front's). That assembly moves pairs of words,
+# which fault at an address that is not aligned when the MMU is off, as
+# it is here (QEMU raises the alignment fault; mini-qemu does not
+# check). With libc's, the kernel does not boot under QEMU.
 $D/memmove.$O: $TOP/lib_core/libc/port/memmove.c
 	mkdir -p $D
 	$CC $CINC -o $target $prereq
@@ -51,7 +55,8 @@ $D/memset.$O: $TOP/lib_core/libc/port/memset.c
 	mkdir -p $D
 	$CC $CINC -o $target $prereq
 
-# (l first: its vectors are the image's first bytes)
+# (l comes first, because its vectors, or on the Pi 1 its start, are
+# the image's first bytes.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/user.$O $D/start.$O \
 	$STDOBJS $D/Main.$O $L/std_exit.$O \
 	$D/runtime.$O $D/memmove.$O $D/memset.$O $L/libc.a

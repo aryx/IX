@@ -12,7 +12,7 @@ LIBOBJS=$B/utilities/calc/dc/Num.$O $B/utilities/calc/dc/Dc.$O
 GEN=$B/utilities/calc/bc/Parser.ml $B/utilities/calc/bc/Lexer.ml
 <$TOP/mkfiles/mkprog
 
-# the units mini-yacc and mini-lex made, by their names
+# the units that mini-yacc and mini-lex made, each by its name
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL

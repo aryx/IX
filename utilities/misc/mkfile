@@ -1,5 +1,5 @@
-# utilities/misc, built by ix's tools: each program one file, with its
-# start and its link (for Plan 9: mini-mk O=5 OS=plan9)
+# utilities/misc, built by ix's tools: each program is one file, built
+# with its start and its link (for Plan 9, run mini-mk O=5 OS=plan9)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/misc
@@ -20,7 +20,7 @@ $D/mini-basename: $D/Basename.$O $LIBS
 $D/mini-wc: $D/Wc.$O $LIBS
 	$ML -start $STD $COMMONS Wc Std_exit -o $D/Wc.start.$O
 	$LD $LDH -nofollow -o $target $D/Wc.start.$O $STDOBJS $D/Wc.$O $STDEND
-# (Seq_: Seq is the standard library's)
+# (Seq_, because Seq is the standard library's)
 $D/mini-seq: $D/Seq_.$O $LIBS
 	$ML -start $STD $COMMONS Seq_ Std_exit -o $D/Seq_.start.$O
 	$LD $LDH -nofollow -o $target $D/Seq_.start.$O $STDOBJS $D/Seq_.$O $STDEND

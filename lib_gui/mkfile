@@ -1,6 +1,6 @@
 # lib_gui, a library of ix's tools (mkfiles/mklib): widgets, their
-# layout and focus, immediate and retained (the playground's Gui over
-# it)
+# layout and focus, immediate and retained (the playground's Gui is
+# built over it)
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_gui

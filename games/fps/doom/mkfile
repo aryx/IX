@@ -1,35 +1,38 @@
-# mini-doom, built by ix's tools (docs/plans/done/plan_doom.md): its units,
-# compiled here, then the program, linked with the libraries
-# (mkfiles/mklibs): the playground and one platform of it, the
-# pictures' core. The platform is ppm's on Linux (no window: a frame
-# written to a file, the tests'), the draw device's with OS=plan9
-# (mini-9pi: a window of mini-rio, or the bare screen, as the games',
-# ../../mkgames); PLATFORM=software, the pixels given as a picture,
+# mini-doom, built by ix's tools (docs/plans/done/plan_doom.md). Its
+# units are compiled here, then the program is linked with the
+# libraries (mkfiles/mklibs): the playground and one platform of it,
+# and the pictures' core. The platform is ppm's on Linux, where there is
+# no window and a frame is written to a file for the tests. With
+# OS=plan9 (mini-9pi) it is the draw device's, a window of mini-rio or
+# the bare screen, as for the games (../../mkgames). With
+# PLATFORM=software the pixels are given as a picture, and the game is
 # made beside (games/fps/doom-soft).
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/games/fps/doom$BESIDE
-# (each after the ones it names)
-# (the playground's apis: Audio, Audio3d and Ai, with what they stand on,
-# as ../../mkgames)
+# (each library comes after the ones it names)
+# (the playground's apis, Audio, Audio3d and Ai, come with what they
+# stand on, as in ../../mkgames)
 LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
-# (the folders of the modules: dune's comment says which)
+# (the folders of the modules; dune's comment says which module is in
+# which)
 DIRS=. wad render play actors sound
-# (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
+# (the libraries come before lib_core, so that Cmd is lib_playground's,
+# Elm's, and not commons/'s)
 INCLUDES=${DIRS:%=-I ./%} $LIBI $STDI
-# (each before the ones that name it)
+# (each unit comes before the ones that name it)
 LIB=Wad Level Textures Info Things View Planes Segs Sprites Bsp Render World \
  Collision Specials Mobj Inter Ways Enemy Weapons Play Mus Sound
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-# (doom: the name the frames' test asks for, as a game's,
-# ../../tests/frames.sh; mini-doom: the program's)
+# (doom is the name that the frames' test asks for, as for a game,
+# in ../../tests/frames.sh; mini-doom is the program's name)
 all:V: $D/mini-doom
 
 $D/%.$O: $LOCAL

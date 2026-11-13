@@ -1,7 +1,8 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# Small programs to read, build and run on tiny-kernel, in /examples,
-# this directory, the same files; each its file's header:
+# Small programs to read, build and run on tiny-kernel. They are in
+# /examples, which has the same files as this directory. Each file's
+# header says more about it:
 #
 #     C          ML           what
 #     hello.c    helloml.ml   a print (hello with square.s, in assembly)
@@ -12,17 +13,19 @@
 #                gui.ml       a counter, on the widgets (TinyLibGUI)
 #     spin.s                  prof's example, with spin.prof
 #
-# build: all of them; build gui: one by its name. What they link besides
-# their own objects is already built in /lib: /lib/c, C's runtime and
-# tiny-kernel's calls, start.o first (the machine starts there), drawing
-# and dialing; /lib/ml, ML's runtime (mlsys.o), the library (stdlib.a,
-# its units), the libraries a program that draws stands on, and end.o,
-# the program's end, last. They are built in /src and copied there by
-# its build install. -s puts the labels after the image, the names debug
-# shows; -map writes them beside it too.
+# build makes all of them; build gui makes one by its name. What they
+# link besides their own objects is already built in /lib:
+# - /lib/c has C's runtime and tiny-kernel's calls, with start.o first
+#   (the machine starts there), and drawing and dialing;
+# - /lib/ml has ML's runtime (mlsys.o), the library (stdlib.a and its
+#   units), the libraries that a program that draws stands on, and
+#   end.o, the program's end, linked last.
+# They are built in /src and copied to /lib by its build install. -s
+# puts the labels, the names that debug shows, after the image; -map
+# also writes them beside it.
 #
-# On the host, the same, the tools tiny-cc..., /lib the disk's as
-# TinyKernel/Makefile installs it, in _make/system:
+# On the host it works the same way, with the tools tiny-cc..., and with
+# /lib as TinyKernel/Makefile installs it for the disk, in _make/system:
 #     tiny-build TINY=tiny- LIB=../TinyKernel/_make/system/lib
 
 TINY =
@@ -38,15 +41,16 @@ STDLIB = ${LIB}/ml/stdlib.a
 MLEND = ${LIB}/ml/end.o
 # (where tiny-ml reads the library's interfaces)
 MLLIB = ${LIB}/ml
-# (user.h: the system's calls a C program makes, and libc.h)
+# (where user.h is, with the system's calls a C program makes, and
+# libc.h)
 INC = ${LIB}/c
-# (draw.o: the drawing's messages, draw.h's)
+# (draw.o sends the drawing's messages that draw.h declares)
 DRAW = ${LIB}/c/draw.o
-# (net.o: dial by an address or by a name, reach)
+# (net.o has reach, which dials by an address or by a name)
 NET = ${LIB}/c/net.o
-# the libraries an ML program that draws stands on, each after the ones
-# it uses: the system's calls, the drawing's messages, the playground,
-# the widgets
+# The libraries that an ML program that draws stands on, each after the
+# ones it uses: the system's calls, the drawing's messages, the
+# playground and the widgets.
 SYS = ${LIB}/ml/TinyLibSystem.o
 DRAWLIB = ${LIB}/ml/TinyLibDraw.o
 PLAYGROUND = ${LIB}/ml/TinyLibPlayground.o
@@ -80,14 +84,15 @@ procs.o: procs.c ${INC}/user.h
 helloml: helloml.o
 	$LD -map -s -n -o $target $CRT $MLRT $prereq $STDLIB $MLEND
 
-# (one unit: its code and its start in one object)
+# (a program of one unit has its code and its start in one object)
 helloml.o: helloml.ml
 	$ML -L $MLLIB -o $target helloml.ml
 
-# A program on libraries, as /src's: its unit compiled with their
-# interfaces (-I), its start made by ml from all its units (their
-# initializations in order, the globals' table), then linked by ld: the
-# runtimes, the start, the library, the units, the end
+# A program on libraries is built as /src's are. Its unit is compiled
+# with their interfaces (-I), and ml makes its start from all its units
+# (their initializations in order, the table of the globals). Then ld
+# links it from the runtimes, the start, the library, the units and the
+# end.
 %.o: %.ml
 	$ML -c -L $MLLIB -I $MLLIB -o $target $stem.ml
 %.start.o:
@@ -118,11 +123,12 @@ gui.start.o: $STDLIB $GUI_UNITS
 gui: $CRT $MLRT gui.start.o $STDLIB $GUI_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# spin alone, no runtime: prof's example, with spin.prof, where its
-# instructions went, which tiny-cpu -prof wrote on the host (tiny-kernel
-# has no tiny-cpu; so it is kept here, and never made by build there):
+# spin is linked alone, with no runtime. It is prof's example, with
+# spin.prof, which says where its instructions went and which tiny-cpu
+# -prof wrote on the host. tiny-kernel has no tiny-cpu, so spin.prof is
+# kept here, and build never makes it there:
 #     prof spin.prof -u spin.map
-#     tiny-build TINY=tiny- spin.prof     on the host, made again
+#     tiny-build TINY=tiny- spin.prof     makes it again, on the host
 spin: spin.o
 	$LD -map -o $target spin.o
 spin.map: spin

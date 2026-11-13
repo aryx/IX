@@ -12,11 +12,10 @@ LIBOBJS=
 GEN=$B/database/Parser.ml $B/database/Lexer.ml
 <$TOP/mkfiles/mkprog
 
-# each folder's units, a rule each, its source the prerequisite (one %
-# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
-# so that .depend orders each: storage dbm sql
-# old: the folders' units said whole, compiled by one recipe, each found
-#   by its name (*/)
+# each folder's units, with a rule for each folder whose prerequisite is
+# the source (mk refuses a second % rule for every unit beside
+# mkprog's). Each unit gets its own recipe, so that .depend orders each
+# one. The folders: storage dbm sql
 $D/%.$O: storage/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target storage/$stem.ml
@@ -28,7 +27,7 @@ $D/%.$O: sql/%.ml
 	$ML $INCLUDES -o $target sql/$stem.ml
 
 # the lexer and the grammar, which are in sql/ (mkprog's rules are for
-# this directory's)
+# this directory's files)
 $D/Parser.ml: sql/Parser.mly
 	mkdir -p $D
 	$YACC -b $D/Parser sql/Parser.mly
@@ -36,7 +35,7 @@ $D/Lexer.ml: sql/Lexer.mll
 	mkdir -p $D
 	$LEX -o $target sql/Lexer.mll
 
-# the units mini-yacc and mini-lex made, by their names
+# the units that mini-yacc and mini-lex made, each by its name
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL

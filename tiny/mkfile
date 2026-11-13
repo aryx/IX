@@ -1,20 +1,18 @@
-# The tiny programs that run on the host, built by ix's tools: each one
-# file (and for the CPUs their library's, for tiny-vcs SHA-1 and zlib),
-# with its start and its link, on m-ix's library: lib_core/'s standard
-# library and its commons/, and lib_crypto's SHA-1 (mkfiles/mklibs).
-# TinyKernel.ml is not here: tiny-ml compiles it, for tiny-machine.
-# What is built is under _mk/$O/tiny.
-# (old: on arm64 by default on TinyLibHost/, t-ix's trimmed copy of
-# lib_core/ with its own runtime and C library, LIB=core for lib_core;
-# gone with plan_tiny_self_hosting.md's step 2: it had shown what of
-# lib_core/ the tiny programs use)
+# The tiny programs that run on the host, built by ix's tools. Each one
+# is a single file (the CPUs also have their library's file, and
+# tiny-vcs has SHA-1 and zlib), with its start and its link, on m-ix's
+# library: lib_core/'s standard library and its commons/, and
+# lib_crypto's SHA-1 (mkfiles/mklibs).
+# TinyKernel.ml is not here, because tiny-ml compiles it, for
+# tiny-machine. What is built goes under _mk/$O/tiny.
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/tiny
 LIBDIRS=lib_crypto
 <$TOP/mkfiles/mklibs
-# (tiny/, where TinyLibSystem.mli is, before its Unix implementation:
-# TinyLibSystem/tinykernel/'s is tiny-ml's)
+# (tiny/, where TinyLibSystem.mli is, comes before its Unix
+# implementation; the implementation in TinyLibSystem/tinykernel/ is
+# compiled by tiny-ml)
 INCLUDES=-I . -I TinyLibSystem/unix -I $D -I ../lib_crypto $STDI
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
@@ -23,8 +21,9 @@ PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-cc tiny-ml tiny-as tiny-
 
 all:V: ${PROGS:%=$D/%}
 
-# (each unit alone: none names another, but TinyCPU and TinyMachine their libraries,
-# and TinyMachine KNetwork, the other end of its wire)
+# (each unit is compiled alone: none names another, except that TinyCPU
+# and TinyMachine name their libraries, and TinyMachine names KNetwork,
+# the other end of its wire)
 $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
@@ -33,7 +32,8 @@ $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/cc/TinyC.$O $D/TinyML.$O $D/TinyCPU.$O $D/TinyMachine.$O $D/TinyMkfat.$O: $D/TinyLibSystem.$O
 
-# (tiny-ml's passes, TinyML/, each after the ones before it, after TinyLibMachine, the lines they make)
+# (tiny-ml's passes, in TinyML/: the lines below compile each one after
+# the ones before it, and after TinyLibMachine)
 MLC=TinyLibMachine Lexer Tree Formats Parser Types Machine Compile Link
 MLCO=${MLC:%=$D/%.$O}
 $D/Tree.$O: $D/Lexer.$O
@@ -45,9 +45,11 @@ $D/Compile.$O: $D/Machine.$O
 $D/Link.$O: $D/Compile.$O
 $D/TinyML.$O: $D/Link.$O
 
-# (tiny-cc's passes, TinyC/, the same way, after TinyLibMachine, the lines they make;
-# their objects in $D/cc/, since tiny-ml's of the same names, Lexer..., are in $D;
-# TinyC.ml's too, so that its Lexer... are, for tests/depend_edges.sh, those of $D/cc)
+# (tiny-cc's passes, in TinyC/, are ordered the same way by the lines
+# below, after TinyLibMachine. Their objects go in $D/cc/, since
+# tiny-ml's passes of the same names, Lexer..., are in $D. TinyC.ml's
+# object goes there too, so that, for tests/depend_edges.sh, its
+# Lexer... are those of $D/cc)
 CCP=Types Lexer Tree Lower Parser Machine
 CCPO=$D/TinyLibMachine.$O ${CCP:%=$D/cc/%.$O}
 $D/cc/Lexer.$O: $D/cc/Types.$O
@@ -59,13 +61,14 @@ $D/TinyAssembler.$O: $D/TinyLibMachine.$O
 $D/cc/TinyC.$O: $D/cc/Machine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/KNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 
-# (a blank line above: a # line right under a rule's head is its recipe,
-# and TinyMachinePeer's object was never compiled)
-# (tiny-machine's parts are in TinyMachine/, the kernel's stack, which
-# is the wire's other end, in TinyKernel/). A part finds the parts of
-# its own directory (mini-ml looks there first); the -I's are the
-# directories a program's files name besides, each program's own:
-# tiny-machine's, then tiny-cc's and tiny-ml's main files
+# (The blank line above is needed: a # line right under a rule's head
+# is its recipe, and then TinyMachinePeer's object is never compiled.)
+# (tiny-machine's parts are in TinyMachine/, and the kernel's stack,
+# which is the wire's other end, is in TinyKernel/.) A part finds the
+# parts of its own directory (mini-ml looks there first). The -I's are
+# the other directories whose files a program names, and each program
+# has its own: tiny-machine's here, then those of tiny-cc's and
+# tiny-ml's main files
 MACHINE_INCLUDES=-I TinyMachine -I TinyKernel -I TinyBrowser
 $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 	mkdir -p $D
@@ -76,7 +79,8 @@ $D/TinyCPU.$O: TinyCPU.ml
 $D/TinyMachine.$O: TinyMachine.ml
 	mkdir -p $D
 	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine.ml
-# (what www types, which the wire's other end takes the same way)
+# (TinyBrowser's units that tiny-machine uses: its end of the wire reads
+# the addresses and the HTTP that www sends with www's own code)
 $D/%.$O: TinyBrowser/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyBrowser/$stem.ml
@@ -90,7 +94,8 @@ $D/TinyML.$O: TinyML.ml
 	mkdir -p $D
 	$ML $INCLUDES -I TinyML -o $target TinyML.ml
 
-# (tiny-cc's: its directories before INCLUDES' $D, where tiny-ml's Lexer.$O is)
+# (tiny-cc's directories come before INCLUDES' $D, where tiny-ml's
+# Lexer.$O is)
 CC_INCLUDES=-I TinyC -I $D/cc
 $D/cc/%.$O: TinyC/%.ml
 	mkdir -p $D/cc
@@ -99,7 +104,8 @@ $D/cc/TinyC.$O: TinyC.ml
 	mkdir -p $D/cc
 	$ML $CC_INCLUDES $INCLUDES -o $target TinyC.ml
 
-# (tiny-mkfat is t6's, a step before tiny-kernel: its file is there)
+# (tiny-mkfat belongs to t6, a step before tiny-kernel, and its file is
+# there)
 $D/TinyMkfat.$O: TinyKernel/steps/t6/TinyMkfat.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfat.ml
@@ -108,10 +114,11 @@ $D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
 $D/tiny-build: $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyLibSystem TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
 	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
-# (the shell's system, the host's: TinyLibSystem/unix/TinyLibSystem.ml;
-# TinyLibSystem/tinykernel/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
-# compile. Not beside TinyShell.ml: mini-ml looks for a module in the
-# directory of the file it compiles before any -I)
+# (The shell's system is the host's, TinyLibSystem/unix/TinyLibSystem.ml.
+# TinyLibSystem/tinykernel/TinyLibSystem.ml is tiny-machine's, and
+# tiny-ml compiles it. The file is not beside TinyShell.ml, because
+# mini-ml looks for a module in the directory of the file it compiles
+# before any -I.)
 $D/TinyLibSystem.$O: TinyLibSystem/unix/TinyLibSystem.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyLibSystem/unix/TinyLibSystem.ml
@@ -119,14 +126,14 @@ $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
 	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND
-# (the utilities, on the same TinyLibSystem as the shell, and
+# (the utilities use the same TinyLibSystem as the shell, and
 # TinyLibRegex for grep)
 $D/TinyUtilities.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyUtilities.ml
 $D/tiny-utils: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
 	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
-# (the line editor, on the same TinyLibSystem as the shell and the
-# same TinyLibRegex as grep: it is tiny-kernel's ed and sam too)
+# (the line editor uses the same TinyLibSystem as the shell and the
+# same TinyLibRegex as grep; it is also tiny-kernel's ed and sam)
 $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
 $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
@@ -160,9 +167,9 @@ $D/tiny-cpu: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/Ti
 $D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices KNetwork Strings Url Http TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
 	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
-# (Parallel: the host's cores where OCaml has domains, -cores-parallel;
-# mini-ml has none: lib_core/parallel's file for OCaml 4.14, which dune
-# chooses by the compiler's version)
+# (Parallel runs on the host's cores where OCaml has domains, for
+# -cores-parallel. mini-ml has none, so this is lib_core/parallel's file
+# for OCaml 4.14, which dune chooses by the compiler's version.)
 $D/Parallel.$O: ../lib_core/parallel/host/single.ml.in ../lib_core/parallel/Parallel.mli
 	mkdir -p $D
 	cp ../lib_core/parallel/Parallel.mli $D/Parallel.mli
@@ -180,15 +187,18 @@ $D/tiny-mkfat: $D/TinyLibSystem.$O $D/TinyMkfat.$O $LIBS
 clean:V:
 	rm -rf $D
 
-# the units' order (mkfiles/mkdepend); beside the lines above, those
-# of each unit that names another here (TinyOffice, TinyTroff,
-# TinyKernel are tiny-ml's: no lines; of TinyBrowser, tiny-machine's
-# three. old: none of TinyBrowser's, and TinyBrowserHttp compiled
-# beside TinyBrowserText, inlining its functions or not by which ended
-# first: test-ix-fixpoint's builds differed, one in two or three).
-# Not tiny-cc's, TinyC.ml and TinyC/: a unit is found by its name in
-# the first directory that has it, and TinyC/'s Lexer... are tiny-ml's
-# names too; their order is the lines above
+# The units' order (mkfiles/mkdepend). Besides the lines above, it adds
+# those of each unit that names another unit here. TinyOffice,
+# TinyTroff and TinyKernel are compiled by tiny-ml, so they have no
+# lines; of TinyBrowser's files, only the three tiny-machine uses have
+# lines. They need them: without their lines, a file could be compiled
+# at the same time as one it uses, and inline that one's functions or
+# not depending on which ended first, so test-ix-fixpoint's builds would
+# differ, one time in two or three.
+# tiny-cc's units, TinyC.ml and TinyC/, are left out, because a unit is
+# found by its name in the first directory that has it, and TinyC/'s
+# Lexer... have the same names as tiny-ml's. Their order is given by the
+# lines above.
 DEPOBJ=D
 DEPDIRS=. TinyMachine TinyBrowser TinyML TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/Strings.ml TinyBrowser/Url.ml TinyBrowser/Http.ml

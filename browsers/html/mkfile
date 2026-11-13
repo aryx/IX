@@ -1,5 +1,5 @@
-# browsers/html as a library (mkfiles/mklib): HTML read into a tree,
-# for mini-lynx and mini-netscape
+# browsers/html as a library (mkfiles/mklib), which reads HTML into a
+# tree, for mini-lynx and mini-netscape
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=browsers/html

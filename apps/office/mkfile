@@ -1,7 +1,8 @@
 # apps/office, built by ix's tools as a game is (games/mkgames):
-# mini-office (its unit Office, the program office), with what it
-# stands on (office: this directory's folders, and Packbits), a
-# sheet's formulas, lib_gui and the playground's Gui
+# mini-office (its unit Office, for the program office). It is built
+# with what it stands on (office, which is this directory's folders and
+# Packbits), with a sheet's formulas, and with lib_gui and the
+# playground's Gui.
 TOP=../..
 DIR=apps/office
 GAMES=Office

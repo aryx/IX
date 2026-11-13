@@ -1,61 +1,71 @@
 # A kernel built by ix's tools (plan_kernel_mini_ml.md): kernel.mk's
 # counterpart, for mini-mk. The Makefiles build the same kernels with
-# ocaml-light, gcc and GNU's as and ld; here mini-ml, mini-cc, mini-asm
-# and mini-ld, for the Pi 4 (O=7) or the Pi 1 (mini-mk O=5: mkboard). A
-# kernel's mkfile sets TOP, DIR (its
-# directory from TOP), KML (its OCaml modules, in order, after
-# kernels/lib_machine's: each a path without .ml), KNAMES (their names, the same
-# without the directories), KI (-I for each of their directories; an
-# interface may be in the directory above its module's), KFLAGS (the
-# C's own -D), FS (the disk image inside the kernel), includes
-# mkconfig, then this file.
+# ocaml-light, gcc, and GNU's as and ld; here they are built with
+# mini-ml, mini-cc, mini-asm and mini-ld, for the Pi 4 (O=7) or the
+# Pi 1 (mini-mk O=5: see mkboard). A kernel's mkfile sets these
+# variables, includes mkconfig, then includes this file:
+#   TOP      the repository
+#   DIR      the kernel's directory, from TOP
+#   KML      its OCaml modules, in order (they come after
+#            kernels/lib_machine's), each a path without .ml
+#   KNAMES   the same modules' names, without the directories
+#   KI       a -I for each of their directories (an interface may be in
+#            the directory above its module's)
+#   KFLAGS   the C's own -D
+#   FS       the disk image inside the kernel
 #
 # What a kernel is made of here:
-#   l.s        the board's assembly (lib_machine/pi4/l.s; lib_machine/pi1/l1.s
-#              or l2.s, the Pi 1's or the Pi 2's, each including
-#              pi1/l.s; start.s is GNU's)
-#   the C      lib/runtime.c, usb.c, the board's machine.c: the same
+#   l.s        the board's assembly (lib_machine/pi4/l.s; or
+#              lib_machine/pi1/l1.s or l2.s, for the Pi 1 or the Pi 2,
+#              each including pi1/l.s; start.s is for GNU's as)
+#   the C      lib/runtime.c, usb.c and the board's machine.c: the same
 #              files as the Makefile's, compiled over mini-ml's runtime
-#              (languages/ml/runtime's mlvalues.h...) and not ocaml-light's
-#   shim.c     Linux for the C library and the runtime (libc.c's place)
-#   the OCaml  kernels/lib_machine's modules (the board's Arch), then the
-#              kernel's, the whole stdlib, mini-ml's runtime with the
-#              board's heap
-#   images.s   the disk image's size; the image and the font, data
-#              by mini-asm -data
-# linked as an image without a header, its text at KERNBASE + where the
-# board loads it (0x80000 on the Pi 4, 0x8000 on the Pi 1).
+#              (languages/ml/runtime's mlvalues.h...) instead of
+#              ocaml-light's
+#   shim.c     Linux, as the C library and the runtime see it (it takes
+#              libc.c's place)
+#   the OCaml  kernels/lib_machine's modules (with the board's Arch),
+#              then the kernel's, the whole stdlib, and mini-ml's runtime
+#              with the board's heap
+#   images.s   the disk image's size, and the image and the font as
+#              data, by mini-asm -data
+# These are linked as an image without a header, with its text at
+# KERNBASE plus where the board loads it (0x80000 on the Pi 4, 0x8000
+# on the Pi 1).
 
 <$TOP/kernels/lib_machine/mkboard
 D=$B/$DIR
 KLIB=$TOP/kernels/lib_machine
 BD=$KLIB/`{if(~ $O 5) echo pi1; if not if(~ $O 7) echo pi4}
 RT=$TOP/languages/ml/runtime
-# (the Pi 2: board.h's PI2 for the C, l2.s for the assembly)
+# (For the Pi 2, the C gets board.h's PI2, and the assembly is l2.s.)
 BFLAGS=`{if(~ $O^$"PI2 51) echo -DPI2}
 LS=`{if(~ $O^$"PI2 5) echo l1.s; if not if(~ $O^$"PI2 51) echo l2.s; if not echo l.s}
 KINC=$CINC -I$RT -I$BD $BFLAGS
-# the image's name (the firmware's, for each board), its text's
-# address, its entry (the Pi 4's vectors are its first bytes), and a
-# word of its data: its bytes
+# The image's name (the one each board's firmware loads), its text's
+# address, its entry (the Pi 4's vectors are its first bytes), and the
+# size in bytes of a word of its data.
 IMAGE=$D/`{if(~ $O 5) echo kernel.img; if not if(~ $O 7) echo kernel8.img}
 KTEXT=`{if(~ $O 5) echo 0x80008000; if not if(~ $O 7) echo 0xffffff8000080000}
 ENTRY=`{if(~ $O 5) echo _start; if not if(~ $O 7) echo vectors}
 WORD=`{if(~ $O 5) echo 4; if not if(~ $O 7) echo 8}
-# the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
-# for the boot's; with the image, far below the 256 MB where the
-# processes' pages start (board.h's HEAP_LIMIT)
-# (quoted: after a variable's =, mk reads a word before another = as attributes)
+# The heap is two halves of 4M words (32 MB each), and the value stack
+# is 1 MB, for the boot's use. With the image, they stay far below the
+# 256 MB where the processes' pages start (board.h's HEAP_LIMIT).
+# (Quoted, because after a variable's =, mk reads a word before another
+# = as attributes.)
 HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 LIB_ML=Machine Screen Page Arch Mmu
 ALL_ML=$LIB_ML $KNAMES
 MLI=-I $KLIB -I $BD $KI $STDI
-# (mkboard's, the image's name in it; quoted: its =)
+# (mkboard's BOOT, with the image's name in it; quoted because of
+# its =)
 BOOT=`{if(~ $O^$"PI2 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on'; if not if(~ $O^$"PI2 51) echo '-M raspi2b -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3'; if not if(~ $O^$"PI2 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE}
 
 all:V: $IMAGE
 
-# the OCaml: kernels/lib_machine's modules by their names, the kernel's by %
+# The OCaml: kernels/lib_machine's modules by their names, and the
+# kernel's by the next rule.
 LIBSRC=`{ls $KLIB/*.ml $KLIB/*.mli $BD/*.ml}
 ${LIB_ML:%=$D/%.$O}: $LIBSRC
 	mkdir -p $D
@@ -65,8 +75,8 @@ ${LIB_ML:%=$D/%.$O}: $LIBSRC
 		$ML $MLI -o $t $f || exit 1
 	}
 
-# (one rule for them all: a module is in a directory of its own, and a
-# change in one interface may change the others' code)
+# (One rule makes them all, because a module is in a directory of its
+# own, and a change in one interface may change the others' code.)
 KSRC=${KML:%=%.ml}
 ${KNAMES:%=$D/%.$O}: $KSRC $LIBSRC
 	mkdir -p $D
@@ -78,9 +88,9 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 	mkdir -p $D
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
 
-# the C and the assembly, by their names; the C by mini-cc -O3, its
-# back end with registers (plan_cc_ssa.md; COPT= for compat's, 5c -O0's
-# code, the old way)
+# The C and the assembly, by their names. mini-cc compiles the C with
+# -O3, its back end with registers (plan_cc_ssa.md); COPT= gives
+# compat's back end instead, with 5c -O0's code.
 COPT=-O3
 $D/rt.$O: $RTSRC $KLIB/mkkernel
 	mkdir -p $D
@@ -102,19 +112,22 @@ $D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/$LS
 
-# the disk image and the font inside the kernel: each file's bytes
-# one DATA, by mini-asm -data; the image's size a line of text.
-# old: each word a DATA line, by od and awk (od's words the machine's:
-# little-endian), mini-9pi's 7 MB disk 73 MB of text, mini-asm 23 s:
+# The disk image and the font inside the kernel. Each file's bytes are
+# one DATA, by mini-asm -data, and the image's size is a line of text.
+# A DATA line for each word, by od and awk (od's words are the
+# machine's: little-endian), made mini-9pi's 7 MB disk 73 MB of text,
+# which mini-asm took 23 s to read:
 #   fn data { od -An -v -tx$WORD $2 | awk ... printf "DATA\t%s+%d(SB)/%d, $0x%s\n" ... }
 $D/images.$O: $FS $KLIB/font1.bin
 	mkdir -p $D
 	{ echo 'DATA	fs_image_size+0(SB)/'^$WORD^', $'^`{wc -c < $FS | tr -d ' '}; echo 'GLOBL	fs_image_size+0(SB), $'^$WORD } > $D/images.s
 	$AS -data fs_image'='$FS -data font_image'='$KLIB/font1.bin -o $target $D/images.s
 
-# (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
-# (-g: on arm, the image again as an a.out with its tables beside it,
-# kernel.img.aout, what mini-where names a panic's addresses by)
+# (l comes first, because its vectors, or its start on the Pi 1, are
+# the image's first bytes.)
+# (With -g, on arm, the linker also writes the image as an a.out with
+# its tables, kernel.img.aout, which mini-where uses to name a panic's
+# addresses.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/images.$O $D/start.$O $STDOBJS ${ALL_ML:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -g -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS

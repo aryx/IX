@@ -1,33 +1,37 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-xv6 (plan_kernel.md): kernel.img, the Pi1's, from
+# mini-xv6 (docs/plans/done/plan_kernel.md): this Makefile builds
+# kernel.img, the Pi1's, from
 # - the OCaml program (Main.ml), compiled by ocaml-light's arm backend
 #   into one object with the parts of the stdlib it uses (-output-obj);
-# - ocaml-light's native runtime (asmrun/ and byterun/'s C, arm.S),
-#   compiled freestanding for the Pi1's ARMv6 and its VFP;
-# - libc.c (the C library the runtime asks for), start.s (the entry);
-# linked at 0x8000 (kernel.ld), then a raw image.
+# - ocaml-light's native runtime (the C of asmrun/ and byterun/, and
+#   arm.S), compiled freestanding for the Pi1's ARMv6 and its VFP;
+# - libc.c (the C library the runtime asks for) and start.s (the entry);
+# - machine.c (the machine's primitives) and user.s (the user program).
+# They are linked at 0x8000 (kernel.ld), then made into a raw image.
 #
-# ocaml-light cross-compiled for arm: ../../ocaml-light.sh builds it in $(OCL)
-# (from ~/ocaml-light, untouched).
+# ocaml-light cross-compiled for arm: ../../ocaml-light.sh builds it in
+# $(OCL), from ~/ocaml-light, which it leaves untouched.
 #
-#   make            kernel.img
-#   make run        under mini-qemu (Ctrl-A x quits)
-#   make qemu       under QEMU's raspi1ap
+#   make            builds kernel.img
+#   make run        runs it under mini-qemu (Ctrl-A x quits)
+#   make qemu       runs it under QEMU's raspi1ap
 
 OCL ?= $(abspath ../../../_cross/ocaml-light-arm)
 OCAMLOPT = $(OCL)/bin/ocamlopt
 SRC = $(OCL)/src
 CROSS = arm-linux-gnueabihf-
 CPU = -march=armv6kz -mfpu=vfp -mfloat-abi=hard -marm
-# freestanding: no PIE (no GOT), no _FORTIFY_SOURCE's __sprintf_chk, no
-# 64-bit file offsets' open64 beyond what libc.c stubs
+# The code is freestanding: no PIE (so no GOT), no _FORTIFY_SOURCE's
+# __sprintf_chk, and no 64-bit file offsets' open64 beyond what libc.c
+# stubs.
 CFLAGS = $(CPU) -O2 -ffreestanding -fno-builtin -fno-pie -U_FORTIFY_SOURCE -w -I$(SRC)/byterun -I$(SRC)/config
 RTFLAGS = $(CFLAGS) -I$(SRC)/byterun -I$(SRC)/config -DNATIVE_CODE -DTARGET_arm -DSYS_linux_elf
 B = build
 
-# asmrun's Makefile's COBJS, less main.o (libc.c's kmain starts OCaml)
+# asmrun's Makefile's COBJS, without main.o, because libc.c's kmain
+# starts OCaml
 RUNTIME = startup fail roots signals misc freelist major_gc minor_gc memory alloc compare ints \
   floats str array io extern intern hash sys parsing gc_ctrl terminfo md5 obj lexing printexc \
   backtrace callback weak compact custom
@@ -37,7 +41,8 @@ all: kernel.img
 
 $(B):
 	mkdir -p $(B)/bin
-	# ocaml-light's -output-obj calls "ld -r": the ARM one here
+	# ocaml-light's -output-obj calls "ld -r", and this link makes it
+	# the ARM one
 	ln -sf $$(command -v $(CROSS)ld) $(B)/bin/ld
 
 $(B)/rt_%.o: | $(B)

@@ -1,23 +1,24 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL
 #
-# The standard tiny library, OCaml's subset: every ML program's first units,
-# kept in one library, stdlib.a, which a program links (ld ... stdlib.a),
-# and their interfaces, each unit's .tmi, which tiny-ml reads
-# (ml -L TinyLibCore).
-# Called from ../Buildfile by `cd TinyLibCore && build`.
+# The standard tiny library, a subset of OCaml's. It holds the first
+# units of every ML program, kept in one library, stdlib.a, which a
+# program links (ld ... stdlib.a), and their interfaces, one .tmi for
+# each unit, which tiny-ml reads (ml -L TinyLibCore).
+# ../Buildfile calls it with `cd TinyLibCore && build`.
 #
-#     build                  stdlib.a, and the units' .o and .tmi
-#     build depend           .depend again, after a unit names another one
-#     tiny-build TINY=tiny-  the same on the host, by tiny-ml and tiny-ar
+#     build                  makes stdlib.a, and the units' .o and .tmi
+#     build depend           makes .depend again, after a unit names another one
+#     tiny-build TINY=tiny-  does the same on the host, with tiny-ml, tiny-ar
 
-# the tools, tiny-kernel's names, the host's by TINY=tiny- (the top
-# Buildfile gives its own, ML=... AR=...)
+# The tools, by tiny-kernel's names; the host's names are given by
+# TINY=tiny- (the top Buildfile gives its own, with ML=... AR=...).
 TINY =
 ML = ${TINY}ml
 AR = ${TINY}ar
 
-# its units, in the order they start in: the archive's, which every
-# program links in it (Stdlib first: what the others call)
+# The library's units, in the order they start in. This is their order
+# in the archive, and every program links them in that order (Stdlib
+# comes first, because the others call it).
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
     Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit \
     In_channel Out_channel Chan Logs
@@ -25,9 +26,10 @@ CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
 stdlib.a: ${CORE:%=%.o}
 	$AR -o $target $prereq
 
-# a unit, with the interfaces of the units it names, Stdlib's first, as
-# OCaml opens it: the library is here (-L .), being made, each unit
-# after those it names, its line in .depend
+# A unit is compiled with the interfaces of the units it names, Stdlib's
+# first, since OCaml opens it. The library is here (-L .), being made,
+# and each unit is compiled after those it names, by its line in
+# .depend.
 %.o: %.ml
 	$ML -c -L . -o $target $stem.ml
 %.tmi: %.o

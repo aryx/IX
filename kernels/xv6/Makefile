@@ -1,40 +1,45 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-xv6 (plan_kernel.md): one kernel, two boards (BOARD=pi1, the
-# default, or pi4). Its OCaml modules (ML below) over kernels/lib_machine's
-# (the machine: lib_machine/kernel.mk builds the image, from the board's
-# lib_machine/pi1/ or lib_machine/pi4/, the processes' kernel side, the C library, the
-# DWC2's primitives, the OCaml Machine, Screen, Page, Arch, Mmu), and
-# fs.img, the xv6 port's own (its user programs, as built in $(XV6)),
-# embedded. The Pi1's a raw image loaded at 0x8000 (kernel-pi1.img),
-# the Pi4's an ELF (kernel-pi4.elf).
+# mini-xv6 (docs/plans/done/plan_kernel.md) is one kernel for two
+# boards (BOARD=pi1, the default, or pi4). Its OCaml modules (ML below)
+# run on top of kernels/lib_machine's, which give the machine.
+# lib_machine/kernel.mk builds the image from the board's
+# lib_machine/pi1/ or lib_machine/pi4/,
+# the processes' kernel side, the C library, the DWC2's primitives, and
+# the OCaml modules Machine, Screen, Page, Arch and Mmu. The image also
+# embeds fs.img, the xv6 port's own file system, with its user programs
+# as built in $(XV6). The Pi1's image is a raw image loaded at 0x8000
+# (kernel-pi1.img), and the Pi4's is an ELF (kernel-pi4.elf).
 #
-# ocaml-light for the board: ../ocaml-light.sh arm, arm64 builds it in
-# $(OCL) (from ~/ocaml-light, untouched).
+# ocaml-light for the board: ../ocaml-light.sh arm (or arm64) builds it
+# in $(OCL), from ~/ocaml-light, which it leaves untouched.
 #
-#   make [BOARD=pi4]      the image
+#   make [BOARD=pi4]      builds the image
 #   make BOARD=pi4 COMPILER=ocaml
-#                         the Pi4's image by the switch's OCaml 4.14
-#                         (kernel-pi4-ocaml4.elf; ../ocaml.sh first: its
-#                         runtime's sources); run, qemu, check the same
-#   make run              under mini-qemu (Ctrl-A x quits)
-#   make qemu             under QEMU
-#   make check            a shell session under mini-qemu and QEMU, the
-#                         same as the xv6 port's C kernel's
-#                         (expected-$(BOARD)); usertests under QEMU
-#   make usertests-mini   usertests under mini-qemu (slow)
-#   make expected         the session on the C kernel
+#                         builds the Pi4's image with the switch's OCaml
+#                         4.14 (kernel-pi4-ocaml4.elf; run ../ocaml.sh
+#                         first, for its runtime's sources); run, qemu
+#                         and check work the same way with it
+#   make run              runs it under mini-qemu (Ctrl-A x quits)
+#   make qemu             runs it under QEMU
+#   make check            runs a shell session under mini-qemu and QEMU,
+#                         which must match the xv6 port's C kernel's
+#                         (expected-$(BOARD)), and usertests under QEMU
+#   make usertests-mini   runs usertests under mini-qemu (slow)
+#   make expected         records the session on the C kernel
 
-# no built-in rules (kernel.mk's comment: ~/xv6's fs.img once deleted)
+# No built-in rules: see kernel.mk's comment, because they once deleted
+# ~/xv6's fs.img.
 MAKEFLAGS += --no-builtin-rules
 
 XV6 ?= $(HOME)/xv6
-# (Usbhost is kernels/lib_machine's: not every kernel wants it)
+# (Usbhost comes from kernels/lib_machine, and is listed here because
+# not every kernel wants it.)
 ML = Types Proc Fs File ../lib_machine/Usbhost Exec Syscall Main
 
-# the xv6 port's file system: its user programs, usertests among them;
-# its C kernel, the reference
+# The xv6 port's file system, with its user programs, usertests among
+# them, and its C kernel, which is the reference.
 ifeq ($(BOARD),pi4)
 FS = $(XV6)/forks/arm64-pi4/fs.img
 C_KERNEL = -cpu cortex-a72 -M raspi4b -kernel $(XV6)/forks/arm64-pi4/kernel/kernel -m 2G -smp 4 -nographic
@@ -45,7 +50,7 @@ endif
 
 include ../lib_machine/kernel.mk
 
-# the xv6 port's image: a source, never a target
+# The xv6 port's image is a source, never a target.
 $(FS): ;
 
 run: $(IMAGE)
@@ -54,26 +59,28 @@ run: $(IMAGE)
 qemu: $(IMAGE)
 	$(QEMU) $(QEMU_BOOT)
 
-# the session: what sh is typed (session.py waits for each prompt), no
-# '>' (xv6 arm-pi1's C kernel panics on O_TRUNC: plan_kernel.md), no
-# concurrent output (stressfs's interleaves with the timer); compared
-# from init's first line on
+# The session: the lines typed at sh (session.py waits for each
+# prompt). There is no '>', because xv6 arm-pi1's C kernel panics on
+# O_TRUNC (plan_kernel.md), and no concurrent output, because
+# stressfs's interleaves with the timer. The output is compared from
+# init's first line on.
 SESSION = ls "cat README" "echo hello world" "mkdir d" "ls d" "ln README d/r" "ls d" "wc d/r" "rm d/r" \
   "grep xv6 README" forktest "cat nosuch" "sh -c"
-# (xv6 arm64-pi4's other cores say "hart N starting" whenever they
-# start: not the session's)
+# (xv6 arm64-pi4's other cores print "hart N starting" whenever they
+# start, and those lines are not part of the session.)
 from_init = sed -n '/init: starting sh/,$$p' $(1) | grep -v '^hart [0-9] starting$$'
 
-# the Pi1's screen too: xv6 arm-pi1's C kernel draws its console there
-# (arm64-pi4's does not)
+# On the Pi1, the screen is recorded too, because xv6 arm-pi1's C
+# kernel draws its console there (arm64-pi4's does not).
 expected: | $(B)
 	$(SESSION_PY) --timeout 300 --out $(B)/c.txt $(if $(filter pi1,$(BOARD)),--screendump $(B)/c.ppm) $(SESSION) -- $(QEMU) $(C_KERNEL)
 	$(call from_init,$(B)/c.txt) > expected-$(BOARD)
 	$(if $(filter pi1,$(BOARD)),gzip -n -9 < $(B)/c.ppm > expected-$(BOARD).ppm.gz)
 
-# the USB keyboard and mouse (kernels/lib_machine's Usbhost): a session typed on the
-# keyboard, the mouse moved; its text what the same lines typed on the
-# serial line print (expected-$(BOARD)'s ls, then its echo)
+# The USB keyboard and mouse (kernels/lib_machine's Usbhost): a session
+# is typed on the keyboard, and the mouse is moved. Its text must be
+# what the same lines print when typed on the serial line, that is,
+# expected-$(BOARD)'s ls, then its echo.
 USB = -device usb-kbd -device usb-mouse
 USB_SESSION = ls "echo hello world"
 $(B)/usb-expected.txt: expected-$(BOARD) | $(B)
@@ -81,11 +88,13 @@ $(B)/usb-expected.txt: expected-$(BOARD) | $(B)
 	sed -n '/^\$$ echo hello world$$/,/^hello world$$/p' $< >> $@
 	echo '$$ ' >> $@
 
-# the session, and the screen after it: the console on the framebuffer
-# (Screen.ml), the same under mini-qemu and QEMU, and on the Pi1 the
-# same as xv6 arm-pi1's C kernel's (expected-pi1.ppm.gz)
-# (the sessions: each an emulator and a kernel waited on, a core each:
-# side by side, check's $(MAKE) -j, then check compares what they wrote)
+# The session, and the screen after it. The screen shows the console on
+# the framebuffer (Screen.ml). It must be the same under mini-qemu and
+# QEMU, and on the Pi1 the same as xv6 arm-pi1's C kernel's
+# (expected-pi1.ppm.gz).
+# (Each session waits on an emulator and a kernel, and takes a core. So
+# check runs them side by side with $(MAKE) -j, then compares what they
+# wrote.)
 run-mini:
 	$(SESSION_PY) --timeout 300 --out $(B)/mini.txt --screendump $(B)/mini.ppm $(SESSION) -- $(MINIQEMU) $(BOOT)
 run-qemu:
@@ -113,13 +122,14 @@ check: $(IMAGE) $(B)/usb-expected.txt
 	cmp $(B)/mini-usb.ppm $(B)/qemu-usb.ppm && echo "ok xv6 $(BOARD): the screen after the USB mouse moved, under mini-qemu as under QEMU"
 	echo "ok xv6 $(BOARD): usertests under QEMU"
 
-# IX'S EXTENSION TO XV6'S FORMAT, checked (Fs.ml: files larger than
-# xv6's 314 KB): an image made by mini-mkfs (../9pi/filesystems/
-# lib_xv6fs's code, which has the same extension) with xv6's programs
-# (taken out of xv6's own image) and a text of 1.3 MB; this kernel with
-# it as its disk; "wc big" there says what wc says here. Then the file
-# is made again by this kernel itself (cat big > copy: its own blocks
-# of numbers), and counted.
+# IX'S EXTENSION TO XV6'S FORMAT, checked. Fs.ml allows files larger
+# than xv6's 314 KB. mini-mkfs, with ../9pi/filesystems/lib_xv6fs's
+# code, which has the same extension, makes an image with xv6's
+# programs (taken out of xv6's own image) and a text of 1.3 MB. This
+# kernel runs with that image as its disk, and "wc big" there must say
+# what wc says here. Then this kernel makes the file again itself (cat
+# big > copy, so it writes its own blocks of numbers), and the copy is
+# counted too.
 LARGE = $(B)/large
 XV6TEST = ../../_build/default/kernels/9pi/filesystems/lib_xv6fs/tests/Xv6test.exe
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe

@@ -1,8 +1,8 @@
 # mini-emacs in a terminal, built by ix's tools: the editor (../core,
-# ../features, ../modes, ../Config) over lib_terminal, with its
-# Tty_unix, and the languages' highlighters (lib_code, languages/*/highlight,
-# assembler/highlight; two lexers made by mini-lex); their units from
-# their directories, by their names
+# ../features, ../modes, ../Config) over lib_terminal and its Tty_unix,
+# with the languages' highlighters (lib_code, languages/*/highlight,
+# assembler/highlight, and two lexers made by mini-lex). Their units are
+# taken from their directories, each by its name.
 TOP=../../..
 DIR=editors/emacs/tty
 PROG=mini-emacs-tty
@@ -13,11 +13,12 @@ LIBI=-I .. -I ../core -I ../features -I ../modes -I ../../../lib_code -I ../../.
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
-# (the highlighters' two lexers, and mini-ml's parser and lexer: for Names_ml)
+# (the highlighters' two lexers, and mini-ml's parser and lexer, which
+# Names_ml needs)
 GEN=$B/editors/emacs/tty/Lexer_ml.ml $B/editors/emacs/tty/Lexer_c.ml $B/editors/emacs/tty/Parser.ml $B/editors/emacs/tty/Lexer.ml
 <$TOP/mkfiles/mkprog
 
-# the others' units, by their names
+# the other directories' units, each by its name
 $D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Line_discipline.ml
@@ -182,7 +183,7 @@ $D/Config_pad.$O: ../Config_pad.ml $LOCAL
 $D/Ast.$O: $TOP/languages/ml/Ast.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/Ast.ml
-# (the checked annotations the parser records: Annotations.mli)
+# (the checked annotations that the parser records; see Annotations.mli)
 $D/Annotations.$O: $TOP/languages/ml/Annotations.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/Annotations.ml

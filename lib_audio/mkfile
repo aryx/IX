@@ -1,6 +1,7 @@
 # lib_audio, a library of ix's tools (mkfiles/mklib): the synthesizer,
 # its instruments and effects, ABC, MIDI, MOD, WAV and Ogg Vorbis (the
-# playground's Audio over it). Not in it: the MPEG decoders and Player, OCaml's only.
+# playground's Audio is built over it). The MPEG decoders and Player
+# are not in it: apps/media/play's mkfile compiles them itself.
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_audio

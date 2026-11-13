@@ -1,25 +1,30 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# tiny-kernel, kernel.img: TinyKernel.ml and its parts, in ML; the
-# assembly ML cannot say (kentry.s: the traps, the switch; kdraw.s and
-# kcopy.s, the pixels' and the memory's loops); kruntime.c, ML's runtime
-# given the machine's memory; kfont.s, the font's pixels (made on the
-# host by fonts/Mkfont.ml, on the image as it is); kend.s, the kernel's
-# end, where the files it carries start. Run by ../Buildfile at each
-# build (cd TinyKernel && build), after the library, which it links
-# from ../TinyLibCore.
+# This file builds tiny-kernel, kernel.img, from:
+# - TinyKernel.ml and its parts, in ML;
+# - the assembly that ML cannot say (kentry.s has the traps and the
+#   switch; kdraw.s and kcopy.s have the loops over pixels and over
+#   memory);
+# - kruntime.c, which is ML's runtime given the machine's memory;
+# - kfont.s, the font's pixels, which the Makefile makes on the host
+#   from fonts/plan9.font and puts in the copy of tiny/ (no rule here
+#   makes it, so on the image, in /src, it is taken as it is);
+# - kend.s, which marks the kernel's end, where the files it carries
+#   start.
+# ../Buildfile runs it at each build (cd TinyKernel && build), after the
+# library, which the kernel links from ../TinyLibCore.
 #
-#     build                  kernel.img, and its objects
-#     build depend           .depend again, after a unit names another one
-#     tiny-build TINY=tiny-  the same on the host, by tiny-ml...
+#     build                  makes kernel.img, and its objects
+#     build depend           makes .depend again, after a unit names another one
+#     tiny-build TINY=tiny-  does the same on the host, with tiny-ml...
 #
-# What it makes is in this directory, from its sources, so that no file
-# has two Buildfiles making it (a pattern takes any name that ends as
-# it says: ../runtime/c/udivmod.o here would be made again by this file's
-# %.o).
+# What it makes stays in this directory, next to its sources, so that no
+# file is made by two Buildfiles (a pattern takes any name that ends as
+# it says, so if this file used ../runtime/c/udivmod.o, its %.o would
+# make that file again).
 
-# the tools, tiny-kernel's names, the host's by TINY=tiny- (../Buildfile
-# gives its own, ML=... CC=...)
+# The tools, by tiny-kernel's names; the host's names are given by
+# TINY=tiny- (../Buildfile gives its own, with ML=... CC=...).
 TINY =
 ML = ${TINY}ml
 CC = ${TINY}cc
@@ -30,8 +35,9 @@ STDLIB = ../TinyLibCore/stdlib.a
 
 all: kernel.img
 
-# a unit, with the library's interfaces (-L) and the kernel's (-I .),
-# its line in .depend; its .tmi made with its .o
+# A unit is compiled with the library's interfaces (-L) and the
+# kernel's (-I .); its prerequisites are its line in .depend. Its .tmi
+# is made with its .o.
 %.o: %.ml $STDLIB
 	$ML -c -L ../TinyLibCore -I . -o $target $stem.ml
 %.tmi: %.o
@@ -42,14 +48,15 @@ all: kernel.img
 %.o: %.s
 	$AS -o $target $stem.s
 
-# the unsigned division tiny-cc calls (kruntime.c's), the kernel's own
-# object of runtime/'s
+# The unsigned division that tiny-cc calls (for kruntime.c): the kernel
+# has its own object of runtime/'s udivmod.s.
 udivmod.o: ../runtime/c/udivmod.s
 	$AS -o $target ../runtime/c/udivmod.s
 kruntime.o: kruntime.c ../runtime/ml/ml.c
 
-# the units, each after the ones it names; the kernel's start made by
-# ml, as a program's (../TinyML/Link.mli). kentry.o first, at 0
+# The units, each after the ones it names. ml makes the kernel's start
+# as it makes a program's (see ../TinyML/Link.mli). kentry.o is linked
+# first, at 0.
 UNITS = KRaw.o KGraphics.o KNetwork.o \
     KAudio.o KFS.o KMemory.o KMachine.o \
     KFiles.o KProcs.o KDevices.o KIO.o \

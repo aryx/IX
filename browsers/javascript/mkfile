@@ -1,18 +1,20 @@
-# browsers/javascript as a library (mkfiles/mklib): the language read
-# and run, for mini-netscape; and mini-node, the engine at a prompt,
-# linked with it and lib_playground's (Lehmer, Math.random's numbers)
-# old: mini-node's units compiled here, Lehmer among them, no library
+# browsers/javascript as a library (mkfiles/mklib), which reads and runs
+# the language, for mini-netscape; and mini-node, the engine at a
+# prompt, linked with that library and with lib_playground's (Lehmer,
+# for Math.random's numbers)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=browsers/javascript
 DIRS=values parsing eval opti library
 NEEDS=lib_playground
-# (each before the ones that name it; Js_quicken and Js_compile after
-# Js_eval, which they tell of themselves when the program starts:
-# nobody names them, a program links their objects, as dune's -linkall)
+# (each unit comes before the ones that name it. Js_quicken and
+# Js_compile come after Js_eval, which they tell about themselves when
+# the program starts. Nobody names them, so a program links their
+# objects, as dune's -linkall does.)
 UNITS=Js_prelude Js_ast Per_domain Mini_opti Js_string Js_lexer Js_parse Js_coroutine Js_regexp Js_value Js_operators \
  Js_scope Js_json Js_promise Js_builtins Js_frame Js_props Js_globals Js_eval Js_quicken Js_compile
-# (mini-node's two, below, after the library's units they name)
+# (mini-node's two units, below, come after the library's units they
+# name)
 DEPMORE=CLI Main
 <$TOP/mkfiles/mklib
 

@@ -1,40 +1,46 @@
-# mini-singularity on the Pi 4, or (mini-mk O=5) the Pi 1, built by ix's
-# tools: mini-ml, mini-cc, mini-asm, mini-ld (plan_system_singularity.md).
-# Everything it is made of is in this directory, said here in full: its
-# own files, and under machine/ the ones it shares with the other
-# kernels, each a symbolic link (ls -l machine says from where). Only
-# the language is outside: mini-ml's runtime and the standard library.
-#   mini-mk          _mk/7/kernels/singularity/kernel8.img (O=5: _mk/5/kernels/singularity/kernel.img)
-#   mini-mk run      under mini-qemu (Ctrl-A x quits)
-#   mini-mk check    a session at its shell, under mini-qemu and QEMU
-#   ./numbers.sh     what a call, a yield, a message and a process cost
+# This mkfile builds mini-singularity for the Pi 4, or for the Pi 1 with
+# mini-mk O=5, with ix's tools: mini-ml, mini-cc, mini-asm and mini-ld
+# (docs/plans/done/plan_system_singularity.md). Everything it is made
+# of is in this directory, and this mkfile lists all of it: its own
+# files, and under machine/ the files it shares with the other kernels.
+# Each of those is a symbolic link (ls -l machine shows where it
+# points). Only the language lives outside: mini-ml's runtime and the
+# standard library.
+#   mini-mk          builds _mk/7/kernels/singularity/kernel8.img
+#                    (with O=5, _mk/5/kernels/singularity/kernel.img)
+#   mini-mk run      runs it under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    runs a session at its shell, under mini-qemu and QEMU
+#   ./numbers.sh     measures what a call, a yield, a message and a
+#                    process cost
 TOP=../..
-# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
-# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+# (Its recipes are still sh's, hence MKSHELL=sh, while the other
+# mkfiles' recipes are rc's, as mkfiles/mkconfig sets; see
+# docs/plans/plan_self_hosting.md.)
 MKSHELL=sh
 DIR=kernels/singularity
 <$TOP/mkfiles/mkconfig
 
-# the board, from the machine: the Pi 4 for arm64, the Pi 1 for arm
+# The machine decides the board: the Pi 4 for arm64, the Pi 1 for arm.
 BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 M=machine
 BD=$M/$BOARD
-# the board's assembly: the Pi 1's l1.s defines its numbers, then
-# includes l.s (the Pi 4's l.s is whole)
+# The board's assembly: the Pi 1's l1.s defines its numbers, then
+# includes l.s, while the Pi 4's l.s is complete by itself.
 LS=`{case $O in 5) echo l1.s;; 7) echo l.s;; esac}
 D=$B/$DIR
 
 # the kernel's modules, in the order they start, after the machine's
 KERNEL=Contract Programs Exchange Channel Process Abi Main
-# the processes' programs, each a directory of programs/ (its Main.ml),
-# in the order Main names them: an image of its own inside the kernel's
+# The processes' programs. Each is a directory of programs/ (with its
+# Main.ml), listed in the order Main names them, and each becomes an
+# image of its own inside the kernel's image.
 PROGRAMS=init console shell hello tick tock ping pong rogue selftest crash bench nothing
-# the contracts, each a module of contracts/ written over lib/Contract
-# and lib/Sip, linked in every program, in this order
+# The contracts. Each is a module of contracts/ written on top of
+# lib/Contract and lib/Sip, and every program links them, in this order.
 CONTRACTS=Pong Intro Console
-# (Pong's module is written by hand, to be read; the others are made by
-# mini-singml, singml/, from their declaration, a .contract)
+# (Pong's module is written by hand, to be read. mini-singml, in
+# singml/, makes the others from their declaration, a .contract file.)
 HAND=Pong
 MADE=Intro Console
 UNITS=Machine $KERNEL
@@ -42,44 +48,48 @@ LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I lib -I $M -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
 
-# the C: the board's and the kernels' (machine/), over mini-ml's runtime
-# and ix's C library
+# The C code comes from the board and from the kernels' machine/, and
+# runs on top of mini-ml's runtime and ix's C library.
 RT=$TOP/languages/ml/runtime
 LIBC=$TOP/lib_core/libc
 CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
 KINC=$CINC -I$RT -I$BD
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
-# the kernel's heap: two halves of 1M words, a value stack of 1 MB
-# (quoted: after a variable's =, mk reads a word before another = as attributes)
+# The kernel's heap has two halves of 1M words, and its value stack has
+# 1 MB. The words are quoted because, after a variable's =, mk reads a
+# word before another = as attributes.
 HEAP='-DMAXHEAP=1048576' '-DSTACK=131072'
-# a process's: two halves of 256k words, a value stack of 64k
+# A process's heap has two halves of 256k words, and its value stack
+# has 64k.
 PHEAP='-DMAXHEAP=262144' '-DSTACK=65536'
 
-# the image: its name (the firmware's, for each board), its text's
-# address (where the board loads it, in the kernel's half), its entry,
-# and a word of its data
+# The image: its name (the one the firmware looks for on each board),
+# the address of its text (where the board loads it, in the kernel's
+# half), its entry point, and the size of a word of its data.
 IMAGE=$D/`{case $O in 5) echo kernel.img;; 7) echo kernel8.img;; esac}
 KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
 ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
 WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
-# where the programs are linked: the first at 128 MB of the RAM (the
-# kernel's own memory ends below 96 MB, where the exchange heap is:
-# Exchange), the next ones 16 MB apart (a program's text, data and bss: its heap;
-# Process refuses one that is larger), as
-# the kernel sees the RAM: KHIGH's digits before the eight of KLOW and
-# the address (the shell's numbers stop short of the Pi 4's addresses)
+# Where the programs are linked: the first at 128 MB of the RAM, and
+# the next ones 16 MB apart. The kernel's own memory ends below 96 MB,
+# where the exchange heap is (see Exchange). A slot holds a program's
+# text, data and bss, and the bss is its heap; Process refuses a
+# program that is larger. The addresses are the RAM's as the kernel
+# sees it: KHIGH's digits, then eight digits for KLOW plus the address,
+# because the shell's numbers stop short of the Pi 4's addresses.
 KHIGH=`{case $O in 5) echo 0x;; 7) echo 0xffffff80;; esac}
 KLOW=`{case $O in 5) echo 0x80000000;; 7) echo 0;; esac}
 PFIRST=0x8000000
 PSLOT=0x1000000
-# an emulator's arguments, and QEMU
+# the emulators' arguments, and which QEMU to run
 BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
 QEMU=`{case $O in 5) echo qemu-system-arm;; 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64;; esac}
 MINIQEMU=$TOP/_build/default/raspberry/Main.exe
 
 all:V: $IMAGE
 
-# the OCaml: machine/'s module by its name, the kernel's by %
+# The OCaml code: machine/'s module has a rule by its name, and the
+# kernel's modules share one rule with %.
 LOCAL=`{ls *.ml *.mli}
 MSRC=`{ls $M/*.ml $M/*.mli}
 $D/Machine.$O: $MSRC
@@ -88,9 +98,10 @@ $D/Machine.$O: $MSRC
 $D/%.$O: %.ml $LOCAL $MSRC
 	mkdir -p $D
 	$ML $MLI -o $target $stem.ml
-# The programs, for the kernel: PROGRAMS' names, as an OCaml array, and
-# for each what its manifest asks of the machine (programs/x/Main.manifest,
-# read by mini-singml; none: nothing).
+# The programs, as the kernel sees them: the names in PROGRAMS, as an
+# OCaml array, and for each program what its manifest asks of the
+# machine. mini-singml reads the manifest, programs/x/Main.manifest; a
+# program without one asks for nothing.
 MANIFESTS=`{ls programs/*/Main.manifest}
 $D/Programs.$O: mkfile $MANIFESTS
 	mkdir -p $D
@@ -124,7 +135,7 @@ $D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/$LS
 
-# the crossing, the kernel's side
+# the crossing, on the kernel's side
 $D/cross.$O: cross.c $KH
 	mkdir -p $D
 	$CC $KINC -o $target cross.c
@@ -132,21 +143,25 @@ $D/crossl.$O: cross_$ARCH.s
 	mkdir -p $D
 	$AS -o $target cross_$ARCH.s
 
-# A process's program: its Main, after the standard library and Sip
-# (lib/: the kernel's calls), before the run-time system (its own heap: PHEAP), over lib/'s start and
-# system (sip.c in the place of Linux's calls); linked at its slot's
-# address, the start first: the image's first bytes are its entry.
+# A process's program: its Main comes after the standard library and
+# Sip (in lib/, the kernel's calls), and before the run-time system,
+# which has its own heap (PHEAP). It runs on top of lib/'s start and
+# system, where sip.c takes the place of Linux's calls. It is linked at
+# its slot's address, with the start first, because the image's first
+# bytes are its entry.
 $D/sipl.$O: lib/start_$ARCH.s
 	mkdir -p $D
 	$AS -o $target lib/start_$ARCH.s
 $D/sip.$O: lib/sip.c
 	mkdir -p $D
 	$CC $CINC -I$RT -o $target lib/sip.c
-# (the kernel's too: the C library's is 64 MB of bss)
+# (The kernel uses this malloc too, because the C library's has 64 MB
+# of bss.)
 $D/malloc.$O: lib/malloc.c
 	mkdir -p $D
 	$CC $CINC -o $target lib/malloc.c
-# (the kernel's too: the one description of a contract)
+# (The kernel uses this Contract too, so there is one description of a
+# contract.)
 $D/Contract.$O: lib/Contract.ml lib/Contract.mli
 	mkdir -p $D
 	$ML $PMLI -o $target lib/Contract.ml
@@ -178,10 +193,12 @@ $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 PMLI=-I lib -I contracts -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 POBJS=$D/sipl.$O $D/sip.$O $D/malloc.$O $D/pstart.$O $STDOBJS $D/Contract.$O $D/Sip.$O ${CONTRACTS:%=$D/%.$O}
 PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
-# (a program's own code is looked at first: nothing in it that could
-# reach another's memory; lib/ and the contracts are not its own)
-# (a program's module Given: what its manifest names, and the endpoints
-# its parent gave it; made by mini-singml, one a program)
+# (A program's own code is checked first, so that nothing in it could
+# reach another program's memory. lib/ and the contracts are not its
+# own code.)
+# (Each program has a module Given, with what its manifest names and
+# the endpoints its parent gave it. mini-singml makes one for each
+# program.)
 $D/g_%.given: programs/%/Main.ml lib/Sip.mli $MANIFESTS mkfile
 	mkdir -p $D/g_$stem
 	m=programs/$stem/Main.manifest; [ -f $m ] || m=/dev/null
@@ -195,12 +212,12 @@ $D/p_%.img: $D/p_%.sip $D/g_%.given $POBJS $PEND mkfile
 	i=0; for p in $PROGRAMS; do [ $p = $stem ] && break; i=$((i + 1)); done
 	$LD -H0 -T `printf '%s%08x' $KHIGH $(($KLOW + $PFIRST + i * $PSLOT))` -E _sipstart -nofollow -o $target $POBJS $D/g_$stem.given $D/p_$stem.sip $PEND
 
-# The console's font and the programs inside the kernel: each file's
-# bytes one DATA, by mini-asm -data (old: each word a DATA line, by od
-# and awk). The programs' table
-# (cross.c's sip_images): for each its copy's address, its bytes, the
-# address it is linked at, its slot's bytes. And the disk machine.c names, which this
-# kernel has not: a word, its size 0.
+# The console's font and the programs go inside the kernel, and
+# mini-asm -data puts each file's bytes in one DATA. The programs'
+# table (cross.c's sip_images) gives, for each program, the address of
+# its copy, its size in bytes, the address it is linked at, and its
+# slot's size in bytes. There is also the disk that machine.c names.
+# This kernel has none, so it is one word, and its size is 0.
 PIMAGES=${PROGRAMS:%=$D/p_%.img}
 $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	mkdir -p $D
@@ -219,7 +236,8 @@ $D/images.$O: $M/font1.bin $PIMAGES mkfile
 	 word sip_nimages 0 $i; echo "GLOBL	sip_nimages+0(SB), \$$WORD") > $D/images.s
 	$AS -data font_image=$M/font1.bin `i=0; for p in $PROGRAMS; do echo -data sip_image$i=$D/p_$p.img; i=$((i + 1)); done` -o $target $D/images.s
 
-# (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
+# (l comes first, because its vectors, or on the Pi 1 its start, are
+# the image's first bytes.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/cross.$O $D/crossl.$O $D/malloc.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
@@ -227,12 +245,12 @@ $IMAGE: $OBJS
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic
 
-# A session at the shell, under mini-qemu and QEMU: the lines typed on
-# the serial line (tests/session.cmds), what the console shows
-# (tests/session.expected): the shell's own commands, programs run and
-# one that fails, and selftest, a program that tries the kernel
-# (processes together, a contract kept and one broken, a block that
-# changes hands).
+# check runs a session at the shell, under mini-qemu and QEMU. It types
+# lines on the serial line (tests/session.cmds) and compares what the
+# console shows (tests/session.expected). The session runs the shell's
+# own commands, some programs and one that fails, and selftest, a
+# program that tries the kernel: processes running together, a
+# contract kept and one broken, and a block that changes hands.
 check:V: $IMAGE
 	session() { tests/session.py --prompt 'sing> ' --until 'no process left.' --timeout 300 --out $D/$1.txt --lines tests/session.cmds -- $2 $BOOT -nographic > /dev/null 2>&1; }
 	session mini-qemu $MINIQEMU & session QEMU $QEMU & wait
@@ -243,7 +261,7 @@ check:V: $IMAGE
 clean:V:
 	rm -rf $D
 
-# the units' order (mkfiles/mkdepend)
+# mkfiles/mkdepend gives the units' order
 INCLUDES=$MLI
 DEPOBJ=D
 DEPDIRS=. $M $D

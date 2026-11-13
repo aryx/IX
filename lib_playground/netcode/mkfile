@@ -1,7 +1,8 @@
-# lib_playground's netcode, a library of its own (mkfiles/mklib): the
-# players' inputs exchanged, lockstep and rollback, over lib_networking's
-# Udp (apis/'s Multiplayer over it); apart from lib_playground, after
-# it, since it names its Lehmer (old: lib_networking/netcode)
+# lib_playground's netcode, a library of its own (mkfiles/mklib): it
+# exchanges the players' inputs, with lockstep and rollback, over
+# lib_networking's Udp (apis/'s Multiplayer is built over it). It is
+# apart from lib_playground and built after it, since it names its
+# Lehmer.
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=lib_playground/netcode

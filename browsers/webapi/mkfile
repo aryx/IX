@@ -1,6 +1,6 @@
-# browsers/webapi as a library (mkfiles/mklib): a page's scripts, what
-# they see and change (dom, window, net, run; Script_types, types
-# alone, here)
+# browsers/webapi as a library (mkfiles/mklib): a page's scripts and
+# what they see and change (dom, window, net, run; Script_types, which
+# is types alone, is here)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=browsers/webapi

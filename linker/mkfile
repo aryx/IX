@@ -1,4 +1,5 @@
-# mini-ld, built by ix's tools; then mini-ar (tools/)
+# mini-ld, built by ix's tools; then tools/ has mini-ar and mini-nm,
+# which the top mkfile builds after it
 TOP=..
 DIR=linker
 PROG=mini-ld
@@ -12,12 +13,14 @@ LIBUNITS=Asm Show_asm
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
 <$TOP/mkfiles/mkprog
 
-# compat/'s unit: said whole (a second rule with % for every unit, mk refuses)
+# compat/'s unit, named in full (mk refuses a second rule with % for
+# every unit)
 $D/Follow.$O: compat/Follow.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target compat/Follow.ml
 
-# debug/'s units (plan_debugger.md: what a debugger needs), said whole too
+# debug/'s units (what a debugger needs: plan_debugger.md), named in
+# full too
 $D/Debug_link.$O: debug/Debug_link.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target debug/Debug_link.ml

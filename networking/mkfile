@@ -4,7 +4,7 @@
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/networking
-# (mini-httpd is sockets: Linux's only)
+# (mini-httpd uses sockets, so it is Linux's only)
 PROGS=`{if(~ $OS plan9) echo '$D/mini-curl $D/mini-timesync'; if not echo '$D/mini-curl $D/mini-timesync $D/mini-httpd'}
 LIBDIRS=lib_crypto lib_compression lib_networking
 <$TOP/mkfiles/mklibs

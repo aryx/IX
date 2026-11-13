@@ -1,6 +1,7 @@
-# mini-datalog, built by ix's tools: over mini-prolog's terms and its
-# reader (../prolog), their units from their directory, by their names;
-# dotnet/'s compiler of rules to .NET, over mini-dotnet's writer
+# mini-datalog, built by ix's tools. It stands on mini-prolog's terms
+# and its reader (../prolog), whose units are taken from their
+# directory, each by its name. It also has dotnet/'s compiler of rules
+# to .NET, over mini-dotnet's writer.
 TOP=../..
 DIR=languages/datalog
 PROG=mini-datalog
@@ -15,16 +16,17 @@ LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# the others' units, by their names
+# the other directories' units, each by its name
 $D/Prolog.$O: $PL/Prolog.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $PL/Prolog.ml
 $D/Prolog_read.$O: $PL/Prolog_read.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $PL/Prolog_read.ml
-# (Parallel: the host's cores where OCaml has domains, -j; mini-ml has
-# none yet, plan_ml_multicore.md: lib_core/parallel's file for OCaml
-# 4.14, which dune chooses by the compiler's version)
+# (Parallel uses the host's cores where OCaml has domains, for -j.
+# mini-ml has none yet (plan_ml_multicore.md), so this is
+# lib_core/parallel's file for OCaml 4.14, which dune chooses by the
+# compiler's version.)
 $D/Parallel.$O: $TOP/lib_core/parallel/host/single.ml.in $TOP/lib_core/parallel/Parallel.mli
 	mkdir -p $D
 	cp $TOP/lib_core/parallel/Parallel.mli $D/Parallel.mli

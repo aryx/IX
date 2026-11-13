@@ -2,13 +2,13 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # v0, the first step before TinyKernel.ml: a page of kernel in
-# tiny-machine's assembly, and four
-# user programs linked with it (there is no loader):
+# tiny-machine's assembly, and four user programs linked with it (there
+# is no loader):
 #
-#   make run          the image on tiny-machine
-#   make listing      the image, listed
+#   make run          runs the image on tiny-machine
+#   make listing      lists the image
 #
-# The tools from the PATH (after `dune install`), or from ix's bin/.
+# The tools come from the PATH (after `dune install`), or from ix's bin/.
 
 export PATH := $(abspath ../../../../bin):$(PATH)
 
@@ -20,8 +20,8 @@ O = _make
 
 all: $(O)/kernel.img
 
-# the kernel first, at 0, then its programs, found by their labels
-# (what is built goes to _make/)
+# The kernel is linked first, at 0, then its programs, which it finds by
+# their labels (what is built goes to _make/).
 $(O)/%.o: %.s
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<

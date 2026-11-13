@@ -1,63 +1,69 @@
 # Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
 #
-# t-IX built by tiny-build, under t-IX: this file is /src/Buildfile on
-# tiny-kernel's second disk, where /src is tiny/; the host builds by it
-# too, in a copy of tiny/ (TinyKernel/Makefile; make self compares the
-# two builds' images).
+# This file builds t-IX with tiny-build, under t-IX. It is /src/Buildfile
+# on tiny-kernel's second disk, where /src is tiny/. The host builds with
+# it too, in a copy of tiny/ (see TinyKernel/Makefile; make self compares
+# the images of the two builds).
 #
 #     cd /src
-#     build build          tiny-build itself, as /src/build, to run
-#     build rc             the shell; any program by its name in /bin
-#     build                every program, the kernel, the image
-#     build install        the programs in /bin, /lib, /examples
+#     build build          makes tiny-build itself, as /src/build, to run
+#     build rc             makes the shell, or any program by its name
+#     build                makes every program, the kernel, the image
+#     build install        installs the programs in /bin, /lib, /examples
 #
-# It is also meant to be read: how t-IX's pieces fit together, from the
-# bottom up. A program stands on its own units, on the libraries
-# several programs share, on the standard library (TinyLibCore/), and
-# on the runtimes, what a program links besides its own code; the
-# kernel stands on the same library and runtime; the image is the
-# kernel and the few programs that mend a disk, the disk all the rest.
+# The file is also meant to be read: it shows how t-IX's pieces fit
+# together, from the bottom up. A program stands on its own units, on
+# the libraries that several programs share, on the standard library
+# (TinyLibCore/), and on the runtimes, which are what a program links
+# besides its own code. The kernel stands on the same library and
+# runtime. The image holds the kernel and the few programs that mend a
+# disk, and the disk holds all the rest.
 #
-# What a recipe makes is beside its source: TinyShell.o and its
-# interface TinyShell.tmi beside TinyShell.ml, TinyC/Parser.o in
-# TinyC/; a program at the top, by its name (rc, build, ml). `build
-# clean` removes them.
+# What a recipe makes goes beside its source: TinyShell.o and its
+# interface TinyShell.tmi go beside TinyShell.ml, and TinyC/Parser.o
+# goes in TinyC/. A program goes at the top, under its name (rc, build,
+# ml). `build clean` removes them.
 #
-# The tools are tiny-kernel's: ml, cc, as, ld, ar, build (ML, CC...
-# below). On the host they are tiny-ml, tiny-cc and so on, the same
-# names after tiny-: tiny-build TINY=tiny- runs this file there (or a
-# directory of links named ml, cc... first in the PATH, as
-# TinyKernel/Makefile's build in its copy of tiny/). A recipe is rc's,
-# on both: tiny-build runs it with tiny-shell on the host, /bin/rc on
-# tiny-kernel.
+# The tools are tiny-kernel's: ml, cc, as, ld, ar and build (see ML,
+# CC... below). On the host they are named tiny-ml, tiny-cc and so on,
+# the same names after tiny-, so tiny-build TINY=tiny- runs this file
+# there. Another way is to put a directory of links named ml, cc...
+# first in the PATH, as TinyKernel/Makefile's build does in its copy of
+# tiny/. A recipe is written in rc on both: tiny-build runs it with
+# tiny-shell on the host and with /bin/rc on tiny-kernel.
 #
-# Two parts have their own Buildfile, run from here at each build:
-# the library, TinyLibCore/, and the kernel, TinyKernel/. Each makes
-# the files of its own directory, and knows which to make again.
+# Two parts have their own Buildfile, which this file runs at each
+# build: the library, TinyLibCore/, and the kernel, TinyKernel/. Each
+# one makes the files of its own directory and knows which ones to make
+# again.
 #
-# What t-IX keeps and drops as a whole is README.md's (twin:, kept:,
-# dropped:, twist:). The build's own:
+# README.md says what t-IX as a whole keeps and drops (twin:, kept:,
+# dropped:, twist:). Here is what the build itself drops:
 #
 # dropped:
-# - no source is made: no lex, no yacc, every lexer and parser written
-#   by hand, so no rule here makes a .ml or a .c;
-# - no configure, no install prefix: build install copies into /bin,
+# - no source is generated: there is no lex and no yacc, since every
+#   lexer and parser is written by hand, so no rule here makes a .ml or
+#   a .c;
+# - no configure and no install prefix: build install copies into /bin,
 #   /lib and /examples;
-# - no glob: tiny-build has none, nor mk's backquotes in a variable
-#   (its .mli), so CORE, the library's units, is said here (the disk's
-#   /lib/ml) and in TinyLibCore/Buildfile, and the disk's /examples is
-#   rc's glob in its recipe, not prerequisites.
+# - no glob, because tiny-build has none, nor mk's backquotes in a
+#   variable (see its .mli). So CORE, the list of the library's units,
+#   is written out here (for the disk's /lib/ml) and again in
+#   TinyLibCore/Buildfile, and the disk's /examples is copied with rc's
+#   glob in its recipe, not through prerequisites.
 
 
-# the programs, by their names in /bin; then the kernel (TinyKernel/)
+# The programs, listed by their names in /bin, and then the kernel
+# (TinyKernel/).
 PROGS = sh rc emacs office troff play mltests paint windows square tetris \
     calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld \
     ar cc ml trace debug
 
 all: $PROGS kernel
 
-# the tools, by their names on tiny-kernel; on the host tiny-ml... by
-# tiny-build TINY=tiny- (or each, as tiny-build ML=../ml.exe)
+# The tools, by their names on tiny-kernel. On the host, tiny-build
+# TINY=tiny- names them tiny-ml and so on; each one can also be given
+# alone, as in tiny-build ML=../ml.exe.
 TINY =
 ML = ${TINY}ml
 CC = ${TINY}cc
@@ -70,29 +76,31 @@ BUILD = ${TINY}build
 #############################################################################
 # How each kind of file is made
 #############################################################################
-# the standard library (below): stdlib.a, which every ML program links,
-# made with its units' interfaces, which every ML unit reads (-L
-# TinyLibCore); CORE, its units, for what makes it again and for the
-# disk's /lib/ml
+# The standard library (see below) is stdlib.a, which every ML program
+# links. It is made together with its units' interfaces, which every ML
+# unit reads (-L TinyLibCore). CORE lists its units, for the disk's
+# /lib/ml (TinyLibCore/Buildfile has its own CORE, to make it).
 CORE = Stdlib Char Seq List String Bytes Array Option Int32 Int64 \
     Filename Buffer Printf Marshal Hashtbl Common Sha1 Fpath Fpath_ Exit \
     In_channel Out_channel Chan Logs
 STDLIB = TinyLibCore/stdlib.a
 
-# an ML unit: its source alone; tiny-ml reads the library from
-# TinyLibCore/ (-L) and finds the interfaces of the modules the source
-# names in INCLUDES' directories (-I), each after those it stands on.
-# Its prerequisites are tiny-build's alone, what must be made before it
-# and what makes it again: the library (STDLIB, its interfaces made
-# with it, as Plan 9's mkfiles make every object depend on all the
-# headers), and the interfaces it reads, its line in .depend (at the
-# end); as mini-ml in m-ix, the compiler's arguments are not its
-# prerequisites. Its .tmi made with its .o. A rule for each directory
-# (mk's &, a stem with no / or .): here tiny/'s own units, user/'s and
-# the system's; a program with parts in a directory of their own
-# (TinyML/) has its rules in its section, with its own -I's (X_INCLUDES)
-# for its parts and its main file, so that two programs' parts may
-# have the same names (Lexer)
+# An ML unit is compiled from its source alone. tiny-ml reads the
+# library from TinyLibCore/ (-L), and it finds the interfaces of the
+# modules that the source names in INCLUDES' directories (-I). Each unit
+# is compiled after the units it stands on.
+# Its prerequisites are for tiny-build alone: they say what must be made
+# before the unit and what makes it again. They are the library (STDLIB,
+# whose interfaces are made with it, just as Plan 9's mkfiles make every
+# object depend on all the headers) and the interfaces the unit reads,
+# which are its line in .depend (at the end). As with mini-ml in m-ix,
+# the compiler's arguments are not among its prerequisites. A unit's
+# .tmi is made with its .o. There is a rule for each directory (mk's &,
+# a stem with no / or .). Here are the rules for tiny/'s own units, for
+# user/'s and for the system's. A program with parts in a directory of
+# their own (TinyML/) has its rules in its own section, with its own
+# -I's (X_INCLUDES) for its parts and its main file, so that the parts
+# of two programs may have the same names (Lexer).
 INCLUDES = -I . -I TinyLibSystem/tinykernel
 MLC = $ML -c -L TinyLibCore $INCLUDES
 &.o: &.ml $STDLIB
@@ -103,18 +111,20 @@ TinyLibSystem/tinykernel/&.o: TinyLibSystem/tinykernel/&.ml $STDLIB
 	$MLC -o $target TinyLibSystem/tinykernel/$stem.ml
 %.tmi: %.o
 
-# an ML program's start, what only the whole program can make (its
-# units' initializations in their order, their globals' table, the
-# curry functions; TinyML/Link.mli): made by ml of the files the
-# program links, its prerequisites, the libraries first, each
-# program's line below (P.start.o: $STDLIB $P_UNITS), linked right
-# after the ML runtime, which calls it
+# An ML program's start holds what only the whole program can make: its
+# units' initializations in their order, the table of their globals,
+# and the curry functions (see TinyML/Link.mli). ml makes it from the
+# files the program links, the libraries first. Those files are its
+# prerequisites, given on each program's line below (P.start.o: $STDLIB
+# $P_UNITS). The start is linked right after the ML runtime, which
+# calls it.
 %.start.o:
 	$ML -o $target $prereq
 
-# C, by tiny-cc, its #includes found beside the file, then in runtime/c/
-# (libc.h, which user.h includes); assembly written by hand, by tiny-as
-# (the compilers write their objects themselves)
+# C is compiled by tiny-cc, which finds the #includes beside the file,
+# then in runtime/c/ (libc.h, which user.h includes). Assembly written
+# by hand is assembled by tiny-as (the compilers write their objects
+# themselves).
 %.o: %.c
 	$CC -I runtime/c -o $target $stem.c
 %.o: %.s
@@ -125,19 +135,24 @@ TinyLibSystem/tinykernel/&.o: TinyLibSystem/tinykernel/&.ml $STDLIB
 # The runtimes: what a program links besides its own code
 #############################################################################
 
-# Each language's in its directory, runtime/c/ and runtime/ml/, as the
-# disk's /lib/c and /lib/ml (the TinyLibXxx.ml are libraries a
-# program chooses; these, every program links).
+# Each language has its runtime in its own directory, runtime/c/ and
+# runtime/ml/, which become the disk's /lib/c and /lib/ml. (The
+# TinyLibXxx.ml are libraries that a program chooses; a runtime is
+# linked by every program.)
 #
-# C's: _start, which calls main, then exits, linked first since the
-# machine starts at 0; the unsigned division tiny-cc calls; libc, print
-# and the strings; tiny-kernel's calls, sys.s, a sys instruction each;
-# draw.c and net.c for the programs that draw or dial
+# C's runtime has:
+# - _start, which calls main and then exits, linked first since the
+#   machine starts at 0;
+# - the unsigned division that tiny-cc calls;
+# - libc, with print and the strings;
+# - tiny-kernel's calls, in sys.s, one sys instruction for each;
+# - draw.c and net.c, for the programs that draw or dial.
 CRT = runtime/c/start.o runtime/c/udivmod.o runtime/c/libc.o runtime/c/sys.o
 
-# ML's: ml.c, the allocator and Cheney's collector, #included by
-# mlsys.c, which gives it tiny-kernel's memory and calls; end.s, the
-# program's end, where its value stack can start, linked last
+# ML's runtime is ml.c, the allocator and Cheney's collector. It is
+# #included by mlsys.c, which gives it tiny-kernel's memory and calls.
+# end.s marks the program's end, where its value stack can start, and
+# it is linked last.
 MLRT = runtime/ml/mlsys.o
 MLEND = runtime/ml/end.o
 runtime/ml/mlsys.o: runtime/ml/mlsys.c runtime/ml/ml.c runtime/c/user.h
@@ -147,13 +162,14 @@ runtime/ml/mlsys.o: runtime/ml/mlsys.c runtime/ml/ml.c runtime/c/user.h
 # The standard library: TinyLibCore/, OCaml's subset
 #############################################################################
 
-# Made by its own Buildfile, TinyLibCore/Buildfile, as ocaml-light's
-# stdlib by its Makefile and m-ix's libraries by their mkfiles: its
-# units compiled among themselves, then kept in stdlib.a in the order
-# they start in. stdlib is not a file, so it is never up to date: the
-# library's build runs each time, and it knows which units to make
-# again (by its digests, in TinyLibCore/.tiny-build); stdlib.a is made
-# with it, as a .tmi with its .o. On the disk they are /lib/ml.
+# The library is made by its own Buildfile, TinyLibCore/Buildfile, just
+# as ocaml-light's stdlib is made by its Makefile and m-ix's libraries
+# by their mkfiles. Its units are compiled among themselves, then kept
+# in stdlib.a in the order they start in. stdlib is not a file, so it is
+# never up to date, and the library's build runs each time. That build
+# knows which units to make again (by its digests, in
+# TinyLibCore/.tiny-build). stdlib.a is made with stdlib, as a .tmi is
+# made with its .o. On the disk, they are in /lib/ml.
 stdlib:
 	cd TinyLibCore && $BUILD ML=^$ML AR=^$AR
 $STDLIB: stdlib
@@ -163,15 +179,19 @@ $STDLIB: stdlib
 # The libraries: what several programs share
 #############################################################################
 
-# the system's calls, tiny-kernel's side of TinyLibSystem.mli (its unix/
-# side is the host's, by dune); the machine's code (libmach: the
-# instructions, the objects, the labels); the regular expressions; and
-# the window's: the picture's messages, the playground (a game's loop),
-# the widgets. Each is a whole library in one file (m-ix's are a
-# directory and an archive each), so its object is a .a in spirit: one
-# name in a program's link. Named in the links of the programs that use
-# it, so that which program stands on which is seen below (one archive
-# of them all would hide it)
+# The libraries are:
+# - the system's calls, which are tiny-kernel's side of
+#   TinyLibSystem.mli (its unix/ side is the host's, built by dune);
+# - the machine's code (libmach: the instructions, the objects, the
+#   labels);
+# - the regular expressions;
+# - the window's libraries: the picture's messages, the playground (a
+#   game's loop) and the widgets.
+# Each one is a whole library in one file (m-ix's are each a directory
+# and an archive), so its object is a .a in spirit: one name in a
+# program's link. Each is named in the links of the programs that use
+# it, so that you can see below which program stands on which library
+# (one archive of them all would hide it).
 SYS = TinyLibSystem/tinykernel/TinyLibSystem.o
 MACH = TinyLibMachine.o
 REGEX = TinyLibRegex.o
@@ -179,20 +199,21 @@ DRAWLIB = TinyLibDraw.o
 PLAYGROUND = TinyLibPlayground.o
 GUI = TinyLibGUI.o
 #
-# An ML program, in the sections below: its units (X_UNITS), its start
-# made of them (X.start.o, by ml: TinyML/Link.mli), and the
-# program linked by ld: the C runtime, ML's, the start, the library, its
-# units, the end (the libraries before the units that use them, OCaml's
-# rule). Its units' rules are .depend's (at the end).
+# Each ML program in the sections below has its units (X_UNITS) and its
+# start, made from them (X.start.o, by ml; see TinyML/Link.mli). ld then
+# links the program from the C runtime, ML's runtime, the start, the
+# library, its units and the end (the libraries come before the units
+# that use them, which is OCaml's rule). The rules of its units are in
+# .depend (at the end).
 
 
 #############################################################################
 # The shell, the utilities, the editors, the stores
 #############################################################################
 
-# rc the shell; utils, cat ls grep... in one program (/bin/cat a link
-# to it); ed and sam, the line editor; db and vcs, a database and a
-# version control; build, this file's reader.
+# rc is the shell; utils is cat, ls, grep... in one program (/bin/cat is
+# a link to it); ed, also named sam, is the line editor; db and vcs are a
+# database and a version control; build is the reader of this file.
 
 RC_UNITS = $SYS TinyShell.o
 rc.start.o: $STDLIB $RC_UNITS
@@ -228,8 +249,8 @@ build: $CRT $MLRT build.start.o $STDLIB $BUILD_UNITS $MLEND
 # The toolchain, and the tools of the machine's code
 #############################################################################
 
-# as, ld, ar, cc and ml, which built all of this; prof, where a profile's
-# instructions went; trace, a program's calls; debug, a debugger.
+# as, ld, ar, cc and ml built all of this; prof shows where a profile's
+# instructions went; trace shows a program's calls; debug is a debugger.
 
 AS_UNITS = $SYS $MACH TinyAssembler.o
 as.start.o: $STDLIB $AS_UNITS
@@ -289,9 +310,10 @@ debug: $CRT $MLRT debug.start.o $STDLIB $DEBUG_UNITS $MLEND
 # The window's programs
 #############################################################################
 
-# windows, the window system; emacs; office and troff, which prints its
-# documents; www, the browser; play, tetris, square, calc and temp, on
-# the playground; bigmem, a test of a big memory.
+# windows is the window system. Then come emacs; office, and troff,
+# which prints office's documents; www, the browser; play, tetris,
+# square, calc and temp, which run on the playground; and bigmem, a test
+# of a big memory.
 
 WINDOWS_UNITS = $SYS $DRAWLIB TinyWindows.o user/windows.o
 windows.start.o: $STDLIB $WINDOWS_UNITS
@@ -303,7 +325,7 @@ emacs.start.o: $STDLIB $EMACS_UNITS
 emacs: $CRT $MLRT emacs.start.o $STDLIB $EMACS_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-# (office's and troff's)
+# (the parts that office and troff share)
 OFFICE_INCLUDES = -I TinyOffice
 OFFICE_PARTS = TinyOffice/Model.o TinyOffice/Text.o TinyOffice/Sheet.o \
     TinyOffice/Drawing.o TinyOffice/Paint.o TinyOffice/Chart.o \
@@ -374,9 +396,9 @@ bigmem: $CRT $MLRT bigmem.start.o $STDLIB $BIGMEM_UNITS $MLEND
 # The programs in C
 #############################################################################
 
-# sh, the first shell (rc is the one used); mltests, a test of ML's
-# calls; ping, get, put and httpd, the network's (get and put with
-# net.c, which dials a name); paint, which draws (with draw.c)
+# sh is the first shell (rc is the one used); mltests is a test of ML's
+# calls; ping, get, put and httpd are the network's programs (get and
+# put link net.c, which dials a name); paint draws (with draw.c).
 user/sh.o: user/sh.c runtime/c/user.h
 sh: $CRT user/sh.o
 	$LD -map -s -n -o $target $prereq
@@ -403,9 +425,10 @@ paint: $CRT runtime/c/draw.o user/paint.o
 # The kernel: TinyKernel/
 #############################################################################
 
-# Made by its own Buildfile, TinyKernel/Buildfile, from its units, its
-# assembly and the library; run each time, as the library's (kernel,
-# not a file), after it. TinyKernel/kernel.img made with it
+# The kernel is made by its own Buildfile, TinyKernel/Buildfile, from
+# its units, its assembly and the library. Like the library's build, it
+# runs each time (kernel is not a file), and it runs after the library's.
+# TinyKernel/kernel.img is made with it.
 kernel: $STDLIB
 	cd TinyKernel && $BUILD ML=^$ML CC=^$CC AS=^$AS LD=^$LD
 TinyKernel/kernel.img: kernel
@@ -414,44 +437,49 @@ TinyKernel/kernel.img: kernel
 # The system and the image
 #############################################################################
 
-# The system, by build install, in /bin, /lib and /examples: on
-# tiny-kernel the disk's (make self), on the host a directory, which
-# TinyKernel/Makefile makes a disk of, disk.img (by tiny-mkfs, on the
-# host; the sources, /src, are the second disk, src.img).
+# build install puts the system in /bin, /lib and /examples. On
+# tiny-kernel, these are the disk's (make self). On the host, they are
+# in a directory, which TinyKernel/Makefile turns into a disk, disk.img
+# (with tiny-mkfs, on the host; the sources, /src, are the second disk,
+# src.img).
 #
-# /bin: the programs; utils under each of its names, a hard link (cat is
-# utils, ls, wc...), emacs as editor too, ed as sam
+# /bin holds the programs. utils is there under each of its names, as a
+# hard link (cat is utils, and so are ls, wc...); emacs is also there as
+# editor, and ed as sam.
 UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd \
     rm seq sleep sort tail tee test touch walk wc xd
 
-# /lib: what a program built on tiny-kernel links, already built here.
-# /lib/c, C's: the runtime, the system's calls, drawing and dialing,
-# and their headers (cc -I /lib/c: user.h, which includes libc.h).
-# /lib/ml, ML's: its runtime, the program's end, the library, its
-# archive and its units' interfaces (ml -L /lib/ml), and the libraries
-# a program that draws stands on, each its object and its interface
-# (ml -I /lib/ml): the system's calls, the drawing's messages, the
-# playground, the widgets
+# /lib holds what a program built on tiny-kernel links, already built
+# here.
+# /lib/c holds C's files: the runtime, the system's calls, drawing and
+# dialing, and their headers (cc -I /lib/c finds user.h, which includes
+# libc.h).
+# /lib/ml holds ML's files: its runtime, the program's end, the library
+# (its archive and its units' interfaces, for ml -L /lib/ml), and the
+# libraries that a program that draws stands on, each as its object and
+# its interface (for ml -I /lib/ml): the system's calls, the drawing's
+# messages, the playground and the widgets.
 LIBC = runtime/c/start.o runtime/c/udivmod.o runtime/c/libc.o \
     runtime/c/sys.o runtime/c/draw.o runtime/c/net.o \
     runtime/c/libc.h runtime/c/user.h runtime/c/draw.h
 MLLIBS = $SYS $DRAWLIB $PLAYGROUND $GUI
 LIBML = runtime/ml/mlsys.o runtime/ml/end.o \
     $MLLIBS ${MLLIBS:%.o=%.tmi}
-# (the .tmi made with stdlib.a, by TinyLibCore/Buildfile; not
-# prerequisites: this file's %.tmi would make them again)
+# (The .tmi are made with stdlib.a, by TinyLibCore/Buildfile. They are
+# not prerequisites, because this file's %.tmi would make them again.)
 LIBUNITS = ${CORE:%=TinyLibCore/%.tmi} $STDLIB
 
-# /examples: examples/'s files, by their kinds, rc's globs (its sources,
-# not what a build of them there makes: the programs, *.o, *.tmi,
-# *.map); not prerequisites, so an example changed alone does not make
-# the disk again
+# /examples holds examples/'s files, chosen by their kinds with rc's
+# globs (its sources, not what a build of them there makes: the
+# programs, *.o, *.tmi, *.map). They are not prerequisites, so an
+# example changed alone does not make the disk again.
 #
-# build install: the files above copied where they go, from where they
-# are built (Plan 9's mk install). On the host, into a directory, the
-# three by their names (TinyKernel/Makefile's _make/system):
+# build install copies the files above where they go, from where they
+# are built (as Plan 9's mk install does). On the host, it copies into a
+# directory, with the three given by their names (TinyKernel/Makefile's
+# _make/system):
 #     tiny-build TINY=tiny- BIN=d/bin LIB=d/lib EXAMPLES=d/examples install
-# Not a file: it runs each time it is asked
+# install is not a file, so it runs each time it is asked for.
 BIN = /bin
 LIB = /lib
 EXAMPLES = /examples
@@ -464,17 +492,19 @@ install: $PROGS $LIBC $LIBML $STDLIB
 	for(f in $LIBML $LIBUNITS) cp $f $LIB/ml/^`{basename $f}
 	cp examples/Buildfile examples/*.c examples/*.ml examples/*.s examples/*.prof examples/*.ixd examples/*.wav $EXAMPLES
 
-# boot.img: the kernel, then /boot's files, each its name, its size and
-# its bytes (a hard link a name and a line "link utils"); an empty line
-# at the end. /boot is what a person needs when the disk does not come
-# up, the repair kit: sh, rc, the utilities, ed, in bin/ (the first
-# process is /bin/sh, the disk's, else the image's); and the boot's
-# configuration, memory: MEMORY, from the environment
-# (TinyKernel/Makefile's MEMORY=segments or pages), the kernel's way of
-# giving memory, with MEMSIZE. The same recipe on the host and on
-# tiny-kernel, in a copy of tiny/ (TinyKernel/Makefile's _make/src, the
-# second disk's /src). One file is made on the host alone, before:
-# TinyKernel/kfont.s, the font's bytes.
+# boot.img holds the kernel, then /boot's files, each as its name, its
+# size and its bytes (a hard link as a name and a line "link bin/utils"
+# or "link bin/ed"), and an empty line at the end. /boot is the repair
+# kit, what a person needs when the disk does not come up: sh, rc, the
+# utilities and ed, in bin/ (the first process is /bin/sh, the disk's if
+# there is one, else the image's). /boot also holds the boot's
+# configuration, a file named memory: MEMORY, taken from the environment
+# (TinyKernel/Makefile's MEMORY=segments or pages), is the kernel's way
+# of giving memory, and it comes with MEMSIZE. The recipe is the same on
+# the host and on tiny-kernel, where it runs in a copy of tiny/
+# (TinyKernel/Makefile's _make/src, the second disk's /src). One file is
+# made beforehand, on the host alone: TinyKernel/kfont.s, the font's
+# bytes.
 BOOT = sh rc utils ed
 boot.img: TinyKernel/kernel.img $BOOT
 	cat TinyKernel/kernel.img > $target
@@ -489,19 +519,21 @@ boot.img: TinyKernel/kernel.img $BOOT
 # The units' dependencies
 #############################################################################
 
-# The ML units' rules, in .depend: a unit's object, then the interfaces
-# of the units it names and its .mli, written by ml -depend as ocamldep
-# writes OCaml's (and m-ix's mini-ml -depend). Its sources are every
-# .ml of INCLUDES' directories, then each program's with parts, by its
-# own -I's (its main file's line again, now with its parts; tiny-build
-# merges a target's lines) (a unit added is found; the host's
-# programs among them, TinyCPU.ml and TinyMachine.ml, are lines no
-# target asks for, or left out, said, when tiny-ml cannot read them).
-# The globs are written here, not in a variable: rc does not glob a *
-# that comes from one. .depend is kept beside this file, as
-# ocaml-light's stdlib keeps its own (TinyLibCore/ and TinyKernel/ have
-# theirs, made again too): `build depend` makes it again after a unit
-# names another one, or a unit is added.
+# .depend holds the ML units' rules: a unit's object, then the
+# interfaces of the units it names and its .mli. ml -depend writes them
+# as ocamldep writes OCaml's (and as m-ix's mini-ml -depend does). Its
+# sources are every .ml of INCLUDES' directories, then the files of
+# each program with parts, read with that program's own -I's (its main
+# file's line comes again, now with its parts, and tiny-build merges a
+# target's lines). A unit that is added is found. The host's programs
+# among them, TinyCPU.ml and TinyMachine.ml, give lines that no target
+# asks for, or are left out, with a message, when tiny-ml cannot read
+# them. The globs are written here, not in a variable, because rc does
+# not glob a * that comes from a variable. .depend is kept beside this
+# file, as ocaml-light's stdlib keeps its own (TinyLibCore/ and
+# TinyKernel/ have theirs, and they are made again too). `build depend`
+# makes it again after a unit names another one, or after a unit is
+# added.
 depend:
 	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml user/*.ml > .depend
 	$ML -depend $INCLUDES $CC_INCLUDES TinyC.ml TinyC/*.ml >> .depend
@@ -514,9 +546,9 @@ depend:
 <.depend
 
 #############################################################################
-# clean: what this file made removed (the objects and interfaces beside
-# their sources, each directory by name; the programs, the image, the
-# maps; the library's and the kernel's by their Buildfiles)
+# clean: removing what this file made (the objects and interfaces
+# beside their sources, each directory by name; the programs, the image
+# and the maps; the library's and the kernel's files by their Buildfiles)
 #############################################################################
 
 clean:

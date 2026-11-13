@@ -1,36 +1,45 @@
-# mini-oberon on the Pi 4, or (mini-mk O=5) the Pi 1, built by ix's
-# tools: mini-ml, mini-cc, mini-asm, mini-ld (plan_system_oberon.md).
-# Everything it is made of is in this directory, said here in full: its
-# own files, and under machine/ the ones it shares with the other
-# kernels, each a symbolic link (ls -l machine says from where). Only
-# the language is outside: mini-ml's runtime and the standard library.
-#   mini-mk          _mk/7/kernels/oberon/kernel8.img (O=5: _mk/5/kernels/oberon/kernel.img)
-#   mini-mk run      under mini-qemu (Ctrl-A x quits)
-#   mini-mk check    its boot's lines on the serial line, under mini-qemu and QEMU
+# This mkfile builds mini-oberon for the Pi 4, or for the Pi 1 with
+# mini-mk O=5, with ix's tools: mini-ml, mini-cc, mini-asm and mini-ld
+# (docs/plans/done/plan_system_oberon.md). Everything it is made of is
+# in this directory, and this mkfile lists all of it: its own files, and
+# under machine/ the files it shares with the other kernels. Each of
+# those is a symbolic link (ls -l machine shows where it points). Only
+# the language lives outside: mini-ml's runtime and the standard
+# library.
+#   mini-mk          builds _mk/7/kernels/oberon/kernel8.img
+#                    (with O=5, _mk/5/kernels/oberon/kernel.img)
+#   mini-mk run      runs it under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    checks its boot's lines on the serial line and its
+#                    40 screens by their MD5, under mini-qemu and QEMU
 TOP=../..
-# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
-# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+# (Its recipes are still sh's, hence MKSHELL=sh, while the other
+# mkfiles' recipes are rc's, as mkfiles/mkconfig sets; see
+# docs/plans/plan_self_hosting.md.)
 MKSHELL=sh
 DIR=kernels/oberon
 <$TOP/mkfiles/mkconfig
 
-# the board, from the machine: the Pi 4 for arm64, the Pi 1 for arm
+# The machine decides the board: the Pi 4 for arm64, the Pi 1 for arm.
 BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
 ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
 M=machine
 BD=$M/$BOARD
-# the board's assembly: the Pi 1's l1.s defines its numbers, then
-# includes l.s (the Pi 4's l.s is whole)
+# The board's assembly: the Pi 1's l1.s defines its numbers, then
+# includes l.s, while the Pi 4's l.s is complete by itself.
 LS=`{case $O in 5) echo l1.s;; 7) echo l.s;; esac}
 D=$B/$DIR
 
-# Oberon's modules, in the order they start, after the machine's; of
-# the language, the standard library and not ix's own (lib_core's
-# commons). A directory a part of the system (the book's chapters):
-# files/ (FileDir, Files), display/ (Display, Input, Viewers,
-# MenuViewers), texts/ (Fonts, Texts, TextFrames, Edit), system/
-# (Modules, Oberon, System), and apps/, the programs of others
-# (machine/'s: Machine and Usbhost, links)
+# Oberon's modules, in the order they start, after the machine's. From
+# the language, they use the standard library and not ix's own library
+# (lib_core's commons). Each directory is a part of the system, as the
+# book's chapters are:
+#   files/ (FileDir, Files)
+#   display/ (Display, Input, Viewers, MenuViewers)
+#   texts/ (Fonts, Texts, TextFrames, Edit)
+#   system/ (Modules, Oberon, System)
+#   apps/, the programs written by others
+# The machine's modules are machine/'s Machine and Usbhost, which are
+# links.
 OBERON=FileDir Files Modules Display Fonts Input Viewers Texts Oberon MenuViewers TextFrames System Edit
 APPS=Hilbert Sierpinski Stars Blink Checkers
 UNITS=Machine $OBERON $APPS Usbhost Main
@@ -38,32 +47,34 @@ LIBDIRS=system core base collections printing parsing concurrency
 MLI=-I . -I files -I display -I texts -I system -I apps -I $M ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
 
-# the C: the board's and the kernels' (machine/), over mini-ml's runtime
-# and ix's C library
+# The C code comes from the board and from the kernels' machine/, and
+# runs on top of mini-ml's runtime and ix's C library.
 RT=$TOP/languages/ml/runtime
 LIBC=$TOP/lib_core/libc
 CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
 KINC=$CINC -I$RT -I$BD
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
-# the heap: two halves of 4M words, a value stack of 1 MB
-# (quoted: after a variable's =, mk reads a word before another = as attributes)
+# The heap has two halves of 4M words, and the value stack has 1 MB.
+# The words are quoted because, after a variable's =, mk reads a word
+# before another = as attributes.
 HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 
-# the image: its name (the firmware's, for each board), its text's
-# address (where the board loads it, in the kernel's half), its entry,
-# and a word of its data
+# The image: its name (the one the firmware looks for on each board),
+# the address of its text (where the board loads it, in the kernel's
+# half), its entry point, and the size of a word of its data.
 IMAGE=$D/`{case $O in 5) echo kernel.img;; 7) echo kernel8.img;; esac}
 KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
 ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
 WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
-# an emulator's arguments, and QEMU
+# the emulators' arguments, and which QEMU to run
 BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
 QEMU=`{case $O in 5) echo qemu-system-arm;; 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64;; esac}
 MINIQEMU=$TOP/_build/default/raspberry/Main.exe
 
 all:V: $IMAGE
 
-# the OCaml: a module by its name, found in its directory
+# The OCaml code: each module is listed by its name, and the recipe
+# finds it in its directory.
 SRC=`{ls *.ml */*.ml */*.mli}
 MACHINE=Machine Usbhost
 ${MACHINE:%=$D/%.$O} ${OBERON:%=$D/%.$O} ${APPS:%=$D/%.$O}: $SRC
@@ -98,23 +109,25 @@ $D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/$LS
 
-# the disk: its files one after the other, each after a line with its
-# name and its length; an empty line at the end (FileDir.mli)
+# The disk holds its files one after the other, each after a line with
+# its name and its length, and it ends with an empty line (see
+# FileDir.mli).
 DISKFILES=`{ls disk/*.Fnt disk/*.Tool disk/*.Text}
 DISK=$D/disk.img
 $DISK: $DISKFILES mkfile
 	mkdir -p $D
 	(for f in $DISKFILES; do echo `basename $f` `wc -c < $f | tr -d ' '`; cat $f; done; echo) > $target
 
-# the disk and the console's font inside the kernel: each file's bytes
-# one DATA, by mini-asm -data; the disk's size a line of text
-# (old: each word a DATA line, by od and awk: lib_machine's mkkernel)
+# The disk and the console's font go inside the kernel, and mini-asm
+# -data puts each file's bytes in one DATA. The disk's size is one line
+# of assembly text.
 $D/images.$O: $DISK $M/font1.bin
 	mkdir -p $D
 	(echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $DISK | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
 	$AS -data fs_image=$DISK -data font_image=$M/font1.bin -o $target $D/images.s
 
-# (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)
+# (l comes first, because its vectors, or on the Pi 1 its start, are
+# the image's first bytes.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
@@ -122,21 +135,26 @@ $IMAGE: $OBJS
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic
 
-# the boot and a session, under mini-qemu and QEMU, with a USB keyboard
-# and mouse (tests/session.steps). The texts: the caret set and a line
-# typed; a stretch selected, copied to the caret, another deleted, by
-# the interclicks; the text scrolled by its bar, and back. The
-# commands, each clicked with the middle key: System.Watch; a pattern
-# selected and System.Directory ^; in the text's menu Edit.Store,
-# System.Copy, System.Grow, and System.Close in the grown one's. The
-# viewers: one's top dragged down by its menu, then moved to the other
-# track. The programs: a name that is no command, System.ShowModules,
-# Hilbert.Draw, Stars.Open and Stars.Step twice. (tests/steps.py makes
-# the steps.) Checked: the serial line's lines, and the screen at the boot
-# and after each step (QMP's screendump, by their MD5s: the same for
-# the two boards and the two emulators). tests/graphics.py is
-# mini-9pi's, by its link (it finds session.py by its own path,
-# kernels/lib_machine's, which tests/session.py is)
+# check runs the boot and a session under mini-qemu and QEMU, with a
+# USB keyboard and mouse (tests/session.steps). The session does this:
+# - In the texts, it sets the caret and types a line. With the
+#   interclicks, it selects a stretch, copies it to the caret, and
+#   deletes another. It scrolls the text by its bar, and back.
+# - It clicks commands, each with the middle key: System.Watch; then
+#   System.Directory ^ with a pattern selected; then, in the text's
+#   menu, Edit.Store, System.Copy and System.Grow, and System.Close in
+#   the grown viewer's menu.
+# - In the viewers, it drags one viewer's top down by its menu, then
+#   moves the viewer to the other track.
+# - For the programs, it clicks a name that is no command, then
+#   System.ShowModules, Hilbert.Draw, Stars.Open, and Stars.Step twice.
+# (tests/steps.py makes the steps.) check compares the serial line's
+# lines, and the screen at boot and after each step. The screens come
+# from QMP's screendump and are compared by their MD5s, which are the
+# same for the two boards and the two emulators. tests/graphics.py is
+# mini-9pi's, through its link. It finds session.py by its own path,
+# which is in kernels/lib_machine, and tests/session.py links to that
+# same file.
 USB=-device usb-kbd -device usb-mouse
 check:V: $IMAGE
 	session() { tests/graphics.py --steps tests/session.steps --expect tests/session.md5 $D/$1 -- $2 $BOOT -nographic $USB > /dev/null 2>&1; }

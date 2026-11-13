@@ -1,7 +1,7 @@
-# mini-dotnet, built by ix's tools; the JIT's encoders are the linker's
-# (Program Debug_link Link Arm Arm64), compiled here from its sources (the linker is
-# made beside this directory, not before), and its memory jit/mini-ml/'s
-# Code_memory, not dune's
+# mini-dotnet, built by ix's tools. The JIT's encoders are the linker's
+# (Program Debug_link Link Arm Arm64), compiled here from its sources,
+# because the linker is made beside this directory, not before it. Its
+# memory is jit/mini-ml/'s Code_memory, not dune's.
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
@@ -14,7 +14,8 @@ LIBUNITS=Asm Show_asm Lexer_asm Parser_asm
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
 <$TOP/mkfiles/mkprog
 
-# the linker's units, one recipe each, so that .depend orders each
+# the linker's units, with one recipe each, so that .depend orders each
+# one
 $D/Program.$O: $TOP/linker/Program.ml
 	$ML $INCLUDES -o $target $TOP/linker/Program.ml
 $D/Debug_link.$O: $TOP/linker/debug/Debug_link.ml
@@ -25,11 +26,12 @@ $D/Arm.$O: $TOP/linker/Arm.ml
 	$ML $INCLUDES -o $target $TOP/linker/Arm.ml
 $D/Arm64.$O: $TOP/linker/Arm64.ml
 	$ML $INCLUDES -o $target $TOP/linker/Arm64.ml
-# the JIT's memory: mini-ml's (jit/Code_memory.ml is dune's)
+# the JIT's memory, mini-ml's version (jit/Code_memory.ml is dune's)
 $D/Code_memory.$O: jit/mini-ml/Code_memory.ml
 	$ML $INCLUDES -o $target jit/mini-ml/Code_memory.ml
-# the units in folders (dune's comment says which): the folder that has
-# it, mkprog's rule (a unit here) dropped for them
+# the units in folders (dune's comment says which): each one is
+# compiled from the folder that has it, and mkprog's rule (for a unit
+# here) is not used for them
 $D/%.$O: assembly/%.ml
 	$ML $INCLUDES -o $target assembly/$stem.ml
 $D/%.$O: runtime/%.ml

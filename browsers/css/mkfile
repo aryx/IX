@@ -1,5 +1,5 @@
-# browsers/css as a library (mkfiles/mklib): style sheets read,
-# matched and computed
+# browsers/css as a library (mkfiles/mklib), which reads, matches and
+# computes style sheets
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=browsers/css

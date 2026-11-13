@@ -1,5 +1,5 @@
-# kernels/tools, built by ix's tools: each program one file, with its
-# start and its link
+# kernels/tools, built by ix's tools. Each program is one file, with
+# its own start and link rules.
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/kernels/tools
@@ -21,7 +21,8 @@ $D/mini-mkpixdata: $D/Mkpixdata.$O $LIBS
 	$ML -start $STD $COMMONS Mkpixdata Std_exit -o $D/Mkpixdata.start.$O
 	$LD $LDH -nofollow -o $target $D/Mkpixdata.start.$O $STDOBJS $D/Mkpixdata.$O $STDEND
 
-# (with lib_xv6fs's unit, the kernel's too)
+# (mini-mkfs is linked with lib_xv6fs's unit, which the kernel uses
+# too.)
 X=../9pi/filesystems/lib_xv6fs
 $D/Xv6fs.$O: $X/Xv6fs.ml $X/Xv6fs.mli
 	mkdir -p $D

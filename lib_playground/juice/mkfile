@@ -1,6 +1,6 @@
 # lib_playground's juice, a library of its own (mkfiles/mklib): a
-# game's feel, eases, tweens, shakes and particles (apis/'s Juice over
-# it)
+# game's feel, with eases, tweens, shakes and particles (apis/'s Juice
+# is built over it)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=lib_playground/juice

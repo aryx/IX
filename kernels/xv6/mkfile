@@ -1,18 +1,22 @@
-# mini-xv6 on the Pi 4, or (mini-mk O=5) the Pi 1, built by ix's tools
-# (plan_kernel_mini_ml.md):
-# the Makefile's kernel (ocaml-light, gcc, GNU's as and ld), by mini-ml,
-# mini-cc, mini-asm and mini-ld. The same OCaml, the same C;
-# ../lib_machine/mkkernel says what else.
-#   mini-mk          _mk/7/kernels/xv6/kernel8.img (O=5: _mk/5/kernels/xv6/kernel.img)
-#   mini-mk run      under mini-qemu (Ctrl-A x quits)
-#   mini-mk check    the Makefile's session, under mini-qemu and QEMU:
-#                    the same expected-pi4 (expected-pi1)
+# This mkfile builds mini-xv6 for the Pi 4, or for the Pi 1 with mini-mk
+# O=5, with ix's tools (docs/plans/done/plan_kernel_mini_ml.md). It is
+# the Makefile's kernel: the Makefile builds it with ocaml-light, gcc,
+# and GNU's as and ld, and this mkfile with mini-ml, mini-cc, mini-asm
+# and mini-ld. The OCaml and the C are the same; ../lib_machine/mkkernel
+# says what else goes into it.
+#   mini-mk          builds _mk/7/kernels/xv6/kernel8.img
+#                    (with O=5, _mk/5/kernels/xv6/kernel.img)
+#   mini-mk run      runs it under mini-qemu (Ctrl-A x quits)
+#   mini-mk check    runs the Makefile's session, under mini-qemu and
+#                    QEMU, against the same expected-pi4 (or expected-pi1)
 TOP=../..
-# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
-# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+# (Its recipes are still sh's, hence MKSHELL=sh, while the other
+# mkfiles' recipes are rc's, as mkfiles/mkconfig sets; see
+# docs/plans/plan_self_hosting.md.)
 MKSHELL=sh
 DIR=kernels/xv6
-# (Usbhost is kernels/lib_machine's: not every kernel wants it)
+# (Usbhost comes from kernels/lib_machine, and is listed here because
+# not every kernel wants it.)
 KML=Types Proc Fs File ../lib_machine/Usbhost Exec Syscall Main
 KNAMES=Types Proc Fs File Usbhost Exec Syscall Main
 KI=-I .
@@ -24,11 +28,12 @@ FS=`{case $O in 5) echo /home/pad/xv6/forks/arm-pi1/user/fs.img;; 7) echo /home/
 run:V: $IMAGE
 	mini-qemu $BOOT -nographic
 
-# The Makefile's check, with this image: the session typed at sh, under
-# mini-qemu and QEMU, as xv6's C kernel's (expected-pi4, expected-pi1);
-# the screen after it, the same under both (and on the Pi 1 as the C
-# kernel draws it); the session typed on a USB keyboard, the mouse
-# moved; usertests under QEMU.
+# The Makefile's check, with this image. It types the session at sh,
+# under mini-qemu and QEMU, and the output must match xv6's C kernel's
+# (expected-pi4, expected-pi1). The screen after it must be the same
+# under both, and on the Pi 1 the same as the C kernel draws it. It
+# also types the session on a USB keyboard and moves the mouse, and it
+# runs usertests under QEMU.
 SESSION_PY=$TOP/kernels/lib_machine/session.py
 MINIQEMU=$TOP/_build/default/raspberry/Main.exe
 KBOOT=$BOOT -nographic
@@ -39,8 +44,9 @@ check:V: $IMAGE
 	from_init() { sed -n '/init: starting sh/,$p' $1 | grep -v '^hart [0-9] starting$'; }
 	typed() { session --timeout $1 --out $D/$2.txt --screendump $D/$2.ppm ls "cat README" "echo hello world" "mkdir d" "ls d" "ln README d/r" "ls d" "wc d/r" "rm d/r" "grep xv6 README" forktest "cat nosuch" "sh -c" -- $3 $KBOOT $4; }
 	usb() { session --timeout $1 --usb --move "200,-100;-60,40" --out $D/$2-usb.txt --screendump $D/$2-usb.ppm ls "echo hello world" -- $3 $KBOOT $4 $USB; }
-	# the sessions, each an emulator and a kernel waited on: side by side, then compared
-	# (old: one after the other, 4 minutes)
+	# Each session waits on an emulator and a kernel, so the sessions run
+	# side by side, and are compared afterwards. (One after the other,
+	# they would take 4 minutes.)
 	rm -f $D/usertests.ok
 	typed 300 mini $MINIQEMU & typed 60 qemu $QEMU "$QEMUSMP" & usb 300 mini $MINIQEMU & usb 120 qemu $QEMU "$QEMUSMP" &
 	session --until "ALL TESTS PASSED" --timeout 600 --out $D/usertests.txt usertests -- $QEMU $KBOOT $QEMUSMP > $D/usertests.log 2>&1 && touch $D/usertests.ok &

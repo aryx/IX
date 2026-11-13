@@ -1,6 +1,6 @@
-# lib_crypto's vectors by ix's tools (mini-mk): Vectors and Speed, each
-# with its start and its link with the library (mkfiles/mklibs; vectors.sh
-# runs it)
+# lib_crypto's vectors, built by ix's tools (mini-mk): Vectors and
+# Speed, each with its start and its link with the library
+# (mkfiles/mklibs). vectors.sh runs it.
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_crypto/tests

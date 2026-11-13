@@ -1,9 +1,9 @@
-# ix built by ix: mini-mk here, after make install (or with
-# PATH=$PWD/bin:$PATH). The libraries first, then each program;
-# what is made is under _mk/ (docs/plans/plan_mkfiles.md).
-# mini-mk O=5: for arm (the programs, and the kernels' steps for the Pi 1;
-# O=7's are the Pi 4's)
-# (O and OS: mkconfig's, 7 and linux, or on Plan 9 its own)
+# ix built by ix: run mini-mk here, after make install (or with
+# PATH=$PWD/bin:$PATH). It builds the libraries first, then each
+# program; what is made goes under _mk/ (docs/plans/plan_mkfiles.md).
+# mini-mk O=5 builds for arm (the programs, and the kernels' steps for
+# the Pi 1; O=7's are for the Pi 4).
+# (O and OS come from mkconfig: 7 and linux, or on Plan 9 its own.)
 TOP=.
 <mkfiles/mkconfig
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editors/ed \
@@ -11,23 +11,27 @@ DIRS=lib_core assembler linker linker/tools languages/c database builder shell e
  typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows/rio windows/rio/tests windows/desktop apps/misc apps/files apps/maps profilers/misc debuggers/where debuggers/acid games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
-# The libraries first, side by side in waves (libs: below), each after
-# the ones it needs (xix's and principia's top mkfiles: a directory
-# then takes the libraries as they are, a stale one built again from
-# here; mini-mk libs: the libraries alone), and the assembler (the others read its
-# objects), then the rest side by side, each directory a mini-mk; the
-# two that take another's objects after it (mini-ar the linker's,
-# mini-bc mini-dc's machine, and the
-# playground's programs of apps/ and examples/ the games' libraries: games/mkgames). NPROC is each mini-mk's own jobs.
-# (old: one directory after the other, 3 minutes:
-#   for d in $DIRS; do (cd $d && mini-mk O=$O) || exit 1; done
-#   if [ $O = 7 ]; then for d in $KERNELS; do (cd $d && mini-mk) || exit 1; done; fi)
-# (the machine's cores, 16 at most: there are as many directories at
-# once; on Plan 9 a line of /dev/sysstat each)
+# The libraries are built first, side by side in waves (libs: below),
+# each after the ones it needs. As in xix's and principia's top
+# mkfiles, a directory then takes the libraries as they are, and a
+# stale one is built again from here; mini-mk libs builds the libraries
+# alone. The assembler comes next, because the others read its objects.
+# Then the rest are built side by side, a mini-mk for each directory.
+# Beside them run three chains of directories that take another's
+# objects, each built in order: the linker, then mini-ar (linker/tools),
+# which takes its objects; mini-dc, then mini-bc, which takes its
+# machine; and games, then editors/drscheme, examples and apps/office,
+# which take the games' libraries (games/mkgames). NPROC is each
+# mini-mk's own number of jobs.
+# (The directories are built side by side because one after the other
+# takes 3 minutes.)
+# (NPROC is the machine's cores, 16 at most; on Plan 9 each core is a
+# line of /dev/sysstat. It does not cap the directories: every one of
+# them is started at once.)
 NPROC=`{if(~ $#objtype 0) nproc | awk '{print ($1 > 16 ? 16 : $1)}'; if not wc -l < /dev/sysstat}
-# (OS=plan9: mini-9pi's, kernels/9pi's Makefile; its games' two
-# platforms, the draw device's and the software one, where Linux's is
-# ppm)
+# (OS=plan9 is for mini-9pi, and kernels/9pi's Makefile sets it. Its
+# games have two platforms, the draw device's and the software one,
+# where Linux's is ppm.)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
 LIBS=lib_core lib_mime lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
@@ -44,14 +48,15 @@ all:V: libs
 	for(d in $KERNELS){ @{cd $d && $MK 'O='$O} & pids=($pids $apid) }
 	for(p in $pids){ wait $p; ~ $status '' || exit 1 }
 
-# (B given on when it was said, as games/mkfile does: tests/lite.sh's
-# _mk/lite, where each library's own mkconfig would say _mk/$O)
-# lib_core, then in waves: each library whose NEEDS (its mkfile's) are
-# made, side by side, then the next (troff beside the browser's chain;
-# 25 s to 13 for tests/lite.sh's). A library its NEEDS name not in LIBS,
-# or a cycle: no wave, said, not a loop.
-# old: one after the other, in LIBS's order:
-#   for(d in $LIBS) @{cd $d && $MK 'O='$O 'OS='$OS $b} || exit 1
+# (B is passed on when it was given, as games/mkfile does: tests/lite.sh
+# gives _mk/lite, where each library's own mkconfig would say _mk/$O.)
+# libs builds lib_core, then the others in waves. A wave is every
+# library whose NEEDS (from its mkfile) are made, built side by side;
+# then comes the next wave. troff is built beside the browser's chain,
+# and the waves take tests/lite.sh's libraries from 25 s, one after the
+# other in LIBS's order, to 13 s. When a library's NEEDS name one that
+# is not in LIBS, or when there is a cycle, no wave can be made, and
+# libs says so and stops instead of looping.
 libs:V:
 	b=(); if(~ $B /*) b='B='^$B
 	@{cd lib_core && $MK 'O='$O 'OS='$OS $b} || exit 1
@@ -76,9 +81,10 @@ libs:V:
 	}
 	status=''
 
-# every directory's .depend (mkfiles/mkdepend) made again, those
-# whose mkfile includes mkprog, mklib, mkdepend or games/mkgames (each
-# build makes them when older than a source: this, when in doubt)
+# depend makes every directory's .depend (mkfiles/mkdepend) again, in
+# the directories whose mkfile includes mkprog, mklib, mkdepend or
+# games/mkgames. Each build makes them when they are older than a
+# source; use this target when in doubt.
 depend:V:
 	for(m in `{$WALK . | grep '/mkfile$' | grep -v -e '^\./_' -e '/\.claude/' | xargs grep -l -E -e '^<.*mkfiles/mk(prog|lib|depend)$' -e '^<.*games/mkgames$'}) {
 		d=`{echo $m | sed 's,/[^/]*$,,'}

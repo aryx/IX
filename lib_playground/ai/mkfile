@@ -1,5 +1,5 @@
-# lib_playground's ai, a library of its own (mkfiles/mklib): a way
-# through a map (apis/'s Ai over it)
+# lib_playground's ai, a library of its own (mkfiles/mklib), which finds
+# a way through a map (apis/'s Ai is built over it)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=lib_playground/ai

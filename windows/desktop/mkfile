@@ -1,8 +1,8 @@
 # the desktop's programs, built by ix's tools (for Plan 9: mini-mk O=5
-# OS=plan9): their shared modules in lib/; lib_graphics's units compiled
-# here, those of the screen, and for desk those that read a picture (not all
-# of lib_graphics' archive: 9 MB of PDF, fonts and films for a wallpaper),
-# with lib_compression's
+# OS=plan9). Their shared modules are in lib/. lib_graphics's units are
+# compiled here: those of the screen, and for desk those that read a
+# picture, with lib_compression's. (Linking all of lib_graphics' archive
+# would bring 9 MB of PDF, fonts and films for a wallpaper.)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIBDIRS=lib_compression
@@ -19,7 +19,8 @@ MENU=$GFX Apps Icon Startmenu
 DESK=$GFX $IMG Taskbar Apps Icon Prefs Paper Desk
 SETTINGS=$GFX Taskbar Prefs Settings
 UNITS=$GFX $IMG Taskbar Wsys Tiles Apps Icon Prefs Paper Panel Startmenu Desk Settings Expose
-# (the objects by a variable each: a recipe is rc's, which has no ${:})
+# (each program's objects are in a variable of their own, because a
+# recipe is rc's, which has no ${:})
 PANELOBJS=${PANEL:%=$D/%.$O}
 MENUOBJS=${MENU:%=$D/%.$O}
 DESKOBJS=${DESK:%=$D/%.$O}
@@ -29,13 +30,13 @@ LOCAL=`{ls *.ml lib/*.ml lib/*.mli ../../lib_graphics/*.ml ../../lib_graphics/*.
 
 all:V: $D/panel $D/startmenu $D/desk $D/settings $D/expose
 
-# a unit from the first of DIRS that has it
+# a unit from the last of DIRS that has it (the loop keeps the last)
 $D/%.$O: $LOCAL
 	mkdir -p $D
 	for(d in $DIRS) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f
 
-# a program: its units, in their order, the start, the link
+# a program: its units in their order, then the start and the link
 $D/panel: $PANELOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $PANEL Std_exit -o $D/panel.start.$O
 	$LD $LDH -nofollow -o $target $D/panel.start.$O $STDOBJS $PANELOBJS $STDEND

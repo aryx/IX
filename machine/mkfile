@@ -1,5 +1,5 @@
 # mini-5i, built by ix's tools; its units are in folders (core, arm32,
-# arm64, process)
+# arm64, process, compat)
 TOP=..
 DIR=machine
 PROG=mini-5i
@@ -9,16 +9,15 @@ GEN=
 LIBI=-I core -I arm32 -I arm64 -I process -I compat
 LIBUNITS=
 LIBOBJS=
-# (its traces: the program's tables read)
+# (for its traces, which read the program's tables)
 LIBDIRS=lib_executable
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# each folder's units, a rule each, its source the prerequisite (one %
-# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
-# so that .depend orders each: core process arm32 arm64 compat
-# old: the folders' units said whole, compiled by one recipe, each found
-#   by its name (*/)
+# each folder's units, with a rule for each folder whose prerequisite is
+# the source (mk refuses a second % rule for every unit beside
+# mkprog's). Each unit gets its own recipe, so that .depend orders each
+# one. The folders: core process arm32 arm64 compat
 $D/%.$O: core/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target core/$stem.ml

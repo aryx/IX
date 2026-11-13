@@ -14,8 +14,8 @@ LIBOBJS=
 GEN=$B/languages/smalltalk/St_kernel.ml
 <$TOP/mkfiles/mkprog
 
-# the Blue Book's kernel; what Squeak's and MiniMorphic's both add to
-# it; then each one's own
+# the Blue Book's kernel, then what Squeak's and MiniMorphic's both add
+# to it, then what each one adds on its own
 BLUE=Definitions Objects Classes Numbers Collections Streams Graphics System
 BASE=squeak/Closures squeak/Color squeak/Text
 SQUEAK=squeak/Morphic squeak/Morphs squeak/Tools squeak/Etoys
@@ -32,11 +32,10 @@ $D/St_kernel.ml: $ST mkfile
 $D/St_kernel.$O: $D/St_kernel.ml $LOCAL
 	$ML $INCLUDES -o $target $D/St_kernel.ml
 
-# each folder's units, a rule each, its source the prerequisite (one %
-# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
-# so that .depend orders each: compiler vm graphics
-# old: the folders' units said whole, compiled by one recipe, each found
-#   by its name (*/)
+# each folder's units, with a rule for each folder whose prerequisite is
+# the source (mk refuses a second % rule for every unit beside
+# mkprog's). Each unit gets its own recipe, so that .depend orders each
+# one. The folders: compiler vm graphics
 $D/%.$O: compiler/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target compiler/$stem.ml

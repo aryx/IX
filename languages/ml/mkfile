@@ -1,8 +1,8 @@
-# mini-ml, built by ix's tools (and so by itself): the front end, its
-# lexer by mini-lex and its grammar by mini-yacc, the preprocessor
-# (pp/), then the back ends (simple/, compat/, opti/, ssa/), what a
-# debugger needs (debug/), .NET's
-# (dotnet/, over mini-dotnet's writer of assemblies), the command
+# mini-ml, built by ix's tools (and so by itself): the front end with
+# its lexer (made by mini-lex) and its grammar (made by mini-yacc), the
+# preprocessor (pp/), then the back ends (simple/, compat/, opti/,
+# ssa/), what a debugger needs (debug/), .NET's back end (dotnet/, over
+# mini-dotnet's writer of assemblies), and the command
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
@@ -15,22 +15,26 @@ GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
 <$TOP/mkfiles/mkprog
 
-# the units that are not here: those mini-yacc and mini-lex made, and
-# each subdirectory's, by their names (as languages/c/mkfile's)
+# the units that are not here: those that mini-yacc and mini-lex made,
+# and each subdirectory's units, by their names (as in
+# languages/c/mkfile)
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
-# lib_code's units (Dominators Braun Liveness Coloring: SSA's algorithms,
-# mini-cc's too): one recipe each, so that .depend orders each
+# lib_code's units (Dominators Braun Liveness Coloring, SSA's algorithms,
+# which mini-cc uses too), with one recipe each, so that .depend orders
+# each one
 $D/%.$O: $TOP/lib_code/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/lib_code/$stem.ml
-# pp/'s units (Bits Derive Pp): one recipe each, so that .depend orders each
+# pp/'s units (Bits Derive Pp), with one recipe each, so that .depend
+# orders each one
 $D/%.$O: pp/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target pp/$stem.ml
-# simple/'s units (Ir Summary Fold Lower Gen): one recipe each, so that .depend orders each
+# simple/'s units (Ir Summary Fold Lower Gen), with one recipe each, so
+# that .depend orders each one
 $D/%.$O: simple/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target simple/$stem.ml
@@ -38,16 +42,19 @@ $D/Gas.$O: compat/Gas.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target compat/Gas.ml
 $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target opti/Opti.ml
-# ssa/'s units (Ssa Ssa_build Unbox Untag Cse Licm Alloc Emit): one recipe each, so that .depend orders each
+# ssa/'s units (Ssa Ssa_build Unbox Untag Cse Licm Alloc Emit), with one
+# recipe each, so that .depend orders each one
 $D/%.$O: ssa/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target ssa/$stem.ml
-# debug/'s units (Lines_ml Acid_ml): one recipe each, so that .depend orders each
+# debug/'s units (Lines_ml Acid_ml), with one recipe each, so that
+# .depend orders each one
 $D/%.$O: debug/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target debug/$stem.ml
-# dotnet/'s units (Il_code Il_types Il_functions Il_patterns Il_externals Il_printf Il_prims Il_exprs Lower_il), and mini-dotnet's writer of assemblies
-# (Metadata Signature Il Writer), by their names
+# dotnet/'s units (Il_code Il_types Il_functions Il_patterns Il_externals
+# Il_printf Il_prims Il_exprs Lower_il), and mini-dotnet's writer of
+# assemblies (Metadata Signature Il Writer), by their names
 $D/%.$O: dotnet/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target dotnet/$stem.ml

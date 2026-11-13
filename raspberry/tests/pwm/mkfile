@@ -1,6 +1,6 @@
-# The Pi 1's jack from the bare board (pwm.sh): tone.c by mini-cc, over
-# the first step's start, its C library and its console
-# (kernels/steps/step0: pi1/l.s, shim.c). mini-mk O=5.
+# The Pi 1's jack from the bare board (pwm.sh): tone.c, compiled by
+# mini-cc, over the first step's start, its C library and its console
+# (kernels/steps/step0: pi1/l.s, shim.c). Build it with mini-mk O=5.
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard

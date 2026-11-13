@@ -1,8 +1,8 @@
 # mini-turbopascal for mini-9pi (mini-mk O=5 OS=plan9): turbopascal, the
-# IDE (../../editor) in a window of mini-rio's, painted by the draw
-# device (lib_terminal/hosts: Window_draw, over Cells and lib_graphics), over mini-pascal
-# (languages/pascal) and lib_terminal; their units from their
-# directories, by their names
+# IDE (../../editor), in a window of mini-rio's that the draw device
+# paints (lib_terminal/hosts: Window_draw, over Cells and lib_graphics),
+# over mini-pascal (languages/pascal) and lib_terminal. Their units are
+# taken from their directories, each by its name.
 TOP=../../../..
 DIR=editors/turbopascal/hosts/draw
 PROG=turbopascal
@@ -20,7 +20,7 @@ LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# the others' units, by their names
+# the other directories' units, each by its name
 $D/Lehmer.$O: $R/Lehmer.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $R/Lehmer.ml

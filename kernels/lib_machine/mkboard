@@ -1,20 +1,23 @@
-# The board a kernel is built for by ix's tools, from the machine
+# The board that ix's tools build a kernel for, chosen from the machine
 # (mkconfig's O): the Pi 4 for arm64 (O=7), the Pi 1 for arm (O=5).
-# Included by the steps' mkfiles and by mkkernel, after mkconfig.
-#   ARCH     the C library's name of the machine
-#   P        where a step keeps the board's own files: its directory
-#            for the Pi 4 (the first written), pi1/ for the Pi 1
-#   LOAD     where the board loads an image, its text's address
-#   BOOT     an emulator's arguments, IMAGE in them where the image's
-#            name goes (boot, below, puts it); QEMU, and what it takes more
+# The steps' mkfiles and mkkernel include it, after mkconfig.
+#   ARCH     the C library's name for the machine
+#   P        where a step keeps the board's own files: the step's
+#            directory for the Pi 4 (written first), pi1/ for the Pi 1
+#   LOAD     where the board loads an image, which is its text's address
+#   BOOT     an emulator's arguments, with IMAGE where the image's name
+#            goes (a step's check recipe puts it there with sed, and
+#            mkkernel sets its own BOOT with the name in it); QEMU is
+#            the emulator, and QEMUSMP what more it takes
 #   CINC     the C library's headers
-#   PI2      1 for the Pi 2 (mini-mk O=5 PI2=1): the Pi 1's files, with
-#            what differs (docs/plans/plan_pi2.md); nothing otherwise
+#   PI2      1 for the Pi 2 (mini-mk O=5 PI2=1), which uses the Pi 1's
+#            files with what differs (docs/plans/plan_pi2.md); empty
+#            otherwise
 PI2=
 ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 P=`{if(~ $O 5) echo pi1/}
 LOAD=`{if(~ $O 5) echo 0x8000; if not if(~ $O 7) echo 0x80000}
-# (quoted: an = that mk would read as attributes)
+# (It is quoted, because mk would read its = as attributes.)
 BOOT=`{if(~ $O 5) echo '-M raspi1ap -device loader,file=IMAGE,addr=0x8000,cpu-num=0,force-raw=on'; if not if(~ $O 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel IMAGE'}
 QEMU=`{if(~ $O 5) echo qemu-system-arm; if not if(~ $O 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
 QEMUSMP=`{if(~ $O 7) echo '-smp 4'}

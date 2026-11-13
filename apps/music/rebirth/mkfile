@@ -1,7 +1,8 @@
 # apps/music/rebirth, built by ix's tools as a game is (games/mkgames):
-# mini-rebirth (its unit ReBirth, the program rebirth), with the
-# synthesizer and what is played live (audio, studio), its studio and
-# its voices (rebirth), lib_gui and the playground's Gui
+# mini-rebirth (its unit ReBirth, for the program rebirth). It is built
+# with the synthesizer and what is played live (audio, studio), with
+# its studio and its voices (rebirth), and with lib_gui and the
+# playground's Gui.
 TOP=../../..
 DIR=apps/music/rebirth
 GAMES=ReBirth

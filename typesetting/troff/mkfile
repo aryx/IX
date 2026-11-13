@@ -1,19 +1,17 @@
 # typesetting/troff as a library (mkfiles/mklib): the typesetter, for
-# mini-man; and mini-troff, its Main linked with it. Its units are in
-# folders (doc, roff, pic, ixdoc, latex), pic's grammar made by
-# mini-yacc beside the objects; it needs lib_graphics's Pdf_write, its
-# fonts' widths and names and its pictures' readers (PNG, JPEG, GIF),
-# lib_compression's Zlib
-# old: a program's mkfile, its units compiled here and mini-man linking
-# their objects, naming each and each of the folders
+# mini-man; and mini-troff, its Main linked with that library. Its units
+# are in folders (doc, roff, pic, ixdoc, latex), and pic's grammar is
+# made by mini-yacc beside the objects. It needs lib_graphics's
+# Pdf_write, its fonts' widths and names and its pictures' readers
+# (PNG, JPEG, GIF), and lib_compression's Zlib.
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=typesetting/troff
 DIRS=. doc roff pic ixdoc latex
 NEEDS=lib_compression lib_graphics
-# (each before the ones that name it)
+# (each unit comes before the ones that name it)
 UNITS=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
-# (mini-troff's Main, after the CLI it names)
+# (mini-troff's Main comes after the CLI it names)
 DEPMORE=Main
 <$TOP/mkfiles/mklib
 
@@ -21,7 +19,7 @@ LIBDIRS=lib_compression lib_graphics
 <$TOP/mkfiles/mklibs
 all:V: $D/mini-troff
 
-# pic's grammar, by mini-yacc: made beside the objects, and there
+# pic's grammar, made by mini-yacc beside the objects, where it is made
 # before the units that name it
 $D/Pic_parser.ml: pic/Pic_parser.mly
 	mkdir -p $D

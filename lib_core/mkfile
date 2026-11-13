@@ -1,13 +1,14 @@
-# The libraries every program of ix links, built by ix's tools: the
-# stdlib and ix's own library (mini-ml), mini-ml's runtime (mini-cc),
-# and the C library under it (libc/: by mini-cc and mini-asm, kept by
-# mini-ar).
+# The libraries that every program of ix links, built by ix's tools:
+# the stdlib and ix's own library (by mini-ml), mini-ml's runtime (by
+# mini-cc), and the C library under it (libc/, made by mini-cc and
+# mini-asm and kept by mini-ar).
 TOP=..
 <$TOP/mkfiles/mkconfig
 
 all:V: $STDOBJS $STDEND
 
-# a unit is in one of the directories: the rule whose source is there
+# a unit is in one of these directories, and the rule whose source is
+# there makes it
 $L/%.$O: core/%.ml
 	mkdir -p $L
 	$ML $STDI -o $target core/$stem.ml
@@ -33,12 +34,13 @@ $L/%.$O: commons/%.ml
 	mkdir -p $L
 	$ML $STDI -o $target commons/$stem.ml
 
-# (the system's Unix: mkconfig's UNIXDIR)
+# (the system's Unix, from mkconfig's UNIXDIR)
 $L/Unix.$O: $UNIXDIR/Unix.ml
 	mkdir -p $L
 	$ML $STDI -o $target $UNIXDIR/Unix.ml
 
-# (Source: mini-ml's threads' file, not commons/'s, which is OCaml's)
+# (Source is the file of mini-ml's threads, not commons/'s, which is
+# OCaml's)
 $L/Source.$O: concurrency/Source.ml
 	mkdir -p $L
 	$ML $STDI -o $target concurrency/Source.ml
@@ -46,37 +48,39 @@ $L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
 	mkdir -p $L
 	$ML $STDI -o $target $P9DIR/Sys_plan9.ml
 
-# each one an older compiler's remade (MLEXE: mkconfig)
+# each unit is made again when an older compiler made it (MLEXE:
+# mkconfig)
 $STDUNITS: $MLEXE
 
 # the units' order (mkfiles/mkdepend)
 INCLUDES=$STDI
 DEPOBJ=L
 DEPDIRS=concurrency $UNIXDIR $P9DIR $STDDIRS
-# (concurrency first: Source is its file, not commons's, which P9DIR is on
-# Linux; old: after it, so Source was not made after the Printf it names.)
-# (std_exit too: Pervasives' do_at_exit inlined. old: not, compiled
-# beside Pervasives)
+# (concurrency comes first, because Source is its file, not commons's,
+# which is P9DIR on Linux. With concurrency after it, Source would not
+# be made after the Printf it names.)
+# (std_exit is there too, because Pervasives' do_at_exit is inlined.)
 DEPUNITS=$STD $COMMONS std_exit
 <$TOP/mkfiles/mkdepend
 
 # mini-ml's runtime, on the C library
 ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
-# (goken reaches utf.h and os/posix/ through links: here utf's directory
-# is searched, and os/posix/ is its os/unix/ under that name)
+# (goken reaches utf.h and include/os/posix/ through symbolic links.
+# Here utf's directory is searched instead, and include/os/posix/'s
+# errno.h is a copy of goken's include/os/unix/errno.h.)
 CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -D$OS
-# OPTIMIZATION (the runtime by ssa/): mini-cc -O3, its back end with
-# registers (-simple -O -ssa, plan_cc_ssa.md), gc.c's scan as fast as it
-# was by hand in assembly (old: $CC $CINC, compat's for the runtime
-# too)
+# OPTIMIZATION (the runtime by ssa/): mini-cc -O3 uses its back end
+# with registers (-simple -O -ssa, plan_cc_ssa.md), which makes gc.c's
+# scan as fast as it was when written by hand in assembly
 $L/runtime.$O: $RTSRC
 	mkdir -p $L
 	$CC -O3 $CINC -o $target $TOP/languages/ml/runtime/runtime.c
 
-# The C library: goken's (libc/, with its LICENSE), the files a program
-# of mini-ml's links, in C and in assembly: those of every system, then
-# those of one (Linux's calls under Plan 9's names; Plan 9's own, where
-# a name is the kernel's call: svc_arm.s), then those of one machine.
+# The C library is goken's (libc/, with its LICENSE). Here are the files
+# that a program of mini-ml's links, in C and in assembly: those of
+# every system, then those of one system (Linux's calls under Plan 9's
+# names, or Plan 9's own, where a name is the kernel's call: svc_arm.s),
+# then those of one machine.
 LIBC_C=ix/fmt port/abort port/asin \
  port/atan port/atan2 port/atexit port/atol port/dirstat \
  port/execl port/exp port/fabs port/floor port/frexp port/lock \
@@ -90,11 +94,12 @@ LIBC_plan9=os/plan9/_exits os/plan9/access os/plan9/convD2M os/plan9/convM2D os/
 LIBC_linux5=ix/vlrt
 LIBC_linux7=port/getcallerpc
 LIBC_plan95=ix/vlrt syscall/os/plan9/zsyscall_plan9_arm
-# memmove and memset: each machine's assembly in the place of port's C,
-# as Plan 9's libc (its mkfile: an arch's file and port's of one name,
-# the arch's taken). The C one is kept, read beside it, and switched back
-# to by its names here, to compare (old: port/memmove port/memset, a
-# byte a turn: 49% of the Pi 4's boot under mini-qemu, plan_pi4.md)
+# memmove and memset: each machine's assembly takes the place of port's
+# C, as in Plan 9's libc, whose mkfile takes the arch's file when an
+# arch's file and port's have the same name. The C version is kept, to
+# be read beside it, and you can switch back to it by its names here, to
+# compare. port/memmove and port/memset copy a byte a turn, which took
+# 49% of the Pi 4's boot under mini-qemu (plan_pi4.md).
 LIBC_MEM5=arch/arm/memmove arch/arm/memset
 LIBC_MEM7=arch/arm64/memmove arch/arm64/memset
 LIBC_S5=$LIBC_MEM5 arch/arm/div arch/arm/getcallerpc arch/arm/rt0 arch/arm/vlop syscall/os/$OS/svc_arm
@@ -104,8 +109,7 @@ LIBC=`{if(~ $OS^$O linux5) echo $LIBC_C $LIBC_linux $LIBC_linux5 $LIBC_S5; if no
  if not if(~ $OS^$O plan95) echo $LIBC_C $LIBC_plan9 $LIBC_plan95 $LIBC_S5 ix/syscall6_plan9_arm}
 LIBCOBJS=${LIBC:%=$LC/%.$O}
 
-# (by mini-cc -O3, as the runtime: old: $CC $CINC, compat's, 5c -O0's
-# code)
+# (made by mini-cc -O3, as the runtime is)
 $LC/%.$O: libc/%.c
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
 	$CC -O3 $CINC -o $target libc/$stem.c
@@ -117,7 +121,8 @@ $L/libc.a: $LIBCOBJS
 	rm -f $target
 	$AR u $target $LIBCOBJS
 
-# the stdlib and ix's own library, a library too (mkconfig's STDOBJS)
+# the stdlib and ix's own library, made into a library too (mkconfig's
+# STDOBJS)
 $L/lib_core.a: $STDUNITS
 	rm -f $target
 	$AR u $target $STDUNITS

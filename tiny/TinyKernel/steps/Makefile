@@ -2,30 +2,27 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The steps before TinyKernel.ml: what ran on tiny-cpu and tiny-machine
-# before a kernel in ML did, kept as kernels/steps/ keeps m-ix's
-# kernel's, each built by the tiny tools as any program is built by its
-# toolchain:
+# before a kernel in ML did. They are kept as kernels/steps/ keeps the
+# steps of m-ix's kernel, and each is built by the tiny tools as any
+# program is built by its toolchain:
 #   hello.c   a C program on the bare CPU (tiny-cpu answers its calls);
 #   v0/       a page of kernel in assembly: traps, a timer, round robin;
-#   t6/       a kernel in C: spawn, a partition a process, a FAT on a
-#             disk, one kernel stack (TinyKernel.ml has no disk). Six of
-#             its programs are tiny-kernel's own (links to ../user/).
+#   t6/       a kernel in C: spawn, a partition for each process, a FAT
+#             on a disk, one kernel stack (TinyKernel.ml has its own
+#             file system, KFS.ml). Its nine programs are in t6/user/.
 # They share the C runtime, ../../runtime/c/ (tiny-cc's: start.s,
-# udivmod.s, libc.c, libc.h), whose system calls are tiny-cpu's and
-# the kernels'. Not counted in t-ix's lines (make loc).
-# (old: tiny/TinyKernel/steps/, with v6/, xv6's structure and names in C, 3,400
-# lines: a faithful twin, which mini-xv6 is in m-ix, kernels/xv6/;
-# removed on 2026-10-13, in git's history before)
+# udivmod.s, libc.c, libc.h), whose system calls are those of tiny-cpu
+# and of the kernels. The steps are not counted in t-ix's lines (make
+# loc).
 #
-#   make run          t6 on tiny-machine: its shell, on the console
-#   make run-v0       v0
-#   make run-hello    hello.c, compiled by tiny-cc, on tiny-cpu
+#   make run          runs t6 on tiny-machine, with its shell on the console
+#   make run-v0       runs v0
+#   make run-hello    runs hello.c, compiled by tiny-cc, on tiny-cpu
 #
-# The tools from the PATH (after `dune install`), or from ix's bin/. A
-# C program is compiled to its object by tiny-cc, then linked by
-# tiny-ld after the runtime: start.s first (the machine starts at
-# 0), udivmod.s, libc. (old: tiny-cc wrote a .s, assembled here; since
-# 7ea94bae it writes the object, and these rules failed)
+# The tools come from the PATH (after `dune install`), or from ix's
+# bin/. A C program is compiled to its object by tiny-cc, then linked by
+# tiny-ld after the runtime: start.s first (the machine starts at 0),
+# then udivmod.s and libc.
 
 export PATH := $(abspath ../../../bin):$(PATH)
 

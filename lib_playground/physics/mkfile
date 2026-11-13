@@ -1,6 +1,6 @@
 # lib_playground's physics, a library of its own (mkfiles/mklib):
-# bodies, their contacts and joints, a step of the world (apis/'s
-# Physics over it)
+# bodies, their contacts and joints, and a step of the world (apis/'s
+# Physics is built over it)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=lib_playground/physics

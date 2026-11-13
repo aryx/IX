@@ -1,5 +1,5 @@
-# lib_executable, a library of ix's tools (mkfiles/mklib): an
-# executable's symbol table and pc/line table read back
+# lib_executable, a library of ix's tools (mkfiles/mklib), which reads
+# back an executable's symbol table and pc/line table
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_executable

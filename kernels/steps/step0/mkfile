@@ -1,25 +1,26 @@
-# mini-xv6, step 0: the bare board by ix's tools, before any OCaml
-# (plan_kernel_mini_ml.md, steps 1, 2 and 9): the Pi 4 (arm64, O=7) or
-# the Pi 1 (arm, mini-mk O=5: pi1/'s assembly and expected lines). Two
-# images, without a header (-H0), their text where the board loads it
-# (-T):
+# mini-xv6, step 0: the bare board, built by ix's tools before any OCaml
+# (docs/plans/done/plan_kernel_mini_ml.md, steps 1, 2 and 9). It runs
+# on the Pi 4 (arm64, O=7) or the Pi 1 (arm, mini-mk O=5, which uses
+# pi1/'s assembly and expected lines). This mkfile makes two images, without a
+# header (-H0), with their text where the board loads it (-T):
 #   hello-s.img   a page of assembly (hello.s)
-#   hello-c.img   a C program (hello.c) by mini-cc: l.s starts it, over
-#                 goken's C library and shim.c in Linux's place
-#   mini-mk          the images, under _mk/7/kernels/steps/step0/
-#   mini-mk check    each booted under mini-qemu, and under QEMU if it
-#                    is there: its line
+#   hello-c.img   a C program (hello.c) compiled by mini-cc: l.s starts
+#                 it, on top of goken's C library, with shim.c in
+#                 Linux's place
+#   mini-mk          builds the images, under _mk/7/kernels/steps/step0/
+#   mini-mk check    boots each under mini-qemu, and under QEMU if it
+#                    is there, and checks its line
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step0
 IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
-# (the board's expected lines: pi1/expected-s on the Pi 1)
+# (the board's expected lines, such as pi1/expected-s on the Pi 1)
 EXPECTED=${P}expected
 
 all:V: $D/hello-s.img $D/hello-c.img
 
-# (the assembly is the board's; the C is for both)
+# (The assembly is the board's own, and the C is for both boards.)
 $D/hello.$O: ${P}hello.s
 	mkdir -p $D
 	$AS -o $target $prereq
@@ -38,7 +39,8 @@ $D/hello-s.img: $D/hello.$O
 $D/hello-c.img: $D/l.$O $D/shim.$O $D/helloc.$O $L/libc.a
 	$IMAGE -o $target $D/l.$O $D/shim.$O $D/helloc.$O $L/libc.a
 
-# a kernel does not stop: its line, then the emulator is ended
+# A kernel does not stop, so check reads its line, then ends the
+# emulator.
 check:V: all
 	for(k in s c){
 		boot=`{echo $BOOT | sed 's|IMAGE|'$D/hello-$k.img'|'}

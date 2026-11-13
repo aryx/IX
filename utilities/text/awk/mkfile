@@ -12,7 +12,7 @@ LIBOBJS=
 GEN=$B/utilities/text/awk/Parser.ml $B/utilities/text/awk/Lexer.ml
 <$TOP/mkfiles/mkprog
 
-# the units mini-yacc and mini-lex made, by their names
+# the units that mini-yacc and mini-lex made, each by its name
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL

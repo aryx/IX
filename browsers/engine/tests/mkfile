@@ -1,7 +1,6 @@
-# browsers/engine's boxes by ix's tools (mini-mk): Boxes with its start
-# and its link, with the libraries (mkfiles/mklibs: browsers/html, css
-# and engine; boxes.sh runs it)
-# old: their units compiled here
+# browsers/engine's boxes, built by ix's tools (mini-mk): Boxes with its
+# start and its link with the libraries (mkfiles/mklibs: browsers/html,
+# css and engine). boxes.sh runs it.
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/engine/tests

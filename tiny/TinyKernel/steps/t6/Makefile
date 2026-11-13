@@ -4,18 +4,20 @@
 # t6, a free kernel in C, a step before TinyKernel.ml
 # (docs/plans/done/plan_tiny_os.md):
 #
-#   make run          the kernel on tiny-machine, the disk fs.img: sh
-#   make check        t6tests, and a script through sh, on a fresh disk
+#   make run          runs the kernel on tiny-machine, with the disk
+#                     fs.img, and sh
+#   make check        runs t6tests, and a script through sh, on a fresh disk
 #
-# The kernel: entry.s first (the machine starts at 0), then the C. The
-# programs are tiny-ld's images (linked at 0: t6 runs each at the
-# start of its partition), start.s first, with libc and
-# sys.s; the disk is a FAT (tiny-mkfat -fat). The tools from the PATH
+# The kernel is entry.s first (the machine starts at 0), then the C. The
+# programs are tiny-ld's images (linked at 0, because t6 runs each one
+# at the start of its partition), with start.s first, then libc and
+# sys.s. The disk is a FAT (tiny-mkfat). The tools come from the PATH
 # (after `dune install`), or from ix's bin/.
 #
-# What is built goes to _make/ and nowhere else (as dune's _build and
-# mini-mk's _mk): the kernel's assembly, its objects and kernel.img, user/*.s, bin/
-# the programs, fs.img the disk; make clean removes it.
+# What is built goes to _make/ and nowhere else (as with dune's _build
+# and mini-mk's _mk): the kernel's objects and kernel.img, user/*.o,
+# bin/ with the programs, and fs.img, the disk. make clean
+# removes it.
 
 export PATH := $(abspath ../../../../bin):$(PATH)
 
@@ -37,8 +39,8 @@ $(O)/%.o: %.c t6.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-# an object of assembly: of a .s here, or of the C runtime's (tiny-cc
-# writes the C's objects; old: their .s, assembled by a rule here)
+# An object of assembly, from a .s here or from the C runtime's (tiny-cc
+# writes the objects of the C files itself).
 $(O)/%.o: %.s
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
@@ -68,7 +70,8 @@ $(O)/fs.img: $(addprefix $(O)/bin/,$(UPROGS))
 run: $(O)/kernel.img $(O)/fs.img
 	$(MACHINE) -d $(O)/fs.img $(O)/kernel.img
 
-# the output of both, on fresh disks, against check.expected
+# The output of both, each run on a fresh disk, is compared with
+# check.expected.
 check: $(O)/kernel.img $(O)/fs.img
 	cp $(O)/fs.img $(O)/check.img
 	echo t6tests | timeout 120 $(MACHINE) -d $(O)/check.img $(O)/kernel.img > $(O)/check.out

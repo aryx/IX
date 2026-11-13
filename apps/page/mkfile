@@ -1,7 +1,8 @@
 # apps/page, built by ix's tools as a game is (games/mkgames):
-# mini-page (its unit Pageview, the program pageview), with a PDF file
-# read and drawn and the pictures' readers (pdf: lib_graphics/pdf and
-# fonts, Jpeg and Png, Zlib and Huffman)
+# mini-page (its unit Pageview, for the program pageview). It is built
+# with what reads and draws a PDF file, and with the pictures' readers
+# (pdf, which is lib_graphics/pdf and fonts, Jpeg and Png, Zlib and
+# Huffman).
 TOP=../..
 DIR=apps/page
 GAMES=Pageview

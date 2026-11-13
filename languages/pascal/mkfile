@@ -1,6 +1,7 @@
-# mini-pascal, built by ix's tools: the P-machine talks (lib_terminal's
-# Talk, with what it stands on), and draws its numbers from Lehmer
-# (lib_playground/random); their units from their directories
+# mini-pascal, built by ix's tools. The P-machine talks (lib_terminal's
+# Talk, with what it stands on) and draws its numbers from Lehmer
+# (lib_playground/random); their units are taken from their
+# directories.
 TOP=../..
 DIR=languages/pascal
 PROG=mini-pascal

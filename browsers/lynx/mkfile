@@ -1,6 +1,5 @@
 # mini-lynx, built by ix's tools: the program, linked with the libraries
 # (mkfiles/mklibs: the network and browsers/html)
-# old: browsers/html's units compiled here
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/lynx

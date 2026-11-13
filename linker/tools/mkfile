@@ -1,7 +1,8 @@
 # the linker's tools, built by ix's tools: mini-ar, the librarian, and
-# mini-nm, the names (principia's linkers/misc/: ar.c and nm.c side by
-# side); each one file, over the linker's units for objects and
-# libraries, mini-nm over lib_executable too for an a.out's tables
+# mini-nm, which prints the names (principia's linkers/misc/ has ar.c
+# and nm.c side by side). Each is one file, over the linker's units for
+# objects and libraries; mini-nm is over lib_executable too, for an
+# a.out's tables.
 TOP=../..
 DIR=linker/tools
 LIBDIRS=lib_executable

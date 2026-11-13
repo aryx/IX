@@ -1,8 +1,9 @@
 # mini-turbopascal in a terminal, built by ix's tools: the IDE
-# (../editor), a session with no screen (../Keys) and its screen as a
-# picture (lib_terminal/hosts: Cells, Picture, with lib_graphics's font), over mini-pascal
-# (languages/pascal) and lib_terminal, with its Tty_unix; their units
-# from their directories, by their names
+# (../editor), a session with no screen (../Keys), and its screen as a
+# picture (lib_terminal/hosts: Cells, Picture, with lib_graphics's
+# font), over mini-pascal (languages/pascal) and lib_terminal with its
+# Tty_unix. Their units are taken from their directories, each by its
+# name.
 TOP=../../..
 DIR=editors/turbopascal/tty
 PROG=mini-turbopascal-tty
@@ -19,7 +20,7 @@ LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# the others' units, by their names
+# the other directories' units, each by its name
 $D/Lehmer.$O: $R/Lehmer.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $R/Lehmer.ml

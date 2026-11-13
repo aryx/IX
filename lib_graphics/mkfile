@@ -1,7 +1,8 @@
 # lib_graphics, a library of ix's tools (mkfiles/mklib): its folders'
-# units (pictures and their pixels, shapes made pixels, the fonts, PDF
-# files, SVG, films) and, here, the draw device's client (Display, Draw, Font,
-# Mouse, Keyboard: Plan 9's libdraw)
+# units (pictures and their pixels, shapes turned into pixels, the
+# fonts, PDF files, SVG, films) and, in this directory, the draw
+# device's client (Display, Draw, Font, Mouse, Keyboard, after Plan 9's
+# libdraw)
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_graphics

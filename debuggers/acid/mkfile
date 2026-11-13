@@ -1,5 +1,6 @@
 # mini-acid, built by ix's tools: its lexer by mini-lex, its grammar by
-# mini-yacc; Ptrace linux/mini-ml/'s, which has none (dune's is linux/'s)
+# mini-yacc. Ptrace is linux/mini-ml/'s, which has no ptrace (dune's is
+# linux/'s).
 TOP=../..
 DIR=debuggers/acid
 PROG=mini-acid
@@ -8,13 +9,13 @@ LOCAL=`{ls *.ml *.mli *.mly *.mll linux/mini-ml/*.ml}
 LIBI=
 LIBUNITS=
 LIBOBJS=
-# (the program's tables read)
+# (to read the program's tables)
 LIBDIRS=lib_executable
 <$TOP/mkfiles/mkconfig
 GEN=$B/debuggers/acid/Parser.ml $B/debuggers/acid/Lexer.ml
 <$TOP/mkfiles/mkprog
 
-# the units mini-yacc and mini-lex made, by their names
+# the units that mini-yacc and mini-lex made, each by its name
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL

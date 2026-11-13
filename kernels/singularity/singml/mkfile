@@ -1,5 +1,6 @@
-# mini-singml, built by ix's tools: over mini-ml's parser, whose objects
-# are languages/ml's (mini-mk there first)
+# This mkfile builds mini-singml with ix's tools. It is built on top of
+# mini-ml's parser, whose objects languages/ml makes (run mini-mk there
+# first).
 TOP=../../..
 DIR=kernels/singularity/singml
 PROG=mini-singml

@@ -1,6 +1,7 @@
 # mini-squeak for mini-9pi (mini-mk O=5 OS=plan9): Squeak in a window
-# of mini-rio's. With lib_graphics's units, compiled here, and
-# Smalltalk's (the directory above: mini-mk O=5 OS=plan9 there first).
+# of mini-rio's. It is built with lib_graphics's units, compiled here,
+# and with Smalltalk's, from the directory above (run mini-mk O=5
+# OS=plan9 there first).
 TOP=../../../..
 <$TOP/mkfiles/mkconfig
 D=$B/languages/smalltalk/hosts/draw

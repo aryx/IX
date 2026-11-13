@@ -1,21 +1,24 @@
-# mini-xv6, step 1, by ix's tools, on the Pi 4 or (mini-mk O=5) the
-# Pi 1 (plan_kernel_mini_ml.md, steps 3 and 9): the same Main.ml as the Makefile's (the Pi 1's, by
-# ocaml-light and gcc), compiled by mini-ml, on mini-ml's runtime (by
-# mini-cc, with the board's heap), the whole stdlib, goken's C library,
-# and step 0's start and shim in Linux's place; linked by mini-ld as an
-# image without a header.
-#   mini-mk          _mk/7/kernels/steps/step1/kernel8.img
-#   mini-mk check    booted under mini-qemu, and under QEMU if it is
-#                    there: expected-pi4, the Makefile's expected lines
-#                    but the sum, which the Pi 1's 31 bits wrap (on the
-#                    Pi 1: expected itself)
+# mini-xv6, step 1, built by ix's tools, on the Pi 4 or (mini-mk O=5)
+# the Pi 1 (docs/plans/done/plan_kernel_mini_ml.md, steps 3 and 9). It
+# is the same Main.ml as the Makefile's (the Pi 1's, built by
+# ocaml-light and gcc). mini-ml compiles it, and it runs on mini-ml's
+# runtime (compiled by mini-cc, with the board's heap), the whole
+# stdlib, goken's C library, and step 0's start and shim in Linux's
+# place. mini-ld links it as an image without a header.
+#   mini-mk          builds _mk/7/kernels/steps/step1/kernel8.img
+#   mini-mk check    boots it under mini-qemu, and under QEMU if it is
+#                    there, and compares with expected-pi4: the
+#                    Makefile's expected lines except the sum, which the
+#                    Pi 1's 31 bits wrap (on the Pi 1, it compares with
+#                    expected itself)
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step1
 EXPECTED=`{if(~ $O 5) echo expected; if not if(~ $O 7) echo expected-pi4}
-# the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
-# (quoted: after a variable's =, mk reads a word before another = as attributes)
+# The heap has two halves of 4M words (32 MB each), and the value stack
+# has 1 MB. The words are quoted because, after a variable's =, mk reads
+# a word before another = as attributes.
 HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 
 all:V: $D/kernel8.img
@@ -35,10 +38,11 @@ $D/l.$O: ../step0/${P}l.s
 $D/shim.$O: ../step0/shim.c
 	mkdir -p $D
 	$CC $CINC -o $target ../step0/shim.c
-# memmove and memset: port's C, a byte at a time, not libc's arm64
-# assembly (9front's), whose pairs of words fault at an address not
-# aligned with the MMU off, as here (QEMU's alignment fault; mini-qemu
-# does not check; old: libc's, since 7001c4be no boot under QEMU)
+# memmove and memset come from port's C, a byte at a time, and not from
+# libc's arm64 assembly (9front's). That assembly moves pairs of words,
+# which fault at an address that is not aligned when the MMU is off, as
+# it is here (QEMU raises the alignment fault; mini-qemu does not
+# check). With libc's, the kernel does not boot under QEMU.
 $D/memmove.$O: $TOP/lib_core/libc/port/memmove.c
 	mkdir -p $D
 	$CC $CINC -o $target $prereq

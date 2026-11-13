@@ -1,9 +1,7 @@
 # mini-git, mini-diff and mini-merge3, built by ix's tools: one set of
-# units, three mains; SHA-1 and zlib from the libraries (mkfiles/mklibs:
-# lib_crypto, lib_compression); the units are in folders (objects, repo,
-# diff, wire, commands)
-# old: Sha1 and Zlib compiled here, by their names in the libraries'
-# directories
+# units with three mains. SHA-1 and zlib come from the libraries
+# (mkfiles/mklibs: lib_crypto, lib_compression). The units are in
+# folders (objects, repo, diff, wire, commands).
 TOP=..
 DIR=version_control
 PROG=mini-git
@@ -16,16 +14,16 @@ LIBI=-I objects -I repo -I diff -I wire -I commands
 LIBDIRS=lib_crypto lib_compression
 LIBUNITS=
 LIBOBJS=
-# (the two other programs' mains, below, after the units they name)
+# (the two other programs' mains, below, come after the units they
+# name)
 DEPMORE=Diffmain Merge3main
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# each folder's units, a rule each, its source the prerequisite (one %
-# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
-# so that .depend orders each: repo objects diff commands wire
-# old: the folders' units said whole, compiled by one recipe, each found
-#   by its name (*/)
+# each folder's units, with a rule for each folder whose prerequisite is
+# the source (mk refuses a second % rule for every unit beside
+# mkprog's). Each unit gets its own recipe, so that .depend orders each
+# one. The folders: repo objects diff commands wire
 $D/%.$O: repo/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target repo/$stem.ml
@@ -42,7 +40,8 @@ $D/%.$O: wire/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target wire/$stem.ml
 
-# the two other programs: the same units, each its main and its start
+# the two other programs, which have the same units, each with its own
+# main and its own start
 all:V: $D/mini-diff $D/mini-merge3
 VCSOBJS=${VCS:%=$D/%.$O}
 $D/start_diff.$O: mkfile $TOP/mkfiles/mkconfig

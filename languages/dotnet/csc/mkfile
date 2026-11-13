@@ -1,8 +1,8 @@
 # mini-csc, built by ix's tools: its lexer by mini-lex, and the units of
 # languages/dotnet it stands on (the library's description, the
-# writer), by their names. (Csc_ast first: a unit of here compiled
-# first, so that tests/depend_edges.sh looks for CLI here before in
-# .., which has mini-dotnet's)
+# writer), by their names. (Csc_ast comes first, so that a unit of this
+# directory is compiled first and tests/depend_edges.sh looks for CLI
+# here before it looks in .., which has mini-dotnet's.)
 TOP=../../..
 DIR=languages/dotnet/csc
 PROG=mini-csc

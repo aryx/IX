@@ -1,5 +1,6 @@
 # browsers/engine as a library (mkfiles/mklib): a page's boxes, their
-# shapes, and a page read (layout, display, page); tests/ apart
+# shapes, and the reading of a page (layout, display, page). tests/ is
+# built apart.
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=browsers/engine

@@ -1,6 +1,6 @@
 # lib_graphics's programs, for mini-9pi (mini-mk O=5 OS=plan9): the
-# library's units, compiled here, then each program with its start and
-# its link
+# library's units are compiled here, then each program with its start
+# and its link
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_graphics/tests

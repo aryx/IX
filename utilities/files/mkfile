@@ -1,5 +1,5 @@
-# utilities/files, built by ix's tools: each program one file, with its
-# start and its link (for Plan 9: mini-mk O=5 OS=plan9)
+# utilities/files, built by ix's tools: each program is one file, built
+# with its start and its link (for Plan 9, run mini-mk O=5 OS=plan9)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/files

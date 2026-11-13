@@ -1,5 +1,5 @@
 # mini-usbd, built by ix's tools (for Plan 9: mini-mk O=5 OS=plan9), with
-# ../../lib_usb's units (the kernel's too)
+# ../../lib_usb's units, which the kernel uses too
 TOP=../../../../..
 <$TOP/mkfiles/mkconfig
 D=$B/kernels/9pi/buses/user/usbd

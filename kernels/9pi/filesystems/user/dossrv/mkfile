@@ -21,7 +21,7 @@ $D/P9_server.$O: ../../../../../lib_networking/9p/P9_server.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9_server.ml
 
-# (the kernel's too: Kdos)
+# (Fat is the kernel's too, in Kdos.)
 $D/Fat.$O: ../../lib_fat/Fat.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target ../../lib_fat/Fat.ml

@@ -1,10 +1,11 @@
-# make self-quick's programs (tests/self.rc -q), each built and linked
-# on the card as on Linux, as t-ix's self-quick links ping: one in C
-# over lib_core's C library, one in OCaml started with Pervasives
-# alone, not all of lib_core.a (6 minutes on the card: mkfiles/mkprog
-# links it), their objects what self-quick makes of lib_core
-#   hello-c    hello.c, by mini-cc
-#   hello-ml   Hello.ml, by mini-ml
+# The programs of make self-quick (tests/self.rc -q). Each is built and
+# linked on the card as on Linux, as t-ix's self-quick links ping. One
+# is in C, over lib_core's C library. The other is in OCaml, started
+# with Pervasives alone rather than all of lib_core.a (which
+# mkfiles/mkprog links, and which takes 6 minutes on the card). They
+# are linked with the objects that self-quick makes of lib_core.
+#   hello-c    hello.c, compiled by mini-cc
+#   hello-ml   Hello.ml, compiled by mini-ml
 TOP=../../../..
 <$TOP/mkfiles/mkconfig
 D=$B/kernels/9pi/tests/self
@@ -14,8 +15,9 @@ CINC=-I$LC/include -I$LC/include/utf -I$LC -I$LC/include/arch/arm -Darm -D$OS
 
 all:V: $D/hello-c $D/hello-ml
 
-# (the C object hello-c.5, not hello.5: Hello.ml's Hello.5 is the same
-# file where case does not count, macOS's, and took its place)
+# (The C object is hello-c.5, not hello.5, because where case does not
+# count, as on macOS, Hello.ml's Hello.5 is the same file and took its
+# place.)
 $D/hello-c.$O: hello.c
 	$CC $CINC -o $target hello.c
 $D/hello-c: $D/hello-c.$O $L/libc.a

@@ -1,6 +1,6 @@
 # profilers/misc, built by ix's tools (for mini-9pi: mini-mk O=5
-# OS=plan9): mini-prof with machine's units (the instructions decoded
-# and printed: -a), and mini-stats with lib_graphics's units
+# OS=plan9): mini-prof, with machine's units (which decode and print
+# the instructions, for -a), and mini-stats, with lib_graphics's units
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/profilers/misc
@@ -21,8 +21,8 @@ $D/%.$O: $G/%.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $G/$stem.ml
 
-# machine's units: said whole (a second rule with %, mk refuses), each
-# found by its name in machine's folders
+# machine's units, named in full (mk refuses a second rule with %),
+# each found by its name in machine's folders
 $MACHOBJS: $MLOCAL
 	mkdir -p $D
 	for(t in $target) $ML $INCLUDES -o $t $M/*/^`{basename $t .$O}^.ml || exit 1

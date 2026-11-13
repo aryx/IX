@@ -4,7 +4,8 @@
  * returns its definitions: a function's tree, or a global's data. Read
  * Tree.mli first. *)
 
-(* The file's tokens to read; at_end once all are read. *)
+(* start gives the file's tokens to read; at_end is true once all of them
+ * are read. *)
 val start : Lexer.located list -> unit
 val at_end : unit -> bool
 val last_loc : unit -> Lexer.loc option   (* None before any token *)

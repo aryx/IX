@@ -1,5 +1,6 @@
-(* TinyOffice's text box: its data, how it is laid out in its box, how
- * it is edited as it is shown (WYSIWYG), and its view.
+(* TinyOffice's text box. This module handles its data, how it is laid
+ * out in its box, how it is edited as it is shown (WYSIWYG), and its
+ * view.
  *
  * A text box's data is its text with a mark where the style changes:
  *
@@ -42,11 +43,11 @@ val lay_out : int -> string -> string -> laid
 (* the index of the character nearest (x, y) *)
 val index_at : laid -> string -> string -> int -> int -> int
 
-(* from the first character to just after the last *)
+(* The selection, from its first character to just after its last. *)
 val selection : Model.doc -> int * int
 
-(* Nothing is selected after it; what is typed next takes the style of
- * the character before. *)
+(* [go_to d i] moves the cursor to [i]. Afterwards nothing is selected,
+ * and what is typed next takes the style of the character before. *)
 val go_to : Model.doc -> int -> unit
 
 (* replaces the selection *)
@@ -70,8 +71,9 @@ val edit : Model.office -> int -> int -> int -> bool -> unit
 val write_key :
   Model.office -> Model.doc -> TinyLibPlayground.key -> unit
 
-(* [text_view box txt sty editing] draws the lines that fit, a word per
- * run of one style, and the selection and cursor while editing. *)
+(* [text_view box txt sty editing] draws the lines that fit, with one
+ * word for each run of a single style. While editing, it also draws the
+ * selection and the cursor. *)
 val text_view :
   Model.obj -> string -> string -> Model.doc option ->
   TinyLibPlayground.shape list

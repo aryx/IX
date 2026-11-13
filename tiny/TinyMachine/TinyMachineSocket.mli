@@ -1,4 +1,4 @@
-(* tiny-machine's way out to other programs (plan_tiny_network.md, "On
+(* This is tiny-machine's way out to other programs (plan_tiny_network.md, "On
  * Linux"). This program holds one connection of the host's and moves
  * its bytes through its standard input and output. It is a separate
  * program, as TinyMachineWindow is for the screen: tiny-machine has no
@@ -40,8 +40,8 @@
  * it (address translation), one connection at a time, and what Plan
  * 9's machines needed a gateway for when the world did not speak IL.
  *
- * mini-qemu has the same way out inside itself (raspberry/'s Usernet,
- * like QEMU's slirp: it answers the guest's TCP and opens a socket of
+ * mini-qemu has the same way out inside itself (Usernet in raspberry/,
+ * which is like QEMU's slirp: it answers the guest's TCP and opens a socket of
  * the host's for each of its connections). Here it is a separate
  * program, so that tiny-machine links no socket code.
  *

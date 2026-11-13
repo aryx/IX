@@ -10,14 +10,15 @@ type loc =
   | Glob of Machine.sym * int
   | Static of Machine.sym
 type known = Machine.sym * int        (* a function's code, its arity *)
-(* Ext is a primitive, its name and arity. *)
+(* Ext is a primitive, with its name and arity. *)
 type binding = Loc of loc * known option | Ext of string * int
 
 (* The values of the toplevel names; their types are in Types. *)
 val globals : (string, binding) Hashtbl.t
 
-(* [start_fun nslots ntries]: the frame slots and handlers seen so far;
- * [finish_fun f nparams]. *)
+(* [start_fun nslots ntries] starts a function's code, given the frame
+ * slots and the handlers seen so far; [finish_fun f nparams] turns that
+ * code into f's assembly. *)
 val start_fun : int -> int -> unit
 val finish_fun : Machine.sym -> int -> unit
 val emit : Machine.ir -> unit

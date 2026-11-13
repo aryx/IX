@@ -1,13 +1,13 @@
-(* The small programs of a system, cat, ls, wc and the others, in one
- * file and one executable.
+(* The small programs of a system (cat, ls, wc and the others) are
+ * written here in one file and built into one executable.
  *
  * {b One executable, many names.} tiny-utils wc f runs wc, and so does
  * a link named wc (as in BusyBox, Bruce Perens, 1995). Each utility is
  * a row of a table: its name, its usage, and a function from its
  * arguments to its exit status.
  *
- * {b Most utilities are filters}: a function over the bytes of the
- * input, which arrive in pieces. cat prints each piece. wc counts, and
+ * {b Most utilities are filters}: each is a function over the bytes of
+ * the input, which arrive in pieces. cat prints each piece. wc counts, and
  * carries over from one piece to the next whether it is inside a word.
  * xd carries over the bytes of a line it has not finished. tee also
  * writes each piece to its files. Opening the named files (or reading
@@ -30,25 +30,26 @@
  * each program is what it has in common with the others, and that can
  * be written once.
  *
- * The originals are in principia's utilities/, Plan 9's C (files/cat.c,
- * misc/wc.c, byte/xd.c, text/grep/...), which we know through m-ix's
- * twins. ln has neither an original nor a twin: Plan 9 has no second
- * name for a file, while tiny-kernel's file tree has hard links (ls -l
- * counts them). So ln is ours, three lines over TinyLibSystem.link. ps
- * is ours too: Plan 9's ps reads the status file in each process's
- * directory of /proc, while tiny-kernel gives a single file, /dev/ps,
- * with a line per process, which ps puts in columns.
+ * The originals are in principia's utilities/, written in Plan 9's C
+ * (files/cat.c, misc/wc.c, byte/xd.c, text/grep/...), and we know them
+ * through m-ix's twins. ln has neither an original nor a twin: Plan 9
+ * has no second name for a file, while tiny-kernel's file tree has hard
+ * links (ls -l counts them). So ln is ours, three lines over
+ * TinyLibSystem.link. ps is ours too: Plan 9's ps reads the status file
+ * in each process's directory of /proc, while tiny-kernel gives a
+ * single file, /dev/ps, with a line per process, which ps puts in
+ * columns.
  *
  * kept:
  * We keep the twins' output where it costs nothing: wc's columns, xd's
  * lines, du's kilobytes, cmp's messages, ls's sorted names.
  *
  * dropped:
- * Most options (each utility keeps the one or two that carry its idea),
- * UTF-8 (wc counts bytes), floating point in seq, most of ls -l
- * (tiny-kernel has no owners, modes or times, so it shows only a file's
- * kind, links and size), and the wording of each program's errors:
- * here they are all "tool: file: reason". The plan, and what was found
+ * It drops most options (each utility keeps the one or two that carry
+ * its idea), UTF-8 (wc counts bytes), floating point in seq, most of
+ * ls -l (tiny-kernel has no owners, modes or times, so it shows only a
+ * file's kind, links and size), and the wording of each program's
+ * errors, which here are all "tool: file: reason". The plan, and what was found
  * along the way, is in docs/plans/done/plan_tiny_utilities.md.
  *
  * twist:
@@ -56,14 +57,14 @@
  * walks the tree its own way (Plan 9's du.c and rm.c each have their
  * own recursion). [fold caps path f] calls f with the path, whether it
  * is a directory, its size, and a function that, when called, folds the
- * entries in name order. When f calls that function decides the
- * order:
+ * entries in name order. The moment when f calls that function decides
+ * the order:
  *
  *     walk     prints the path, then calls it          pre-order
  *     du       calls it, sums its results with the     post-order
  *              path's own size, then prints the sum
  *     rm -r    calls it, then removes the path         post-order
- *     ls       does not call it: one level only
+ *     ls       does not call it, so it lists one level only
  *
  * context:
  * The same file runs on two systems. Like TinyShell.ml, it uses only

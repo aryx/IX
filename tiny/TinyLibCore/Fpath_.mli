@@ -1,11 +1,13 @@
-(* Fpath_, lib_core/commons/'s subset (see Stdlib.mli): Fpath's functions
- * under shorter names, a conversion at each door three characters:
+(* Fpath_: a subset of lib_core/commons/'s module (see Stdlib.mli). It
+ * gives Fpath's functions shorter names, so that each conversion
+ * between a string and a path takes three characters:
  *
  *     open Fpath_.Operators
  *     let obj = dir / "main.o" in ... print_string !!obj ...
  *
- * Operators is a module in this one, as lib_core's: tiny-ml has modules
- * of one level, their names Fpath_.Operators.x, open A.M opening them *)
+ * Operators is a module inside this one, as in lib_core. tiny-ml allows
+ * only one level of such modules: their values are named
+ * Fpath_.Operators.x, and open A.M opens them. *)
 
 val of_strings : string list -> Fpath.t list
 val to_strings : Fpath.t list -> string list

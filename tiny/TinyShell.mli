@@ -39,7 +39,7 @@
  * when compatibility is dropped.
  *
  * kept:
- * From rc, its core, and why it is the core:
+ * It keeps rc's core, and each item below says why it is the core:
  * - {b Every value is a list of strings.} $x is never split again, so
  *   there is no need to quote $x, no "$@", and $* is exactly the
  *   arguments as they were given. The only quote is '...' (with ''
@@ -64,25 +64,27 @@
  *   of a pipe or for a subshell walks its subtree and then exits, or,
  *   when the subtree is a program, execs it in place; the last stage
  *   of a pipe runs in the shell itself.
- * - {b $status is a string}: "" for success, otherwise the exit code
- *   or the signal; for a pipe it is rc's: a|b|c is (a|b)|c, and a|b
- *   counts as the exit code a child running it would have, its first
- *   number, so the statuses 1, 2 and 3 give 1|3.
+ * - {b $status is a string}: it is "" for success, and otherwise the
+ *   exit code or the signal. For a pipe it is the same as in rc: a|b|c
+ *   is read as (a|b)|c, and the status of a|b counts as the exit code
+ *   that a child running it would have, which is its first number. So
+ *   the statuses 1, 2 and 3 give 1|3.
  *
  * A pipe stage that is a single program costs one process: the child
  * forked for it execs the program in place, as it has nothing left to
  * do, instead of forking it and waiting for it. The shell forks every
  * stage itself, from the list of stages, rather than a child for the
- * pipe on the left of the last |. So a|b|c|d is four processes, where
- * it was seven, and tiny-kernel, which has eight, runs six stages
- * under sh and rc. Past that, fork fails and the shell says "try
- * again", as rc does.
+ * pipe on the left of the last |. So a|b|c|d is four processes rather
+ * than seven. tiny-kernel has room for eight processes, so with sh and
+ * rc running it can run six stages. Past that, fork fails and the shell
+ * says "try again", as rc does.
  *
  * dropped:
- * Each a few lines in mini-rc, and none needed by the recipes in xix's
- * mkfiles (the test for this shell): switch and if not, here documents,
- * joining a list into one word, subscripts, `sep{} and <{}, `{} inside
- * a word, eval and ., all builtins except cd, exit, shift, wait and ~,
+ * It drops the following features. Each takes a few lines in mini-rc,
+ * and none is needed by the recipes in xix's mkfiles, which are the
+ * test for this shell: switch and if not, here documents, joining a
+ * list into one word, subscripts, `sep{} and <{}, `{} inside a word,
+ * eval and ., all builtins except cd, exit, shift, wait and ~,
  * functions in the environment, a $path separate from $PATH, -x,
  * rcmain, signals other than an interrupt at the prompt, and $prompt.
  *
@@ -104,15 +106,16 @@
  *
  * exercises:
  * What is dropped above makes good exercises, roughly in that order.
- * One more, which rc does not have: > as a transaction, the output
- * written to a new file beside the target and renamed over it only when
- * the command succeeds (TSys.rename, as tiny-vcs writes its head). Then
- * sort f > f sorts f instead of emptying it (> truncates f before sort
- * reads it: sponge exists for that), and a command that fails leaves
- * the old file, not half a new one that looks whole. The price: the
- * output appears only at the end (no tail -f on a log), a hard link to
- * the file keeps the old one, and devices, >> and >[2] must be left as
- * they are. Two more, in the direction Tcl and es took. First, a block
+ * Here is one more, which rc does not have: make > a transaction. The
+ * output is written to a new file beside the target and renamed over it
+ * only when the command succeeds (TSys.rename, as tiny-vcs writes its
+ * head). Then sort f > f sorts f instead of emptying it (> truncates f
+ * before sort reads it, which is why sponge exists), and a command that
+ * fails leaves the old file, not half a new one that looks whole. The
+ * price is that the output appears only at the end (no tail -f on a
+ * log), that a hard link to the file keeps the old one, and that
+ * devices, >> and >[2] must be left as they are. There are two more, in
+ * the direction that Tcl and es took. First, a block
  * as a value (its text), with if, while, for and fn as builtins over
  * blocks; then a function is just a variable (fn#f), and eval, whatis,
  * switch and functions in the environment come almost for free.
@@ -148,8 +151,8 @@
  *    (CACM, 1974): fork and exec as two separate calls, between which
  *    the child sets up its own file descriptors, and the shell as an
  *    ordinary program
- *  - principia's shells/rc, rc's C, which mini-rc follows and this file
- *    knows only through mini-rc
+ *  - principia's shells/rc, the C code of rc, which mini-rc follows and
+ *    this file knows only through mini-rc
  *)
 
 (* What running a command needs. The program also needs a terminal
@@ -162,7 +165,7 @@ type caps =
  * command line around. *)
 val source : < caps; .. > -> string -> unit
 
-(* The program. -h prints the language by example, -debug the tree of
- * each command. *)
+(* The program. -h prints the language by example, and -debug prints
+ * the tree of each command. *)
 val main :
   < caps; Cap.stdin; Cap.signal; Cap.env; .. > -> string array -> Exit.t

@@ -7,12 +7,15 @@ type label = int                      (* a place in a function's code *)
 type ir =
   | Imm of int64
   | Place of Tree.place          (* a variable's address *)
-  | Load of Types.ty             (* the address on top by its value *)
-  | Store of Types.ty            (* a value and an address by the value *)
+  | Load of Types.ty             (* replaces the address on top by its
+                                  * value *)
+  | Store of Types.ty            (* replaces a value and an address by
+                                  * the value *)
   | Op of Tree.binop * Types.ty
-      (* a b by a op b, in the operands' type; a relation gives 1 or 0 *)
+      (* replaces a b by a op b, in the operands' type; a relation gives
+       * 1 or 0 *)
   | Unop of Tree.unop * Types.ty
-  | Ext of Types.ty              (* the value on top to a type *)
+  | Ext of Types.ty              (* extends the value on top to a type *)
   | Dup
   | Drop
   | Call of Types.sym option * int * bool
@@ -22,7 +25,7 @@ type ir =
   | Jmp of label
   | Jz of label
   | Jnz of label
-  | Ret of bool                       (* with a value *)
+  | Ret of bool                       (* true with a value *)
 
 val show : ir -> string               (* as -ir prints it *)
 

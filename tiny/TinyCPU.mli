@@ -10,8 +10,9 @@
  * TinyMachine.ml runs the same CPU with devices and a kernel, where a
  * system call is a trap.
  *
- * The image is tiny-ld's: the objects one after the other, their
- * labels one namespace, the first at address 0, where the CPU starts.
+ * The image is made by tiny-ld: the objects are placed one after the
+ * other, their labels share one namespace, and the first object is at
+ * address 0, where the CPU starts.
  * The arguments are put where the main of a C program expects them
  * (the convention of tiny-cc, in runtime/c/start.s): the strings go
  * at the top of memory, and sp points to argc, followed by argv.
@@ -35,11 +36,12 @@
  * what the Linux kernel does.
  *
  * mini-5i follows Plan 9's 5i (principia's machine/5i), which is also
- * a debugger, with db's commands (:b, :c, :s, cmd.c), and a profiler
- * ($ip: every instruction counted by its address, then summed by
- * function, stats.c's iprofile). Here the two are programs of their
- * own: tiny-cpu writes the counts (-prof) for tiny-prof, and the
- * debugger is tiny-kernel's debug (TinyDebugger), not the emulator's.
+ * a debugger, with db's commands (:b, :c, :s, in cmd.c), and a
+ * profiler ($ip counts every instruction by its address, then sums the
+ * counts by function; see iprofile in stats.c). Here the two are
+ * programs of their own: tiny-cpu writes the counts (-prof) for
+ * tiny-prof, and the debugger is tiny-kernel's debug (TinyDebugger),
+ * not the emulator's.
  * mini-5i handles all the calls of a whole system, Linux's or Plan
  * 9's; tiny-cpu handles three, the ones start.s needs.
  *
@@ -50,8 +52,8 @@
  * sys traps to that kernel instead of to OCaml.
  *
  * dropped:
- * mini-5i's -t, -s and -y, which print each instruction as it runs,
- * the count and the speed, and each system call. A program on tiny-cpu
+ * mini-5i's -t, -s and -y are left out; they print each instruction as
+ * it runs, the count and the speed, and each system call. A program on tiny-cpu
  * is watched through its output, or run under tiny-kernel with its
  * debug. With three calls there are no files, processes or clock, so a
  * program that opens a file runs only on tiny-machine, under the
@@ -64,8 +66,8 @@ val interpret :
   < Cap.stdin; Cap.stdout; Cap.stderr; .. > ->
   TinyMachineCPU.profile option -> string -> string list -> int
 
-(* The program: its arguments (its name first; -h tells how), and how
- * it exits, which is the image's exit status. *)
+(* [main] is the program. It takes its arguments (its name first; -h
+ * tells how), and it exits with the image's exit status. *)
 val main :
   < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; .. > ->
   string array -> Exit.t

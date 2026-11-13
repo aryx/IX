@@ -37,7 +37,7 @@
  * is; tiny-ld -debug prints them). Every label is global to the
  * program: the link has a single name space, and the compilers write
  * their labels accordingly (tiny-cc's statics carry their file's name,
- * tiny-ml's labels their unit's).
+ * and tiny-ml's labels carry their unit's).
  *
  * twin:
  * mini-asm (assembler/) is Plan 9's 5a and 7a (principia's
@@ -75,12 +75,13 @@
  *   illegal words, as on a real machine in user mode.
  *
  * dropped:
- * Besides Plan 9's syntax and its two machines, mini-asm's -data, which
- * puts a file's bytes in the object under a name, and labels private to
- * a file (5a's name<>). Without -data, a file of bytes goes through the
- * text: TinyKernel's Makefile turns the font into .byte lines with od
- * and awk, a .s several times the font's size. Without private labels,
- * a hand-written .s must choose names that no other file uses.
+ * Besides Plan 9's syntax and its two machines, tiny-as drops mini-asm's
+ * -data, which puts a file's bytes in the object under a name, and the
+ * labels private to a file (5a's name<>). Without -data, a file of
+ * bytes goes through the text: TinyKernel's Makefile turns the font
+ * into .byte lines with od and awk, which makes a .s several times the
+ * font's size. Without private labels, a hand-written .s must choose
+ * names that no other file uses.
  *
  * twist:
  * {b The text is a view of the lines, both ways.} tiny-as -S prints the
@@ -146,20 +147,22 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
  * compilers' -S writes. TinyAssembler_test.sh checks the law:
  * assembling that text gives the same object as the original file.
  *
- * [parse text]: a line's labels, then its instruction or directive
- * (.word a, b gives one Word each). A ; starts a comment. Raises
- * TinyLibMachine.Error. *)
+ * [parse text] returns a line's labels, then its instruction or
+ * directive (.word a, b gives one Word for each). A ; starts a comment.
+ * Raises TinyLibMachine.Error. *)
 val parse : string -> TinyLibMachine.line list
 
-(* Lines numbered from 1, none for a blank line or a comment. An error
- * is reported with the file (Chan.origin) and the line. *)
+(* Each line of text is numbered from 1, with its lines; a blank line or
+ * a comment has none. An error is reported with the file (Chan.origin)
+ * and the line. *)
 val read : Chan.i -> (int * TinyLibMachine.line list) list
 
-(* [encode file lines]: file names the errors. *)
+(* [encode file lines]: errors are reported with the name file. *)
 val encode :
   string -> (int * TinyLibMachine.line list) list -> TinyLibMachine.line list
 
-(* Marshalled by TinyLibMachine.to_object, as tiny-ld reads it. *)
+(* The object is marshalled by TinyLibMachine.to_object, which is the
+ * form tiny-ld reads. *)
 val write : Chan.o -> TinyLibMachine.line list -> unit
 
 (* The arguments start with the program's name; -h tells how. *)

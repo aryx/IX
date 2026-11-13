@@ -41,7 +41,8 @@ val title : page -> string
 val base : page -> string
 val refresh : page -> string
 
-(* lines so far; [lines_between page a b] is lines a to b-1, the screen *)
+(* [count] is the number of lines so far; [lines_between page a b] gives
+ * lines a to b-1, which is what the screen shows *)
 val count : page -> int
 val lines_between : page -> int -> int -> Lines.line list
 

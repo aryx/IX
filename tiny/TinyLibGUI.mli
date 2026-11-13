@@ -5,8 +5,8 @@
  * program; this library keeps only the last one, Mvu. It draws with
  * the playground's shapes.
  *
- * The main idea: {b an interface is a value computed from the model,
- * together with the messages it sends back}. [view] builds the widgets
+ * The main idea is that {b an interface is a value computed from the
+ * model, together with the messages it sends back}. [view] builds the widgets
  * from the model, and each button carries the message it sends.
  * [update] is the only place where the model changes, in response to
  * a message. The program never draws, never asks where the mouse is,
@@ -20,8 +20,8 @@
  *                                   |                     ^
  *                       sizes, then positions     the mouse, the keys
  *
- * Here is a whole program: a number, and a button that adds one to it
- * (the first of the 7GUIs; examples/Gui7Counter.ml is the m-ix
+ * Here is a whole program. It shows a number, and a button that adds
+ * one to it (the first of the 7GUIs; examples/Gui7Counter.ml is the m-ix
  * version):
  *
  *     let counter = {
@@ -34,8 +34,8 @@
  * What the library takes care of:
  *
  * - {b Layout, in two passes.} Going up, each widget says what size it
- *   needs (a text its own size, a row its widest widget times the
- *   number of widgets, a column the sum of their heights). Going down,
+ *   needs (a text needs its own size, a row its widest widget times
+ *   the number of widgets, and a column the sum of their heights). Going down,
  *   each widget is given its position (a row shares its width among
  *   its widgets, a column gives each of them its full width). No
  *   widget has a coordinate in the program.
@@ -59,16 +59,19 @@
  *   whatever the model made of it.
  *
  * dropped:
- * From lib_gui, this drops: a caret that moves inside the text (it
- * stays at the end, where a key adds and a backspace removes), a
- * selection, Tab to go from one field to the next; sliders, check
- * boxes, lists; themes and looks (there is only one: grey, with two
- * edges lit); a grid, weights and spans (the widgets of
- * a row all have the same width, which gives a grid when rows are put
- * in a column); a window that changes size (TinyWindows does not tell
- * programs their size); time (a program here only changes when the
- * user does something); and the three other ways to write a program
- * (immediate, retained, model-view-controller).
+ * From lib_gui, this library drops:
+ * - a caret that moves inside the text (it stays at the end, where a
+ *   key adds and a backspace removes), a selection, and Tab to go from
+ *   one field to the next;
+ * - sliders, check boxes and lists;
+ * - themes and looks (there is only one: grey, with two edges lit);
+ * - a grid, weights and spans (the widgets of a row all have the same
+ *   width, which gives a grid when rows are put in a column);
+ * - a window that changes size (TinyWindows does not tell programs
+ *   their size);
+ * - time (a program here only changes when the user does something);
+ * - the three other ways to write a program (immediate, retained,
+ *   model-view-controller).
  *
  * twist:
  * {b The state below the model} is just three points, where lib_gui
@@ -90,8 +93,9 @@
  *   an update; the library lays out, draws and answers the mouse
  *   (TinyAppCalculator, TinyAppTemperature);
  * - {b the menus} ([menu_mouse], [menu_view]): a bar of pull-down menus
- *   for a program that draws its own window (the office, the browser),
- *   their state kept in its model, as the widgets' mouse is kept here;
+ *   for a program that draws its own window (the office, the browser);
+ *   the program keeps the menus' state in its model, the way this
+ *   library keeps the widgets' mouse;
  * - {b the canvas} ([run_canvas]): the program draws its whole window
  *   as shapes (emacs, the office, the debugger), and the library draws
  *   only what changed, comparing the shapes' leaves (rectangles and
@@ -100,14 +104,14 @@
  * context:
  * Below this library are TinyLibPlayground, TinyLibDraw and
  * TinyLibSystem. We use the playground's shapes and its drawing, but not
- * its loop, which is made for a game: frames and no mouse. Above it are
+ * its loop, which is made for a game, with frames and no mouse. Above it are
  * TinyAppCalculator, TinyAppTemperature, and the programs that draw
  * their own window (emacs, the office, the debugger, the browser). The
  * library draws on fd_draw and reads fd_stdin and fd_mouse, so a
  * program runs on the screen or in a window of TinyWindows without
- * knowing which. Its mouse is the kernel's box,
- * which keeps only the last position, so a click that starts and ends
- * while the program is drawing is missed. On tiny-machine a press
+ * knowing which. Its mouse is the kernel's box, which keeps only the
+ * last position, so a click that starts and ends while the program is
+ * drawing is missed. On tiny-machine a press
  * costs about 160,000 instructions (20 ms), mostly for building the
  * strings of its four messages; a click that changes the model costs
  * 540,000, for building, placing and comparing the 18 widgets of the
@@ -118,12 +122,12 @@
  *   the model;
  * - Tab: send the keys to the next field (the focus is a point, so it
  *   becomes a point in the next box);
- * - a caret that moves with the arrows, its position kept below the
- *   model;
+ * - a caret that moves with the arrows, with its position kept below
+ *   the model;
  * - a row that gives each widget the width it asked for, and the rest
  *   to one of them;
- * - a clock: a message every second, for a timer;
- * - undo and redo in the library, with a stack of past models: every
+ * - a clock that sends a message every second, for a timer;
+ * - undo and redo in the library, with a stack of past models. Every
  *   program would get them for free, since update is the only place
  *   where the model changes (Elm's time travel).
  *
@@ -132,10 +136,11 @@
  * PARC, the 1970s), where a button was an object notified of the mouse
  * which in turn notified another object. Every toolkit since has kept
  * that shape (MacApp, X's Xt and Motif, Tk, Qt): a tree of objects,
- * each with its own state, changed in place by the program. Plan 9's
+ * where each object has its own state and the program changes it in
+ * place. Plan 9's
  * own toolkit, libpanel (Tom Duff), is one of the smallest of that
- * kind. Layout in two passes, sizes requested going up and positions
- * given going down, comes from TeX's boxes (1978) and Tk's packer
+ * kind. Layout in two passes, where sizes are requested going up and
+ * positions are given going down, comes from TeX's boxes (1978) and Tk's packer
  * (John Ousterhout, 1990).
  *
  * modern:
@@ -176,7 +181,8 @@ val run : ('m, 'msg) gui -> Exit.t
 type point = int * int
 
 (* The state below the model, [up] at first. [m_down] is None while the
- * button is up; the field at [m_focus], the last press, has the keys. *)
+ * button is up. The field at [m_focus], where the last press was,
+ * receives the keys. *)
 type mouse = { m_down : point option; m_at : point; m_focus : point option }
 val up : mouse
 
@@ -200,7 +206,8 @@ val place :
 (* the edges of a held button and the caret of the focused field *)
 val over : 'msg boxes -> mouse -> (box * TinyLibPlayground.shape) list
 
-(* [mouse g boxes model m x y buttons], after the mouse moves to (x, y) *)
+(* [mouse g boxes model m x y buttons] handles the mouse after it moves
+ * to (x, y), and gives the new model and mouse state. *)
 val mouse :
   ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> int -> int -> int ->
   'm * mouse
@@ -238,10 +245,12 @@ val bar_height : int
 (* [Ignored] leaves the mouse to the program. *)
 type 'msg menu_answer = Ignored | Taken | Picked of 'msg
 
-(* each title with its items, each item a text and its message *)
+(* Each title with its items, where each item is a text and its
+ * message. *)
 type 'msg menus = (string * (string * 'msg) list) list
 
-(* [menu_mouse menus state x y buttons]; 1 is the left button. *)
+(* [menu_mouse menus state x y buttons] handles the mouse for the
+ * menus. In [buttons], 1 is the left button. *)
 val menu_mouse :
   'msg menus -> menu_state -> int -> int -> int -> 'msg menu_answer
 
@@ -269,6 +278,7 @@ type 'm canvas = {
  * differing character. The console is raw meanwhile, so ^C is a key. *)
 val run_canvas : < Cap.clock; Cap.keyboard; .. > -> 'm canvas -> unit
 
-(* Inside tiny-windows, the answer to an ENQ; with no answer within half
- * a second, the whole screen of the console. *)
+(* The window's size. Inside tiny-windows, it is the answer to an ENQ;
+ * with no answer within half a second, it is the whole screen of the
+ * console. *)
 val window_size : < Cap.clock; .. > -> int * int

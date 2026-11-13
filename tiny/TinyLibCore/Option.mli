@@ -1,4 +1,4 @@
-(* Option, OCaml's subset (see Stdlib.mli) *)
+(* Option: a subset of OCaml's module (see Stdlib.mli) *)
 val get : 'a option -> 'a
 val iter : ('a -> unit) -> 'a option -> unit
 val map : ('a -> 'b) -> 'a option -> 'b option

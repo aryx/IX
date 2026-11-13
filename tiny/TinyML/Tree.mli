@@ -52,7 +52,7 @@ type expr =
   | SetDot of expr * string * int ref * expr
 and case = pat * expr option * expr   (* a pattern, a guard, a body *)
 
-(* IExt: a name, a type, a primitive. IAlias: module A = M. *)
+(* IExt has a name, a type and a primitive. IAlias is module A = M. *)
 type item =
   | ILet of rec_flag * (pat * expr) list
   | IExt of string * texpr * string
@@ -71,7 +71,7 @@ type cinfo = {
   nblock : int;
   scheme : ty;
 }
-(* By M.C; the builtins bare: (), [], ::, true, false. *)
+(* By M.C; the builtins are bare: (), [], ::, true, false. *)
 val cons : (string, cinfo) Hashtbl.t
 
 (* lscheme is %l(record, field). Several records may share a label. *)
@@ -101,11 +101,12 @@ val string_t : ty
 
 val unit_name : string ref
 val aliases : (string * string) list ref  (* module A = M *)
-(* con_base: C of M.C. qualified: M.x for A.x. own: U.x for x. *)
+(* con_base gives C for M.C. qualified gives M.x for A.x. own gives U.x
+ * for x. *)
 val con_base : string -> string
 val qualified : string -> string
 val own : string -> string
-(* type 'a t = ...: by the qualified name, with the parameters. *)
+(* type 'a t = ..., by its qualified name, with the parameters. *)
 val abbreviations : (string * (string list * texpr)) list ref
 val declared : (string, unit) Hashtbl.t
 (* Bare names to qualified ones; scope_done ends the unit's scope. *)
@@ -119,7 +120,8 @@ val bring :
   ((string, string) Hashtbl.t -> string -> string -> unit) ->
   ((string, linfo) Hashtbl.t -> string -> linfo -> unit) -> string -> unit
 val open_unit : string -> unit
-(* The unit's own, brought into scope. *)
+(* These declare the unit's own types, constructors and labels, and
+ * bring them into scope. *)
 val declare_type : string -> unit
 val add_con : string -> cinfo -> unit
 val add_label : string -> linfo -> unit
@@ -129,4 +131,4 @@ val resolve_con : string -> string
 val find_con : string -> cinfo
 (* vars maps the names of type variables to their types. *)
 val of_texpr : (string * ty) list ref -> texpr -> ty
-val var : string -> expr              (* its type not known yet *)
+val var : string -> expr              (* its type is not known yet *)

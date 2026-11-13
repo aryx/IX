@@ -73670,3 +73670,89 @@ Claude then planned a Makefile target and a pointer to it in tiny/README.md.
 Claude checked how the existing READMEs counted lines before writing the docs/loc.md entry.
 Claude wrote a docs/loc.md paragraph explaining how the tables count, plus an SDL change log row.
 Claude's answer only announced these edits, so no completed changes appear in it.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:26
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the six files as `c17f72d6` on top of `6c3c2568` and pushed the branch.
+Claude ran `make loc-readme` and fixed the TinyMachineSDL issue before committing.
+Claude updated the numbers in both READMEs, the docs/loc.md paragraph, and today's row.
+Claude noted that the new loc.md row still says only "other sessions' work" for opti/, which went from 1,522 to 6,124.
+The working tree is clean except for the untracked `tiny/docs/`, which Claude said is not its work.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:27
+
+**Yoann:**
+
+> ok let's process the tiny/ .mli now
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:28
+
+**Yoann:**
+
+> I mean remove the clipped style you mentioned before
+
+**Claude (summary):**
+
+Claude said it was rewriting the clipped style into plain sentences in tiny/'s .mli files, with no other changes.
+Claude started seven agents to make those rewrites while it prepared a code check.
+Claude described that check as parsing each file before and after and comparing the trees, leaving out comments.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:30
+
+**Yoann:**
+
+> where is this samecode.sh? seems worth adding under scripts/
+
+**Claude (summary):**
+
+Claude moved samecode.sh to scripts/comments_only.sh and finished the comment-only pass across all seven groups.
+Claude reported the GUI group done, with 15 files changed and one phrase it could not interpret.
+Claude flagged "games/4s (not in principia; from memory)" in TinyAppTetris.mli as unclear, guessing the 4s description was written from memory.
+Claude noted that the 4s source is not in principia, so it could not check that sentence against code.
+Claude put the phrase on its list of items for Yoann to resolve by hand.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:39
+
+**Yoann:**
+
+> 1: it's in 9front I think.
+
+**Claude (summary):**
+
+Claude reworded TinyAppTetris.mli line 25 to attribute Tetris to 9front's games/4s, not principia.
+Claude said it could not verify that 4s exists in 9front, since no 9front source is on the machine.
+Claude also added "the fork of Plan 9" to the sentence, which Yoann had not asked for, for readers unfamiliar with 9front.
+Claude left the history passages, the `old:` comment in TinyShell.ml, and the incomplete `mem_post` comment for later.
+Nothing is committed yet, and Claude asked whether to commit and push now or trim the history passages first.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:40
+
+**Yoann:**
+
+> I'll review the changes. Anything else?
+
+**Claude (summary):**
+
+Claude said the 101 tiny/ .mli files and the untracked scripts/comments_only.sh were ready to commit.
+Claude noted that git diff would not show the untracked script, so Yoann would need to review it separately.
+Claude recommended checking prose with git diff --word-diff -- tiny and rerunning scripts/comments_only.sh HEAD tiny after any edits.
+Claude offered to commit and push once Yoann finished reviewing, since nothing else was waiting on him.
+Claude listed open items: two history passages, KMemory.mli's mem_post comment, and uncovered tiny/ .ml files and m-IX headers.

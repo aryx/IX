@@ -1,5 +1,6 @@
-(* tiny-office: a page of objects, each a kind of document in a box,
- * in one program (docs/plans/done/plan_tiny_office.md).
+(* tiny-office is one program that shows a page of objects, where each
+ * object is a kind of document in a box
+ * (docs/plans/done/plan_tiny_office.md).
  *
  * It is the compound document of the Xerox Star and of Smalltalk, cut
  * down:
@@ -23,8 +24,8 @@
  * - a text box holds Markdown: **bold**, *italic*, a line starting with
  *   "# " for large, \u{} for underlined, \large{} for large inside a
  *   line;
- * - a sheet is a table: the columns' letters, then what was typed, one
- *   row per line;
+ * - a sheet is a table whose header has the columns' letters, and each
+ *   line after it is a row of what was typed;
  * - a drawing or a paint is a fence (```drawing, ```paint) around its
  *   lines.
  * So a document can be read, or written, in emacs, and a Markdown file
@@ -35,7 +36,7 @@
  *
  * {b A text box is edited as it is shown} (WYSIWYG, as in the Alto's
  * Bravo, then MacWrite and Word). Its text is filled to the box's
- * width, a word that does not fit going to the next line, and each
+ * width, and a word that does not fit goes to the next line. Each
  * character is drawn in its style with the kernel's fonts: bold, large
  * (16x32), and italic, which slants any of them. A line is as tall as
  * its largest character. A click places the cursor and a drag selects.
@@ -126,22 +127,22 @@
  *
  * twin:
  * Its full-size counterpart in m-ix is mini-office (apps/office/, about
- * 5,200 lines): a document of parts (text, sheet, picture, drawing,
- * chart), each a record of functions.
+ * 5,200 lines). Its document is made of parts (text, sheet, picture,
+ * drawing, chart), and each part is a record of functions.
  *
- * mini-office is the author's playground's apps/office/TinyOffice.ml,
+ * mini-office is apps/office/TinyOffice.ml from the author's playground,
  * brought to ix under that name. There, a part is a record of functions
  * (Component); a file is a marshalled value after a header line
  * (Saved); shapes use floats and can move, scale and rotate; letters
- * are Hershey's strokes; a text is a piece table (lib_gui's Text_edit);
- * the menus are Gui's, in immediate mode; and a PDF is written from the
- * view. What differs here:
- * - an object's kind is a word and its data a string, and the code
+ * are drawn with Hershey's strokes; a text is a piece table (lib_gui's
+ * Text_edit); the menus are Gui's, in immediate mode; and a PDF is
+ * written from the view. What differs here:
+ * - an object's kind is a word and its data is a string, and the code
  *   matches on the kind where mini-office calls a part's functions;
  * - the file is text in mini-troff's format, so emacs and troff can
  *   read it without any of the office's code;
- * - coordinates are integers in pixels, with the kernel's single font
- *   and its styles;
+ * - coordinates are integers in pixels, and text uses the kernel's
+ *   single font and its styles;
  * - run_canvas draws the page only where it changed;
  * - PDF is left to tiny-troff.
  *
@@ -160,8 +161,8 @@
  *   before the box was edited).
  *
  * twist:
- * A sheet's values are computed again at each view: each cell once,
- * after the cells it needs. mini-office's Sheet instead builds a
+ * A sheet's values are computed again at each view. Each cell is
+ * computed once, after the cells it needs. mini-office's Sheet instead builds a
  * dependency graph and recalculates only what a change reaches. With
  * no graph there is nothing to invalidate. A cell that is still being
  * computed when it is needed counts as #CYCLE, which is what a cell
@@ -176,12 +177,12 @@
  * office's record. File reads and writes the file.
  *
  * context:
- * This file makes no system calls: the program around it reads the
+ * This file makes no system calls. The program around it reads the
  * keys and the mouse, draws, and writes the file.
  *
  * exercises:
- * - a save that is a tiny-vcs commit: the document is Markdown's lines,
- *   so tiny-vcs's diff of two saves reads well.
+ * - make a save a tiny-vcs commit. The document is made of Markdown
+ *   lines, so tiny-vcs's diff of two saves reads well.
  *)
 
 (* [create width height file text] makes the office on a page of that
@@ -190,7 +191,7 @@
  * two arguments cannot be swapped by mistake. *)
 val create : int -> int -> Fpath.t -> string -> Model.office
 
-(* what a key or the mouse asks of the program around *)
+(* What a key or the mouse asks the program around it to do. *)
 type request = Continue | Save | Quit
 
 val key : Model.office -> TinyLibPlayground.key -> request

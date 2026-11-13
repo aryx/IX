@@ -28,7 +28,8 @@
  * table's rows as cells one after the other, not in columns.
  *)
 
-(* bits to combine; [big] is a heading drawn twice the size *)
+(* A look is made of bits to combine; [big] is a heading drawn twice the
+ * size. *)
 type look = int
 val bold : look
 val emph : look
@@ -79,11 +80,12 @@ val word : flow -> string -> look -> string option -> bool -> unit
 (* [picture_block flow id rows link] *)
 val picture_block : flow -> int -> int -> string option -> unit
 
-(* for <pre>, without wrapping *)
+(* [verbatim] is for <pre>: its lines are not wrapped *)
 val verbatim : flow -> string -> int -> string option -> unit
 
-(* A cell's words are kept until the end of its table. A Word's bool:
- * a space before it; a Pic: a picture's number, columns, rows, link. *)
+(* A cell's words are kept until the end of its table. A Word's bool
+ * says whether there is a space before it. A Pic holds a picture's
+ * number, its columns, its rows and its link. *)
 type item =
   | Word of string * look * string option * bool
   | Break

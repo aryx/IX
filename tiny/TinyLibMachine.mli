@@ -74,7 +74,7 @@ val sext16 : int -> int
 
 (* The word of an instruction is an int on purpose: its opcode is under
  * 0x40, so it fits tiny-ml's 31-bit ints. The CPU decodes a word at
- * each step, and an Int32 is boxed in OCaml and two 16-bit pieces in
+ * each step, and an Int32 is boxed in OCaml and is two 16-bit pieces in
  * tiny-ml. Any other 32 bits (an li's number, a .word, an illegal
  * instruction with any opcode) are an Int32, as they may not fit. *)
 type instr_word = int
@@ -87,7 +87,8 @@ val decode : instr_word -> instr option
 val reg_name : reg -> string
 
 (* [text i imm]: imm, when given (a label, an address), replaces the
- * immediate or offset. The one printer, for listings and print_line. *)
+ * immediate or offset. It is the only printer, used for listings and by
+ * print_line. *)
 val text : instr -> string option -> string
 
 (* A branch's or jal's target is shown as an address. *)
@@ -101,7 +102,8 @@ val csr_names : string array          (* by number, for csrr and csrw *)
 exception Error of string
 val error : string -> 'a
 
-(* Run by TinyMachineDevices; the CPU's decode does not know them. *)
+(* These are run by TinyMachineDevices; the CPU's decode does not know
+ * them. *)
 type machine_instr =
   | Csrr of reg * int                 (* d, csr *)
   | Csrw of int * reg                 (* csr, a *)
@@ -140,7 +142,8 @@ type target = Name of string | Address of int
 
 type sym = string                     (* a label *)
 
-(* An offset in a chunk's bytes, its kind of place, what goes there. *)
+(* An offset in a chunk's bytes, its kind of place, and what goes
+ * there. *)
 type reloc = int * place * target
 
 (* A line of assembly, as a compiler makes it or the assembler reads it,
@@ -161,9 +164,9 @@ type reloc = int * place * target
  * An instruction that refers to a label, whose address the link
  * chooses, says where it goes: Instr_at, la, call, j or Branch_to.
  *
- * An object is lines too, once encoded: Chunks of bytes with a reloc
- * where an operand is a label, and the lines the link places things
- * by: Label, Align, Space, Piece and the sections. *)
+ * An object is lines too, once they are encoded: Chunks of bytes, with
+ * a reloc where an operand is a label, and the lines by which the link
+ * places things (Label, Align, Space, Piece and the sections). *)
 type line =
   | Instr of instr
   | Instr_at of instr * place * target  (* with 0 where the link writes *)
@@ -185,12 +188,14 @@ type line =
   | Word_sym of sym                   (* .word of a label's address *)
   | Piece
       (* .piece: the link leaves out what follows, up to the next piece,
-       * when nothing reaches it (tiny-ml's functions, static blocks) *)
+       * when nothing reaches it (tiny-ml's functions and static
+       * blocks) *)
   | SectionCode                       (* .text *)
   | SectionData                       (* .data *)
   | Chunk of string * reloc list      (* bytes in memory order *)
 
-(* With its newline; an instruction or a directive after a tab. *)
+(* The text of a line, with its newline; an instruction or a directive
+ * comes after a tab. *)
 val print_line : line -> string
 
 (*****************************************************************************)
@@ -203,21 +208,22 @@ val print_line : line -> string
  * when an operand does not fit its field. *)
 val encode_line : line -> line
 
-(* Each line encoded, after an Align 4, so that a file starts on a word
+(* Encodes each line, after an Align 4, so that a file starts on a word
  * whatever the previous one ended with. *)
 val assemble : line list -> line list
 
-(* The low byte first, the memory's order. *)
+(* The low byte comes first, as in memory. *)
 val word_bytes : word -> string
 
-(* The lines marshalled after a magic line; of_object raises Error on
- * bytes that are not an object, or an object of an older format. *)
+(* to_object marshals the lines after a magic line; of_object raises
+ * Error on bytes that are not an object, or on an object of an older
+ * format. *)
 val to_object : line list -> string
 val of_object : string -> line list
 
-(* Named objects in order, which tiny-ld links all: a library. Error
- * when a member is not an object, a name has a blank, or the bytes are
- * not an archive. *)
+(* An archive is a library: named objects in order, all of which tiny-ld
+ * links. Error is raised when a member is not an object, a name has a
+ * blank, or the bytes are not an archive. *)
 val is_archive : string -> bool
 val to_archive : (string * string) list -> string
 val of_archive : string -> (string * string) list
@@ -253,15 +259,17 @@ type symbols = (label * address) array  (* sorted by address *)
 (* Whether a compiler made the label inside a function. *)
 val local : label -> bool
 
-(* browse for TinyBrowser.f151_browse; an anonymous function's whole. *)
+(* Gives browse for TinyBrowser.f151_browse; an anonymous function keeps
+ * its whole name. *)
 val clean : label -> string
 
-(* All but the local labels. *)
+(* Reads the "address label" lines, leaving out the local labels. *)
 val labels : string -> symbols
 
 (* The function pc is in (the last label at or before it), its name
  * cleaned, and its address. *)
 val find : symbols -> address -> (string * address) option
 
-(* By its name or its cleaned name (main, browse). *)
+(* A label's address, found by its name or its cleaned name (main,
+ * browse). *)
 val address : symbols -> string -> int option

@@ -31,8 +31,9 @@ val pixel_at : Model.obj -> int -> int -> int * int
 val paint :
   Model.office -> int -> int -> int -> int -> int -> int -> unit
 
-(* [paint_key office brush key]: a digit chooses a colour (0 white,
- * 1 black...); C-g stops editing the paint. *)
+(* [paint_key office brush key] handles a key in a paint. A digit
+ * chooses a colour (0 white, 1 black...), and C-g stops editing the
+ * paint. *)
 val paint_key : Model.office -> int -> TinyLibPlayground.key -> unit
 
 (* Each row is a word of fat pixels. Only the rows that fit in the box

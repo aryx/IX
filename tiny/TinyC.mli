@@ -13,9 +13,9 @@
  *        | machine    turns that list into assembly, keeping the
  *        |            stack depth d in register rd; also makes the
  *        |            data of globals
- *     file.o: the assembly lines encoded by TinyLibMachine's assemble,
- *     for tiny-ld, and then tiny-cpu runs the program; with -S,
- *     file.s, the text
+ *     file.o holds the assembly lines, encoded by TinyLibMachine's
+ *     assemble, for tiny-ld, and then tiny-cpu runs the program; with
+ *     -S, file.s holds them as text
  *
  * Each step is a module in TinyC/. Its .mli has its types and its
  * functions. In the order they are compiled, which is also the best
@@ -62,7 +62,7 @@
  * compiler is what is left when the code only needs to be correct.
  *
  * mini-cc also has a stack machine, its simple back end
- * (languages/c/simple/, printed by -dir as this one's by -ir), whose
+ * (languages/c/simple/, printed by -dir as this one's is by -ir), whose
  * contract is the behavior, as here; but its main back end is 5c's and
  * 7c's, with what this one leaves out: 7c's trees rewritten using
  * Sethi and Ullman's numbers, addressing modes, a register allocator, a
@@ -105,10 +105,10 @@
  *   front end knows nothing about registers or instructions, the back
  *   end knows nothing about C (Machine is the whole machine),
  *   each can be read and tested on its own, and another machine is
- *   just another back end (there was arm64's, 7c's convention, until
- *   plan_tiny_self_hosting.md). The price is code quality: no
- *   Sethi-Ullman ordering, no addressing modes, and a load or store
- *   for every variable reference.
+ *   just another back end (there was one for arm64, with 7c's
+ *   convention, until plan_tiny_self_hosting.md). The price is code
+ *   quality: no Sethi-Ullman ordering, no addressing modes, and a load
+ *   or store for every variable reference.
  * - {b The stack is in registers.} The back end keeps the stack
  *   machine's stack in r1..r12 (depth d in rd), so a push is a li or
  *   an addi and an operation is one instruction on two registers, as
@@ -134,8 +134,8 @@
  * tiny-cc -h prints. It reads one C file and writes its assembly for
  * TinyCPU (TinyMachineCPU.ml), whose words and pointers are 4 bytes.
  * Its runtime is in runtime/ (built by TinyKernel/steps/Makefile):
- * start.s holds the program start and the system calls, udivmod.s the
- * unsigned division, and the rest of libc is C compiled by tiny-cc.
+ * start.s holds the program start and the system calls, udivmod.s holds
+ * the unsigned division, and the rest of libc is C compiled by tiny-cc.
  * The library uses Plan 9's names (print, exits) and ANSI's rules: the
  * tests compare tiny-cc with the host's cc (TinyC_tests/host.h).
  *
@@ -149,10 +149,10 @@
  * Each is cheap because the stack machine sits between the front end and
  * the machine:
  * - a second back end: arm32 (with 5c's calling convention, for mini-5i
- *   and the Pi1), or x86-64; TinyCPU's took 100 lines;
+ *   and the Pi1), or x86-64; the one for TinyCPU took 100 lines;
  * - running the stack machine: a 60-line interpreter of its code would
  *   give a second semantics against which to compare the back end;
- * - peephole passes on the stack machine code, each a match on a list
+ * - peephole passes on the stack machine code, each one a match on a list
  *   (McKeeman's idea): folding an operation on two constants,
  *   following a jump to a jump, removing a load right after a store
  *   to the same place;
@@ -220,15 +220,16 @@
  *    back ends
  *)
 
-(* The code and the data. A function goes through the stack machine's
- * code to TinyCPU's; a global becomes data. *)
+(* Returns the code and the data of a definition. A function goes
+ * through the stack machine's code to TinyCPU's; a global becomes
+ * data. *)
 val compile :
   Tree.def -> TinyLibMachine.line list * TinyLibMachine.line list
 
 (* For -ir: a function's stack machine code, as text. *)
 val show_ir : Tree.def -> string
 
-(* A C file compiled to a file of assembly; -h tells how. *)
+(* Compiles a C file to a file of assembly; tiny-cc -h tells how. *)
 val main :
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

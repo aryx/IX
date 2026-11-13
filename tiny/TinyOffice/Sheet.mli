@@ -1,15 +1,15 @@
-(* TinyOffice's sheet: its data, its formulas, how a cell is edited, and
- * its view, a grid of the cells' values.
+(* TinyOffice's sheet. This module handles its data, its formulas, how
+ * a cell is edited, and its view, which is a grid of the cells' values.
  *
- * A sheet's data has one line per cell: its name and what was typed in
- * it:
+ * A sheet's data has one line per cell, with the cell's name and what
+ * was typed in it:
  *
  *     a1 3
  *     a2 Rent
  *     b1 =a1*2+sum(a1:a3)
  *
  * What was typed is a number, a formula (after an =; every spreadsheet
- * since VisiCalc has had such a sign, VisiCalc's being +), or text. A
+ * since VisiCalc has had such a sign, and VisiCalc's was +), or text. A
  * cell's name is its column, a to z, followed by its row, 1 to 99. The
  * numbers are tiny-ml's integers, 31 bits on tiny-machine; there is no
  * floating point.
@@ -23,15 +23,16 @@
  *     b1 =a1*2+sum(a1:a3)     b1 needs a1, a2, a3: each computed once
  *     c1 =c1+1                #CYCLE
  *
- * The values are computed again at each view: a sheet is small, and
- * there is no other place to keep them. Chart draws a sheet's cells,
+ * The values are computed again at each view, because a sheet is small
+ * and there is no other place to keep them. Chart draws a sheet's cells,
  * and File writes the sheet as a Markdown table.
  *
  * cs-history:
  * VisiCalc (Dan Bricklin and Bob Frankston, 1979, on the Apple II)
  * introduced the grid of cells, with a formula in a cell and the values
- * computed again at each change. Its formulas started with a +, Lotus
- * 1-2-3's with a + or an @, and Excel's with the = that we use here.
+ * computed again at each change. Its formulas started with a +. Those of
+ * Lotus 1-2-3 started with a + or an @, and those of Excel with the =
+ * that we use here.
  *)
 
 (* A cell's value. An empty cell is the text "", which counts as 0 in a
@@ -39,7 +40,8 @@
  * sum), #DIV0, or #CYCLE (a cell that depends on itself). *)
 type value = Num of int | Str of string | Err of string
 
-(* column and row counted from 0: name 1 2 is "b3" *)
+(* [name c r] is a cell's name, with the column and the row counted
+ * from 0: name 1 2 is "b3". *)
 val name : int -> int -> string
 
 (* the cells that were typed in: their names and what was typed *)
@@ -54,16 +56,17 @@ val values : string -> string -> value
 (* a column's width in pixels *)
 val cell_w : int
 
-(* [put_cell office c r typed], in the selected sheet *)
+(* [put_cell office c r typed] stores what was typed in a cell of the
+ * selected sheet. *)
 val put_cell : Model.office -> int -> int -> string -> unit
 
 (* [choose office i x y] chooses the cell of box i under (x, y), with
  * nothing typed in it yet *)
 val choose : Model.office -> int -> int -> int -> unit
 
-(* [cell_key office c r typed key]: a character starts a new entry,
- * Enter stores it and moves down, an arrow stores it and moves that
- * way, C-g forgets it. *)
+(* [cell_key office c r typed key] handles a key in a cell. A character
+ * starts a new entry, Enter stores it and moves down, an arrow stores
+ * it and moves that way, and C-g forgets it. *)
 val cell_key :
   Model.office -> int -> int -> string option -> TinyLibPlayground.key
   -> unit

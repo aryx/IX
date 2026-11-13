@@ -1,7 +1,9 @@
-(* Hashtbl, OCaml's subset (see Stdlib.mli): an array of buckets, a
- * key's by its hash (runtime/ml/ml.c's ml_hash: its integers, its strings'
- * bytes, its blocks' tags and fields, ten values at most), twice as
- * many when there are twice as many bindings as buckets *)
+(* Hashtbl: a subset of OCaml's module (see Stdlib.mli). A table is an
+ * array of buckets, and a key's bucket is chosen by its hash. The hash
+ * is runtime/ml/ml.c's ml_hash, which looks at the key's integers, its
+ * strings' bytes, and its blocks' tags and fields, ten values at most.
+ * The number of buckets doubles when there are twice as many bindings
+ * as buckets. *)
 type ('a, 'b) t
 val create : int -> ('a, 'b) t
 val length : ('a, 'b) t -> int

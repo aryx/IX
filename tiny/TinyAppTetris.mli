@@ -9,21 +9,21 @@
  * it moves down. The game ends when a new piece cannot enter the well.
  * Every ten rows the level goes up and the pieces fall faster.
  *
- * The game is a value of TinyLibPlayground's [game] type: a model and
- * three functions. There is no loop, no clock and no drawing in this
+ * The game is a value of TinyLibPlayground's [game] type, which is a
+ * model and three functions. There is no loop, no clock and no drawing in this
  * file.
  *
  * twin:
  * m-ix's games/puzzle/Tetris.ml is its twin, built on lib_playground.
- * It is the author's playground's port of elm-flatris, written in Elm's
- * way: the well is the list of its full cells, a piece is four cells
+ * It is the port of elm-flatris from the author's playground, written
+ * in Elm's way: the well is the list of its full cells, a piece is four cells
  * turned by computing their places again, and the falling piece's
  * height is a float, for the speed of its fall. What differs here is
  * explained below: the rotations are a table of bits, the well is an
  * array, and we use integers only (a level's speed is a number of
  * frames). A turn that does not fit is retried one cell to each side,
- * where the twin tries two. Plan 9 has its own Tetris, games/4s (not in
- * principia; from memory).
+ * where the twin tries two. 9front, the fork of Plan 9, has its own
+ * Tetris, games/4s, which is not in principia.
  *
  * kept:
  * The parts that are not obvious:
@@ -39,23 +39,27 @@
  *   five shapes, not a hundred.
  *
  * dropped:
- * The shadow showing where the piece would land, holding a piece aside,
- * wall kicks further than one cell to either side, dealing the seven
- * pieces as a bag, a pause, and high scores. The sounds are kept from
- * m-ix: a piece landing, rows cleared, four rows at once, a new level,
- * and the game over; [sound] picks them by comparing two models. The
- * music is m-ix's too: Korobeiniki, with the melody on a square wave
- * and an octave bass on a triangle, a tenth faster at each level.
- * [music] gives the tune a model wants, as [view] gives the picture it
- * wants, and gives none when the game is over.
+ * The game has none of these:
+ * - the shadow showing where the piece would land;
+ * - holding a piece aside;
+ * - wall kicks further than one cell to either side;
+ * - dealing the seven pieces as a bag;
+ * - a pause, and high scores.
+ * The sounds are kept from m-ix (a piece landing, rows cleared, four
+ * rows at once, a new level, and the game over), and [sound] picks them
+ * by comparing two models. The music is m-ix's too. It is Korobeiniki,
+ * with the melody on a square wave and an octave bass on a triangle,
+ * played a tenth faster at each level. [music] gives the tune a model
+ * wants, as [view] gives the picture it wants, and gives none when the
+ * game is over.
  *
  * twist:
- * {b Each rotation of a piece is 16 bits}: a 4 by 4 square, one
- * hexadecimal digit per row, all stored in a string ([turns]). There
- * is no table of tables, and turning a piece just means moving to
- * the next four digits. Here are the T's sixteen digits, 4E00 4640
- * 0E40 4C40; each column of the picture is one rotation, and the
- * high bit of a digit is the leftmost cell:
+ * {b Each rotation of a piece is 16 bits.} They make a 4 by 4 square,
+ * with one hexadecimal digit per row, and all the rotations are stored
+ * in a string ([turns]). There is no table of tables, and turning a
+ * piece just means moving to the next four digits. Here are the T's
+ * sixteen digits, 4E00 4640 0E40 4C40; each column of the picture is
+ * one rotation, and the high bit of a digit is the leftmost cell:
  *
  *     4  . # . .     4  . # . .     0  . . . .     4  . # . .
  *     E  # # # .     6  . # # .     E  # # # .     C  # # . .
@@ -82,9 +86,9 @@
  * distinct (Solomon Golomb's tetrominoes, which, combined with tennis,
  * gave the game its name). It spread from machine to machine through
  * copies before any contract existed, and Nintendo's Game Boy (1989)
- * made it the game everyone had played. A character screen, a 10 by 20
- * well, four moves: it was a small program on a small machine from day
- * one, which is why it is this machine's first game.
+ * made it the game everyone had played. With a character screen, a 10 by
+ * 20 well and four moves, it was a small program on a small machine
+ * from day one, which is why it is this machine's first game.
  *
  * modern:
  * Most of what is dropped above was added after 1984 and is now fixed
@@ -100,7 +104,8 @@
  *  - https://en.wikipedia.org/wiki/Tetris
  *)
 
-(* [kind] is which of the seven pieces, [turn] its rotation. *)
+(* [kind] is which of the seven pieces it is, and [turn] is its
+ * rotation. *)
 type piece = { kind : int; turn : int; x : int; y : int }
 type board = { 
   well : int array;

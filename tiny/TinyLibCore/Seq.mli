@@ -1,6 +1,7 @@
-(* Seq, OCaml's subset (see Stdlib.mli): a sequence read as it is
- * pulled, each element made when it is asked for (tiny-db's rows,
- * from a tree, stop being read at a take) *)
+(* Seq: a subset of OCaml's module (see Stdlib.mli). A sequence is read
+ * as it is pulled, and each element is made when it is asked for. For
+ * example, tiny-db's rows come from a tree, and the tree stops being
+ * read at a take. *)
 type 'a t = unit -> 'a node
 and 'a node = Nil | Cons of 'a * 'a t
 

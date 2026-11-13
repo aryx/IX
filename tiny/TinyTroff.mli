@@ -55,9 +55,9 @@
  * typesetting/).
  *
  * dropped:
- * A text that flows onto the next page, a paint as a real image (a BMP;
- * we use SVG rectangles instead), and the office's colours and fonts in
- * the HTML (it uses the browser's monospace font).
+ * A text cannot flow onto the next page. A paint is not a real image (a
+ * BMP); we use SVG rectangles instead. The HTML does not have the
+ * office's colours and fonts; it uses the browser's monospace font.
  *
  * twist:
  * There is only one format, the office's, read by the office's own
@@ -83,9 +83,11 @@ val to_html : string -> string -> string
 (* One PDF page per page, all the size of the largest, one point per
  * pixel. Text is in Courier at 13.33 points, so that a character is 8
  * points wide as in the office's 8x16 font, and is laid out as the
- * office does. Sheets are grids, drawings lines, paints and charts
- * rectangles. With standard fonts and no compression: about 120 lines. *)
+ * office does. Sheets are drawn as grids, drawings as lines, and paints
+ * and charts as rectangles. Because it uses standard fonts and no
+ * compression, the PDF writer takes only about 120 lines. *)
 val to_pdf : string -> string
 
-(* troff [-h | -p] file prints text (72 columns), HTML or PDF. *)
+(* "troff [-h | -p] file" prints the file as text (72 columns), as HTML
+ * (-h) or as PDF (-p). *)
 val main : < Cap.open_in; Cap.stdout; Cap.stderr; .. > -> string array -> Exit.t

@@ -1,4 +1,4 @@
-(* debug: a debugger for tiny-kernel's programs, at the level of their
+(* debug is a debugger for tiny-kernel's programs, at the level of their
  * machine instructions (not the source). It starts its program stopped
  * at its first instruction (a child that calls trace(0), then exec),
  * or attaches to a process by its pid. It then controls the process
@@ -22,13 +22,13 @@
  *     $ debug 12 /bin/cat
  *
  * At each stop it shows why, and the instruction at the pc, located by
- * the function it is in: main+0x14. The names are the labels that
+ * the function it is in, as in main+0x14. The names are the labels that
  * tiny-ld wrote after the image (-s, see TinyLibMachine). debug reads
  * them from the program's file: the one it started, or the one named
  * after the pid when it attaches (the kernel knows a process's image,
  * not the file it came from).
  *
- * How it works: debug and its program are two processes, and the
+ * Here is how it works. debug and its program are two processes, and the
  * kernel stands between them. Every command is a line written on the
  * descriptor that trace(pid) returned, and every answer and every stop
  * is a line read from it (see command and stop in TinyKernel.ml):
@@ -72,10 +72,10 @@
  * kept:
  * Where we differ from Plan 9's tools and gdb:
  *
- * - {b One descriptor and a system call}, not a directory of files.
- *   trace(pid) returns the descriptor, and trace(0) asks to be traced
- *   by the parent (Unix's PTRACE_TRACEME). The commands are text, as
- *   in /proc's ctl file.
+ * - The debugger uses {b one descriptor and a system call}, not a
+ *   directory of files. trace(pid) returns the descriptor, and trace(0)
+ *   asks to be traced by the parent (Unix's PTRACE_TRACEME). The
+ *   commands are text, as in /proc's ctl file.
  * - {b The kernel keeps the breakpoints.} b gives it the address and
  *   the kernel saves the word; m shows the saved word, c and s run it,
  *   and the child of a fork gets the original words back. Plan 9's db
@@ -89,18 +89,18 @@
  *   adb syntax (main:b, :c, $c), which readers today know less well.
  * - {b The names are lines of text after the image}, in the map's
  *   format, rather than a binary symbol table, and only functions have
- *   names: no line numbers, no types. db too shows a function and an
- *   instruction.
+ *   names; there are no line numbers and no types. db too shows a
+ *   function and an instruction.
  *
  * dropped:
  * {b The source.} It debugs machine instructions only: a breakpoint is
  * an address or a function's name, a step is one instruction, and no
  * line of C or ML is shown or stepped over, since neither tiny-cc nor
  * tiny-ml writes a table from pcs to lines (tiny-ld has no -g).
- * Watchpoints; conditional breakpoints; printing a C variable or an ML
- * value according to its type (this needs the compilers to describe
- * their frames, which is acid's road); and debugging the kernel
- * itself.
+ * Also dropped are watchpoints, conditional breakpoints, printing a C
+ * variable or an ML value according to its type (this needs the
+ * compilers to describe their frames, which is acid's road), and
+ * debugging the kernel itself.
  *
  * twist:
  * {b A step is the timer's interrupt.} kentry.s's k_step sets the timer
@@ -113,7 +113,8 @@
  *
  * context:
  * Its sibling is trace (TinyTracer), which applies strace's idea to the
- * same descriptor: a stop before and after each system call.
+ * same descriptor: it stops the program before and after each system
+ * call.
  *
  * exercises:
  * - reverse step by replay: tiny-machine is deterministic (-events,
@@ -133,8 +134,8 @@
  *
  * others:
  * gdb drives its program by ptrace on Unix, and by a remote protocol
- * of text packets (gdbserver, QEMU's stub) elsewhere: commands as
- * lines on a wire, as here. LLDB (2010) is built on LLVM's
+ * of text packets (gdbserver, QEMU's stub) elsewhere, where the
+ * commands are lines on a wire, as here. LLDB (2010) is built on LLVM's
  * disassemblers and its compiler's knowledge of types.
  *
  * plan9-is-cleaner:
@@ -142,12 +143,12 @@
  * a dozen requests (peek a word, poke a word, get the registers,
  * continue, step), one word at a time, and only a parent or an
  * attached tracer may call it. Plan 9 makes a process a directory of
- * files, /proc/n: mem is its memory, regs its registers, ctl a file
- * of text commands (stop, start, waitstop), and note its signals. A
- * debugger is then a program that reads and writes files, and it can
- * debug a process on another machine by importing that machine's
- * /proc. The trace descriptor is
- * that idea in a single file.
+ * files, /proc/n: mem is its memory, regs holds its registers, ctl is
+ * a file of text commands (stop, start, waitstop), and note carries its
+ * signals. A debugger is then a program that reads and writes files,
+ * and it can debug a process on another machine by importing that
+ * machine's /proc. The trace descriptor is that idea in a single
+ * file.
  *
  * references:
  *  - S. R. Bourne, "A. Debugging with adb" (Seventh Edition's manual,
@@ -161,7 +162,8 @@
  *  - plan_tiny_debugger.md: the design and its steps
  *)
 
-(* The program: its command line, then its commands, until it exits.
+(* The program reads its command line, then its commands, until it
+ * exits.
  * caps includes what a window needs (-window, with TinyLibGUI's
  * run_canvas), and stdout, where it prints its answers at once. *)
 val main :

@@ -22,7 +22,8 @@
  *     tiny-machine-fetch -picture 250 188 https://.../250px-Award.jpg
  *
  * fetches a picture (or reads it, when the source is a file holding a
- * kept copy), decodes it (PNG, JPEG, GIF: lib_graphics), and prints it
+ * kept copy), decodes it (PNG, JPEG or GIF, with lib_graphics), and
+ * prints it
  * as 250 times 188 bytes, one byte per pixel in the machine's 256
  * colours. Each pixel is the average of the source pixels that fall in
  * it, put on white where they are transparent, then mapped to the
@@ -33,8 +34,8 @@
  * itself: the encrypted half (plan_tiny_browser.md, section 3).
  * Everything from the first < of the page on is done by the machine.
  *
- * In m-ix the same work is done by mini-curl (networking/'s Curl, on
- * the same lib_networking), which runs on mini-9pi itself, and the
+ * In m-ix the same work is done by mini-curl (Curl in networking/, built
+ * on the same lib_networking), which runs on mini-9pi itself, and the
  * browser there decodes the pictures. Here the host does both, so
  * tiny-kernel needs no TLS and no PNG or JPEG decoder. *)
 

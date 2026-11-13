@@ -1,5 +1,5 @@
-(* Tiny graphics: the essence of Plan 9's draw library (libdraw and
- * libmemdraw; ix's twins are lib_graphics/ and mini-9pi's
+(* Tiny graphics is the essence of Plan 9's draw library (libdraw and
+ * libmemdraw, whose twins in ix are lib_graphics/ and mini-9pi's
  * lib_memdraw), for tiny-machine's screen of 1024 by 768 pixels. A
  * pixel is one byte, an index in Plan 9's colour table. This is not a
  * program but the part of the kernel that draws (plan_tiny_windows.md).
@@ -11,13 +11,13 @@
  * on an array on the host.
  *
  * kept:
- * Of Plan 9's, this keeps:
- * - {b One operation}, [draw dst r src mask p]: the pixels of dst's
+ * Of Plan 9's draw library, this module keeps:
+ * - {b One operation}, [draw dst r src mask p]. The pixels of dst's
  *   rectangle r are copied from src, starting at point p, wherever
  *   the mask's pixels are set (everywhere when there is no mask).
  *   Filling a rectangle, copying a window to the screen, scrolling a
  *   text (an image drawn on itself), and drawing a character (the font
- *   is the mask, the ink the source) are all this one operation.
+ *   is the mask, and the ink is the source) are all this one operation.
  * - {b A colour is an image} of one pixel that repeats. So draw needs
  *   no colour argument, and a pattern costs nothing more.
  * - {b The kernel has the pixels; a program says what to draw}. A
@@ -28,7 +28,7 @@
  *   it, and a window system can forward a program's messages after
  *   renumbering the images.
  *
- * The one operation, drawn. The pixel of dst at (x, y), for each (x,
+ * Here is the one operation, drawn. The pixel of dst at (x, y), for each (x,
  * y) of r, becomes the pixel of src at (x, y) moved by p - r's corner,
  * if the mask's pixel at that same point is set:
  *
@@ -83,8 +83,8 @@
  * letters. What we dropped is listed below.
  *
  * dropped:
- * - Pixels of other depths and channels: a pixel is one byte, an index
- *   in the colour table.
+ * - Pixels of other depths and channels. Here a pixel is always one
+ *   byte, an index in the colour table.
  * - Alpha and Porter and Duff's operators. A mask is either set or
  *   not, except for a colour drawn through a font with grey levels
  *   (grey.font), which is mixed by a table made for that colour.
@@ -92,10 +92,10 @@
  *   point for the mask (the mask uses the source's, as in libdraw's
  *   draw).
  * - Ellipses, arcs, polygons and thick lines.
- * - Fonts and their cache. There is one font, the machine's 8 by 16,
- *   with its bold and its large 16 by 32 faces, and italic made by
- *   slanting them; or font1.bin alone, with bold and large made from
- *   it too.
+ * - Fonts and their cache. There is one font, the machine's 8 by 16
+ *   font, with its bold face and its large 16 by 32 face; italic is
+ *   made by slanting them. Or the font is font1.bin alone, and bold and
+ *   large are made from it too.
  * - Layers and windows (TinyWindows.ml composes whole images), and
  *   the screen's refresh.
  *
@@ -105,9 +105,10 @@
  * characters by their places in that font's cache (principia's
  * drawmesg.c), so a bold or a large text is another font to load. Here
  * t carries the characters themselves and a few bits of style. Bold and
- * large are the font's own faces when it has them, else made from its
- * one face the first time a text asks (each pixel doubled, or drawn
- * twice a pixel apart), and italic is made by slanting. A word
+ * large are the font's own faces when it has them. Otherwise they are
+ * made from its one face the first time a text asks for them: for
+ * large, each pixel is doubled, and for bold, each character is drawn
+ * twice, a pixel apart. Italic is made by slanting. A word
  * processor's styles then cost a program only a number.
  *
  * context:
@@ -143,8 +144,8 @@
  * others:
  * The mask of levels left as an exercise is Porter and Duff's
  * compositing, which is what every system now draws with: PDF,
- * Quartz, Cairo, the HTML canvas (ix's own: lib_graphics's software
- * renderer, and mini-netscape's painting). They add paths filled
+ * Quartz, Cairo, the HTML canvas, and ix's own lib_graphics software
+ * renderer and mini-netscape's painting. They add paths filled
  * with antialiasing and a matrix on the coordinates; the rectangle
  * copied through a mask is still the operation at the bottom.
  *
@@ -177,12 +178,14 @@ type rect = { x0 : int; y0 : int; x1 : int; y1 : int }
 type image = { r : rect; at : int; repl : bool }
 val rect : int -> int -> int -> int -> rect
 
-(* The one operation, [draw dst r src mask px py]: dst's rectangle r
- * takes src's pixels from point (px, py), where the mask is set (or all). *)
+(* [draw dst r src mask px py] is the one operation. The rectangle r of
+ * dst takes the pixels of src from point (px, py), wherever the mask is
+ * set (or everywhere when there is no mask). *)
 val draw : image -> rect -> image -> image option -> int -> int -> unit
 
-(* The memory for the images programs make, outside the collected heap.
- * [arena at size] sets the whole area; [blocks] is the free list. *)
+(* This is the memory for the images that programs make, outside the
+ * collected heap. [arena at size] sets the whole area; [blocks] is the
+ * free list. *)
 val arena : int -> int -> unit
 val free : int -> int -> unit
 val alloc : int -> int
@@ -190,16 +193,19 @@ val blocks : (int * int) list ref
 
 (* [font_mask bits size at] makes a font's first face into a 16 KB mask
  * at address at; its other faces stay for styled texts. The font is
- * font1.bin, tiny.font or grey.font (grey levels; fonts/README.md). *)
+ * font1.bin, tiny.font or grey.font (with grey levels; see
+ * fonts/README.md). *)
 val font_mask : int -> int -> int -> image
 
-(* A program's images, by its own numbers; 0 is the one it draws on.
+(* A conn holds a program's images, by its own numbers; 0 is the one it
+ * draws on.
  * [messages c s] skips a bad message and raises Graphics after the
  * rest; a message cut short or unknown raises it at once. *)
 type conn
 val connect : image -> image -> conn
 val disconnect : conn -> unit
 val messages : conn -> string -> unit
-(* The 'c' message (the cursor's look): the kernel sets it to write the
- * machine's mouse word; on the host it does nothing. *)
+(* This hook runs for the 'c' message, which sets the cursor's look.
+ * The kernel sets it to write the machine's mouse word; on the host it
+ * does nothing. *)
 val cursor_hook : (int -> unit) ref

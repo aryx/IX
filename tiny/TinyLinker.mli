@@ -55,14 +55,15 @@
  * assembler (plan_tiny_self_hosting.md, step 3).
  *
  * dropped:
- * Besides the work for its machine said above, mini-ld's -g, the tables
- * from pcs to source lines that its debugger reads: tiny-kernel's debug
- * and tiny-prof name a function, never a line. There is no -T nor -E:
- * an image is linked at 0 and starts at its first word, so start.s or
- * the kernel's entry must be the first object given. Nor are there
- * names private to a file (5l's name<>) or weak ones: a compiler makes
- * its statics unique with its file's name, and a name defined twice is
- * an error.
+ * Besides the work for its machine described above, tiny-ld drops
+ * mini-ld's -g, which writes the tables from pcs to source lines that
+ * its debugger reads; tiny-kernel's debug and tiny-prof name a
+ * function, never a line. There is no -T nor -E, because an image is
+ * linked at 0 and starts at its first word, so start.s or the kernel's
+ * entry must be the first object given. Nor are there names private to
+ * a file (5l's name<>) or weak ones: a compiler makes its statics
+ * unique with its file's name, and a name defined twice is an
+ * error.
  *
  * twist:
  * What tiny-ld adds compared to its twin:
@@ -87,7 +88,7 @@
  *
  * exercises:
  * - folding identical pieces: two pieces with the same bytes and the
- *   same relocations kept once, found by their hash (gold's --icf).
+ *   same relocations are kept once, found by their hash (gold's --icf).
  *
  * others:
  * Wirth's Oberon (Project Oberon, 1992) links modules as they are
@@ -139,16 +140,18 @@ val read : Chan.i -> TinyLibMachine.line list list
 val link : sections -> TinyLibMachine.line list list -> linked
 
 (* Image is for tiny-cpu and tiny-machine. Aout n is an a.out for
- * tiny-kernel asking for n bytes of memory (-a); Aout_labels adds the
- * labels after the image, but the compilers' local ones (-s; 1 MB
- * unless -a). An a.out's header is three words (a magic number, the
- * image's size, the memory), then the image, linked at 0; with a
- * data_start (-n), a fourth word, it, and another magic number. *)
+ * tiny-kernel that asks for n bytes of memory (-a); Aout_labels also
+ * writes the labels after the image, except the compilers' local ones
+ * (-s; the memory is 1 MB unless -a is given). An a.out's header is
+ * three words (a magic number, the image's size, the memory), and the
+ * image, linked at 0, follows it. With a data_start (-n), the header
+ * has a fourth word that holds it, and a different magic number. *)
 type output = Image | Aout of int | Aout_labels of int
 
 val contents : output -> linked -> string
 
-(* One line per label, the address in hexadecimal, by address. *)
+(* One line per label, with its address in hexadecimal, sorted by
+ * address. *)
 val map : linked -> string
 
 (* The arguments start with the program's name; -h tells how. *)

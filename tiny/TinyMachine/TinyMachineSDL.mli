@@ -31,9 +31,9 @@ type event =
   | Key of int * bool (* the USB HID usage, also SDL's scancode *)
   | Wheel of int (* a step, negative going up *)
 
-(* [present w h rgb] takes three bytes a pixel. [cursor] 0 is the arrow,
- * 1 a hand. [play] queues the speaker's signed bytes, 8,000 a second,
- * and opens the sound at the first call. *)
+(* [present w h rgb] takes three bytes a pixel. For [cursor], 0 is the
+ * arrow and 1 is a hand. [play] queues the speaker's signed bytes,
+ * 8,000 a second, and opens the sound at the first call. *)
 type t = {
   present : int -> int -> string -> unit; poll : unit -> event list;
   cursor : int -> unit; play : string -> unit; queued : unit -> int;
@@ -44,8 +44,8 @@ val create : title:string -> t
 (* How tiny-machine-window and tiny/user/sdl/ turn events into bytes,
  * on a US keyboard with shift and control. The arrows are 128 to 131
  * (up, down, left, right); Alt types Escape then the key (Emacs's Meta).
- * A wheel step types an up or down arrow: a key is queued, where a
- * quick click between two reads of the mouse could be missed. A held
+ * A wheel step types an up or down arrow, because a key is queued,
+ * whereas a quick click between two reads of the mouse could be missed. A held
  * key repeats after 0.3 s, then every 0.05 s; it is done here because
  * the display reports a press once, as a USB driver wants, while a game
  * wants held arrows to keep coming. Times are in seconds. *)

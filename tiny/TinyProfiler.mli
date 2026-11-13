@@ -1,7 +1,8 @@
-(* tiny-prof: shows where a program's instructions went, by function.
+(* tiny-prof shows where a program's instructions went, by function.
  * It reads a profile written by tiny-cpu -prof or tiny-machine -prof,
  * which counts every instruction run by its address, and the maps that
- * tiny-ld wrote for what ran (with -map: the address of each label).
+ * tiny-ld wrote for what ran (with -map; a map gives the address of
+ * each label).
  * It prints the functions that ran most, with their share.
  *
  *     tiny-machine -prof p boot.img          a session, counted
@@ -25,8 +26,8 @@
  * A profile of tiny-machine separates the kernel's instructions (-k
  * gives the kernel's map) from those of the programs, and tells the
  * programs apart by the base of their window, that is, their
- * partition. -u gives the map of one program: by default the one with
- * the most instructions, unless -base says which. The other programs
+ * partition. -u gives the map of one program, which by default is the
+ * one with the most instructions, unless -base says which. The other programs
  * are counted as "another program".
  *
  * With -diff base, the profile of a shorter run (the same session
@@ -37,10 +38,11 @@
  * A worked example: why www scrolled slowly (2026-10-16).
  *
  * The question was where the instructions of a page down go. A recorded
- * session makes it repeatable: www OCaml typed, then, once the page and
- * its pictures are in, eight spaces (eight page downs). A second session
- * is the same with one key that does nothing (x), the baseline: what
- * the first costs more than the second is the eight page downs alone.
+ * session makes it repeatable: it types www OCaml, then, once the page
+ * and its pictures are in, eight spaces (eight page downs). A second
+ * session, the baseline, is the same with one key that does nothing (x)
+ * instead. What the first costs more than the second is the cost of the
+ * eight page downs alone.
  *
  *     printf '20000000 k www OCaml\\n\n600000000 k        \n' > pages.events
  *     printf '20000000 k www OCaml\\n\n600000000 k x\n' > base.events
@@ -49,8 +51,8 @@
  *     tiny-machine -prof pages.prof -net tiny/tests/www -events pages.events \
  *       tiny/TinyKernel/_make/boot.img
  *
- * Then the maps of what ran, the kernel's and www's (tiny/TinyKernel's
- * Makefile links each with -map):
+ * Then tiny-prof is given the maps of what ran, the kernel's and www's
+ * (the Makefile of tiny/TinyKernel links each with -map):
  *
  *     M=tiny/TinyKernel/_make
  *     tiny-prof -diff base.prof pages.prof -k $M/kernel.img.map \
@@ -106,29 +108,31 @@
  * read from the program and decoded, which is what a compiler's back
  * end is tuned on; here that means reading tiny-machine -l's listing
  * beside the profile. Names come only from tiny-ld's maps, not from
- * an executable's symbols. There is no source file (5i's iprofile
- * prints each function's), nor who called whom (gprof's graph).
+ * an executable's symbols. It does not show a function's source file,
+ * as 5i's iprofile does, nor who called whom, as gprof's graph does.
  *
  * twist:
- * Every instruction is counted on a machine with a kernel, where
- * mini-qemu, the twin that runs one, samples a pc in 1024: the machine
- * is slow enough for that to cost little more than running it, and two
- * runs give the same profile. mini-5i's -prof counts every instruction
- * too, but of one program with no kernel; here the kernel's counts and
- * the program's are told apart, named by their own maps (-k, -u).
+ * Every instruction is counted, on a machine with a kernel, whereas
+ * mini-qemu, the twin that runs a kernel, samples one pc in 1024. The
+ * machine is slow enough for counting to cost little more than running
+ * it, and two runs give the same profile. mini-5i's -prof counts every
+ * instruction too, but of one program with no kernel; here the kernel's
+ * counts and the program's are told apart, and each is named by its
+ * own map (-k, -u).
  *
  * cs-history:
  * Unix's prof (1973 or so) counted where the program was at each tick
- * of the clock, the kernel adding one to a histogram of addresses
+ * of the clock, as the kernel added one to a histogram of addresses
  * (profil(2)); gprof (Graham, Kessler and McKusick, 1982) added who
  * called whom. A machine that is a program can do better than sample:
  * it counts every instruction, and disturbs nothing, not even the
- * kernel with its interrupts off. Later profilers went both ways:
- * counting, by rewriting the program to count its basic blocks (MIPS's
- * pixie, ATOM) or by running it on a simulated machine as here (Shade,
- * Valgrind's Cachegrind and Callgrind); or sampling a whole machine at
- * once, kernel and programs, at little cost (DCPI, Linux's perf,
- * Google-Wide Profiling), drawn since as flame graphs.
+ * kernel with its interrupts off. Later profilers went both ways. Some
+ * count, either by rewriting the program to count its basic blocks
+ * (MIPS's pixie, ATOM) or by running it on a simulated machine as here
+ * (Shade, Valgrind's Cachegrind and Callgrind). Others sample a whole
+ * machine at once, kernel and programs, at little cost (DCPI, Linux's
+ * perf, Google-Wide Profiling), and their samples have since been drawn
+ * as flame graphs.
  *
  * references:
  *  - plan_tiny_browser.md: the profile that found where www's time
@@ -169,6 +173,7 @@
  *  - B. Gregg, "The Flame Graph" (CACM, 2016)
  *)
 
-(* The program: its arguments (its name first), and how it exits. *)
+(* [main] is the program: it takes its arguments (its name first) and
+ * says how it exits. *)
 val main :
   < Cap.stdout; Cap.stderr; Cap.open_in; .. > -> string array -> Exit.t

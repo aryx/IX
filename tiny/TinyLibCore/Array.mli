@@ -1,4 +1,5 @@
-(* Array, OCaml's subset (see Stdlib.mli); a.(i) is Array.get a i *)
+(* Array: a subset of OCaml's module (see Stdlib.mli). a.(i) is
+ * Array.get a i. *)
 val make : int -> 'a -> 'a array
 val length : 'a array -> int
 val get : 'a array -> int -> 'a

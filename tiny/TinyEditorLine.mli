@@ -66,12 +66,12 @@
  * cases (see lib_core's Regex.mli, which mini-ed uses).
  *
  * dropped:
- * From sam: the screen; multiple files (the b B D n X Y commands and
- * addresses that name a file); the mark (k and its address); ! < > |;
- * and cd. In a few places sam sets dot oddly after a loop or a move
- * (the range of the first change after an x, an empty range after t).
- * Here dot is simply the text the command produced; after u, dot is
- * restored to what it was before the undone command.
+ * It drops these parts of sam: the screen; multiple files (the b B D n
+ * X Y commands and addresses that name a file); the mark (k and its
+ * address); ! < > |; and cd. In a few places sam sets dot oddly after
+ * a loop or a move (the range of the first change after an x, an empty
+ * range after t). Here dot is simply the text the command produced;
+ * after u, dot is restored to what it was before the undone command.
  *
  * context:
  * It is tiny-kernel's ed (and sam, the same program under another
@@ -100,7 +100,7 @@
  *   selections, and run the next command on each of them (the editing
  *   model of Kakoune and vis, which grew out of sam's x);
  * - a journal of each command's changes, appended to a file as they are
- *   applied: crash recovery, and undo across sessions.
+ *   applied, which gives crash recovery and undo across sessions.
  *
  * cs-history:
  * The line as the unit of editing comes from the teletype. QED
@@ -146,7 +146,7 @@
  *    Strings" (Software -- Practice and Experience, 1995)
  *)
 
-(* a parsed command: its address, its letter, and what follows *)
+(* A parsed command holds its address, its letter, and what follows. *)
 type cmd
 
 (* Runs one command: its address is evaluated from dot, then the

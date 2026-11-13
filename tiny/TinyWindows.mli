@@ -52,10 +52,10 @@
  * sweep a rectangle, drag a window, or point at a window.
  *
  * twin:
- * The full-size version in ix is mini-rio (windows/rio/), the complete
- * one: Wm and Window, a Terminal for the text of a window, and
- * Fileserver, Virtual_cons and Virtual_mouse for the files that a
- * window's program opens.
+ * The full-size version in ix is mini-rio (windows/rio/). It is the
+ * complete one, with Wm and Window, a Terminal for the text of a
+ * window, and Fileserver, Virtual_cons and Virtual_mouse for the files
+ * that a window's program opens.
  *
  * kept:
  * The idea is implemented each time in the cheapest way that still
@@ -80,41 +80,45 @@
  *   example the shell's prompt, once the program ends).
  *
  * dropped:
- * A menu specific to each window, scroll bars and the kept text of a
- * window (what scrolls off the top is lost), selection, snarf and
- * paste, Resize and Hide, cursor shapes, using the border as a handle,
- * window names, and the files a window serves. rio is a file server,
- * but here the descriptors are simply handed over, because
- * TinyKernel.ml has no name space.
+ * tiny-windows has none of these:
+ * - a menu specific to each window;
+ * - scroll bars and the kept text of a window (what scrolls off the top
+ *   is lost);
+ * - selection, snarf and paste;
+ * - Resize and Hide;
+ * - cursor shapes, and using the border as a handle;
+ * - window names, and the files a window serves.
+ * rio is a file server, but here the descriptors are simply handed
+ * over, because TinyKernel.ml has no name space.
  *
  * twist:
- * Against rio and mini-rio:
+ * Compared with rio and mini-rio:
  * - {b The kernel holds every pixel.} A window is an off-screen image
  *   created by a message; tiny-windows only knows its number, never
  *   its bytes. What appears on the screen is composed by drawing the
  *   windows back to front, clipped to the rectangle that changed.
  *   There are no layers: mini-9pi's Memlayer saves the hidden parts
  *   of windows separately, but here nothing needs saving.
- * - {b A mouse is a box}: the position of the mouse in the window is
- *   written to a special kind of kernel pipe that keeps only the last
- *   write. So a program that never reads its mouse does not block
+ * - {b A mouse is a box.} The position of the mouse in the window is
+ *   written to a box, which is a special kind of kernel pipe that keeps
+ *   only the last write. So a program that never reads its mouse does not block
  *   anything.
  *
  * context:
  * TinyKernel provides the five descriptors, the pipes, the box and
  * ready; KGraphics, inside the kernel, holds the images;
  * TinyLibDraw builds and parses the messages. The programs that run in
- * a window (paint in C, user/paint.c, and TinyAppTetris
- * on TinyLibPlayground) also run without it.
+ * a window (paint, written in C in user/paint.c, and TinyAppTetris,
+ * built on TinyLibPlayground) also run without it.
  *
  * exercises:
  * - Resize: make a new image, draw the old one in it, free the old one;
  * - keep the text and add a scroll bar; add selection, snarf and paste;
  * - tell a program the size of its window (a message read on its 4);
- * - let New start a program other than the shell (an argument);
- * - remote windows: a window's draw messages are a byte stream
- *   already, so sent over an IL connection they are drawn by another
- *   machine's tiny-windows (drawterm's idea).
+ * - let New start a program other than the shell (given as an argument);
+ * - remote windows: a window's draw messages are already a byte
+ *   stream, so they could be sent over an IL connection and drawn by
+ *   another machine's tiny-windows (drawterm's idea).
  *
  * cs-history:
  * The idea comes from the Blit (Rob Pike, Bell Labs, 1982). Its window
@@ -160,12 +164,12 @@
  *    programs the same interface it uses itself
  *  - N. Wirth and J. Gutknecht, "Project Oberon" (1992): the other
  *    road, where windows are part of the system
- *  - principia's windows/rio/ (rio's C: wm.c, fsys.c, terminal.c...)
+ *  - principia's windows/rio/ (rio in C: wm.c, fsys.c, terminal.c...)
  *    and xix's rio in OCaml, which mini-rio follows, module by module
  *)
 
 (* The program. It loops until the keys or the mouse end, or until Exit
- * in the menu kills the shells. On the host OCaml only type-checks it:
- * boxes exist only on tiny-kernel. *)
+ * in the menu kills the shells. On the host, OCaml only type-checks it,
+ * because boxes exist only on tiny-kernel. *)
 val main :
   < Cap.pipe; Cap.forkew; Cap.kill; .. > -> string array -> Exit.t

@@ -1,4 +1,4 @@
-(* tiny-mkfs: makes a disk of tiny-kernel's file system on the host,
+(* tiny-mkfs makes a disk of tiny-kernel's file system on the host,
  * filled with files of the host, for tiny-machine -d. Its usage and
  * examples are in [help], which is what tiny-mkfs -h prints.
  *
@@ -18,12 +18,12 @@
  * split between its boot.img and its card.img.
  *
  * twin:
- * mini-mkfs (m-ix's, after xv6's mkfs.c), whose command line this one
- * follows: -m, name=file, and directory/. We dropped -b and -i: here a
- * block is always 1 KB, and the inodes are a file of their own
- * (see KFS.mli). *)
+ * mini-mkfs, m-ix's version of xv6's mkfs.c. This one follows its
+ * command line: -m, name=file, and directory/. We dropped -b and -i,
+ * because here a block is always 1 KB, and the inodes are a file of
+ * their own (see KFS.mli). *)
 
-(* [main caps argv]: tiny-mkfs's command line *)
+(* [main caps argv] runs tiny-mkfs's command line. *)
 val main :
   < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

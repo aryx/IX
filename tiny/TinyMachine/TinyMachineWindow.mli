@@ -1,4 +1,4 @@
-(* tiny-machine's window. tiny-machine -window runs it as a separate
+(* This is tiny-machine's window. tiny-machine -window runs it as a separate
  * program (TinyMachine.ml says why): this one links SDL, through
  * TinyMachineSDL, while tiny-machine links no C at all. The window
  * knows nothing of the machine. It shows the pictures it reads on its
@@ -12,8 +12,8 @@
  *                      becomes an arrow key, up or down)
  *
  * Between two pictures, the input may also contain:
- * - a line "C n", which sets the mouse cursor: 0 is the arrow, 1 a
- *   hand. A program of the machine asked for it by writing to the
+ * - a line "C n", which sets the mouse cursor: 0 is the arrow, and 1
+ *   is a hand. A program of the machine asked for it by writing to the
  *   mouse's word (www does it when the mouse is over a link);
  * - a line "A n" followed by n bytes, the speaker's samples since the
  *   last such line, which the window plays (TinyMachineSDL's play).

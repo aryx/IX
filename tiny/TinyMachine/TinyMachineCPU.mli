@@ -19,16 +19,17 @@
  * and every immediate is the low 16 bits.
  *
  * The machine:
- * - 16 registers of 32 bits. r0 is always 0, which gives a zero at hand
- *   and a place to throw a result away (the choice of RISC-V and MIPS).
- * - A byte-addressed memory of 2^20 bytes. Addresses are taken modulo
- *   its size, so nothing faults. The two low bits of a word's address
- *   are ignored: as in MMIX, there is no alignment trap, and no
- *   alignment check either.
- * - No flags. A branch compares two registers, and slt turns a
+ * - There are 16 registers of 32 bits. r0 is always 0, which gives a
+ *   zero at hand and a place to throw a result away (the choice of
+ *   RISC-V and MIPS).
+ * - Memory is addressed by bytes and has 2^20 of them. Addresses are
+ *   taken modulo its size, so nothing faults. The two low bits of a
+ *   word's address are ignored: as in MMIX, there is no alignment trap,
+ *   and no alignment check either.
+ * - There are no flags. A branch compares two registers, and slt turns a
  *   comparison into a value (ARM's flags are something an instruction
  *   set can do without).
- * - One format: an 8-bit opcode, two 4-bit registers d and a, and a
+ * - There is one format: an 8-bit opcode, two 4-bit registers d and a, and a
  *   16-bit immediate. In the three-register instructions, the low 4 bits
  *   of the immediate name the third register, b.
  *
@@ -106,13 +107,13 @@
  * writes over its code runs the new code.
  *
  * context:
- *     objects: of .s files by hand (v0, tiny-as), of tiny-cc's
- *              and tiny-ml's   |  tiny-ld: an image
+ *     objects: from .s files written by hand (v0, tiny-as), or from
+ *              tiny-cc and tiny-ml; tiny-ld links them into an image
  *     this file:   the CPU ([step], given an [env]), the encoding
- *                  they use, the listing
+ *                  they use, and the listing
  *                 /                          \
  *     TinyCPU: the env is memory and       TinyMachineDevices: the env is
- *     three calls of the host's            pages, devices and a trap;
+ *     three calls the host answers         pages, devices and a trap;
  *                                          used by TinyMachine and
  *                                          TinyMachineWeb
  *
@@ -121,16 +122,16 @@
  * machine changes the CPU only through env:
  * - a translator back to arm32, as QEMU does. It was written once (185
  *   lines) and then removed as a second topic; git history has it. The
- *   law: the same output whether interpreted or translated.
- * - a decode cache (threaded code): each word decoded once into a
- *   closure kept by its address, and dropped when a store hits it.
+ *   law is that the output is the same, interpreted or translated.
+ * - a decode cache (threaded code): each word is decoded once into a
+ *   closure kept by its address, which is dropped when a store hits it.
  *   Measure its speed against step.
  * - compressed instructions: 16-bit forms of the most common ones
  *   (RISC-V's RVC). Measure the density on tiny-kernel's programs, with
- *   the listing's law checking them.
+ *   the listing's law to check them.
  * - a debugger through env: breakpoints are words that decode does not
- *   know, caught by illegal, which then shows the program's registers
- *   and memory.
+ *   know, so illegal catches them and then shows the program's
+ *   registers and memory.
  *
  * cs-history:
  * Knuth designed MIX in the 1960s for The Art of Computer Programming,
@@ -145,7 +146,7 @@
  * the machine a book is written for can be drawn to fit the book.
  *
  * others:
- * Other machines drawn for a course: Hennessy and Patterson's DLX
+ * Other machines were drawn for a course: Hennessy and Patterson's DLX
  * (1990), which is MIPS with its accidents removed and the one this CPU
  * is nearest to; Patt and Patel's LC-3, with 16 bits, eight registers
  * and flags; Nisan and Schocken's Hack, with two kinds of instruction
@@ -168,10 +169,10 @@
  * design:
  * A register that is always zero costs one of the sixteen, and pays
  * for itself in opcodes that are no longer needed: mov is an addi of 0,
- * li an addi from r0, nop an addi into r0, a negation a sub from r0, a
- * jump a jal that throws its link into r0, and an absolute address (a
- * device's, a kernel variable's) is an offset from r0, with no register
- * to load first.
+ * li is an addi from r0, nop is an addi into r0, a negation is a sub
+ * from r0, and a jump is a jal that throws its link into r0. An absolute
+ * address (a device's, or a kernel variable's) is an offset from r0,
+ * with no register to load first.
  *
  * references:
  *  - D. E. Knuth, The Art of Computer Programming, vol. 1 (MIX, 1968;
@@ -225,8 +226,8 @@ val listing : show:(int -> string option) -> origin:int -> string -> string
 
 (* A profile counts each instruction by mode, window base and address;
  * the function given to [profiled] returns the mode (1 kernel, 0 user)
- * and the base. [profile_lines] gives "k|u base pc count" in hex, most
- * counted first, for tiny-prof (TinyProfiler.mli). *)
+ * and the base. [profile_lines] gives "k|u base pc count" in hex, the
+ * most counted first, for tiny-prof (TinyProfiler.mli). *)
 type profile
 val profile : unit -> profile
 val profiled : env -> profile -> (machine -> int * int) -> env

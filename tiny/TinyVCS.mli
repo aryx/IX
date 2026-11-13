@@ -17,17 +17,18 @@
  * push copy the objects that the other side is missing.
  *
  * dropped:
- * git's formats, compression, packs and deltas, the wire protocol, the
- * index, submodules and symbolic links, rename detection, tags, and
- * rebase.
+ * It drops git's formats, compression, packs and deltas, the wire
+ * protocol, the index, submodules and symbolic links, rename detection,
+ * tags, and rebase.
  *
  * twist:
  * - {b The repository is one hash.} Objects are appended to a single
- *   file (.tvcs/objects) and never changed. The state of the repository
- *   (the branches, and which one is current) is an object too, an {e operation},
- *   and .tvcs/head names the current operation. A command first writes its
- *   objects, then replaces head with one rename, so every command is
- *   atomic, just like the statements of TinyDatabase.ml.
+ *   file (.tvcs/objects) and never changed. The state of the
+ *   repository (the branches, and which one is current) is an object
+ *   too, an {e operation}, and .tvcs/head names the current operation.
+ *   A command first writes its objects, then replaces head with one
+ *   rename, so every command is atomic, just like the statements of
+ *   TinyDatabase.ml.
  * - {b Every command can be undone.} Each operation points to the
  *   previous one, so the log of operations is the history of the
  *   repository itself (this is jj's operation log; git's reflogs, one
@@ -92,10 +93,11 @@
  * a name derived from the content can never be stale.
  *
  * exercises:
- * All cheap because the repository is made of objects that never change
- * and are named by their hash, with its state being one of those
- * objects, an operation (redo needs no work at all: undo is itself an
- * operation, so undoing an undo is a redo):
+ * Redo needs no work at all, since undo is itself an operation and
+ * undoing an undo is a redo. The exercises below are all cheap for the
+ * same reason: the repository is made of objects that never change and
+ * are named by their hash, and its state is one of those objects, an
+ * operation.
  * - time travel: log @3 or switch @3 shows the repository as it was
  *   three operations ago; each operation still holds its branches, so
  *   this is just following prev three times;
@@ -126,8 +128,8 @@
  * whole tree on a server, and merged where the earlier systems locked.
  * BitKeeper gave each developer a complete repository; Linux used it
  * from 2002 until its free licence was withdrawn in April 2005, and
- * within weeks Linus Torvalds had written git, and Matt Mackall
- * Mercurial. Naming everything by the hash of its content came from
+ * within weeks Linus Torvalds had written git, and Matt Mackall had
+ * written Mercurial. Naming everything by the hash of its content came from
  * Monotone (Graydon Hoare, 2003), which Torvalds thought was right in
  * its idea but too slow.
  *
@@ -165,7 +167,7 @@
  *    version_control/git9/, with programs in C and commands written as
  *    rc scripts (commit.rc, merge.rc...). Its diff and merge3 come from
  *    version_control/diff/, Hunt and McIlroy's diff (Stone's algorithm,
- *    diffreg.c), where this file uses Myers'
+ *    diffreg.c), whereas this file uses Myers' algorithm
  *)
 
 (* A repository keeps these to access its files. *)

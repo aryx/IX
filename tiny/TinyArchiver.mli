@@ -9,11 +9,12 @@
  * its 24 objects.
  *
  * twin:
- * mini-ar (linker/tools/Ar.ml), which is Plan 9's ar (principia's
- * linkers/misc/ar.c).
+ * The twin is mini-ar (linker/tools/Ar.ml), which is Plan 9's ar
+ * (principia's linkers/misc/ar.c).
  *
  * dropped:
- * - All of ar's keys except t: no r, d, x, nor a and b for the order.
+ * - All of ar's keys except t: there is no r, d or x, nor a and b for
+ *   the order.
  *   An archive is always made again whole, by a Buildfile, with -o as
  *   in the other tools.
  * - The date, owner and mode in the header. This way a library made
@@ -26,5 +27,5 @@
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-(* -o lib.a file.o..., or -t lib.a. *)
+(* The arguments are -o lib.a file.o..., or -t lib.a. *)
 val main : < caps; .. > -> string array -> Exit.t

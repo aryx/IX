@@ -1,4 +1,4 @@
-(* trace: prints the system calls of a process as it makes them, one
+(* trace prints the system calls of a process as it makes them, one
  * line per call. The lines go to the error output, so that trace prog
  * > f keeps the program's own output apart (plan_tiny_debugger.md,
  * section 5):
@@ -16,7 +16,7 @@
  *                                         with its [pid]
  *     % trace 12                          a process already running
  *
- * How it works: trace starts its program stopped at its first
+ * Here is how it works. trace starts its program stopped at its first
  * instruction (a child that calls trace(0), then exec), or attaches to
  * a running process by its pid. Either way it talks to the kernel
  * through the trace descriptor (TinyDebugger.mli has a picture of it).
@@ -42,23 +42,23 @@
  *   and the kind of each argument: a number, a path, bytes given (with
  *   their length in the next argument), bytes filled (as many as the
  *   result says), or an address.
- * - {b -f}: the command f makes the kernel also trace the children the
- *   process forks, with the same tracer and the same stops. trace opens
- *   a descriptor on each child when the fork returns its pid
- *   (trace(pid) gives it; until then the child's stops are held), and
- *   waits on all of them with ready.
+ * - {b -f} sends the command f, which makes the kernel also trace the
+ *   children the process forks, with the same tracer and the same
+ *   stops. trace opens a descriptor on each child when the fork returns
+ *   its pid (trace(pid) gives it; until then the child's stops are
+ *   held), and waits on all of them with ready.
  *
  * kept:
  * Our choices:
  * - The bytes of a call are shown as C strings, only their first 32
- *   (as strace does), and a read of nothing as "" rather than the
- *   address of its buffer.
+ *   (as strace does), and a read of nothing is shown as "" rather than
+ *   the address of its buffer.
  * - There is one descriptor per process, where strace has one ptrace
  *   for all of them.
  * - A fault stops the process, and trace then kills it.
  *
  * dropped:
- * strace's options: choosing which calls to show (-e), the time of
+ * strace's options are dropped: choosing which calls to show (-e), the time of
  * each call or its length (-t, -T), a table of counts at the end (-c),
  * the number of bytes shown (-s), and detaching to let the process go
  * on untraced. Every call of the process is printed, so a long run is
@@ -94,6 +94,6 @@
  *  - plan_tiny_debugger.md
  *)
 
-(* Follows the stops of the command's processes until they exit. *)
+(* [main] follows the stops of the command's processes until they exit. *)
 val main :
   < Cap.forkew; Cap.kill; Cap.stderr; .. > -> string array -> Exit.t

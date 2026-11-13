@@ -23,7 +23,8 @@
  *)
 
 (* [typed] is console input not read yet. [raw] is the pid that put the
- * console in raw mode (rawcons), or 0; [raw_on] says it is alive. *)
+ * console in raw mode (rawcons), or 0; [raw_on] says whether that
+ * process is alive. *)
 val typed : string ref
 val typed_end : bool ref
 val raw : int ref
@@ -32,7 +33,8 @@ val raw_on : unit -> bool
 (* [read f a n] reads up to n bytes to the kernel's address a. *)
 val read : KFiles.file -> int -> int -> int option
 
-(* [net_command n cmd]: cmd 1 sends, 2 takes, n bytes in the buffer. *)
+(* [net_command n cmd] gives the network device a command on n bytes in
+ * the buffer: cmd 1 sends them, and cmd 2 takes them. *)
 val net_command : int -> int -> unit
 val net_send : string -> unit
 
@@ -45,5 +47,5 @@ val stop : KProcs.proc -> string -> unit
 (* [write f a n] writes the n bytes at the kernel's address a. *)
 val write : KFiles.file -> int -> int -> int option
 
-(* Whether a read of the file would not wait. *)
+(* [readable f] says whether a read of the file would not wait. *)
 val readable : KFiles.file -> bool

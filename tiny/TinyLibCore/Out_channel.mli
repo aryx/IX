@@ -1,11 +1,11 @@
-(* Out_channel, OCaml's (4.14) subset (see Stdlib.mli): what goes to a
- * channel. A channel is a descriptor of tiny-kernel's, written by its
- * call at once (mlsys.c's u_write; no buffer of ours, so nothing to
- * flush): as In_channel's read, a program that does not write one does
- * not name the call. TinyLibSystem.with_open_out opens one, as a
- * Chan.o *)
+(* Out_channel: a subset of OCaml's (4.14) module (see Stdlib.mli), for
+ * writing to a channel. A channel is a descriptor of tiny-kernel's,
+ * written at once by tiny-kernel's call (mlsys.c's u_write). There is
+ * no buffer of ours, so there is nothing to flush. As with In_channel's
+ * read, a program that does not write to a channel does not name the
+ * call. TinyLibSystem.with_open_out opens a channel, as a Chan.o. *)
 type t = out_channel
 
-(* all of the string; Failure when the kernel refuses (OCaml's
- * Sys_error) *)
+(* [output_string] writes all of the string; it raises Failure when the
+ * kernel refuses (where OCaml raises Sys_error) *)
 val output_string : t -> string -> unit

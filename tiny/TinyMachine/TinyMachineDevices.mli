@@ -1,4 +1,4 @@
-(* tiny-machine's machine, without a host. It is TinyMachineCPU's CPU
+(* This is tiny-machine's machine, without a host. It is TinyMachineCPU's CPU
  * plus the control registers, the traps, the pages, the state of the
  * devices, and the passing of time, one instruction at a time
  * ([tick]). TinyMachine.mli's header describes the machine itself.
@@ -56,16 +56,19 @@ val colours : string
 val nearest : int -> int -> int -> int
 val time : int
 
-(* Instructions per second, set before [create] into the read-only
- * register "rate", by which tiny-kernel makes its tick 2.5 ms. A host
- * with a window holds the machine to it. The default, 8 million, is what
+(* [rate] is the number of instructions per second. It is set before
+ * [create], which puts it in the read-only register "rate", and
+ * tiny-kernel uses it to make its tick 2.5 ms. A host with a window
+ * holds the machine to it. The default, 8 million, is what
  * the web page keeps up with and what the sessions were recorded at. *)
 val default_rate : int
 val rate : int ref
 
-(* Set before [create]: the date at boot in seconds since 2000-01-01 UTC,
- * at -56(r0), from the host's clock or -date; the seed of the random
- * numbers, at -60(r0), from -seed (0: the kernel uses its clock). *)
+(* Both are set before [create]. [date] is the date at boot, in seconds
+ * since 2000-01-01 UTC; it is read at -56(r0) and comes from the host's
+ * clock or from -date. [seed] is the seed of the random numbers; it is
+ * read at -60(r0) and comes from -seed (with 0, the kernel uses its
+ * clock). *)
 val date : int ref
 val seed : int ref
 
@@ -82,19 +85,21 @@ type console = {
   mutable queue : string; mutable next : int; mutable eof : bool;
   mutable opened : bool; mutable eof_read : bool;
 }
-(* Two disks of 1 KB blocks, their registers at -32(r0) and -80(r0).
- * [wrote] gets each block written, for the host to save. *)
+(* There are two disks of 1 KB blocks, with their registers at -32(r0)
+ * and -80(r0). [wrote] is given each block that is written, so that the
+ * host can save it. *)
 val bsize : int
 type disk = {
   image : Bytes.t; mutable block : int; mutable addr : int;
   mutable done_ : bool; mutable wrote : int -> unit;
 }
-(* [cursor] is set by a program and shown by the host: 0 the arrow, 1 a
- * hand over a link. [moved]: the word changed since it was last read. *)
+(* [cursor] is set by a program and shown by the host: 0 is the arrow,
+ * and 1 is a hand over a link. [moved] says that the word changed since
+ * it was last read. *)
 type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 type net
-(* [ring_at] is 0 when the speaker is off; [since], the last sample's
- * time *)
+(* [ring_at] is 0 when the speaker is off; [since] is the time of the
+ * last sample *)
 type speaker = {
   mutable ring_at : int; mutable played : int; mutable since : int;
 }
@@ -107,13 +112,16 @@ type machine = {
   put : char -> unit; on_open : console -> unit; send : string -> unit;
   hear : string -> unit;
   mutable touched : bool;
-  (* asleep since a wfi, until an interrupt of ie's is pending *)
+  (* the core sleeps after a wfi, until an interrupt enabled in ie is
+   * pending *)
   mutable waiting : bool;
   ipis : int Atomic.t array;
-  (* instructions run in user mode, in the kernel, and idle after a wfi *)
+  (* the instructions run in user mode and in the kernel, and the ones
+   * spent idle after a wfi *)
   spent : int array;
-  (* user pages' translations, a page number (-1: none) and its entry
-   * in the slot of the number's low bits; emptied when satp is written *)
+  (* the translations of user pages: the low bits of a page number pick
+   * a slot, which holds the number (-1 for none) and its entry. They
+   * are emptied when satp is written. *)
   tlb_tag : int array; tlb_pte : int array;
 }
 
@@ -133,28 +141,30 @@ val ring : int
 val hz : int
 val speaker_hear : machine -> unit
 
-(* [core m k] is core k (0 < k < !cores) of m, core 0: its own registers,
- * its pc at 0, the rest shared. *)
+(* [core m k] is core k (0 < k < !cores) of m, which is core 0. It has
+ * its own registers and its pc at 0, and it shares the rest with m. *)
 val core : machine -> int -> machine
 
 val env : machine -> TinyMachineCPU.env
 
-(* For -prof: the window's base tells which program runs. [ticks] runs
- * so many instructions. *)
+(* For -prof, the window's base tells which program runs. [ticks] runs
+ * the given number of instructions. *)
 val supervisor : machine -> bool
 val window_base : machine -> int
 val ticks : machine -> TinyMachineCPU.env -> int -> unit
 
-(* What a host does between two [ticks]. An empty packet does not reach
- * the kernel: it comes back to [send], the other end's clock. *)
+(* These are what a host does between two [ticks]. An empty packet does
+ * not reach the kernel: at its time it comes back to [send], and so it
+ * serves as the clock of the other end. *)
 val console_type : console -> string -> unit
 val mouse_set : mouse -> int -> int -> int -> unit
 val net_give : machine -> after:int -> string -> unit
 
-(* a recorded session: timed lines "m x y buttons" or "k text" *)
+(* A recorded session is made of timed lines, "m x y buttons" or
+ * "k text". *)
 val timed_events : string -> (int * string) list
 val event : mouse -> console -> string -> unit
 
-(* a listing of the instructions added to the CPU (csrr, eret, wfi...),
- * control registers by name (TinyLibMachine.csr_names) *)
+(* [show] lists the instructions added to the CPU (csrr, eret, wfi...),
+ * naming the control registers (TinyLibMachine.csr_names) *)
 val show : int -> string option

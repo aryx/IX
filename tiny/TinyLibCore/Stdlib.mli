@@ -1,49 +1,56 @@
-(* TinyLibCore: the standard library of tiny-ml's programs (the kernel,
- * tiny-windows, the applications, the tools), in tiny-ml's ML, a
- * module a file as OCaml's: Stdlib, open in every unit, then Char,
- * Seq, List, String, Bytes, Array, Option, Int64, Filename, Buffer, Printf
- * (what tiny-ml's reading of a format calls: Printf.mli), Marshal
- * (OCaml's format, in the runtime), Hashtbl, and
- * ix's Common, Sha1, Fpath, Fpath_ and Exit (lib_core's and lib_crypto's,
- * which the tools name), then In_channel, Out_channel and Chan (a file
- * read or written, Chan lib_core's), and Logs (a program's messages,
- * by level). Each .mli but Printf's, Marshal's and Logs' is a subset
- * of OCaml's (lib_core's, lib_crypto's):
- * the same names, the same types, the same results, so that a file
- * is built by OCaml on its own library for the host and by tiny-ml on
- * this one; TinyLibCore_test.sh has OCaml check each .mli against its
- * module, and compares a program's lines on both. What is left out is
- * what no tiny program names.
+(* TinyLibCore is the standard library of tiny-ml's programs (the kernel,
+ * tiny-windows, the applications, the tools). It is written in tiny-ml's
+ * ML, with one module per file, as OCaml's is. Stdlib is open in every
+ * unit, and then come:
+ * - Char, Seq, List, String, Bytes, Array, Option, Int32, Int64,
+ *   Filename and Buffer;
+ * - Printf (what tiny-ml's reading of a format calls: see Printf.mli);
+ * - Marshal (OCaml's format, in the runtime);
+ * - Hashtbl;
+ * - ix's Common, Sha1, Fpath, Fpath_ and Exit (from lib_core and
+ *   lib_crypto, which the tools name);
+ * - In_channel, Out_channel and Chan, for a file read or written (Chan
+ *   comes from lib_core);
+ * - Logs, for a program's messages, by level.
+ * Each .mli except Printf's, Marshal's and Logs' is a subset of OCaml's
+ * (or of lib_core's, or of lib_crypto's): it has the same names, the
+ * same types and the same results. So a file is built by OCaml on its
+ * own library for the host, and by tiny-ml on this one.
+ * TinyLibCore_test.sh has OCaml check each .mli against its module, and
+ * checks that a program prints the same lines when built both ways.
+ * What is left out is what no tiny program names.
  *
- * Each module is compiled once, by tiny-ml -c -L . after the ones it
- * names, to its object and its interface: on tiny-kernel in
- * /lib/ml, where tiny-ml reads the interfaces (-L another
- * directory). They are the first units of every program; what a
- * program does not call, tiny-ld leaves out (its pieces).
+ * Each module is compiled once, by tiny-ml -c -L ., after the modules it
+ * names, into its object and its interface. On tiny-kernel they are in
+ * /lib/ml, where tiny-ml reads the interfaces (-L gives another
+ * directory). The modules are the first units of every program, and
+ * tiny-ld leaves out the pieces that a program does not call.
  *
- *     Stdlib  Char  Seq  List  String  Bytes  Array  Option  Int64
- *        Filename  Buffer  Printf  Marshal  Hashtbl  Common  Sha1
- *        Fpath  Fpath_  Exit  In_channel  Out_channel  Chan  Logs
- *     (each after those before it: String.map is List.init's)
+ *     Stdlib  Char  Seq  List  String  Bytes  Array  Option  Int32
+ *        Int64  Filename  Buffer  Printf  Marshal  Hashtbl  Common
+ *        Sha1  Fpath  Fpath_  Exit  In_channel  Out_channel  Chan  Logs
+ *     (each module comes after the ones it uses: Sha1, for example,
+ *     uses String and Char)
  *
  * design:
- * A directory, a module a file, and not one TinyLibCore.ml: the
- * prelude's dotted names were not modules, and its text was the
- * compiler's, compiled again at each run (47 s for a unit of one line
- * on tiny-kernel, 420 KB of the library's assembly in every program).
- * A module a file is compiled once, to its object and its interface;
+ * TinyLibCore is a directory with one module per file, and not a single
+ * TinyLibCore.ml. As a single file, a prelude, its dotted names were
+ * not modules, and its text was part of the compiler, compiled again
+ * at each run (47 s for a unit of one line on tiny-kernel, and
+ * 420 KB of the library's assembly in every program). A module in a
+ * file of its own is compiled once, into its object and its interface;
  * its name is OCaml's, so the same source builds both ways;
  * TinyLibCore_test.sh checks each .mli against OCaml's module; and
- * tiny-ld leaves out what a program does not call (its pieces).
- * The price is the list of the modules, kept in several places
- * (TinyKernel/Makefile's CORE, TinyML.ml's library, tests/link.sh, the
- * list above). The system's side is not here: TinyLibSystem.mli says
- * why.
+ * tiny-ld leaves out the pieces that a program does not call.
+ * The price is that the list of the modules is kept in several places
+ * (CORE in tiny/Buildfile and in TinyLibCore/Buildfile, TinyML.ml's
+ * library, tests/link.sh, the list above). The system's side is not
+ * here; TinyLibSystem.mli says why.
  *
- * This module: the operators, the machine's and the runtime's
- * (runtime/ml/ml.c's) as externals; option and the exceptions; the few
- * functions OCaml's Stdlib has that tiny programs name. max_int and
- * min_int are the target's, 31 bits. *)
+ * This module has the operators, as externals of the machine and of the
+ * runtime (runtime/ml/ml.c); option and the exceptions; and the few
+ * functions of OCaml's Stdlib that tiny programs name. max_int and
+ * min_int are the target's, on 31 bits. *)
 
 val raise : exn -> 'a
 val ( = ) : 'a -> 'a -> bool
@@ -102,7 +109,7 @@ val max_int : int
 val min_int : int
 exception Exit
 
-(* a file opened to read, or to write (In_channel and Out_channel;
+(* a file opened to read, or to write (see In_channel and Out_channel;
  * TinyLibSystem.with_open_in and with_open_out open them) *)
 type in_channel
 type out_channel

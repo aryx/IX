@@ -8,15 +8,17 @@ type token =
   | P of string                       (* a punctuation *)
   | EOF
 
-(* For error messages: the file (an #include's own) and the line. *)
+(* The file and the line, for error messages; a token from an #include
+ * has the included file's name. *)
 type loc = string * int
 type located = token * loc
 
-(* lx_incl are the -I directories. lx_find here others picks the file,
- * here (next to the including file) first, then in the others. lx_open
- * lexes an included file, its errors given with its name. The lx_
- * prefix: tiny-ml, which compiles tiny-cc for tiny-kernel, has one name
- * space for all record labels. *)
+(* lx_incl are the -I directories. [lx_find here others] picks the file:
+ * it looks here (next to the including file) first, then in the others.
+ * lx_open lexes an included file, and its errors are given with that
+ * file's name. The labels have the lx_ prefix because tiny-ml, which
+ * compiles tiny-cc for tiny-kernel, has one name space for all record
+ * labels. *)
 type env = {
   lx_macros : (string, located list) Hashtbl.t;
   lx_incl : Fpath.t list;

@@ -26,8 +26,9 @@
  * anything else becomes ?.
  *
  * dropped:
- * With the tree go style sheets (but a display:none, hidden), scripts,
- * forms, a page's colours and fonts, anything but ASCII.
+ * Along with the tree, we drop style sheets (except that an element
+ * with a style of display:none is hidden), scripts, forms, a page's
+ * colours and fonts, and anything that is not ASCII.
  *
  * twist:
  * {b A page is read only once, as it arrives, and turned directly into
@@ -81,7 +82,8 @@
  * libpanel's rich text (rdhtml.c's plrtstr), with no tree. Its tables
  * are rows of cells one after the other, not columns. abaco, which
  * came after it, reads a page with libhtml's parsehtml into a list of
- * items, a table one of them, sized as a whole (abaco's html.c).
+ * items; a table is one of those items, sized as a whole (abaco's
+ * html.c).
  *
  * references:
  *  - docs/plans/done/plan_tiny_browser.md: the reasons for each choice, and
@@ -93,36 +95,44 @@
  *    pages use
  *)
 
-(* The program www: the page at [address] asked of the wire's other end
- * (HTTP's request "GET address HTTP/1.0" on port 70, Http:
- * TinyMachinePeer.www_address says what an address can be), and drawn
- * as it arrives on the screen, or in the window, the program's
- * descriptor 3. The answer's head says what its body is (Content-Type):
- * HTML is read, a text shown as it is (text/plain, in a <pre>), and a
- * WAV file or a PDF is kept in the current directory (www.wav, www.pdf)
- * and given to a program that shows it, started beside www and not
- * waited for, as Mosaic's helpers were: /bin/play, /bin/page (none on
- * tiny-kernel yet; the native tiny-www's: tiny-play or mini-play,
- * mini-page). Any other type is said not shown; a status other than 200
- * is said in the last row. At the top, TinyLibGUI's
- * menus (the page: back, top, reload, quit; a search, a few articles
- * to go to; the pages seen before) and a toolbar: Back, the address in
- * a field (a click in it, or g, gives it the keys; Enter goes there),
- * Go. s gives the field a ?: what is typed after it is searched for
- * (Url.absolute). A page whose <meta> refresh sends us
- * on at once, as a search's results do, is followed when it is all
- * there.
- * Space and - show the next and the previous screenful, the arrows a
- * line; q quits and clears. When
- * the keys end (a recorded session's) and the page is all there, the
- * program ends and leaves the page on the screen. caps: the window's
- * size waited for, the wire dialed, a download kept, a helper run *)
+(* The program www. It asks the wire's other end for the page at
+ * [address], with HTTP's request "GET address HTTP/1.0" on port 70
+ * (see Http; TinyMachinePeer.www_address says what an address can be).
+ * It draws the page as it arrives on the screen, or in the window,
+ * which is the program's descriptor 3. The answer's head says what its
+ * body is (Content-Type):
+ * - HTML is read;
+ * - a text (text/plain) is shown as it is, in a <pre>;
+ * - a WAV file or a PDF is kept in the current directory (www.wav,
+ *   www.pdf) and given to a program that shows it, /bin/play or
+ *   /bin/page. That program is started beside www and not waited for,
+ *   as Mosaic's helpers were. There is none on tiny-kernel yet; for the
+ *   native tiny-www, they are tiny-play or mini-play, and mini-page;
+ * - for any other type, www says that it does not show it.
+ * A status other than 200 is shown in the last row.
+ *
+ * At the top are TinyLibGUI's menus and a toolbar. The menus hold the
+ * page's actions (back, top, reload, quit), a search and a few articles
+ * to go to, and the pages seen before. The toolbar has Back, a field
+ * with the address, and Go. A click in the field, or g, gives it the
+ * keys, and Enter goes to what it holds. s puts a ? in the field, and
+ * what is typed after it is searched for (Url.absolute). When a page's
+ * <meta> refresh sends us on at once, as a search's results do, www
+ * follows it once the page is all there.
+ *
+ * Space and the right arrow show the next screenful, and - and the left
+ * arrow the previous one. The up and down arrows move by a line; q
+ * quits and clears the screen. When the keys end (as in a recorded
+ * session) and the page is all there, the program ends
+ * and leaves the page on the screen. The capabilities are for waiting
+ * for the window's size, dialing the wire, keeping a download, and
+ * running a helper. *)
 val browse :
   < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; .. > ->
   string -> unit
 
-(* [main caps argv]: the program, www address or words: the page, or
- * the words searched *)
+(* [main caps argv] is the program, run as "www address" or "www words".
+ * It shows the page at the address, or searches for the words. *)
 val main :
   < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; Cap.stderr; .. > ->
   string array -> Exit.t

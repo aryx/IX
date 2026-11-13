@@ -47,12 +47,14 @@ val asked : string -> Url.url option
 (* [response status headers body] adds the Content-Length *)
 val response : int -> (string * string) list -> string -> string
 
-(* the body's first byte in a response's start, if the head has ended *)
+(* where the body's first byte is in the start of a response, if the
+ * head has ended *)
 val head_end : string -> int option
 
 val status : string -> int option
 
-(* "" if the head has none; names are compared ignoring case *)
+(* [header] is "" if the head has none; names are compared ignoring
+ * case *)
 val header : string -> string -> string
 
 (* a head's Content-Type, without its parameters, in lowercase

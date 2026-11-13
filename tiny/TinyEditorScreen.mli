@@ -1,5 +1,5 @@
-(* A tiny screen editor, in one file: the text on the screen, a cursor
- * in it, and the keys of Emacs.
+(* A tiny screen editor, in one file. It shows the text on the screen
+ * with a cursor in it, and it uses the keys of Emacs.
  *
  * The text is stored as its lines, split at the line of the cursor:
  *
@@ -17,8 +17,8 @@
  *   screen's caches recognize it by == ([faces], below) without any
  *   bookkeeping of what changed;
  * - the screen is made of lines taken from the lists as they are;
- * - an earlier text would share all its lines but one (undo, an
- *   exercise).
+ * - an earlier text would share all its lines but one (this would give
+ *   undo, which is an exercise).
  * The price is that a long line is copied at each key, and a far move
  * moves the lines one by one.
  *
@@ -67,11 +67,11 @@
  *
  * A file of OCaml or C is shown in colors: its keywords, its comments
  * and its strings ([faces]). Each line is colored on its own, except
- * for comments, which may span several lines (and nest, in OCaml): how
- * many are open at the first line shown is counted from the start of
- * the text. A string over several lines, or a C macro continued by a
- * backslash, is colored wrong; Emacs's modes get these right, with
- * much more code.
+ * for comments, which may span several lines (and nest, in OCaml). So
+ * the number of comments open at the first line shown is counted from
+ * the start of the text. A string over several lines, or a C macro
+ * continued by a backslash, is colored wrong; Emacs's modes get these
+ * right, with much more code.
  *
  * twin:
  * mini-emacs (editors/emacs/), its full-size counterpart in m-ix, has
@@ -84,13 +84,14 @@
  * its text is a gap buffer (its Text module), and a key is looked up
  * in keymaps to find a command, which is a function on the editor's
  * structure. This editor keeps Emacs's keys and their names, but a key
- * is a case of [key]'s match, with no keymap; a command's name only
- * stands for its keys (M-x, above); and the text is lines (above).
+ * is a case of the match in [key], with no keymap; a command's name
+ * only stands for its keys (see M-x, above); and the text is stored as
+ * lines (see above).
  *
  * dropped:
- * Multiple buffers and windows, undo, the mark and the region,
- * searching backward, replacing with a question at each, a macro's
- * count (C-u), wrapping long lines (a long line is cut at the edge of
+ * It drops multiple buffers and windows, undo, the mark and the region,
+ * searching backward, replacing with a question at each match, a
+ * macro's count (C-u), wrapping long lines (a long line is cut at the edge of
  * the screen, and the screen scrolls to follow the cursor), and
  * characters beyond ASCII.
  *
@@ -110,11 +111,12 @@
 
 type editor
 
-(* [create cols rows file text]. [file] is the name to show, an Fpath.t
- * so that it cannot be swapped with [text] by mistake. *)
+(* [create cols rows file text] makes an editor. [file] is the name to
+ * show, an Fpath.t so that it cannot be swapped with [text] by
+ * mistake. *)
 val create : int -> int -> Fpath.t -> string -> editor
 
-(* what a key asks of the program around the editor *)
+(* This is what a key asks of the program around the editor. *)
 type request = Continue | Save | Quit
 
 val key : editor -> TinyLibPlayground.key -> request
@@ -123,15 +125,15 @@ val key : editor -> TinyLibPlayground.key -> request
  * program around passes it to [key] before the next key typed. *)
 val pending : editor -> TinyLibPlayground.key option
 
-(* The screen: rows lines of at most cols characters. The last two are
+(* The screen is rows lines of at most cols characters. The last two are
  * a status line (the file and the cursor's place) and a message. *)
 val view : editor -> string list
 
 (* The colors of the text lines of [view] (its first rows - 2), for a
- * file whose name ends in .ml, .mli, .c or .h; [] for other files.
- * Each is a string as long as its line, with one letter per character:
- * k a keyword, c a comment, s a string or a character literal, . the
- * rest. Call it after [view]. *)
+ * file whose name ends in .ml, .mli, .c or .h; it returns [] for other
+ * files. Each is a string as long as its line, with one letter per
+ * character: k for a keyword, c for a comment, s for a string or a
+ * character literal, and . for the rest. Call it after [view]. *)
 val faces : editor -> string list
 
 (* [shapes e n] gives the screen's first n lines as shapes, for a
@@ -140,18 +142,18 @@ val faces : editor -> string list
  * a piece or two. The last shape is the cursor's cell, white on black. *)
 val shapes : editor -> int -> TinyLibPlayground.shape list
 
-(* the column and line of the cursor on that screen *)
+(* Returns the column and line of the cursor on that screen. *)
 val cursor : editor -> int * int
 
-(* the lines with a newline between two *)
+(* Returns the lines joined, with a newline between each two. *)
 val text : editor -> string
 
 val lines : editor -> string list
 
-(* tells the editor that the program around has written the file *)
+(* Tells the editor that the program around has written the file. *)
 val saved : editor -> unit
 
-(* shows a message on the screen's last line until the next key *)
+(* Shows a message on the screen's last line until the next key. *)
 val say : editor -> string -> unit
 
 (* The program emacs file. It writes the file on each save and prints

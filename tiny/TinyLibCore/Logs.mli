@@ -1,18 +1,20 @@
-(* Logs, lib_core's (and opam's) for tiny-ml's programs: a message at a
- * level, said when the level is the one set or below it (Warning by
- * default). A program writes OCaml's call,
+(* Logs: lib_core's module (and opam's), for tiny-ml's programs. A
+ * message has a level, and it is shown when its level is the one set or
+ * below it (Warning by default). A program writes the same call as in
+ * OCaml,
  *
  *     Logs.debug (fun m -> m "%s: %s" file (show_item it))
  *
- * and tiny-ml reads m's format as Printf.sprintf's (TinyML/Parser.ml), so
- * that here m takes the message made: like Printf's, not a subset of
- * OCaml's. Where it goes is the reporter's, TinyLibSystem's on
- * tiny-kernel (stderr, after the program's name); its -v, -debug and
- * -quiet set the level (TinyLibSystem.logging). *)
+ * and tiny-ml reads m's format as it reads Printf.sprintf's
+ * (TinyML/Parser.ml), so that here m takes the message already made.
+ * Like Printf, this module is not a subset of OCaml's. The reporter
+ * decides where a message goes; on tiny-kernel it is TinyLibSystem's,
+ * which writes to stderr, after the program's name. The options -v,
+ * -debug and -quiet set the level (TinyLibSystem.logging). *)
 
 type level = App | Error | Warning | Info | Debug
 
-(* what is said: the levels up to this one; None, nothing *)
+(* [set_level (Some l)] shows the levels up to l; None shows nothing *)
 val set_level : level option -> unit
 
 val app : ((string -> unit) -> unit) -> unit
@@ -21,6 +23,6 @@ val warn : ((string -> unit) -> unit) -> unit
 val info : ((string -> unit) -> unit) -> unit
 val debug : ((string -> unit) -> unit) -> unit
 
-(* where a message said goes, with its level (by default stdout, a
- * line) *)
+(* where a shown message goes, with its level (by default, to stdout,
+ * as a line) *)
 val set_reporter : (level -> string -> unit) -> unit

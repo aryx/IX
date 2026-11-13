@@ -1,8 +1,9 @@
-(* Int64, OCaml's subset (see Stdlib.mli): integers of 64 bits, for
- * tiny-cc's constants, which are C's of 32 bits and its own long
- * temporaries (OCaml's int64; tiny-ml's ints have 31 bits, so here a
- * number is four pieces of 16). The type is named int64, as OCaml
- * names it: tiny-ml's types are one name space, where t is taken. *)
+(* Int64: a subset of OCaml's module (see Stdlib.mli). Its integers of
+ * 64 bits are for tiny-cc's constants, which are C's constants of 32
+ * bits and tiny-cc's own long temporaries, kept in OCaml's int64.
+ * tiny-ml's ints have 31 bits, so here a number is made of four pieces
+ * of 16 bits. The type is named int64, as OCaml names it, because
+ * tiny-ml's types share one name space, where t is already taken. *)
 
 val zero : int64
 val one : int64

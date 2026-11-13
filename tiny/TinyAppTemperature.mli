@@ -6,9 +6,9 @@
  * a field, then type digits, a sign, or Backspace. Escape quits, and so
  * does q before any field is clicked.
  *
- * What the task asks for, and why it comes second: a change must
- * propagate in both directions, and half of what the user types is not
- * yet a number.
+ * The task asks that a change propagate in both directions, while half
+ * of what the user types is not yet a number; this is why it comes
+ * second.
  *
  *     typed in Celsius     Celsius    Fahrenheit
  *     1                    1          34
@@ -21,7 +21,7 @@
  *
  * twin:
  * examples/Gui7Temperature.ml (from the author's playground) has the
- * same model, the two texts, but is written in lib_gui's immediate
+ * same model, which is the two texts, but it is written in lib_gui's immediate
  * style: both fields are drawn at every frame, and the field typed in
  * is the one whose text came back changed; there is no message type.
  * Its numbers are floats, shown with one decimal. Here we use
@@ -42,10 +42,11 @@
  *   itself.
  *
  * dropped:
- * Fractions (tiny-ml has no floats, so we round to the nearest whole
- * number: 34 Fahrenheit gives 1 Celsius, and 1 Celsius gives 34),
- * showing a field in red when its text is not a number, and numbers
- * longer than six digits.
+ * The converter has none of these:
+ * - fractions (tiny-ml has no floats, so we round to the nearest whole
+ *   number: 34 Fahrenheit gives 1 Celsius, and 1 Celsius gives 34);
+ * - showing a field in red when its text is not a number;
+ * - numbers longer than six digits.
  *
  * exercises:
  * - show a field whose text is not a number in another colour (with

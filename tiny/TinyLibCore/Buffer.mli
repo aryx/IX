@@ -1,6 +1,7 @@
-(* Buffer, OCaml's subset (see Stdlib.mli): bytes that double when
- * full, from 256 at most (a program's partition is 1 MB, create's
- * size a guess) *)
+(* Buffer: a subset of OCaml's module (see Stdlib.mli). A buffer is
+ * bytes that double in size when full. They start at 256 bytes at most,
+ * because a program's partition is 1 MB, and the size given to create
+ * is only a guess. *)
 type t
 val create : int -> t
 val add_string : t -> string -> unit

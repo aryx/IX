@@ -1,4 +1,4 @@
-(* Tiny file system: the part of the kernel that keeps files on a
+(* Tiny file system is the part of the kernel that keeps files on a
  * disk, as KGraphics is the part that draws. The first disk is the
  * root, in a union with the boot image's files (see "The files" in
  * TinyKernel.mli).
@@ -17,13 +17,13 @@
  * of Unix since 1971, and of xv6.
  *
  * twin:
- * mini-9pi's disk device, '#x' (kernels/9pi/'s Kfs), built on
- * lib_xv6fs's Xv6fs. That is xv6's file system (xv6's fs.c, also in
- * ix's mini-xv6 as kernels/xv6's Fs) running in the kernel, with a
- * bitmap of free blocks and, as here, no log and no cache. We kept
- * from it the inode with its direct then indirect blocks, the
- * directory as a file of (name, number) pairs, and names longer than
- * xv6's 14 bytes (an ix extension there).
+ * The twin is mini-9pi's disk device, '#x' (Kfs in kernels/9pi/), which
+ * is built on Xv6fs in lib_xv6fs. That is xv6's file system (xv6's
+ * fs.c, also in ix's mini-xv6 as kernels/xv6's Fs) running in the
+ * kernel, with a bitmap of free blocks and, as here, no log and no
+ * cache. We kept from it the inode with its direct then indirect
+ * blocks, the directory as a file of (name, number) pairs, and names
+ * longer than xv6's 14 bytes (an ix extension there).
  * Plan 9 itself has no disk file system in its kernel (principia's
  * kernel/filesystems/ has devfs.c, with dossrv and ramfs as programs):
  * a disk is served by a user program, as Kdos explains. Here, as in
@@ -31,12 +31,13 @@
  * functions.
  *
  * dropped:
- * xv6's buffer cache and its locks on inodes and buffers: a call runs
- * to its end on core 0, and every transfer is instant, so no process
- * ever waits in the middle of the file system. A slow disk would need
- * both back. A directory has no entries for . and .. (the kernel
- * resolves .. by the path's text), and a file is a directory or data,
- * with no kind for a device such as xv6's mknod makes.
+ * xv6's buffer cache and its locks on inodes and buffers are dropped,
+ * because a call runs to its end on core 0, and every transfer is
+ * instant, so no process ever waits in the middle of the file system. A
+ * slow disk would need both back. A directory has no entries for . and
+ * .. (the kernel resolves .. by the path's text), and a file is a
+ * directory or data, with no kind for a device such as xv6's mknod
+ * makes.
  *
  * twist:
  * Unlike the twin:
@@ -94,7 +95,8 @@
  *
  * {b Snapshots come for free.} Since an old tree is never written over,
  * keeping it costs only its root. At each boot, the tree that the last
- * boot left is kept as a snapshot (14 at most, the oldest dropped). The
+ * boot left is kept as a snapshot (there are 14 at most, and the oldest
+ * is dropped). The
  * kernel shows them as /dump/N, the files as they were at the end of
  * boot N, read only. A file deleted by mistake can be copied back from
  * there.
@@ -138,17 +140,19 @@
 type tree = int
 type inode = int
 
-(* 1 and 2 on the disk, as in the directory entries ls gets. *)
+(* The kinds are 1 and 2 on the disk, as in the directory entries ls
+ * gets. *)
 type file_kind = Fs_dir | Fs_file
 
-(* Between block b and memory at a: the disk device's commands 1 and 2
- * in the kernel, a copy of bytes in the tests. *)
+(* A transfer goes between block b and memory at a. In the kernel it is
+ * the disk device's command 1 or 2; in the tests it is a copy of
+ * bytes. *)
 type disk_io = Disk_read | Disk_write
 
-(* A mounted disk, like Linux's super_block. *)
+(* An fs is a mounted disk, like Linux's super_block. *)
 type fs
 
-(* 0 for the first disk mounted, 1 for the second. *)
+(* [fs_disk] is 0 for the first disk mounted, and 1 for the second. *)
 val fs_disk : fs -> int
 
 (* Raised by a write when no block is free, even after a collection. *)
@@ -165,18 +169,21 @@ val fs_mount : (int -> int -> disk_io -> unit) -> int -> int -> fs
 val fs_commit : fs -> unit
 val fs_sync : unit -> unit
 
-(* Each snapshot's tree number and the boot that left it. *)
+(* [fs_snapshots] gives each snapshot's tree number and the boot that
+ * left it. *)
 val fs_snapshots : fs -> (tree * int) list
 
-(* Free blocks, as counted by the last collection. *)
+(* [fs_free] is the number of free blocks, as counted by the last
+ * collection. *)
 val fs_free : fs -> int
 
 (* A file is an inode's number in a tree: tree 0 is the live one, which
- * can be changed, trees 1 to 14 the snapshots. Inode 1 is the root
+ * can be changed, and trees 1 to 14 are the snapshots. Inode 1 is the root
  * directory. *)
 
 (* [fs_kind] gives the type, size and number of links. [fs_date] is the
- * last write, in seconds since 2000, from [fs_clock], the kernel's. *)
+ * last write, in seconds since 2000, taken from [fs_clock], which the
+ * kernel sets. *)
 val fs_kind : fs -> tree -> inode -> file_kind * int * int
 val fs_date : fs -> tree -> inode -> int
 val fs_clock : (unit -> int) ref
@@ -184,7 +191,7 @@ val fs_is_dir : fs -> tree -> inode -> bool
 
 val fs_lookup : fs -> tree -> inode -> string -> inode option
 
-(* In the order the names were made. *)
+(* [fs_entries] lists a directory in the order its names were made. *)
 val fs_entries : fs -> tree -> inode -> (string * inode) list
 
 (* [fs_read_at r n off a len] reads up to len bytes from offset off to

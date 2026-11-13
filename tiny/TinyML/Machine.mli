@@ -31,16 +31,17 @@ type slot = int
  * from the last, as OCaml evaluates them. *)
 type ir =
   | Imm of int64                      (* a word, an integer already tagged *)
-  | Addr of sym                       (* a static block's is its value *)
+  | Addr of sym                       (* a static block, whose address is
+                                       * its value *)
   | Get of slot
   | Set of slot
-  | GetG of sym * int                 (* a unit's table, an index in it *)
+  | GetG of sym * int                 (* a unit's table and an index in it *)
   | SetG of sym * int
   | Field of int                      (* replaces the block by its field *)
   | SetField of int                   (* stores the value below the block *)
-  | Alloc of int * int                (* tag, n: a block of n values, the
-                                       * top becoming field 0 *)
-  | Blank of int * int                (* tag, n: n fields, each () *)
+  | Alloc of int * int                (* tag and n: makes a block of n
+                                       * values, the top becoming field 0 *)
+  | Blank of int * int                (* tag and n: n fields, each () *)
   | Op of op
   | Call of target * int * bool       (* the closure and n arguments; true
                                        * for a tail call *)
@@ -52,10 +53,10 @@ type ir =
   | Drop
   | Ret
   | Raise                             (* raises the top *)
-  | TryEnter of int * label           (* the k-th handler, its code *)
+  | TryEnter of int * label           (* the k-th handler and its code *)
   | TryExit of int
-  | Catch of int                      (* the handler's entry; the exception
-                                       * pushed *)
+  | Catch of int                      (* the handler's entry, with the
+                                       * exception pushed *)
 
 val label : unit -> label
 
@@ -79,7 +80,7 @@ val add_data : TinyLibMachine.line list -> unit
 (* The code, then .data; written as an object, or as text with -S. *)
 val lines : asm -> TinyLibMachine.line list
 
-(* DCode is the label of code, DVal of a block. *)
+(* DCode is the label of some code, and DVal the label of a block. *)
 type dword = DNum of TinyLibMachine.word | DCode of sym | DVal of sym
 
 val words : sym -> dword list -> unit
@@ -98,7 +99,8 @@ val curry : int -> int -> sym
 val entry : int -> sym -> sym
 val closure_sym : sym -> sym
 val static_closure : sym -> int -> sym
-(* [exn_id unit c], where unit declares c; exn_const for a constant c. *)
+(* [exn_id unit c], where unit declares c; exn_const is for a constant
+ * c. *)
 val exn_id : string -> string -> sym
 val exn_const : string -> string -> sym
 val tagged : int -> int64

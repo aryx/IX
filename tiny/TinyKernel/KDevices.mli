@@ -37,7 +37,7 @@ val mouse : KFiles.box
 
 (* [ticks] counts timer interrupts, 400 a second; [date] is the boot's
  * date plus the seconds since. [alarm] is the earliest tick a waiting
- * process asked for (0: none). [counted] is the time of the last tick. *)
+ * process asked for (0 for none). [counted] is the time of the last tick. *)
 val ticks : int ref
 val date : unit -> int
 val alarm : int ref

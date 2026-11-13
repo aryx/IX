@@ -1,5 +1,5 @@
-(* String, OCaml's subset (see Stdlib.mli); concat makes its result
- * once, by the runtime *)
+(* String: a subset of OCaml's module (see Stdlib.mli). concat makes its
+ * result in one go, in the runtime. *)
 val length : string -> int
 val get : string -> int -> char
 val make : int -> char -> string
@@ -21,6 +21,7 @@ val lowercase_ascii : string -> string
 val capitalize_ascii : string -> string
 val trim : string -> string
 val split_on_char : char -> string -> string list
-(* (called without the label: String.starts_with "http://" s) *)
+(* starts_with is called without the label: String.starts_with
+ * "http://" s *)
 val starts_with : prefix:string -> string -> bool
 val get_uint16_le : string -> int -> int

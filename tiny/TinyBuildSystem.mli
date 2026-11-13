@@ -28,8 +28,8 @@
  * infinite patterns (a rule like %: %.gz is used at most once on a
  * path).
  *
- * mk's two wildcards, % and & (a stem with no / or .), for two kinds of
- * rules. A rule whose recipe is the same everywhere is written once
+ * It keeps mk's two wildcards, % and & (a stem with no / or .), for two
+ * kinds of rules. A rule whose recipe is the same everywhere is written once
  * with %, and its stem crosses directories: tiny/Buildfile's %.o: %.c
  * makes runtime/c/libc.o and user/get.o, and its %.tmi: %.o
  * makes TinyML/Lexer.tmi. A rule whose recipe depends on the directory
@@ -37,13 +37,13 @@
  * the top's units without it, so TinyML/&.o and &.o each make their own
  * directory's objects. With two % rules instead, %.o and TinyML/%.o
  * would both match TinyML/Lexer.o, which is ambiguous. The . keeps &.o
- * from making x.start.o (stem x.start), which is %.start.o's. A % that
+ * from making x.start.o (stem x.start), which %.start.o makes. A % that
  * never crossed a / would need no &, but each rule of the first kind
  * would then be written again for each directory (about ten rules in
  * tiny/Buildfile), and the file would no longer be mk's. & is needed
- * because one Buildfile makes all of tiny/'s directories: xix's omk
- * leaves it out ("rarely found used, % is enough"), and with a mkfile
- * in each directory, as Plan 9 has them, % is enough indeed.
+ * because one Buildfile makes all of tiny/'s directories. xix's omk
+ * leaves it out ("rarely found used, % is enough"), and indeed, with a
+ * mkfile in each directory, as Plan 9 has them, % is enough.
  *
  * The line <file includes a file if it exists (a generated .depend may
  * not exist the first time), and a backslash-newline continues a line,
@@ -99,17 +99,19 @@
  * rebuilt when it is missing or when its stamp has changed. This is the
  * "verifying traces" rebuilder of Mokhov, Mitchell and Peyton Jones,
  * "Build Systems a la Carte" (2018), and it fixes four problems of mk
- * at once: two files written in the same second are no longer
- * considered "equal", the new timestamps from a git checkout do not
- * trigger any rebuild, a recipe that regenerates an identical file
- * stops the rebuild there (early cutoff), without mk's cmp -s trick,
- * and a recipe edited, or a variable of it changed (CFLAGS), remakes
- * what it makes, since the recipe is in the stamp with the values of its
- * variables. make and mk see neither change. A Makefile fakes it by
- * making every target depend on the Makefile, which remakes
- * everything, or with boilerplate that saves each command line to
- * compare it later (Linux's kbuild, with its .cmd files and
- * if_changed).
+ * at once:
+ * - two files written in the same second are no longer considered
+ *   "equal";
+ * - the new timestamps from a git checkout do not trigger any rebuild;
+ * - a recipe that regenerates an identical file stops the rebuild there
+ *   (early cutoff), without mk's cmp -s trick;
+ * - when a recipe is edited, or one of its variables changes (CFLAGS),
+ *   what it makes is remade, since the recipe is in the stamp with the
+ *   values of its variables. make and mk see neither change. A Makefile
+ *   fakes it by making every target depend on the Makefile, which
+ *   remakes everything, or with boilerplate that saves each command
+ *   line to compare it later (Linux's kbuild, with its .cmd files and
+ *   if_changed).
  *
  * A file is read for its digest at most once per run, and not at all
  * when its size and date are the ones .tiny-build recorded along with
@@ -144,14 +146,15 @@
  * context:
  * ix itself is built by mini-mk (with Builder's mkfiles, and dune
  * alongside), whose recipes are run by mini-rc or tiny-shell. This one
- * hands each recipe to rc -e (TinyLibSystem.shell: tiny-shell on the
- * host, /bin/rc on tiny-kernel), so a recipe is rc code on both, as
- * mini-mk's recipes are with mini-rc. The digest comes from Sha1,
- * which also names the objects of TinyVCS: naming something by its
- * content is the same idea in both, and in the nodes of TinyDatabase,
- * which never change either. The child processes are waited for by
- * TinyLibSystem.wait_any (on the host, the one of Procs), the same loop
- * around wait that mini-mk and the shells use.
+ * hands each recipe to rc -e (TinyLibSystem.shell, which is tiny-shell
+ * on the host and /bin/rc on tiny-kernel), so a recipe is rc code on
+ * both, as mini-mk's recipes are with mini-rc. The digest comes from
+ * Sha1, which also names the objects of TinyVCS. Naming something by
+ * its content is the same idea in both, and it is also the idea behind
+ * the nodes of TinyDatabase, which never change either. The child
+ * processes are waited for by TinyLibSystem.wait_any (on the host, it
+ * is the wait_any of Procs), the same loop around wait that mini-mk and
+ * the shells use.
  *
  * exercises:
  * - add ${X:%.c=%.o};
@@ -167,9 +170,10 @@
  * had simply not been recompiled (the story is his, told in Eric
  * Raymond's The Art of Unix Programming). The tab that must start each
  * line of a recipe was an accident of the first lex input he wrote, and
- * he kept it because make already had a dozen users (same source): the
- * first backward compatibility, in a tool written over a weekend. Here
- * a recipe line can start with any blank.
+ * he kept it because make already had a dozen users (the same source
+ * tells this). It was the first case of backward compatibility, in a
+ * tool written over a weekend. Here a recipe line can start with any
+ * blank.
  *
  * others:
  * The build systems that came after make all chose among the same few
@@ -195,15 +199,15 @@
  *
  * wib:
  * make compares two times, the time of the target and the time of a
- * prerequisite: one stat call each, nothing stored between runs,
- * nothing read. It gets things wrong when a clock is wrong, when a file
- * is restored with an old date, or when two files are written in the
- * same second, and it rebuilds everything above a file that was touched
- * but not changed. It won for thirty years on the strength of that one
- * stat. A digest has to read a file once (after that, its size and
- * date stand for it, and they only tell that it did not change), and
- * it needs a file of its own (.tiny-build) that can be lost or become
- * stale; but it is right in those four cases.
+ * prerequisite. That takes one stat call each; nothing is stored
+ * between runs, and no file is read. It gets things wrong when a clock
+ * is wrong, when a file is restored with an old date, or when two files
+ * are written in the same second, and it rebuilds everything above a
+ * file that was touched but not changed. It won for thirty years on the
+ * strength of that one stat. A digest has to read a file once (after
+ * that, its size and date stand for it, and they only tell that it did
+ * not change), and it needs a file of its own (.tiny-build) that can be
+ * lost or become stale; but it is right in those four cases.
  *
  * references:
  *  - Stuart Feldman, "Make -- A Program for Maintaining Computer
@@ -217,20 +221,20 @@
  *    cycles are reported earlier, by the walk that builds the graph
  *  - Andrey Mokhov, Neil Mitchell and Simon Peyton Jones, "Build
  *    Systems a la Carte" (ICFP 2018): verifying traces
- *  - principia's builders/mk, mk's C, which mini-mk follows: graph.c
- *    makes the graph (with cyclechk and ambiguous, the checks above),
- *    and mk.c's loop calls work on the whole graph again after each
- *    waitup, the re-walk this file does without
+ *  - principia's builders/mk, the C code of mk, which mini-mk follows:
+ *    graph.c makes the graph (with cyclechk and ambiguous, the checks
+ *    above), and mk.c's loop calls work on the whole graph again after
+ *    each waitup, the re-walk this file does without
  *)
 
 (* A node is a target with what it is made from and how. *)
 type rule
 type node
 
-(* [graph rules exists target]: the target's node, from the rules naming
- * it or else the one pattern rule whose prerequisites can be made.
- * exists says whether a file is at a path. A node's name is a string,
- * since a target like all is no file. *)
+(* [graph rules exists target] returns the target's node, made from the
+ * rules that name it, or else from the one pattern rule whose
+ * prerequisites can be made. exists says whether a file is at a path.
+ * A node's name is a string, since a target like all is no file. *)
 val graph : rule list -> (Fpath.t -> bool) -> string -> node
 
 type caps =

@@ -48,10 +48,11 @@
  * it could finish. Stopped lasts until the tracer resumes the process. *)
 type state = Ready | Waiting of (unit -> bool) | Stopped
 
-(* [since]: while waiting for a child, the value of deaths when it last
- * looked. [core] is 0 also while core 0 handles its trap. [doomed]: killed
- * on another core, it ends at its next trap. [cmd] and [memory], for
- * /dev/ps, come from exec, or from the parent after a fork. *)
+(* [since] is, while the process waits for a child, the value of deaths
+ * when it last looked. [core] is 0 also while core 0 handles its trap.
+ * [doomed] means the process was killed while on another core, and it
+ * ends at its next trap. [cmd] and [memory], for /dev/ps, come from
+ * exec, or from the parent after a fork. *)
 type proc = {
   slot : int;
   mem : KMemory.space;
@@ -73,13 +74,14 @@ val procs : proc list ref
 val next_pid : int ref
 val deaths : int ref
 
-(* Children not waited for yet, oldest first, dropped if the parent
- * ends. Only this is kept, not the process: www's helpers, never waited
- * for, would otherwise hold a slot and 4 MB each. *)
+(* The children not waited for yet, oldest first; they are dropped if
+ * the parent ends. Only this record is kept, not the process, because
+ * www's helpers, which are never waited for, would otherwise hold a slot
+ * and 4 MB each. *)
 type ending = { end_parent : int; end_pid : int; end_status : int }
 val ended : ending list ref
 
-(* Registers r1..r15, and the pc as 16. *)
+(* Registers r1..r15 are numbered 1 to 15, and the pc is 16. *)
 val reg : proc -> int -> int
 val set_reg : proc -> int -> int -> unit
 

@@ -69,7 +69,8 @@ val cores : int
 val ipi_dev : int
 val mailbox : int -> int
 
-(* Chooses the interrupts taken; with several cores, ipi is added. *)
+(* Chooses which interrupts are taken; with several cores, ipi is
+ * added. *)
 val k_ie : int -> unit
 
 (* [cause_of n] decodes the number k_run, k_step or a mailbox gives; it
@@ -78,7 +79,8 @@ type cause = Trap_sys | Trap_illegal | Trap_fault | Trap_intr
 val cause_of : int -> cause
 val cause_code : cause -> int
 
-(* The timer's period: a 400th of a second, in machine instructions. *)
+(* The timer's period is a 400th of a second, counted in machine
+ * instructions. *)
 val tick : int
 
 (* [halt status] commits the disk's changes, then stops the machine. *)

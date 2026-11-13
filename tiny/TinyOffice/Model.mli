@@ -18,8 +18,9 @@
  * ([command]).
  *)
 
-(* Bytes of the machine's palette. [grey] is for a frame, [blue] the
- * selected box, [light_grey] the status line, [pale_blue] selected text. *)
+(* Bytes of the machine's palette. [grey] is for a frame, [blue] for the
+ * selected box, [light_grey] for the status line, and [pale_blue] for
+ * selected text. *)
 val white : int
 val black : int
 val grey : int
@@ -40,7 +41,8 @@ type obj = {
   kind : kind; x : int; y : int; w : int; h : int; data : string;
   called : string; page_no : int }
 
-(* a kind's word, as written in the file and on a box's tab *)
+(* The word for a kind, as it is written in the file and on a box's
+ * tab. *)
 val kind_name : kind -> string
 
 (* The size is in pixels. [pages] counts the empty pages too. *)
@@ -102,7 +104,8 @@ type office = {
                                   * shown *)
 }
 
-(* the page with its i-th object replaced, or removed (None) *)
+(* The page with its i-th object replaced, or removed when the object
+ * given is None. *)
 val replace : obj list -> int -> obj option -> obj list
 
 (* the index of the topmost object under (x, y) on the page shown *)

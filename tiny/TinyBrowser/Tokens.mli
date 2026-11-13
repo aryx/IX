@@ -28,8 +28,8 @@ type token =
   | Open of string * (string * string) list
   | Close of string
 
-(* [tail] is what the last message left unfinished; [raw] the <style> or
- * <script> being skipped; both "" to begin. *)
+(* [tail] is what the last message left unfinished, and [raw] is the
+ * <style> or <script> being skipped; both are "" to begin with. *)
 type reader = { mutable tail : string; mutable raw : string }
 
 (* [tokens_end] gives the tokens of the tail kept at the end *)

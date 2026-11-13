@@ -15,8 +15,8 @@
  * indexes, joins, and a file that outlives the program.
  *
  * dropped:
- * SQL, NULL, the register machine and its programs, the 1,024-byte
- * pages, and SQLite's file format.
+ * It drops SQL, NULL, the register machine and its programs, the
+ * 1,024-byte pages, and SQLite's file format.
  *
  * twist:
  * - {b A query is a pipeline of the operators of the algebra}, read
@@ -38,8 +38,8 @@
  *   price is that the file only grows: nothing is ever reused, as in an
  *   append-only log. Nodes are marshalled. They can have any size;
  *   fixed-size pages are only needed when you change pages in place.
- * - {b Evaluation pulls rows through the stages} (one Seq per stage:
- *   the iterator model). The first where stage chooses an access path
+ * - {b Evaluation pulls rows through the stages} (one Seq per stage;
+ *   this is the iterator model). The first where stage chooses an access path
  *   depending on its shape: a key range on the table, a range on an
  *   index, or a full scan; the explain command prints that choice. A
  *   join builds a hash table of the right-hand table.
@@ -98,13 +98,12 @@
  * only four kernel calls: open, seek, read, and write, through
  * TinyLibSystem. On the host these are Unix's; on tiny-kernel they are
  * its own calls, including the seek that this database relies on. It
- * never asks
- * for the data to actually reach the disk
- * (no fsync), so "atomic" here means safe if the program dies, not if
- * the machine does.
+ * never asks for the data to actually reach the disk (no fsync), so
+ * "atomic" here means safe if the program dies, not if the machine
+ * does.
  *
  * exercises:
- * All cheap because nodes never change:
+ * All of these are cheap because nodes never change:
  * - transactions of several statements: begin ... commit, where the
  *   header is written only at commit (and rollback just forgets the
  *   catalog in memory); about 10 lines, since a single statement is

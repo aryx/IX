@@ -44,6 +44,7 @@ val kill : KProcs.proc -> unit
  * told before and after. *)
 val call : KProcs.proc -> int -> unit
 
-(* For a traced process whose waiting call just ended: stops it and
- * returns true if its tracer asked to stop at a call's end or to step. *)
+(* [waited p] is for a traced process whose waiting call just ended. It
+ * stops the process and returns true if its tracer asked to stop at a
+ * call's end or to step. *)
 val waited : KProcs.proc -> bool

@@ -22,10 +22,11 @@
 (* Devices are nodes too: /dev/console (Tty), /dev/draw, /dev/mouse,
  * /dev/audio, and /dev/ps, made when it is read. A file of the image
  * (Rom: address, size) is read in place until written, so the collector
- * does not copy the megabyte of programs. A Disk file is a tree (0 the
- * live one) and an inode. A union is directories seen as one, as by
- * Plan 9's bind -a: a lookup tries each in turn, a new file goes in the
- * first. Data's bytes double when a write goes past them. *)
+ * does not copy the megabyte of programs. A Disk file is a tree (0 is
+ * the live one) and an inode. A union is several directories seen as
+ * one, as with Plan 9's bind -a: a lookup tries each in turn, and a new
+ * file goes in the first. A Data's bytes double when a write goes past
+ * them. *)
 type node =
   | Dir of (string * node) list ref
   | Data of data
@@ -39,7 +40,7 @@ type node =
   | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
 
-(* At most 512 bytes in buf. A read of an empty pipe with no writer is
+(* buf holds at most 512 bytes. A read of an empty pipe with no writer is
  * the end of file. *)
 type pipe =
   { mutable buf : string; mutable readers : int; mutable writers : int }
@@ -59,7 +60,7 @@ type file =
   | Call of call
   | Voice of voice
   | Trace of trace
-(* [listing]: a directory's entries, made by a read at offset 0. *)
+(* [listing] holds a directory's entries, made by a read at offset 0. *)
 and opened = { node : node; mutable off : int; writes : bool;
                mutable listing : string option }
 and drawing = { conn : KGraphics.conn; mutable refs : int }
@@ -81,7 +82,7 @@ and link = {
   mutable holders : int;
 }
 
-(* A connection by KNetwork's IL. A read gives one whole message, or 0
+(* A connection made with KNetwork's IL. A read gives one whole message, or 0
  * when the other end is done; closing the last descriptor tells it. *)
 and call = { il : KNetwork.il; mutable callers : int }
 
@@ -89,10 +90,11 @@ and call = { il : KNetwork.il; mutable callers : int }
 and voice = { mutable ahead : int }
 
 (* A process traced by the debugger (plan_tiny_debugger.md). [stops]
- * are breakpoints with the word each replaced. [call] is the call it is
- * stopped before or was let into; [ret] the call whose end it stops at.
- * [over] is the breakpoint whose original word it runs; the 0 goes back
- * after. [follow]: its children are traced too (trace -f). *)
+ * are the breakpoints, each with the word it replaced. [call] is the
+ * call the process is stopped before or was let into; [ret] is the call
+ * whose end it stops at. [over] is the breakpoint whose original word
+ * the process is running; the breakpoint's 0 is put back after that
+ * step. [follow] means its children are traced too (trace -f). *)
 and trace = {
   tpid : int;
   tracer : int;
@@ -109,8 +111,8 @@ and trace = {
 
 val data : string -> data
 
-(* [top] is where a path starts: root (the image's files and /dev), or
- * with a disk a union with the disk's root first. *)
+(* [top] is where a path starts. It is root (the image's files and
+ * /dev), or, with a disk, a union with the disk's root first. *)
 val root : node
 val top : node ref
 
@@ -125,16 +127,18 @@ val walk : node -> string list -> node option
 (* The directory where a path's last name is (or would be made). *)
 val dir_of : string list -> (node * string) option
 
-(* 4 bytes, little-endian, as in a directory's entries. *)
+(* An int as 4 bytes, little-endian, as in a directory's entries. *)
 val word : int -> string
 
-(* The 80-byte entry ls reads: name, type, links, size and date. *)
+(* The 80-byte entry that ls reads: the name, type, links, size and
+ * date. *)
 val entry : string -> node -> string
 
-(* Set by KProcs: a line per process with pid, parent, state, KB, command. *)
+(* Set by KProcs, it gives a line per process with its pid, parent,
+ * state, KB and command. *)
 val ps_hook : (unit -> string) ref
 
-(* For a directory, its entries. *)
+(* The entries of a directory. *)
 val contents : node -> string
 
 (* [load a] reads the files the image carries after the kernel, at a. *)

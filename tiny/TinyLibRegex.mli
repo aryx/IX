@@ -8,7 +8,7 @@
  *     [a-z]  [^a-z]      a class of bytes, and its complement
  *     ^  $               the start and the end of a line
  *     e*  e+  e?         repeats
- *     e1e2  e1|e2        one after the other, either one
+ *     e1e2  e1|e2        one after the other, and either one
  *     (e)                a group, referred to by \1 to \9
  *
  * The matcher is a small backtracker that returns the leftmost-longest

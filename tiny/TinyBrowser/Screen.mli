@@ -24,9 +24,10 @@
  *
  * twin:
  * mini-netscape lays out boxes and paints them into a framebuffer of
- * its own (the engine's display). Here a page is lines of runs, each
- * run a text at a column, drawn with the kernel's text and fill
- * operations; a slice of a picture is drawn by copying from its image.
+ * its own (the engine's display). Here a page is lines of runs, where
+ * each run is a text at a column, and they are drawn with the kernel's
+ * text and fill operations; a slice of a picture is drawn by copying
+ * from its image.
  *)
 
 val c_white : int

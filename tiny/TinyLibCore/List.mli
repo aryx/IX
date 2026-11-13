@@ -1,4 +1,5 @@
-(* List, OCaml's subset (see Stdlib.mli); sort a merge sort, stable *)
+(* List: a subset of OCaml's module (see Stdlib.mli). sort is a merge
+ * sort, and it is stable. *)
 val length : 'a list -> int
 val rev : 'a list -> 'a list
 val hd : 'a list -> 'a

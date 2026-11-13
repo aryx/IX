@@ -60,9 +60,10 @@
  *
  * - {b 256 MB} of memory, with the devices still at the top (-16(r0)
  *   is the console).
- * - {b Pages}, using Sv32 (RISC-V's 32-bit scheme with two levels; xv6
- *   on 64 bits uses Sv39's three). The top bit of satp turns paging on
- *   and the window off; a page fault puts the address in tval. With
+ * - {b Pages}, which use Sv32 (RISC-V's 32-bit scheme with two levels;
+ *   xv6 on 64 bits uses Sv39, which has three). The top bit of satp
+ *   turns paging on and the window off; a page fault puts the address
+ *   in tval. With
  *   bit 30 set too (tiny-kernel's pages, plan_tiny_memory.md), only
  *   user mode's addresses are translated, and the kernel's stay
  *   physical (like the PDP-11's two sets of mapping registers, one for
@@ -70,17 +71,17 @@
  *   in a cache of 64 pages, which is emptied when satp is written; a
  *   kernel writes satp after it changes a process's tables (RISC-V's
  *   sfence.vma).
- * - {b amoswap d, a, (b)}, the atomic swap that spinlocks are built
- *   from, usable in either mode. {b core}, the core's number (always 0
- *   without -cores, below). {b scratch} and {b csrrw}, to free a first
- *   register at the start of a trap.
- * - {b Interrupts by source}: ip (pending) and ie (enabled), with one
+ * - {b amoswap d, a, (b)} is the atomic swap that spinlocks are built
+ *   from, and it can be used in either mode. {b core} holds the core's
+ *   number (always 0 without -cores, below). {b scratch} and {b csrrw}
+ *   let a kernel free a first register at the start of a trap.
+ * - {b Interrupts by source}: ip (pending) and ie (enabled) have one
  *   bit per source. The timer is the first source, enabled at the start
  *   as v0 expects. An interrupt's cause is 4, and tval says which
  *   sources are pending.
- * - {b Console input} at -8(r0), with its interrupt.
+ * - {b Console input} is at -8(r0), and it has its own interrupt.
  * - {b A disk} (-d image; a blank 8 MB one is made when there is no
- *   such file), which moves 1 KB blocks instantly, with its interrupt.
+ *   such file) moves 1 KB blocks instantly, and has its own interrupt.
  *   A block is written to the image file as soon as it is written, so
  *   a machine that is killed leaves the disk as a crash would.
  *
@@ -99,7 +100,7 @@
  * For a window system (plan_tiny_windows.md) there are more additions,
  * each behind an option, so that a kernel without one runs as before:
  *
- * - {b A screen} of 1024 by 768 pixels, one byte each, at 0xf00000. It
+ * - {b A screen} of 1024 by 768 pixels, one byte each, is at 0xf00000. It
  *   is ordinary memory (a kernel draws a pixel with stb), and each byte
  *   is a colour in Plan 9's table of 256. -window shows it in a window
  *   on the host, and -screen f writes it as a PPM file at the halt.
@@ -110,8 +111,8 @@
  * - {b The keys} arrive as console input, including the window's keys
  *   with -window (the arrows are bytes 128 to 131: up, down, left,
  *   right; a key held down repeats).
- * - {b A fixed speed} with -window: 20 million instructions per second
- *   (-rate n changes it), so that a game's time, counted in
+ * - {b A fixed speed} is used with -window: 20 million instructions a
+ *   second (-rate n changes it), so that a game's time, counted in
  *   instructions, follows the host's clock and not the host's speed.
  * - {b A replayed session} (-events f): mouse and key events are read
  *   from a file, each at its time. Since time is counted in
@@ -119,7 +120,7 @@
  *
  * For a network (plan_tiny_network.md), again behind an option:
  *
- * - {b A wire}: four words at -48(r0), laid out like the disk's (an
+ * - {b A wire} is four words at -48(r0), laid out like the disk's (an
  *   address, a length, a command, a status). A command either sends a
  *   packet from memory or takes the packet that is waiting; the
  *   interrupt, the fifth source, is raised while a packet waits. The
@@ -139,7 +140,7 @@
  *
  * For sound (plan_tiny_audio.md):
  *
- * - {b A speaker} that is memory, as the screen is: a ring of 8,192
+ * - {b A speaker} is memory, as the screen is. It is a ring of 8,192
  *   samples (one signed byte each), placed where the kernel says by
  *   writing its address at -52(r0). The speaker plays the ring at 8,000
  *   samples a second of the machine's time, and sets each sample it
@@ -152,12 +153,14 @@
  *
  * For several cores (plan_tiny_multicore.md), behind -cores n:
  *
- * - {b Cores}: n CPUs sharing the memory, each with its own registers,
- *   pc and control registers (core holds its number, cores the count).
+ * - {b Cores}: n CPUs share the memory, and each has its own registers,
+ *   pc and control registers (core holds its number, and cores holds
+ *   the count).
  *   All start at 0 in supervisor mode, as RISC-V's cores start at the
  *   reset address; a kernel looks at core to park the others. The
- *   devices are wired to core 0: another core that reaches one faults.
- * - {b The interrupt between cores}, the sixth source (32). Any core
+ *   devices are wired to core 0, so another core that reaches one
+ *   faults.
+ * - {b The interrupt between cores} is the sixth source (32). Any core
  *   can store k at -64(r0) to raise core k's interrupt. A load there
  *   gives the cores that raised this core's interrupt, one bit each,
  *   and clears them. A mailbox in memory plus this interrupt are all
@@ -216,8 +219,8 @@
  * fetch, the load and the store go through the pages or the window and
  * find the devices; sys raises a trap; a word the CPU does not know is
  * decoded here as csrr, csrw, eret or wfi (in supervisor mode), or
- * amoswap, or else it traps. The loop around [step] adds the rest: the time and
- * the interrupts.
+ * amoswap, or else it traps. The loop around [step] adds the rest: the
+ * time and the interrupts.
  *
  * twin:
  * Its twins are machines that ix did not design: mini-qemu's Board and
@@ -253,24 +256,25 @@
  * not the processor's.
  *
  * dropped:
- * Being a real board is left out, and with it what mini-qemu's
- * likeness to one gives. No kernel written for another machine runs
- * here, where mini-qemu boots xv6's Pi ports and principia's 9pi
- * unchanged, their output checked against QEMU's
- * (raspberry/tests/xv6.sh, 9pi.py). What a kernel learns here about
+ * This machine is not a real board, so it lacks what mini-qemu gains by
+ * being like one. No kernel written for another machine runs here,
+ * whereas mini-qemu boots xv6's Pi ports and principia's 9pi unchanged,
+ * and their output is checked against QEMU's (raspberry/tests/xv6.sh,
+ * 9pi.py). What a kernel learns here about
  * devices does not carry over to real ones either: there is no SD
  * card's protocol, no DMA controller, no interrupt controller of its
  * own, no USB. Nor is there a monitor or QMP to look into a running
  * machine or drive it from outside.
  *
  * twist:
- * {b The machine is designed with its kernel}, where mini-qemu must
- * copy a board as it is. A device is a few words at the top of memory:
- * the disk is a block number, an address, a command and a status, and
- * its transfer is done at once, where the Pi's SD card needs its host
- * controller's commands and DMA's control blocks. The screen is memory
- * at a fixed address, with no mailbox to ask the firmware for it. So a
- * kernel's driver is a few stores, and the machine's side is as short.
+ * {b The machine is designed with its kernel}, whereas mini-qemu must
+ * copy a board as it is. A device is a few words at the top of memory.
+ * The disk, for example, is a block number, an address, a command and a
+ * status, and its transfer is done at once, whereas the Pi's SD card
+ * needs commands to its host controller and control blocks for DMA. The
+ * screen is memory at a fixed address, with no mailbox to ask the
+ * firmware for it. So a kernel's driver is a few stores, and the
+ * machine's side is as short.
  *
  * {b A session can be replayed.} -events gives the keys and the mouse
  * at times counted in instructions, and -screen writes the screen at
@@ -287,17 +291,17 @@
  * TinyMachineWeb.ml is the same front end for a web page.
  *
  * context:
- * Below it is TinyMachineCPU, the instructions; above it are its
- * kernels, TinyKernel (in ML, compiled by tiny-ml) and the steps before
+ * Below it is TinyMachineCPU, which runs the instructions. Above it are
+ * its kernels: TinyKernel (in ML, compiled by tiny-ml) and the steps before
  * it (v0 in assembly, t6 in C compiled by tiny-cc).
  *
  * exercises:
  * Each one is cheap, because time is counted in instructions
  * and everything else is a hook of the CPU:
- * - the cores' turns in an order drawn from a seed (-cores takes them
- *   in a fixed one), so a race can be replayed from its seed, which
- *   real hardware never allows;
- * - a slow disk: the transfer completes N instructions after the
+ * - the cores take their turns in an order drawn from a seed (-cores
+ *   takes them in a fixed one), so a race can be replayed from its
+ *   seed, which real hardware never allows;
+ * - a slow disk, whose transfer completes N instructions after the
  *   command, so a kernel must sleep while waiting (v6's diskrw becomes
  *   xv6's);
  * - a TLB: the last translations are cached and flushed by a write to
@@ -339,12 +343,12 @@
  * same limit.
  *
  * terminology:
- * RISC-V says hart (a hardware thread: hartid, its number) where this
- * machine says core. They differ only on a core that runs several
+ * RISC-V says hart (a hardware thread, whose number is in hartid) where
+ * this machine says core. They differ only on a core that runs several
  * threads at once, sharing its units (Intel's Hyper-Threading, SMT),
  * which the kernel then sees as several CPUs: Linux's /proc/cpuinfo
  * counts those. tiny-machine has no such core, so a core is one CPU,
- * the word a reader knows.
+ * and core is the word a reader knows.
  *
  * references:
  *  - the RISC-V privileged specification: the trap registers, their

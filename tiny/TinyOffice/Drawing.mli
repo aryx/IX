@@ -1,5 +1,5 @@
-(* TinyOffice's drawing: its data, the shapes it draws, and how the
- * mouse and the keys make them.
+(* TinyOffice's drawing. This module reads a drawing's data, draws its
+ * shapes, and lets the mouse and the keys make them.
  *
  * A drawing's data has one line per shape, at its place in the
  * drawing's box:
@@ -23,10 +23,11 @@
  * are drawn with the mouse, as in MacDraw, but stored as in pic.
  *)
 
-(* the tools' names, indexed by their number in an edit's Sketch *)
+(* The tools' names, indexed by the tool's number in a Sketch edit. *)
 val tools : string list
 
-(* the shapes of a drawing's data, each its kind, numbers and label *)
+(* The shapes in a drawing's data. Each shape is given as its kind, its
+ * numbers and its label. *)
 val figures : string -> (string * int list * string) list
 
 (* [draw_stroke office tool (x0, y0, x1, y1)] adds the shape made by a
@@ -35,14 +36,14 @@ val figures : string -> (string * int list * string) list
 val draw_stroke :
   Model.office -> int -> int * int * int * int -> unit
 
-(* [sketch_key office tool key]: Tab changes the tool; a character is
- * added to the last shape's label, and Backspace removes one (a shape
- * whose label becomes empty is removed); C-g stops editing the
- * drawing. *)
+(* [sketch_key office tool key] handles a key in a drawing. Tab changes
+ * the tool. A character is added to the last shape's label, and
+ * Backspace removes one (a shape whose label becomes empty is removed).
+ * C-g stops editing the drawing. *)
 val sketch_key : Model.office -> int -> TinyLibPlayground.key -> unit
 
-(* [drawing_view box tool stroke] draws the shapes, and the stroke
- * being made in blue *)
+(* [drawing_view box tool stroke] draws the shapes, and draws the
+ * stroke being made in blue. *)
 val drawing_view :
   Model.obj -> int -> (int * int * int * int) option ->
   TinyLibPlayground.shape list

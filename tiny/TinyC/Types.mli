@@ -2,13 +2,14 @@
  * names used in the assembly. Every other module of the compiler uses
  * them (TinyC.mli describes the whole compiler). *)
 
-(* Raises Common.Error, an error in the program compiled (a bug in
- * tiny-cc raises Failure); TinyC.ml prints where it is. *)
+(* Raises Common.Error, for an error in the program being compiled (a
+ * bug in tiny-cc raises Failure); TinyC.ml prints where it is. *)
 val error : string -> 'a
 
 val unit_name : string ref            (* the prefix of the file's statics *)
 
-(* A global's label: its C name, or static_sym's for a static. *)
+(* A global's label is its C name, or the name static_sym gives for a
+ * static. *)
 type sym = string
 val static_sym : string -> sym
 
@@ -36,7 +37,7 @@ val uint_max : int64
 
 val size : ty -> int
 val align : ty -> int
-val round : int -> int -> int         (* [round n a]: up to a multiple *)
+val round : int -> int -> int         (* rounds n up to a multiple of a *)
 val is_int : ty -> bool
 val is_ptr : ty -> bool
 val unsigned : ty -> bool

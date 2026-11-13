@@ -27,42 +27,43 @@
  *   user and kernel        a trap returns from        the machine has one way
  *   modes, system calls    k_run; a system call is a  in and one way out
  *                          match on its number
- *   preemptive scheduling  round robin on the timer   a list; the process that
- *                                                     ran is moved to the end
- *   protection             tiny-machine's relocating  no page tables to build
- *                          window, a partition per
- *                          process, of the size its
- *                          program asks
+ *   preemptive scheduling  round robin on the timer   the processes are a
+ *                                                     list; the one that ran
+ *                                                     is moved to the end
+ *   protection             tiny-machine's relocating  there are no page
+ *                          window gives each process  tables to build
+ *                          a partition of the size
+ *                          its program asks for
  *   processes              fork, exec, spawn, exit,   with a window, fork just
- *                          wait                       copies a partition: one
- *                                                     k_copy
- *   blocking               each waiting process has   no kernel stack per
- *                          a closure, the rest of     process, no swtch, no
- *                          its call, retried by the   sleep, no locks
- *                          scheduler
- *   files and directories  on the disk (KFS.ml):      no log, no fsck, no map
- *                          inodes, copied on write,   of free blocks: a commit
- *                          as the root; the boot      is one block written; a
- *                          image's files, a tree of   collector finds the free
- *                          ML values, in a union      ones
- *                          with it
+ *                          wait                       copies a partition, in
+ *                                                     one k_copy
+ *   blocking               each waiting process has   there is no kernel stack
+ *                          a closure, the rest of     per process, no swtch,
+ *                          its call, which the        no sleep and no locks
+ *                          scheduler retries
+ *   files and directories  the root is on the disk    there is no log, no fsck
+ *                          (KFS.ml), with inodes      and no map of free
+ *                          copied on write; the boot  blocks: a commit writes
+ *                          image's files, a tree of   one block, and a
+ *                          ML values, are in a union  collector finds the free
+ *                          with it                    ones
  *   console, pipes         other kinds of open files  pipes make a shell a
  *                                                     shell
- *   a screen, a mouse      descriptors 3 and 4 of a   KGraphics.ml
- *                          program: it writes         draws; no memory is
- *                          drawing messages (the      shared, so nothing to map
+ *   a screen, a mouse      descriptors 3 and 4 of a   KGraphics.ml draws; no
+ *                          program: it writes         memory is shared, so
+ *                          drawing messages (the      there is nothing to map
  *                          kernel owns the pixels)
  *                          and reads the mouse
  *                          position
  *   a window system        a program                  a window's program gets
- *                          (TinyWindows.ml) using     the same kind of
- *                          pipes and a box, a pipe    interface the kernel
- *                          that keeps only the last   gives
- *                          write (for a window's
- *                          mouse)
- *   waiting for several    ready(fds, n, until): one  again a closure: a list
- *   things, or for a time  more closure, using the    is scanned, no select
- *                          clock's ticks              queues
+ *                          (TinyWindows.ml) that      the same kind of
+ *                          uses pipes and a box, a    interface the kernel
+ *                          pipe that keeps only the   gives
+ *                          last write (for a
+ *                          window's mouse)
+ *   waiting for several    ready(fds, n, until) is    again a closure: a list
+ *   things, or for a time  one more closure, which    is scanned, and there
+ *                          uses the clock's ticks     are no select queues
  *
  * The files. After the kernel, the boot image carries the few programs
  * needed to repair a disk (sh, rc, the utilities, ed), which are read
@@ -130,17 +131,18 @@
  *     0xb40000   the frames, 68 bytes per slot: r1 to r15 and the pc
  *                of each process that is not running
  *     0xb41000   the cores' mailboxes, 64 bytes each
- *     0xb50000   a packet's place, sent or received
+ *     0xb50000   the place of a packet, sent or received
  *     0xb51000   with pages, a byte for each page of the processes'
  *                memory, counting its users (KMemory.ml)
  *     0xb60000   the bounce buffer, through which a buffer in several
  *                pieces is read or written (sys_rw; unused with
  *                partitions)
  *     0xc00000   the speaker's ring
- *     0xd00000   pixels of images: the font, the hidden windows
+ *     0xd00000   the pixels of images, such as the font and the hidden
+ *                windows
  *     0xf00000   the screen, 1024 by 768 bytes; more images after it
- *    0x1000000   the heap, two halves of 8 MB: every file written,
- *                every pipe, descriptor table and closure
+ *    0x1000000   the heap, two halves of 8 MB, which holds every file
+ *                written, every pipe, descriptor table and closure
  *    0x2000000   the processes' partitions: 1 MB each, or what an
  *                a.out's header asks for (tiny-ld -a), found
  *                first-fit when a program starts
@@ -297,7 +299,7 @@
  * round instead of being woken up, which wastes work while nothing
  * changes (the two shortcuts in [runnable] and [idle] exist because
  * this showed up). Second, fork copies the parent's whole partition
- * (16 MB for tiny-build: hence spawn), a program's memory is a guess
+ * (16 MB for tiny-build, hence spawn), a program's memory is a guess
  * made when it is linked, and there can be only sixteen processes.
  * Both are things a real kernel spends its cleverness on, and both
  * can be measured here (the machine counts instructions).

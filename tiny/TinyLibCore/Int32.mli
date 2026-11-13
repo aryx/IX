@@ -1,10 +1,11 @@
-(* Int32, OCaml's subset (see Stdlib.mli): integers of 32 bits, for the
- * machine's words (TinyLibMachine.word: a datum, a .word, an illegal
- * instruction's word). tiny-ml's ints have 31 bits, so here a number is
- * two pieces of 16, as Int64 is four. No mul, div or of_string: the
- * words are made by Int64's to_int32 or of_int, and read by pieces. The
- * type is named int32, as OCaml names it: tiny-ml's types are one name
- * space, where t is taken. *)
+(* Int32: a subset of OCaml's module (see Stdlib.mli). Its integers of 32
+ * bits are for the machine's words (TinyLibMachine.word: a datum, a
+ * .word, or an illegal instruction's word). tiny-ml's ints have 31
+ * bits, so here a number is made of two pieces of 16 bits, as an Int64
+ * is made of four. There is no mul, div or of_string: the words are
+ * made by Int64's to_int32 or by of_int, and read by pieces. The type
+ * is named int32, as OCaml names it, because tiny-ml's types share one
+ * name space, where t is already taken. *)
 
 val zero : int32
 val one : int32

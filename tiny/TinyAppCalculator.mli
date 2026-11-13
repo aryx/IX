@@ -1,10 +1,11 @@
-(* A tiny calculator: the four operations on whole numbers, with sixteen
- * buttons, pressed with the mouse or by their keys (the digits, + - * /,
- * = or Enter, c clears; q quits).
+(* A tiny calculator. It does the four operations on whole numbers,
+ * with sixteen buttons that are pressed with the mouse or by their keys
+ * (the digits, + - * /, and = or Enter; c clears, and q quits).
  *
- * The calculator is a value of TinyLibGUI's [gui] type: a model, its
- * view, an update function and the keys. There is no loop, no drawing
- * and no mouse handling in this file; this is done by TinyLibGUI.
+ * The calculator is a value of TinyLibGUI's [gui] type, which is a
+ * model, its view, an update function and the keys. There is no loop,
+ * no drawing and no mouse handling in this file; this is done by
+ * TinyLibGUI.
  *
  * The model is the state of a pocket calculator, not an expression: the
  * number shown, the number kept, and the operation waiting for its
@@ -18,16 +19,16 @@
  *     what that means            12 * 12 *      36 + 36 +
  *
  * An operation is performed when the next one is requested, so
- * 2 + 3 * 4 = gives 20: there are no priorities, as on real
+ * 2 + 3 * 4 = gives 20, because there are no priorities, as on real
  * four-operation calculators.
  *
  * twin:
- * There is none in m-ix: lib_gui's small programs are the 7GUIs
+ * There is none in m-ix. lib_gui's small programs are the 7GUIs
  * (examples/Gui7Counter.ml and the others), and a calculator is not one
  * of them. Plan 9's calculators are text programs, hoc and dc
  * (principia's utilities/calc/); this one follows the pocket calculator
- * instead (below), the smallest program that is all buttons, written
- * for TinyLibGUI.
+ * instead (below). It is the smallest program that is all buttons,
+ * written for TinyLibGUI.
  *
  * kept:
  * - {b Overflow and division by zero show an error instead of
@@ -38,11 +39,12 @@
  *   whose integers have 63 bits.
  *
  * dropped:
- * Fractions (tiny-ml has no floats), a sign key, a memory, deleting the
- * last digit, priorities and parentheses.
+ * The calculator has no fractions (tiny-ml has no floats), no sign key,
+ * no memory, no key to delete the last digit, and no priorities or
+ * parentheses.
  *
  * twist:
- * A key is the same as its button: [key] returns the message the button
+ * A key is the same as its button. [key] returns the message the button
  * would send, so the keyboard and the mouse cannot behave differently.
  *
  * exercises:
@@ -55,8 +57,8 @@
  *
  * cs-history:
  * This model comes from the four-operation pocket calculator
- * (Busicom's LE-120A and Bowmar's 901B, 1971): one register shown, one
- * kept, and a key that performs the pending operation. Such
+ * (Busicom's LE-120A and Bowmar's 901B, 1971): one register is shown,
+ * one is kept, and a key performs the pending operation. Such
  * calculators were one of the reasons microprocessors were made in the
  * first place (Intel's 4004 was designed for a Busicom calculator). A
  * calculator was among the first programs of every window system, for

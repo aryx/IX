@@ -32,8 +32,9 @@
  *        |                   function, the code of a stack machine
  *        | machine           turns the list into assembly, and static
  *        |                   blocks into .word directives
- *     file.o: the assembly lines encoded by TinyLibMachine's assemble,
- *     for tiny-ld (with -c, also M.tmi); with -S, file.s, the text
+ *     file.o holds the assembly lines, encoded by TinyLibMachine's
+ *     assemble, for tiny-ld (with -c, M.tmi is written too); with -S,
+ *     file.s holds them as text
  *
  * Each pass is a module in TinyML/. Its .mli has its types and its
  * functions. In the order they run, which is also the best order to
@@ -65,7 +66,7 @@
  *                    v
  *      | header | field 0 | field 1 | ...     a tuple, a record, a ref,
  *        size << 10, with the tag in          a constructor's arguments,
- *        the low byte                         an array: one word a field
+ *        the low byte                         an array: one word per field
  *
  *      | header, tag 247 | unary code | n-ary code | free variables...
  *                           a function value (a closure)
@@ -150,11 +151,11 @@
  * mini-ml's simple back end (Gen) has the same design: a stack machine
  * kept in registers, the values on a stack of their own, and Cheney's
  * collector in C (decision 5 of plan_ml.md covers both compilers).
- * mini-ml has no functors either. The differences: mini-ml's parser is
- * made with ocamlyacc, tiny-ml's is recursive descent; mini-ml writes
- * Plan 9's assembly for arm and arm64, and has -O and an SSA back end
- * with a register allocator, while tiny-ml has one machine and no
- * optimization. On one point tiny-ml goes further: mini-ml has no
+ * mini-ml has no functors either. The differences are these: mini-ml's
+ * parser is made with ocamlyacc, while tiny-ml's is recursive descent;
+ * mini-ml writes Plan 9's assembly for arm and arm64, and has -O and an
+ * SSA back end with a register allocator, while tiny-ml has one machine
+ * and no optimization. On one point tiny-ml goes further: mini-ml has no
  * compiled interface (each unit that names another reads its .mli
  * again), while tiny-ml writes M.tmi, like OCaml's .cmi, which also
  * records where each value is, something an .mli does not say.
@@ -169,7 +170,8 @@
  *   Everything else has one representation: a word, which is either an
  *   integer 2n+1 or a pointer to a block (a header, then fields).
  * - {b A record is a tuple, and a label has a type scheme like a
- *   constructor's}: %l(record, field), instantiated at each use. When
+ *   constructor's}. The scheme is %l(record, field), and it is
+ *   instantiated at each use. When
  *   the type of e is already known (from an annotation such as
  *   (p : proc)), the label is looked up in that record type, so two
  *   records can share a label name. This is OCaml's type-directed
@@ -210,7 +212,8 @@
  *   tables) is made from the interfaces.
  * - {b A unit is a module.} Its names are M.x in the units after it, or
  *   x after open M. Stdlib is open in all units. The standard library,
- *   TinyLibCore/'s modules, are the first units of every program. Each
+ *   which is the modules of TinyLibCore/, makes the first units of
+ *   every program. Each
  *   is compiled once (-L ., in TinyLibCore/), and a unit reads the
  *   interfaces of those it names from a directory (/lib/ml, or the one
  *   given by -L). A type, a constructor and a label belong to their
@@ -237,27 +240,30 @@
  *   program uses is linked (see above).
  *
  * dropped:
- * Against OCaml's ocamlopt, the language that mini-ml leaves out too:
- * functors, classes and objects (but the capabilities' object types,
- * read and ignored), polymorphic variants, GADTs and optional
- * arguments. Against mini-ml, its floats and labeled arguments (the
- * language left out above), its help for debugging and its young
- * generation. There is no -g: no table from pcs to the
- * .ml's lines and no description of the values' types, so an uncaught
- * exception is printed without the trace of its calls, and tiny-kernel's
- * debug names functions, not lines. [@@deriving show] is read and
- * dropped, where mini-ml's mlpp derives the printers, so a tree is
- * printed by hand or on the host. Every collection copies all that is
- * alive, which costs most to a program with many old blocks.
+ * Compared with OCaml's ocamlopt, tiny-ml leaves out the parts of the
+ * language that mini-ml leaves out too: functors, classes and objects
+ * (except the capabilities' object types, which are read and ignored),
+ * polymorphic variants, GADTs and optional arguments. Compared with
+ * mini-ml, it leaves out the floats and the labeled arguments (the
+ * language left out above), the help for debugging, and the young
+ * generation. There is no -g, so there is no table from pcs to the
+ * lines of the .ml and no description of the types of the values. An
+ * uncaught exception is therefore printed without the trace of its
+ * calls, and tiny-kernel's debug names functions, not lines.
+ * [@@deriving show] is read and dropped, while mini-ml's mlpp derives
+ * the printers, so a tree is printed by hand or on the host. Every
+ * collection copies all that is alive, which costs most to a program
+ * with many old blocks.
  *
  * twist:
  * {b Printf without a type for formats.} A call of Printf.sprintf,
  * ksprintf or bprintf whose format is a string written at the call is
  * rewritten by the parser into the concatenation it makes (Formats), so
  * the type checker never sees a format and nothing reads it at run time.
- * mini-ml types a format as OCaml does, format4 computed from the
- * string, and its Printf interprets it as the program runs. The price:
- * a format must be written at the call, and only %d %s %c %x %S are read.
+ * mini-ml types a format as OCaml does, with a format4 type computed
+ * from the string, and its Printf interprets the format as the program
+ * runs. The price is that a format must be written at the call, and
+ * that only %d %s %c %x %S are read.
  *
  * context:
  * tiny-ml compiles every ML program of tiny-kernel, starting with the
@@ -272,8 +278,8 @@
  *
  * exercises:
  * Each is cheap thanks to the stack machine or the value stack:
- * - arm32: a second back end for the stack machine (tiny-machine's
- *   took 150 lines);
+ * - arm32: a second back end for the stack machine (the one for
+ *   tiny-machine took 150 lines);
  * - inline allocation: keep the heap pointer and limit in two
  *   registers, and call the collector only when a block does not fit;
  * - fewer spills: at a call, spill only the registers below the
@@ -376,8 +382,9 @@
 val compile_unit :
   (Tree.item * int) list -> (string * Compile.binding) list * int
 
-(* -h tells how. ml -o prog.start.o lib.a... file.o... makes the start,
- * which only the whole program can make (TinyML/Link.mli). *)
+(* tiny-ml -h tells how to use it. ml -o prog.start.o lib.a... file.o...
+ * makes the start, which only the whole program can make
+ * (TinyML/Link.mli). *)
 val main :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

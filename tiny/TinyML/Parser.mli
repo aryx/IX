@@ -7,11 +7,13 @@
 
 (* The names of types declared as object types: read and forgotten. *)
 val forgotten : string list ref
-(* type 'a t = ...: a second name, with the names of the parameters. *)
+(* type 'a t = ... gives a type a second name; it is kept with the names
+ * of the parameters. *)
 val abbreviations : (string * (string list * Tree.texpr)) list ref
 val abbreviation : string -> Tree.ty list -> Tree.ty option
 
 (* The items, each with its line number. *)
 val parse : string -> (Tree.item * int) list
-(* An .mli's vals; one in module N : sig ... end is named N.x. *)
+(* The vals of an .mli; a val inside module N : sig ... end is named
+ * N.x. *)
 val mli_types : string -> (string * Tree.ty) list

@@ -1,4 +1,5 @@
-(* Bytes, OCaml's subset (see Stdlib.mli): a string that can be changed *)
+(* Bytes: a subset of OCaml's module (see Stdlib.mli), for a string that
+ * can be changed *)
 val make : int -> char -> bytes
 val length : bytes -> int
 val get : bytes -> int -> char

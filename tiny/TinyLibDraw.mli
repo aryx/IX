@@ -85,12 +85,13 @@ val d_fill : image -> image -> rect -> string
 val d_line : image -> image -> point -> point -> string
 val d_text : image -> image -> point -> string -> string
 
-(* [d_styled dst src p style s]: bold 1, italic 2, underlined 4, large
- * 8 (16x32 characters). Style 16, fat pixels, draws each byte of s as a
- * 4x4 square of that colour, and src is unused. *)
+(* [d_styled dst src p style s] draws s in a style whose bits are bold
+ * 1, italic 2, underlined 4 and large 8 (16x32 characters). Style 16,
+ * fat pixels, draws each byte of s as a 4x4 square of that colour, and
+ * src is unused. *)
 val d_styled : image -> image -> point -> style -> string -> string
 
-(* [d_pixels dst p bytes] draws a row of pixels, its left end at p *)
+(* [d_pixels dst p bytes] draws a row of pixels, with its left end at p *)
 val d_pixels : image -> point -> string -> string
 
 (* tiny-windows keeps a cursor per window, shown while the mouse is in
@@ -104,9 +105,10 @@ val d_cursor : cursor -> string
 type message_shape = { ds_length : int; ds_images : int }
 val d_shape : string -> int -> message_shape
 
-(* The 12-byte message read from the kernel's descriptor 4; None when
- * it is not all there. Buttons: 1 left, 2 middle, 4 right; -1 marks
- * the answer of tiny-windows to an ENQ, with the window size in x, y. *)
+(* The 12-byte message read from the kernel's descriptor 4; it is None
+ * when the message is not all there. The buttons are 1 for left, 2 for
+ * middle and 4 for right. -1 marks the answer of tiny-windows to an
+ * ENQ, with the window's size in x and y. *)
 type mouse_event = { mo_x : int; mo_y : int; mo_buttons : int }
 val mouse_event : string -> mouse_event option
 

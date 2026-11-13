@@ -73623,3 +73623,50 @@ Claude left the READMEs and manuals uncommitted until the remaining agent work w
 **Claude (summary):**
 
 Claude said the t-ix.md diff touched about 1,000 lines for roughly 60 sentences, so it would check that no code block, command, or table row changed by accident.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 16:40
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude pushed the plain-prose rewrite to main as 6c3c2568, covering the READMEs and four manuals in docs/manuals/.
+Claude left three unclear sentences in t-ix.md untouched because their meaning was not clear enough to rewrite safely.
+Two of them are in §7.5, "rows that go (four at once, a level)" and "Another tune, or a faster pace, goes on from the same notes."
+The third is in §7.7, "The menus' state is below the model, as the widgets' mouse is," and Claude asked Yoann what each means.
+Claude offered to run the multi-agent pass on the .mli/.ml headers, now that the rule is saved in memory for the agents' briefs.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:11
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed four remaining items, recommending the header pass over tiny/ and m-IX first.
+Claude offered to rewrite three unclear sentences in docs/manuals/t-ix.md (§7.5, §7.7) into plain prose if Yoann explained them.
+Claude proposed a docs/loc.md paragraph explaining the new line-count method, since the READMEs' numbers went up.
+Claude suggested a per-program option in loc.py so the tiny/README.md tables print directly instead of from scratch scripts.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 18:18
+
+**Yoann:**
+
+> for 2, I didn't write those sentences, you did. Let's do 3 and 4
+
+**Claude (summary):**
+
+Claude started with the `-r` rows, placed after the APART and systems entries.
+Claude then planned a Makefile target and a pointer to it in tiny/README.md.
+Claude checked how the existing READMEs counted lines before writing the docs/loc.md entry.
+Claude wrote a docs/loc.md paragraph explaining how the tables count, plus an SDL change log row.
+Claude's answer only announced these edits, so no completed changes appear in it.

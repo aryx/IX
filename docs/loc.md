@@ -68,6 +68,24 @@ code was rewrapped to 80 columns (the author: "going up to 100 just to
 try to reduce the LOC to stay in budget is not ok"), which put t-ix at
 26,302: about 3,700 left.
 
+The tables of README.md and tiny/README.md give each program's lines,
+and since 2026-11-13 they count the same way as the numbers of this
+log: all the lines of a program's files, comments and blank lines
+included, but not its header comments. `make loc-readme`
+(`scripts/stats/loc.py -r`) prints the lines of each row. Before that
+day the tables counted in other ways, so their numbers went up that
+day while the code stayed the same:
+
+- tiny/README.md counted only the code lines, with no comments and no
+  blank lines (tiny-ml was 2,860 lines, and is 3,800 counted the new
+  way; tiny-kernel was 3,880, and is 5,720).
+- README.md's m-IX table counted only the OCaml files, with their
+  header comments (mini-ml was 8,400 lines without its runtime's C,
+  and is 12,000 counted the new way).
+
+The numbers in this log did not move: they were always counted this
+way.
+
 A line is added when a step lands that moves the numbers
 (`scripts/stats/loc.py -l` prints it, for the commit it is run at),
 with what moved them.
@@ -91,3 +109,4 @@ with what moved them.
 | 2026-10-22 | after `e833ae2a` | 155,246 | 3,066 | 2,464 | 7,338 | 27,304 | counted from `e833ae2a`: lib_graphics' `software/`, `core/`, `geometry/` and `images/` (+3,200; the author: "yes the decoders should count, and as we currently optimize the playground, we might need more of lib_graphics to be counted"): every module of them is named by counted code, the decoders by the browser and the office, the rasterizers by `Shape_render_software`; "the software platform" apart is its own directory alone, 98 lines. Not counted: TLS 1.2 (`Tls12`, 386). The kernel's column is the steps, the reference build and the pixels in C, as its title says: since 2026-10-10 `-l` had taken web/ for the pixels in C (7,946 on 2026-10-21 was that). `tiny/TinyKernel/examples/` back in t-ix (70). The other 1,060 lines of m-ix since the last entry are the day's: mini-netscape's selection, clipboard and scrollbar, the page's fields edited, TLS 1.2's branches in `Tls13`, other sessions' |
 | 2026-10-28 | after `fb1f36cd` | 162,192 | 3,068 | 4,175 | 7,355 | 32,070 | counted from this day: the tiny programs' interfaces (78 `.mli`, 7,891 lines, 5,255 of them header comments, taken off), `tiny/` having modules with real signatures since `21da776f`; without them t-ix is 29,434 (the author: "I think we need to count the .mli for tiny/ now"); past its budget of 30,000, kept for now. m-ix 6,946 lines over the last entry, the days between |
 | 2026-11-12 | after `fd343ddf` | 170,411 | 3,078 | 1,522 | 7,356 | 35,218 | t-ix from 29,712 on 2026-11-05 (`958fd4c9`): counted from `f1ee4649` (2026-11-11), tiny-machine's assembly, named `.s` from `.tm` and so counted as m-ix's `*.s` are (+1,600 lines, no new code); the rest the week's own: TinyLibMachine, tiny-machine's instructions and assembly lines shared by tiny-as, tiny-cc and tiny-ml (+800), tiny-ml's types, Int32, -I and -L (+500), TinyLibCore's Fpath, channels and stdlib.a (+500), TinyLibSystem.mli's window calls (+500), `examples/` (+455), the disk and the second disk (+300). `make loc` had also counted the copies of tiny/ in untracked build directories (`tiny/TinyKernel/_make-claude/`: 124,688 lines for t-ix): `.gitignore`'s `_make*/` (old: `_make/`) (the author: "make loc seems to indicate tix is now at 35000 LOC without the header comments. What happened? I think it was 30000 LOC a few days ago") |
+| 2026-11-13 | after `6c3c2568` | 170,416 | 3,078 | 6,124 | 7,356 | 34,143 | TinyMachineSDL, the SDL window of tiny-machine on the host, is not counted from this day (257 lines with its header comment). TinyMachineWindow, the program that uses it, was already apart with the hosts on Linux, and TinyMachineSDL now goes with it. The other changes since the last row are other sessions' work. The READMEs' tables count from this day as this log does (see the paragraph above the table) |

@@ -356,6 +356,9 @@ loc:
 	scripts/stats/loc.py
 loc-v:
 	scripts/stats/loc.py -v
+# The lines of each row of the tables in README.md and tiny/README.md.
+loc-readme:
+	scripts/stats/loc.py -r
 
 # See https://github.com/aryx/codemap and https://github.com/aryx/fork-efuns
 visual:
@@ -366,7 +369,7 @@ visual-all:
 .PHONY: all tix mix install website website-mini website-mini-js test \
   check check-tix check-mix \
   test-vs-mk test-vs-goken test-vs-ocaml-light test-vs-chidb test-vs-qemu \
-  clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
+  clean loc loc-v loc-readme build-docker build-docker-ocaml5 build-docker-test-all \
   test-vs-ocaml ix ix-arm kernels-ix test-ix test-ix-fixpoint test-ix-arm \
   test-ix-fixpoint-arm test-ix-kernels self self-quick self-tix \
   self-quick-tix self-mix self-quick-mix test-all test-lite test-tix \

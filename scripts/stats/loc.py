@@ -40,13 +40,15 @@
 # rather than the module's own has a tag before it (docs/tags.md:
 # cs-history:, modern:, ...): counted by tag.
 #
-# Usage: scripts/stats/loc.py [-v | -l | -t]
+# Usage: scripts/stats/loc.py [-v | -l | -t | -r]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
 #       tests/ directory rather than one line per program (without -v,
 #       the tests are their total alone, with no line per program)
 #   -l: only today's line for docs/loc.md, the log of those last numbers
 #   -t: only t-ix: tiny/'s rows, its total with and without its header
 #       comments, and what of tiny/ is not counted (tiny/'s make loc)
+#   -r: only the lines of each row of the tables in README.md and
+#       tiny/README.md, to update them (make loc-readme)
 #
 # The lines come first, next to the name they count; then the files,
 # the lines of each language (ocaml, c, asm), and the code, comment and
@@ -525,7 +527,8 @@ APART = [
     # under mini-9pi"; last, so a program that is apart keeps its own in
     # its row)
     ("sdl/", "a program's host on Linux, a window of SDL's: what counts runs under mini-9pi",
-     lambda dirs, path: "sdl" in dirs or path == "tiny/TinyMachine/TinyMachineWindow.ml"),
+     lambda dirs, path: "sdl" in dirs or path.startswith(("tiny/TinyMachine/TinyMachineWindow.",
+                                                          "tiny/TinyMachine/TinyMachineSDL."))),
     ("tty/", "a program's host on Linux, a terminal: the same",
      lambda dirs, path: "tty" in dirs),
 ]
@@ -572,6 +575,160 @@ def apart(path):
 
 
 # ---------------------------------------------------------------------
+# The READMEs' tables (-r)
+# ---------------------------------------------------------------------
+
+# The rows of the tables in README.md and tiny/README.md that give a
+# program's lines, so that the tables can be updated with one command
+# (the author, 2026-11-13). Each row has its name and the beginnings of
+# the paths it counts. A file is counted in the first row of its table
+# that names it, so tiny-cpu's TinyMachineCPU.ml comes before
+# tiny-machine's TinyMachine/. The tables count every line of a file
+# but those of its header comment, as the numbers to keep small do.
+#
+# m-IX's first table, the system, counts the files that are not apart.
+# Its second, the programs beyond the system, counts those that are,
+# and mini-analyze. tiny/'s rows count what make loc puts apart too
+# (the editor, the office, the games), since the tables list them, but
+# not a program's host on Linux (sdl/, tty/).
+README_SYSTEM = [
+    ("mini-9pi", ["kernels/9pi/", "kernels/lib_machine/", "kernels/tools/"]),
+    ("lib_core", ["lib_core/"]),
+    ("mini-rc", ["shell/"]),
+    ("mini-mk", ["builder/"]),
+    ("the utilities", ["utilities/"]),
+    ("mini-cc", ["languages/c/"]),
+    ("mini-ml", ["languages/ml/"]),
+    ("mini-asm", ["assembler/"]),
+    ("mini-ld", ["linker/"]),
+    ("lib_executable", ["lib_executable/"]),
+    ("mini-lex, mini-yacc", ["generators/"]),
+    ("mini-acid, mini-prof", ["debuggers/", "profilers/"]),
+    ("mini-git...", ["version_control/"]),
+    ("mini-ed", ["editors/ed/"]),
+    ("mini-emacs", ["editors/emacs/"]),
+    ("lib_graphics", ["lib_graphics/"]),
+    ("mini-rio", ["windows/"]),
+    ("lib_gui", ["lib_gui/"]),
+    ("lib_networking", ["lib_networking/", "networking/"]),
+    ("lib_crypto", ["lib_crypto/"]),
+    ("lib_compression", ["lib_compression/"]),
+    ("mini-netscape", ["browsers/"]),
+    ("lib_audio", ["lib_audio/"]),
+    ("lib_playground", ["lib_playground/"]),
+    ("mini-chidb", ["database/"]),
+    ("mini-troff, mini-man", ["typesetting/"]),
+    ("mini-5i", ["machine/"]),
+    ("mini-qemu", ["raspberry/"]),
+    # (in m-IX, not in the table: the paragraph under it names them)
+    ("lib_code, lib_mime", ["lib_code/", "lib_mime/"]),
+]
+README_BEYOND = [
+    ("mini-office", ["apps/office/"]),
+    ("mini-pim", ["apps/pim/"]),
+    ("mini-files, mini-page...", ["apps/"]),
+    ("the games", ["games/"]),
+    ("the other languages", ["languages/"]),
+    ("mini-analyze", ["analyzers/"]),
+    ("the other kernels", ["kernels/"]),
+]
+README_TINY = [
+    ("tiny-cpu", ["tiny/TinyCPU.", "tiny/TinyMachine/TinyMachineCPU."]),
+    ("tiny-machine", ["tiny/TinyMachine.", "tiny/TinyMachine/"]),
+    ("tiny-kernel", ["tiny/TinyKernel/TinyKernel.", "tiny/TinyKernel/K",
+                     "tiny/TinyKernel/k"]),
+    ("tiny-shell", ["tiny/TinyShell."]),
+    ("tiny-editor", ["tiny/TinyEditorLine."]),
+    ("tiny-build", ["tiny/TinyBuildSystem."]),
+    ("tiny-db", ["tiny/TinyDatabase."]),
+    ("tiny-vcs", ["tiny/TinyVCS."]),
+    ("tiny-prof", ["tiny/TinyProfiler."]),
+    ("tiny-cc", ["tiny/TinyC.", "tiny/TinyC/"]),
+    ("tiny-ml", ["tiny/TinyML.", "tiny/TinyML/"]),
+    ("tiny-as, tiny-ld", ["tiny/TinyAssembler.", "tiny/TinyLinker."]),
+    ("tiny-windows", ["tiny/TinyWindows."]),
+    ("tiny-playground", ["tiny/TinyLibPlayground."]),
+    ("tiny-gui", ["tiny/TinyLibGUI."]),
+    ("tiny-tetris", ["tiny/TinyAppTetris."]),
+    ("tiny-calculator", ["tiny/TinyAppCalculator."]),
+    ("tiny-temperature", ["tiny/TinyAppTemperature."]),
+    ("tiny-office", ["tiny/TinyOffice.", "tiny/TinyOffice/"]),
+    ("tiny-troff", ["tiny/TinyTroff."]),
+    ("tiny-browser", ["tiny/TinyBrowser.", "tiny/TinyBrowser/"]),
+    # (not a program: tiny/README.md says their sum)
+    ("the libraries", ["tiny/TinyLibCore/", "tiny/TinyLibSystem/",
+                       "tiny/TinyLibMachine.", "tiny/TinyLibRegex.",
+                       "tiny/TinyLibDraw."]),
+    ("the runtimes", ["tiny/runtime/"]),
+]
+# README.md's t-IX table: each of its rows is the sum of rows above
+README_TIX = [
+    ("the machine", ["tiny-cpu", "tiny-machine"]),
+    ("the kernel", ["tiny-kernel"]),
+    ("the tools", ["tiny-shell", "tiny-editor", "tiny-build", "tiny-db",
+                   "tiny-vcs", "tiny-prof"]),
+    ("the toolchain", ["tiny-cc", "tiny-ml", "tiny-as, tiny-ld"]),
+    ("the window system", ["tiny-windows", "tiny-tetris", "tiny-calculator",
+                           "tiny-temperature", "tiny-office", "tiny-troff",
+                           "tiny-browser"]),
+    ("the libraries", ["tiny-playground", "tiny-gui", "the libraries",
+                       "the runtimes"]),
+]
+
+
+def readme_tables():
+    """-r: the lines of each row of the READMEs' tables, without the
+    header comments and then with them"""
+    sums = {t: defaultdict(lambda: [0, 0]) for t in ("system", "beyond", "tiny")}
+    for path in files():
+        try:
+            with open(path, encoding="utf-8", errors="replace") as f:
+                text = f.read()
+        except FileNotFoundError:  # deleted, not yet staged
+            continue
+        if classify(path, False)[0] == "tests":
+            continue
+        where = apart(path)
+        if path.startswith("tiny/"):
+            if where in ("sdl/", "tty/"):
+                continue
+            table, rows = "tiny", README_TINY
+        elif where or path.startswith("analyzers/"):
+            table, rows = "beyond", README_BEYOND
+        else:
+            table, rows = "system", README_SYSTEM
+        name = next((n for n, starts in rows if path.startswith(tuple(starts))), None)
+        if name is None:
+            continue
+        lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
+        h = header(path, text)
+        taught = text.count("\n", h[0], h[1]) + 1 if h else 0
+        sums[table][name][0] += lines - taught
+        sums[table][name][1] += lines
+
+    def table(title, rows, numbers):
+        print(title)
+        for name in rows:
+            without, all_ = numbers(name)
+            print(f"{without:>7,} {all_:>8,}  {name}")
+        print(f"{sum(numbers(n)[0] for n in rows):>7,} "
+              f"{sum(numbers(n)[1] for n in rows):>8,}  (the table's total)")
+        print()
+
+    print("  lines  with the header comments")
+    print()
+    table("README.md, m-IX:", [n for n, _ in README_SYSTEM],
+          lambda n: sums["system"][n])
+    table("README.md, the programs beyond the system:",
+          [n for n, _ in README_BEYOND], lambda n: sums["beyond"][n])
+    table("README.md, t-IX:", [n for n, _ in README_TIX],
+          lambda n: [sum(sums["tiny"][p][i] for p in dict(README_TIX)[n])
+                     for i in (0, 1)])
+    table("tiny/README.md, the programs:", [n for n, _ in README_TINY],
+          lambda n: sums["tiny"][n])
+
+
+# ---------------------------------------------------------------------
 # Printing
 # ---------------------------------------------------------------------
 
@@ -606,6 +763,9 @@ def main():
     extra = defaultdict(lambda: defaultdict(int))  # APART's and SYSTEMS'
     starred = set()  # the rows with files in extra: a * after their name
     SYSTEMS.extend(other_systems())
+    if "-r" in sys.argv[1:]:
+        readme_tables()
+        return
     # the header comments (header, above), in lines: m-ix's and t-ix's,
     # and of m-ix's the lines under each tag
     taught = defaultdict(int)

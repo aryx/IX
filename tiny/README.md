@@ -111,14 +111,16 @@ directory of parts included, comments and blank lines too, but not the
 header comments, as `make loc` counts them (2026-11-13). The libraries
 the programs share (`TinyLibCore/`, `TinyLibSystem/`, `TinyLibMachine`,
 `TinyLibRegex`, `TinyLibDraw`) and the runtimes (`runtime/c/`,
-`runtime/ml/`) are not in a program's lines: about 6,300 more.
+`runtime/ml/`) are not in a program's lines: about 5,900 more.
+`make loc-readme` prints the lines of each row of these tables, and
+of those in the top README.md.
 
 **The machine**: what everything else runs on.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
 | **tiny-cpu** | a CPU of our own design, for teaching | 350 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](TinyCPU.ml), [`TinyMachineCPU.ml`](TinyMachine/TinyMachineCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
-| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 3,180 | mini-qemu | [`TinyMachine.ml`](TinyMachine.ml), [`TinyMachine/`](TinyMachine/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
+| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 3,120 | mini-qemu | [`TinyMachine.ml`](TinyMachine.ml), [`TinyMachine/`](TinyMachine/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
 
 **The kernel**, and what it is made of.
 

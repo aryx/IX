@@ -188,16 +188,16 @@ explains how a program is built for tiny-kernel and for the host.
 
 | | programs | lines |
 |---|---|---:|
-| **the machine**, what the rest runs on | tiny-cpu, tiny-machine ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 3,530 |
+| **the machine**, what the rest runs on | tiny-cpu, tiny-machine ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 3,470 |
 | **the kernel** | tiny-kernel: processes, files, graphics, sound, network | 5,720 |
 | **the tools** | tiny-shell, tiny-editor, tiny-build, tiny-db, tiny-vcs, tiny-prof | 4,340 |
 | **the toolchain**, with which tiny-kernel rebuilds its own image | tiny-cc, tiny-ml, tiny-as, tiny-ld | 6,390 |
 | **the window system** and its programs | tiny-windows, tiny-tetris, tiny-calculator, tiny-office, tiny-troff, tiny-browser | 6,250 |
-| **the libraries** under the programs | TinyLibCore (the standard library), TinyLibSystem, tiny-playground, tiny-gui...; the runtimes of C and ML | 7,460 |
+| **the libraries** under the programs | TinyLibCore (the standard library), TinyLibSystem, tiny-playground, tiny-gui...; the runtimes of C and ML | 7,040 |
 
 Counting their `.mli` files, their C (tiny-cc's and tiny-ml's
 runtimes, and tiny-kernel's programs written in C) and tiny-machine's
-assembly, the tiny programs are **about 34,400 lines** without the
+assembly, the tiny programs are **about 34,100 lines** without the
 header comments (`make loc`, 2026-11-13). That is more than t-IX's
 budget of 30,000.
 

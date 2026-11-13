@@ -1,19 +1,21 @@
-(* Lexer_c: C's text cut into tokens (Token_c), comments included.
+(* Lexer_c cuts C's text into tokens (Token_c), comments included.
 
-   Written with ocamllex, as Lexer_ml: the longest match gives "->" one
-   token, "<<=" one, "L'x'" a character. The rules are C99's and Plan 9
-   C's (the same, but for a few keywords: 5c's lexer, Lexer.mll in xix's
-   compiler); gcc's __attribute__ is a keyword, the parser skips what
-   follows it.
+   It is written with ocamllex, as Lexer_ml is. The longest match makes
+   "->" one token, "<<=" one token, and "L'x'" a character. The rules
+   are those of C99 and of Plan 9's C as 5c's lexer reads it (Lexer.mll
+   in xix's compiler); the two are the same except for a few keywords.
+   gcc's __attribute__ is a keyword, and the parser skips what follows
+   it.
 
-   The preprocessor's lines: a # starting a line starts a directive, a
-   [Directive] token (its #, spaces and word: "#define", "# if"), and
-   the tokens up to the line's end are [pp], or further while a line
-   ends with a backslash. After #include, <u.h> is one [String]. A #
-   inside a directive (a macro's # and ##, stringizing and pasting) is
-   an [Operator].
+   The preprocessor's lines: a # that starts a line starts a directive.
+   It is a [Directive] token, made of the #, the spaces and the word
+   ("#define", "# if"). The tokens up to the end of the line are [pp],
+   and so are those of the next line while a line ends with a
+   backslash. After #include, <u.h> is one [String]. A # inside a
+   directive (a macro's # and ##, for stringizing and pasting) is an
+   [Operator].
 
-   Worked example (the tests'):
+   A worked example (from the tests):
 
      #define N 10 /* max */
      static int f(char *s) { return s[0] == 'a'; }
@@ -23,8 +25,8 @@
      Operator *  Ident s  Punctuation )  Punctuation {  Keyword return
      Ident s  ...  Operator ==  Char 'a'  Punctuation ;  Punctuation }
 
-   Never fails: an unclosed comment runs to the end of the file, an
-   unclosed string or character to the end of its line, a character C
-   does not know is an [Error] token. *)
+   The lexer never fails: an unclosed comment runs to the end of the
+   file, an unclosed string or character runs to the end of its line,
+   and a character C does not know is an [Error] token. *)
 
 val tokens : string -> Token_c.t list

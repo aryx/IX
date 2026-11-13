@@ -4,14 +4,15 @@
 (* The stack machine Lower compiles to, as types: an expression pushes
  * its value, an operation pops its operands, statements are labels and
  * jumps. Nothing here knows the machine: an integer is an ML integer
- * (Gen tags it), a static block a symbol (Gen adds a word for its
+ * (Gen tags it), a static block is a symbol (Gen adds a word for its
  * value), and a frame's slots are numbers. Arguments are pushed from
  * the last, as OCaml evaluates them, so an operation's first operand
  * is on top. Opti rewrites this code, Ssa reads it, Gen and Emit write
  * its assembly.
  *
- * A function's code, as mini-ml -dir prints it (slot 0 is the
- * closure, 1 and 2 the parameters, the others the function's own):
+ * Here is a function's code, as mini-ml -dir prints it (slot 0 is the
+ * closure, slots 1 and 2 are the parameters, and the others are the
+ * function's own):
  *
  *     let rec loop i acc = if i = 0 then acc else loop (i - 1) (acc + i)
  *
@@ -23,22 +24,23 @@
  *     Block "cf3_loop<>"; Set 5            loop's closure, a static block
  *     Call (Direct "f3_loop<>", [5; 4; 3], true)   a tail call
  *
- * Two things to see. A call's operands are not on the stack but in
- * slots, named by the call: at a call nothing is left in a register
- * (Gen.mli says why, the collector). And = is [Cmp Eq], the
- * integers', because the type checker saw an int (Lower.immediates);
+ * There are two things to see. A call's operands are not on the stack
+ * but in slots, which the call names: at a call nothing is left in a
+ * register (Gen.mli says why: the collector). And = is [Cmp Eq], the
+ * integers' comparison, because the type checker saw an int
+ * (Lower.immediates);
  * at a type it did not know, or with -unsafe-types, it is [Poly Eq],
  * which tests at run time whether both are integers and calls compare
  * for the others (Opti's eqs sees a constant, and makes it [Cmp Eq]).
  *
  * design:
  * A stack machine needs no decision from the compiler that makes its
- * code: no register to choose, no temporary to name, one construct
- * of the tree is one sequence of instructions whatever is around it.
- * The decisions are put off to Gen, which makes few (depth i of the
- * stack is register i). The same form is mini-cc's simple back
- * end's (its Ir), TinyC's and tiny-ml's; Ssa is what one moves to
- * when one wants to decide better.
+ * code: there is no register to choose and no temporary to name, and
+ * one construct of the tree is one sequence of instructions whatever
+ * is around it. The decisions are put off to Gen, which makes few
+ * (depth i of the stack is register i). mini-cc's simple back end
+ * uses the same form (its Ir), as do TinyC and tiny-ml; Ssa is what
+ * one moves to when one wants to decide better.
  *
  * cs-history:
  * A stack machine between a compiler's two halves is as old as

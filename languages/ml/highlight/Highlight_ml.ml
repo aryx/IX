@@ -5,10 +5,11 @@
 
 (* See Highlight_ml.mli.
  *
- * After pfff's highlight_ml.ml (codemap's), its token pass: one walk
- * over the tokens, a few facts remembered on the way (the parameters
- * and locals of the definition we are in, whether we are in a type),
- * each token's category chosen from its neighbours:
+ * This follows the token pass of pfff's highlight_ml.ml (codemap's).
+ * It is one walk over the tokens, which remembers a few facts on the
+ * way (the parameters and locals of the definition we are in, and
+ * whether we are in a type) and chooses each token's category from
+ * its neighbours:
  *
  *   let f x y = ...     the let's name, then its arguments: Def_function
  *   let v = ...         no arguments: Def_value (a fun after = too: a function)
@@ -17,8 +18,9 @@
  *   type t = A | B      a type definition: Def_type, then types and constructors
  *
  * A let is at the top when the token before it can end an expression
- * (after "=", "in", "(", "->"... a let is inside one): no indentation
- * needed, and a let in a module's struct is at its top too.
+ * (after "=", "in", "(", "->"... a let is inside an expression). So no
+ * indentation is needed, and a let in a module's struct is at its top
+ * too.
  *)
 
 open Highlight_code

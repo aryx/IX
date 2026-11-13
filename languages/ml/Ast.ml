@@ -1,20 +1,21 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The tree of ocaml-light's ML, as the parser builds it: the subset
- * mini-ml compiles (plan_ml.md, "The subset, counted"), names still
- * names. Scope then resolves them.
+(* The tree of ocaml-light's ML, as the parser builds it, for the
+ * subset that mini-ml compiles (plan_ml.md, "The subset, counted").
+ * The names are still names; Scope then resolves them.
  *
- * A multi-argument function is what the parser makes of it, as
- * ocaml-light's: fun x y -> e is a function of x whose body is a
- * function of y; the arities are found later. The sugar is gone: e.(i)
- * is Array.get e i, s.[i] String.get s i, [a; b] a :: b :: [], and
- * x :: l the constructor "::" of the pair.
+ * A multi-argument function is what the parser makes of it, as in
+ * ocaml-light: fun x y -> e is a function of x whose body is a
+ * function of y; the arities are found later. The sugar is gone:
+ * e.(i) is Array.get e i, s.[i] is String.get s i, [a; b] is
+ * a :: b :: [], and x :: l is the constructor "::" applied to the
+ * pair.
  *
  * Each node has its line (the file is the unit's).
  *
- * A definition, as mini-ml -dast prints it, the lines and spans
- * left out:
+ * Here is a definition, as mini-ml -dast prints it, with the lines and
+ * spans left out:
  *
  *     let add x y = x + y
  *
@@ -26,20 +27,21 @@
  *
  * There is no node for an addition: + is a name like another,
  * applied, which Resolve finds in Pervasives to be the primitive
- * %addint, and Lower makes an instruction. So the tree is small: 22
- * kinds of expression, mlpp's three aside.
+ * %addint, and Lower makes an instruction. So the tree is small: it
+ * has 22 kinds of expression, not counting mlpp's three.
  *
  * design:
- * A tree is what ML's types are for: a variant a kind of node, a
- * match the cases, and the compiler says which case a pass forgot.
- * mini-cc's Tree says what the same tree was in 5c's C, one struct
- * for every node with an op, a left and a right, and what passing
- * to variants caught. ML was a language for writing programs about
- * programs (proofs, then compilers) before it was anything else.
+ * A tree is what ML's types are for: each kind of node is a variant's
+ * constructor, a match handles the cases, and the compiler says which
+ * case a pass forgot. mini-cc's Tree says what the same tree was in
+ * 5c's C, one struct for every node with an op, a left and a right,
+ * and what the move to variants caught. ML was a language for writing
+ * programs about programs (proofs, then compilers) before it was
+ * anything else.
  *
  * others:
  * OCaml's own tree, Parsetree, has the same shape and more around
- * each node: a place that is a file, two lines and two columns,
+ * each node: a place made of a file, two lines and two columns,
  * and a list of attributes ([@inline], [@@deriving show]) that mean
  * nothing to the compiler and are for the programs that rewrite the
  * tree before it, the ppx. Here the few such constructs have their

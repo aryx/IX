@@ -1,6 +1,6 @@
-(* A grammar's description, ocamlyacc's (a .mly), the part ix's
- * grammars use, and its reader, written by hand (plan_lex_yacc.md,
- * decision 1).
+(* The description of a grammar in ocamlyacc's format (a .mly), limited
+ * to the part that ix's grammars use, and its reader, which is written
+ * by hand (plan_lex_yacc.md, decision 1).
  *
  *     %{ header %}
  *     %token <int> INT
@@ -19,41 +19,48 @@
  *     %%
  *     trailer
  *
- * And of menhir's, so that a grammar is one text for menhir and for
- * mini-yacc, its standard rules, a symbol as any other:
+ * The reader also accepts menhir's standard rules, used like any other
+ * symbol, so that one grammar text works for both menhir and mini-yacc:
  *
  *     main: list(statement) EOF { $1 };
  *     call: IDENT LPAREN separated_list(COMMA, expr) RPAREN { Call ($1, $3) }
  *
- * option(x) (None, or Some x), boption(x) (is x there), list(x),
- * nonempty_list(x), separated_list(sep, x), separated_nonempty_list(sep, x)
- * (the x's, in the text's order), loption(x) (a list, or none: []);
- * and x?, x*, x+ for option(x), list(x), nonempty_list(x).
- * Each use is a non-terminal with rules of its own, named as menhir
- * names it (list_statement_), before the automaton is made. And in an
- * action, menhir's places: $sloc, where the rule's text is, and
- * $loc($n), where its n-th symbol's is (Output).
+ * The standard rules are:
+ *  - option(x), which is None or Some x;
+ *  - boption(x), which says whether x is there;
+ *  - list(x), nonempty_list(x), separated_list(sep, x) and
+ *    separated_nonempty_list(sep, x), which are the x's in the text's
+ *    order;
+ *  - loption(x), which is a list, or [] when there is none;
+ *  - x?, x* and x+, which stand for option(x), list(x) and
+ *    nonempty_list(x).
+ * Before the automaton is made, each use becomes a non-terminal with
+ * rules of its own, named as menhir names it (list_statement_). In an
+ * action, the reader also accepts menhir's places: $sloc, where the
+ * rule's text is, and $loc($n), where its n-th symbol is (see Output).
  *
- * Not read, and said so: the error token, an action before a rule's
- * end, %token's aliases; menhir's own rules with parameters, x = symbol.
- * The header, the trailer and the actions are
- * OCaml, kept as text with where they start.
+ * The reader does not accept the error token, an action before a
+ * rule's end, %token's aliases, menhir's rules with parameters that a
+ * grammar defines itself, and x = symbol; it gives an error for them.
+ * The header, the trailer and the actions are OCaml code, kept as text
+ * along with where they start.
  *
  * cs-history:
- * A rule as a name, a colon and what it may be is John Backus's
- * notation, made for Algol 58; Peter Naur's report on Algol 60 (1960)
- * defined a whole language's syntax by it, and it has been the way
- * since (BNF). yacc's part is the braces: the code to run when the
- * rule is recognized, $1, $2 the values of its symbols, so that a
- * grammar is also the program that builds the tree. list(x) and x*
- * are the other old notation, a rule's right side as a regular
- * expression (Niklaus Wirth's EBNF, 1977), which an LR generator
- * must first make plain rules again. *)
+ * Writing a rule as a name, a colon and what it may be is John
+ * Backus's notation, made for Algol 58. Peter Naur's report on Algol 60
+ * (1960) defined the syntax of a whole language with it, and it has
+ * been the usual way since (BNF). What yacc added is the braces: the
+ * code to run when the rule is recognized, where $1 and $2 are the
+ * values of its symbols, so that a grammar is also the program that
+ * builds the tree. list(x) and x* come from the other old notation,
+ * where a rule's right side is a regular expression (Niklaus Wirth's
+ * EBNF, 1977); an LR generator must first turn them back into plain
+ * rules. *)
 
-(* the line, the message *)
+(* the line and the message *)
 exception Error of int * string
 
-(* OCaml text, the line and the column it starts at *)
+(* OCaml text, with the line and the column where it starts *)
 type code = { text : string; line : int; col : int }
 
 type assoc = Left | Right | Nonassoc

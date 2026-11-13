@@ -1,23 +1,23 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* The compiler's data: C's types, the trees the parser makes of
- * expressions, statements, declarators and initializers, the symbols,
+(* The compiler's data: C's types; the trees that the parser makes of
+ * expressions, statements, declarators and initializers; the symbols;
  * and what the front end asks of a machine (cc.h's Type, Node, Sym;
  * sub.c's tables).
  *
  * A type's kind is a variant, [etype]; the tables that say which kinds
  * an operator takes ([tasign], [tadd]...) are predicates on the left and
- * right kinds, and the usual conversions a rule ([arith_tab]).
+ * right kinds, and the usual conversions are a rule ([arith_tab]).
  *
- * The trees are ADTs, where 5c's are one Node with an op, a left and a
- * right: an [expr] is its [kind] ([Binary], [Assign], [Call]...) with
- * what the passes learn of it (its type, its complexity, its
- * addressability); the passes (Check, the back end's xcom) return new trees
- * rather than rewrite them in place. Statements, declarators and
- * initializers have their own types ([stmt], [decl], [init]); in 5c they
- * are Nodes too. Symbols and types stay mutable records: declarations
- * complete them as they come.
+ * The trees are ADTs, where 5c's trees are a single Node with an op, a
+ * left and a right. An [expr] is its [kind] ([Binary], [Assign],
+ * [Call]...) with what the passes learn of it: its type, its
+ * complexity, and its addressability. The passes (Check, the back end's
+ * xcom) return new trees rather than rewrite them in place. Statements,
+ * declarators and initializers have their own types ([stmt], [decl],
+ * [init]); in 5c they are Nodes too. Symbols and types stay mutable
+ * records, because declarations complete them as they come.
  *
  * One file is compiled per run, and the state is global: [lineno], the
  * symbol table [hash], the machine [mach].
@@ -48,18 +48,18 @@
  *     return x + y * 2;    Return (Binary (Add, Name x,
  *                                    Binary (Mul, Name y, Const 2)))
  *
- * each node with its [t], Tint here, once Check has typed it, and its
- * [complex] and [addable] once a back end's xcom has labelled it
+ * and each node gets its [t], Tint here, once Check has typed it, and
+ * its [complex] and [addable] once a back end's xcom has labelled it
  * (Cgen.mli says what the two numbers are for).
  *
  * design:
  * Types are compared by walking the two chains together
- * (Tree_helpers.same, 5c's sametype), a structure's elements one by
- * one, and no deeper than five links. So two structures declared
- * apart with the same elements are one type here, where ANSI C
- * makes each declaration a type of its own; and there is no table
- * of types and no numbers for them: a type is made when a
- * declaration is read, and reached from its symbol.
+ * (Tree_helpers.same, 5c's sametype), comparing a structure's elements
+ * one by one, and going no deeper than five links. So two structures
+ * declared apart with the same elements are one type here, whereas
+ * ANSI C makes each declaration a type of its own. And there is no
+ * table of types and no numbers for them: a type is made when a
+ * declaration is read, and it is reached from its symbol.
  *
  * References: Ken Thompson, "Plan 9 C Compilers" (CLI has where it
  * is), its section "Implementation": "four machine-independent

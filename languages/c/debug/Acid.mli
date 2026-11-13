@@ -1,51 +1,56 @@
-(* What -a writes: acid's declarations of the program's types (acid.c),
- * for a debugger to print a value by its type. 5c's text, byte for
- * byte (debuggers/tests/acid/types/target.acid is 5c -an's):
+(* What -a writes: the program's types declared in acid's language
+ * (acid.c), so that a debugger can print a value by its type. The text
+ * is 5c's, byte for byte (debuggers/tests/acid/types/target.acid is the
+ * output of 5c -an):
  *
  *     struct Node { char *name; Point p; Node *next; };
  *
  *     sizeofNode = 20;            the width
- *     aggr Node                   each member's format and offset ('A':
- *     {                           a pointer to a complex type, its name)
- *         'X' 0 name;
+ *     aggr Node                   each member's format and offset ('A'
+ *     {                           is a pointer to a complex type, and
+ *         'X' 0 name;             is followed by the type's name)
  *         Point 4 p;
  *         'A' Node 12 next;
  *     };
- *     defn                        a function printing one, given its
- *     Node(addr) {                address: acid's print calls it on a
- *         complex Node addr;      value of the type
+ *     defn                        a function that prints a Node, given
+ *     Node(addr) {                its address; acid's print calls it on
+ *         complex Node addr;      a value of the type
  *         print("	name	", addr.name\X, "\n");
  *         ...
  *     };
- *     complex Node n1;            a global's type, a local's (f:v), an
- *     complex Node walk:n;        enum's constants as variables
+ *     complex Node n1;            the type of a global, the type of a
+ *     complex Node walk:n;        local (f:v); an enum's constants are
+ *                                 written as variables
  *
- * written as the compiler goes: a structure once its body is aligned
- * (Declare.sualign), a name once declared (Declare.dodecl, doenum).
- * In acid's syntax a keyword is no name: a member called loop is
- * $loop (amap).
+ * The declarations are written as the compiler goes: a structure once
+ * its body is aligned (Declare.sualign), and a name once it is declared
+ * (Declare.dodecl, doenum). In acid's syntax a keyword cannot be a
+ * name, so a member called loop is written $loop (amap).
  *
- * History: Phil Winterbottom's acid (1994) and 5c's -a, Plan 9 2nd
- * edition: the compiler, which knows the types, writes them in the
- * debugger's language; the debugger knows no C (decision 6 of
- * plan_debugger.md; decision 14: the same text in the program, -g). *)
+ * History: Phil Winterbottom's acid (1994) and 5c's -a came with Plan
+ * 9's 2nd edition. The compiler, which knows the types, writes them in
+ * the debugger's language, so the debugger knows no C (decision 6 of
+ * plan_debugger.md; decision 14 puts the same text in the program,
+ * with -g). *)
 
-(* -a's level: 0 none, 1 -a, 2 -aa (only the file compiled, not its
- * #includes) *)
+(* the level of -a: 0 for none, 1 for -a, and 2 for -aa (only the file
+ * compiled, not its #includes) *)
 val level : int ref
 
-(* the declarations written, the last first: a structure's aggr and
- * function one, a variable's line another (mini-ld -g keeps each once:
- * every file says libc.h's) *)
+(* the declarations written, the last first. A structure's aggr and its
+ * function are one declaration, and a variable's line is another
+ * (mini-ld -g keeps each only once, because every file writes those of
+ * libc.h) *)
 val decls : string list ref
 
-(* them as -a writes them *)
+(* the declarations, as -a writes them *)
 val text : unit -> string
 
-(* a structure or union, its elements' offsets and width known
- * (acidtype) *)
+(* writes the declarations of a structure or union, once the offsets of
+ * its elements and its width are known (acidtype) *)
 val acidtype : Tree.typ -> unit
 
-(* a name declared (acidvar): a global's or a local's complex type, an
- * enum's constant; fn the function being defined (its type: thisfn) *)
+(* writes the declaration of a name just declared (acidvar): the complex
+ * type of a global or a local, or an enum's constant. fn is the type of
+ * the function being defined (thisfn). *)
 val acidvar : fn:Tree.typ option -> Tree.sym -> unit

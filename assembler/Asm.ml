@@ -1,111 +1,114 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* Plan 9's assembly language, for arm and arm64: the instructions
- * mini-asm reads and writes, unencoded, into an object file, and that
- * mini-ld lays out and encodes.
+(* Plan 9's assembly language, for arm and arm64. These are the
+ * instructions that mini-asm reads and writes, unencoded, into an object
+ * file, and that mini-ld lays out and encodes.
  *
- *     TEXT  strchr(SB), $8           a function, the size of its frame
+ *     TEXT  strchr(SB), $8           a function, and the size of its frame
  *     MOVW  c+4(FP), R6              an argument: FP is the caller's frame
  *     MOVW  $table(SB), R1           an address: SB is the static base
  *     MOVW.EQ R1, R2                 a condition, as a suffix (arm)
  *     BNE   2(PC)                    a branch, counted in instructions
  *     DATA  msg+0(SB)/8, $"Hello, w" initialized data
- *     GLOBL msg(SB), $14             its size
+ *     GLOBL msg(SB), $14             the size of msg
  *
  * {b Why the assembler only parses, and the linker encodes.} This is
- * Plan 9's design (Thompson's and Pike's toolchain), the one xix
- * follows, and the one ix keeps, because it is the smallest:
+ * Plan 9's design (the toolchain of Thompson and Pike). xix follows it,
+ * and ix keeps it because it is the smallest:
  *
  * - {b No relocations.} The linker encodes after it has laid out the
- *   whole program, so every address is known when a word is made:
- *   objects carry no relocation records, and the linker has no
- *   relocation machinery, most of a Unix linker's complexity.
- * - {b One encoder per machine.} The C compiler will write these same
+ *   whole program, so every address is known when a word is made.
+ *   Objects carry no relocation records, and the linker has no
+ *   relocation machinery, which is most of a Unix linker's complexity.
+ * - {b One encoder per machine.} The C compiler writes these same
  *   instruction lists into an object, as 5c does, without printing
- *   assembly; the encoder is written once, in the linker, shared by
- *   both paths, instead of in the assembler and again in the compiler.
- * - {b Decisions made once, with everything known}: which form a branch
- *   takes, where literal pools go, how a large constant is built (an
- *   immediate where the machine has a form that holds it, else a load
- *   from a literal pool, on arm and on arm64), what a function's
- *   prologue is. With the encoding in the assembler, each needs a guess
- *   now and a fixup later.
+ *   assembly. The encoder is written once, in the linker, and both
+ *   paths share it, instead of having one in the assembler and another
+ *   in the compiler.
+ * - {b Decisions are made once, with everything known.} They are which
+ *   form a branch takes, where the literal pools go, how a large
+ *   constant is built (an immediate where the machine has a form that
+ *   holds it, else a load from a literal pool, on arm and on arm64), and
+ *   what a function's prologue is. With the encoding in the assembler,
+ *   each would need a guess now and a fixup later.
  * - {b The machine is in one place.} This module and the parser are the
- *   same for both targets but for a table of register names; which
+ *   same for both targets except for a table of register names. Which
  *   instructions exist, with which operands, is decided by the linker's
- *   module for each machine (linker/Arm, linker/Arm64), which is where
+ *   module for each machine (linker/Arm, linker/Arm64). That is where
  *   having two targets forces the code to say what is general.
  *
- * The costs don't matter here: an object is not machine code, so it
- * can only be listed, not disassembled; and the linker redoes the
- * encoding at each link, which is why Go moved it back into its
- * compiler and assembler in Go 1.3 (2014), for Google's large
- * programs.
+ * The costs do not matter here. An object is not machine code, so it
+ * can only be listed, not disassembled. And the linker redoes the
+ * encoding at each link, which is why Go moved it back into its compiler
+ * and assembler in Go 1.3 (2014), for Google's large programs.
  *
  * evolution:
- * This toolchain has had three lives. Thompson wrote it for Plan 9
- * (his paper of 1990 has the MIPS and the 68020 for its examples),
- * and a machine after another was added to it. Go started from
- * those sources: its first releases had Plan 9's 6a, 6c and 6l in
- * them, the Go compiler beside them writing the same objects, and
- * Go's assembler is still this language, pseudo-registers and all;
- * its linker gave the encoding back to the compiler in Go 1.3 (the
- * paragraph above). And 9front keeps the original, with a 7 for
- * arm64 where Plan 9's 7 was the Alpha.
+ * This toolchain has had three lives. Thompson wrote it for Plan 9 (his
+ * paper of 1990 takes the MIPS and the 68020 as its examples), and
+ * machines were added to it one after another. Go started from those
+ * sources: its first releases had Plan 9's 6a, 6c and 6l in them, with
+ * the Go compiler beside them writing the same objects, and Go's
+ * assembler still uses this language, pseudo-registers and all. Its
+ * linker gave the encoding back to the compiler in Go 1.3 (see the
+ * paragraph above). And 9front keeps the original, with a 7 for arm64,
+ * where Plan 9's 7 was the Alpha.
  *
- * {b One instruction type for both machines} (xix has a typed tree per
- * machine): an opcode, its dot suffixes, and operands from one set.
- * The linker's classifier rejects what a machine can't encode.
+ * {b One instruction type serves both machines} (xix has a typed tree
+ * per machine). An instruction has an opcode, its dot suffixes, and
+ * operands from one set. The linker's classifier rejects what a machine
+ * cannot encode.
  *
  * Where it stands: this file is the contract between four programs.
- * Parser_asm makes these items from a .s, mini-cc and mini-ml make
- * them from C and ML; mini-ar keeps objects in a library; Link reads
- * them into Program's instructions, which are these with what
- * linking adds (an address, a branch's target). The object file is
+ * Parser_asm makes these items from a .s file, and mini-cc and mini-ml
+ * make them from C and ML. mini-ar keeps objects in a library. Link
+ * reads them into Program's instructions, which are these items plus
+ * what linking adds (an address, a branch's target). The object file is
  * the value marshalled with a version number in front, so a program
- * of another day's types says so and does not crash.
+ * built with another day's types says so and does not crash.
  *
  * terminology:
  * The four pseudo-registers. SB, FP, SP and PC in an operand are not
- * registers of the machine but four ways of naming a place, which
- * the linker turns into a real register and an offset once it knows
- * the layout. name(SB), the static base: a global, by its name.
- * name+4(FP), the frame pointer: an argument, from the caller's
- * side of the frame; the name is a comment. name-4(SP): a local, from
- * the top of the frame. 2(PC): an instruction, counted from this
- * one. A function can so be written without knowing the size of its
- * own frame, which is on its TEXT line, and nothing changes in its
- * body when that size does. (On arm the real SB is R12, set once to
- * the data's start; SP is R13.)
+ * registers of the machine but four ways of naming a place, which the
+ * linker turns into a real register and an offset once it knows the
+ * layout:
+ * - name(SB), the static base, is a global, by its name;
+ * - name+4(FP), the frame pointer, is an argument, counted from the
+ *   caller's side of the frame, and the name is only a comment;
+ * - name-4(SP) is a local, counted from the top of the frame;
+ * - 2(PC) is an instruction, counted from this one.
+ * So a function can be written without knowing the size of its own
+ * frame, which is on its TEXT line, and nothing changes in its body when
+ * that size does. (On arm the real SB is R12, set once to the start of
+ * the data, and SP is R13.)
  *
  * terminology:
- * TEXT, DATA, GLOBL are the three segments' names, kept from the
- * a.out of the first Unix (Exe.mli draws them): the text is the
- * code, read-only and shared; the data is what has an initial value
- * in the file; the bss, what a GLOBL with no DATA makes, is only a
- * size, zeroed when the program starts.
+ * TEXT, DATA and GLOBL stand for the three segments, whose names are
+ * kept from the a.out of the first Unix (Exe.mli draws them). The text
+ * is the code, read-only and shared. The data is what has an initial
+ * value in the file. The bss, which a GLOBL with no DATA makes, is only
+ * a size, zeroed when the program starts.
  *
  * others:
- * The operands go left to right, the destination last, on every
- * machine: MOVW $1, R0 puts 1 in R0. That is the order of the PDP-11's
- * assembler and of AT&T's syntax for the 386; ARM's own manuals, and
- * Intel's, put the destination first (mov r0, #1). The opcodes are
- * Plan 9's too, the same on all its machines where it can be (MOVW
- * is a load, a store or a move by its operands, where ARM has ldr,
- * str and mov), which is what lets one compiler's back end be
- * ported by changing little.
+ * The operands go from left to right, with the destination last, on
+ * every machine: MOVW $1, R0 puts 1 in R0. That is the order of the
+ * PDP-11's assembler and of AT&T's syntax for the 386; ARM's own
+ * manuals, and Intel's, put the destination first (mov r0, #1). The
+ * opcodes are Plan 9's too, and they are the same on all its machines
+ * where they can be (MOVW is a load, a store or a move depending on its
+ * operands, where ARM has ldr, str and mov). This is what lets one
+ * compiler's back end be ported by changing little.
  *
  * References: Ken Thompson, "Plan 9 C Compilers" (Summer 1990 UKUUG
- * Conference, London), the design paper of this split: its loader
+ * Conference, London), the design paper of this split, where the loader
  * "combines the roles of second half of the assembler, global
  * optimizer, and loader", with the MIPS and the 68020 as examples;
  * Rob Pike, "A Manual for the Plan 9 assembler", for the syntax, the
  * pseudo-registers FP and SB, and the remark that the assemblers "are
- * really just variations of a single program" -- which one instruction
+ * really just variations of a single program", which one instruction
  * type makes literal; Russ Cox, "Go 1.3 Linker Overhaul" (2013), for
- * the move back, the encoding done once per package by the compiler
- * and the assembler because linking large programs redid it. *)
+ * the move back, where the compiler and the assembler do the encoding
+ * once per package because linking large programs redid it. *)
 
 (* (No Asm.mli: the module is its types, and what goes with them.) *)
 

@@ -1,10 +1,11 @@
 (* Plan 9's symbol table and pc/line table, written after an a.out's
- * data (5l's asmsym and asmlc, principia's debuggers/libmach reads
- * them): what a trace, a debugger and a profiler name an address by
+ * data (5l's asmsym and asmlc; principia's debuggers/libmach reads
+ * them). A trace, a debugger and a profiler use them to name an address
  * (plan_debugger.md, stage 1).
  *
- * The symbol table is entries, each a value (4 bytes, big-endian), a
- * type (a letter, 0x80 added), a name and its NUL:
+ * The symbol table is a list of entries. Each entry has a value (4
+ * bytes, big-endian), a type (a letter, with 0x80 added), a name and
+ * the name's NUL:
  *
  *     T 00001078 etext        the text's end
  *     D 00002000 hello        a data's address (B: a bss's)
@@ -16,31 +17,32 @@
  *     m 00000018 .frame       its frame, the return address's word too
  *     p 00000004 x            a parameter, x+4(FP); a: a local, y-8(SP)
  *
- * etext first, then the data, the bss and the files in the order of
- * the linker's hash (Link.bucket: each bucket newest first, as the
- * data's layout), then each function in the text's order, the history
- * of its object before the object's first one.
+ * etext comes first, then the data, the bss and the files, in the order
+ * of the linker's hash table (Link.bucket: each bucket newest first, as
+ * in the data's layout). Then come the functions in the text's order,
+ * with the history of each object before the object's first function.
  *
- * A line is global: counted over an object's files as its assembler
- * or compiler read them, each #include's lines inside its includer's,
- * so one number says a file and a line once the history is read. The
- * pc/line table gives each instruction's, as differences from the one
- * before, a byte each mostly:
+ * A line number is global: it counts over all of an object's files as
+ * its assembler or compiler read them, with each #include's lines
+ * inside its includer's. So once the history is read, one number gives
+ * both a file and a line. The pc/line table gives each instruction's
+ * line, as a difference from the one before, mostly in one byte:
  *
- *     1 .. 64      the line goes up by it       (then the pc by 4)
- *     65 .. 128    down by n - 64
- *     129 .. 255   the pc up by 4 * (n - 128), the line as it is
- *     0 + 4 bytes  the line by more than 64, either way
+ *     1 .. 64      the line goes up by n        (then the pc by 4)
+ *     65 .. 128    the line goes down by n - 64
+ *     129 .. 255   the pc goes up by 4 * (n - 128), the line stays
+ *     0 + 4 bytes  the line moves by more than 64, either way
  *
- * Only a change of line is written: a function of 50 instructions on
- * 10 lines costs some 20 bytes. A literal pool's words have line 0.
+ * Only a change of line is written, so a function of 50 instructions on
+ * 10 lines costs about 20 bytes. A literal pool's words have line 0.
  *
  * design:
- * Two tables for two questions: which function is this address in
- * (the symbols, sorted by value), and which line (the pc/line table,
- * walked from the start). Go's runtime has the same two, grown from
- * these (its pclntab, 2009 to 2014): a Go program prints its own
- * symbolic traces with them, and stage 5a here is that.
+ * There are two tables for two questions: which function an address is
+ * in (the symbols, sorted by value), and which line it is at (the
+ * pc/line table, walked from the start). Go's runtime has the same two
+ * tables, grown from these (its pclntab, from 2009 to 2014). A Go
+ * program prints its own symbolic traces with them, and stage 5a of
+ * plan_debugger.md does the same here.
  *
  * References: Plan 9's a.out(6), symbol(2) and mach(2); principia's
  * linkers/5l (debugging.c) and debuggers/libmach (sym.c). *)
@@ -51,7 +53,8 @@ val symbols : 'm Program.t -> string
 (* the pc/line table's bytes *)
 val lines : 'm Program.t -> string
 
-(* ELF's symbols (-g with -H6 or -H7: Exe's .symtab), each a name, its
- * value, its size (an object's), a function or not, global or not (a
- * name<> is its object's: local), by value *)
+(* ELF's symbols (-g with -H7: Exe's .symtab), sorted by value.
+ * Each has a name, its value, its size (for a data object), whether it
+ * is a function, and whether it is global (a name<> is local to its
+ * object). *)
 val elf_symbols : 'm Program.t -> (string * int * int * bool * bool) list

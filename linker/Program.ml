@@ -2,24 +2,24 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The program being linked, as types: its symbols, its instructions
- * (the assembler's, with what linking adds to each) and its data.
- * Link fills it, the machines (Arm, Arm64) lay its code out and encode
- * it.
+ * (the assembler's, with what linking adds to each) and its data. Link
+ * fills it, and the machine modules (Arm, Arm64) lay its code out and
+ * encode it.
  *
- * The whole program is one list of instructions, every object's one
- * after the other, each remembering its file and line for the
- * messages; a branch holds its target as the instruction itself
- * (target), not as a number, so the passes may insert, drop and
- * reorder instructions (a prologue, a literal pool, Follow) without
- * any branch to fix. Only the last pass before the encoding gives
- * each its pc.
+ * The whole program is one list of instructions, with every object's
+ * instructions one after the other, and each instruction remembers its
+ * file and line for the messages. A branch holds its target as the
+ * instruction itself (target), not as a number, so the passes may
+ * insert, drop and reorder instructions (a prologue, a literal pool,
+ * Follow) without any branch to fix. Only the last pass before the
+ * encoding gives each instruction its pc.
  *
- * ['m] is the machine's opcodes. The few opcodes the general part
- * must tell apart to bind names and follow the flow (a TEXT, a
- * branch, a call) are constructors here; all the others are the
- * machine's own type, wrapped in Ins, which Link carries without
- * looking. So Link and Follow are written once, for an ['m] they
- * never inspect, and the type checker says so. *)
+ * ['m] is the type of the machine's opcodes. The few opcodes that the
+ * general part must tell apart, to bind names and follow the flow (a
+ * TEXT, a branch, a call), are constructors here. All the others are
+ * the machine's own type, wrapped in Ins, which Link carries without
+ * looking inside. So Link and Follow are written once, for an ['m] they
+ * never inspect, and the type checker makes sure of it. *)
 
 (* File: a component of a file's path, named "<" and it, numbered in
  * the order met (5l's SFILE): what the symbol table's histories say a

@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's languages/c/Highlight_c.ml (docs/plans/done/plan_emacs.md), a token's category from its kind; without the pass over the tree (Parse_c, 898 lines, and Ast_c: what each name is) and analyze *)
+(* ix: copied from languages/c/Highlight_c.ml in the author's playground
+ * (docs/plans/done/plan_emacs.md). It gives a token its category from
+ * its kind. It leaves out the pass over the tree, which says what each
+ * name is (Parse_c, 898 lines, and Ast_c), and analyze. *)
 
 (* See Highlight_c.mli *)
 

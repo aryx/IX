@@ -73756,3 +73756,64 @@ Claude noted that git diff would not show the untracked script, so Yoann would n
 Claude recommended checking prose with git diff --word-diff -- tiny and rerunning scripts/comments_only.sh HEAD tiny after any edits.
 Claude offered to commit and push once Yoann finished reviewing, since nothing else was waiting on him.
 Claude listed open items: two history passages, KMemory.mli's mem_post comment, and uncovered tiny/ .ml files and m-IX headers.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 20:18
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the plain-prose rewrite of tiny/'s .mli files as `41e39394` and pushed it.
+The commit includes 101 rewritten interfaces, with five wrong facts fixed and the 9front line corrected.
+It also adds `scripts/comments_only.sh` and prompt-history.md.
+Claude re-ran `comments_only.sh` just before committing, confirming your review edits left every file's code unchanged.
+The working tree is clean except for the untracked `tiny/docs/`, which Claude left alone because it isn't its work.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 20:45
+
+**Yoann:**
+
+> ok should we do this on the other .mli in IX?
+
+**Claude (summary):**
+
+Claude proposed checking how large the m-IX headers are and how heavily they are clipped.
+Claude said it would inspect the other .mli files in IX to see whether the same treatment applies.
+Claude had not yet reported findings, since its answer ended with it about to look at the headers.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 20:53
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude launched four comment-rewrite agents and confirmed the generators readings in yacc/Output.mli and lex/CLI.mli.
+Claude reported that the assembler and linker agent had stated four facts that looked wrong.
+Claude checked each of the four facts against the assembler and linker code, and confirmed all of them.
+Claude gathered the context for each confirmed fact, then applied the corrections to the assembler/ and linker/ comments.
+Claude has not yet reviewed the languages/c and languages/ml results, which were still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 21:03
+
+**Yoann:**
+
+> looks better for the few samples I looked
+
+**Claude (summary):**
+
+Claude finished the languages/c pilot review by fixing two issues and leaving one over-long line.
+Claude said the languages/c agent had added a new row to CLI.mli's diagram.
+Claude planned to read the diff section covering that CLI.mli diagram row next.
+Claude had not yet reported whether the CLI.mli diagram row was correct.

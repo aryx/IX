@@ -1,36 +1,36 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-ar: the librarian. A library is objects kept in one file, with
- * the names each defines, for mini-ld, which takes from it the objects
- * that define what a program still lacks. ar's command line (Plan 9's:
- * a key, the library, the files), not its file: a library is ix's, a
- * marshalled value, as an object is (Link's library). Its usage: [help],
- * what mini-ar -h prints.
+(* mini-ar is the librarian. A library is a set of objects kept in one
+ * file, with the names each object defines. mini-ld takes from it the
+ * objects that define what a program still lacks. mini-ar has ar's
+ * command line (Plan 9's: a key, the library, the files), but not ar's
+ * file: a library is ix's own, a marshalled value, as an object is (see
+ * the library in Link). Its usage is [help], which is what mini-ar -h
+ * prints.
  *
- * What makes a file of objects a library is the index: beside each
- * object, the names it defines, so that the linker can ask "who has
- * print?" without reading every member (Link.load takes a member
- * when one of its names is wanted, and Link.mli works an example).
- * A function defined by two members is the first's.
+ * What makes a file of objects a library is the index. Beside each
+ * object it lists the names the object defines, so that the linker can
+ * ask "who has print?" without reading every member (Link.load takes a
+ * member when one of its names is wanted, and Link.mli works through an
+ * example). When two members define a function, it is the first one's.
  *
  * cs-history:
- * ar, the archiver, is of the first Unix (1971), and was a general
- * tool, files kept in one file with their names, dates and modes,
- * before tar took that job and left it the libraries. Its first
- * format was binary; today's, a line of text for each member's
- * header, is 4BSD's and System V's, of the early 1980s, and has
- * barely changed since (mini-mk's Archive reads it, for the dates).
- * The index came
- * later and from another program: ranlib added a first member
- * listing the names, __.SYMDEF, and had to be run after each ar;
- * Plan 9's ar writes it itself.
+ * ar, the archiver, comes from the first Unix (1971). It was a general
+ * tool that kept files in one file with their names, dates and modes,
+ * before tar took over that job and left it the libraries. Its first
+ * format was binary. Today's format, with a line of text for each
+ * member's header, comes from 4BSD and System V in the early 1980s, and
+ * it has barely changed since (mini-mk's Archive reads it, for the
+ * dates). The index came later and from another program: ranlib added
+ * a first member listing the names, __.SYMDEF, and it had to be run
+ * after each ar. Plan 9's ar writes the index itself.
  *
  * others:
- * A static library costs nothing at run time and is copied into
- * each program that uses it; a shared library (a .so, a DLL) is
- * bound when the program starts, by a dynamic loader, and is in
- * memory once for all. Plan 9 has only the first kind, and ix. *)
+ * A static library costs nothing at run time and is copied into each
+ * program that uses it. A shared library (a .so, a DLL) is bound when
+ * the program starts, by a dynamic loader, and it is in memory once for
+ * all the programs. Plan 9 has only the first kind, and so does ix. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 

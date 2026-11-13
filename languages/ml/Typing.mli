@@ -1,12 +1,14 @@
-(* Types inferred, then forgotten (plan_ml.md, decision 4; the
- * tutorial's section 6). Hindley-Milner's algorithm over Scope's tree:
- * type variables are cells, unified in place (union-find); a let's
- * variables deeper than its level are generalized (Remy's levels, as
- * OCaml's), and only a value's (Wright's value restriction); an
- * abbreviation is expanded when two types' heads differ. A string
- * where Printf expects a format is typed by its conversions (%d an int,
- * %s a string, %a a printer and its argument...), the one special
- * case of ocaml-light's checker.
+(* Types are inferred, then forgotten (plan_ml.md, decision 4; the
+ * tutorial's section 6). This is Hindley-Milner's algorithm over
+ * Scope's tree:
+ * - type variables are cells, unified in place (union-find);
+ * - a let's variables that are deeper than its level are generalized
+ *   (Remy's levels, as in OCaml), and only when the let defines a
+ *   value (Wright's value restriction);
+ * - an abbreviation is expanded when the heads of two types differ.
+ * A string where Printf expects a format is typed by its conversions
+ * (%d takes an int, %s a string, %a a printer and its argument...);
+ * it is the one special case of ocaml-light's checker.
  *
  * Inference is solving equations. Each name and each expression gets
  * a type, a variable when nothing is known yet, and each construct
@@ -16,16 +18,17 @@
  *     let compose f g = fun x -> f (g x)      f : 'f   g : 'g   x : 'x
  *
  *     g x        g is a function taking x:    'g = 'x -> 'a
- *     f (g x)    f one taking g x's result:   'f = 'a -> 'b
+ *     f (g x)    f is one taking g x's result: 'f = 'a -> 'b
  *     compose : ('a -> 'b) -> ('x -> 'a) -> 'x -> 'b
  *
  * and no equation says more of 'a, 'b or 'x, so compose works at any
  * types: mini-ml -i prints ('a -> 'b) -> ('c -> 'a) -> 'c -> 'b.
- * A variable that would have to hold itself (let f x = x x: 'x =
- * 'x -> 'a) is "a type would be recursive", unify's occurs check.
+ * A variable that would have to hold itself (let f x = x x gives
+ * 'x = 'x -> 'a) is reported as "a type would be recursive"; this is
+ * unify's occurs check.
  *
- * When a variable is one a program may use at many types is the whole
- * question, and its answer is let:
+ * The whole question is when a variable is one that a program may use
+ * at many types, and its answer is let:
  *
  *     let pair = let id x = x in (id 1, id "a")      int * string
  *     let f = fun id -> (id 1, id "a")               an error: string
@@ -34,33 +37,34 @@
  * A let's definition is typed first, alone, and the variables left in
  * its type that nothing outside knows are generalized: each use of id
  * then has a copy of 'a -> 'a with a variable of its own. A function's
- * parameter has one type in its body. Which variables nothing outside
- * knows is the levels' work: a variable remembers how deep in the lets
- * it was made, unifying it with an older one lowers it, and those
- * still deeper than the let at its end are its own. And only a value
- * is generalized:
+ * parameter has one type in its body. Finding which variables nothing
+ * outside knows is the levels' work: a variable remembers how deep in
+ * the lets it was made, unifying it with an older one lowers it, and
+ * those still deeper than the let at its end belong to that let. And
+ * only a value is generalized:
  *
  *     let r = ref []          '_a list ref: one list, of one type
  *     r := [ 1 ]; r := [ "a" ]   the second is the error
  *
- * since ref [] is a call, which makes one cell: generalized, the cell
- * would take integers and give them back as strings.
+ * since ref [] is a call, which makes one cell. If it were generalized,
+ * the cell would take integers and give them back as strings.
  *
- * Nothing after this pass reads a type, but for one optimization, the
- * comparisons on integers (immediates below): Lower compiles the tree
- * it checked. So a program ocaml-light accepts compiles without it
- * (-unsafe-types), and the tests compare what it accepts, and what
- * -i prints, with ocaml-light's.
+ * Nothing after this pass reads a type, except for one optimization,
+ * the comparisons on integers (immediates below): Lower compiles the
+ * tree that Typing checked. So a program that ocaml-light accepts
+ * compiles without this pass (-unsafe-types), and the tests compare
+ * what it accepts, and what -i prints, with ocaml-light's.
  *
  * The unit's own .mli, when it has one, is checked: each val's
- * declared type an instance of the inferred one. Another unit's values
- * have their .mli's types (a unit without one: a fresh variable, not
- * checked).
+ * declared type must be an instance of the inferred one. Another
+ * unit's values have the types of its .mli (for a unit without one,
+ * each value gets a fresh variable, and nothing is checked).
  *
  * The same unification, of terms whose variables are linked in place,
  * is Prolog's (mini-prolog's Prolog_machine.unify, which leaves the
  * occurs check out, as Prologs do). mlpp's classes are found here too,
- * from the types (the dictionaries below; Pp.mli has their story).
+ * from the types (see the dictionaries below; Pp.mli has their
+ * story).
  *
  * cs-history:
  * The algorithm was found twice. Roger Hindley (1969), a logician,
@@ -75,13 +79,13 @@
  * type whenever the program has a type at all.
  *
  * design:
- * Why let and not every function. If a parameter could be used at
+ * Why let, and not every function? If a parameter could be used at
  * many types (the second example above), a function's type would say
  * for all inside an arrow's argument; that is System F, where
  * finding the types of a program with no annotation is undecidable
- * (Joe Wells, 1994). ML's cut, polymorphism at let only, is where
- * inference is still complete, and it is why a file of ML has so
- * few types written in it.
+ * (Joe Wells, 1994). ML's cut, with polymorphism at let only, is
+ * where inference is still complete, and it is why a file of ML has
+ * so few types written in it.
  *
  * evolution:
  * The reference broke the first rule. Standard ML (1990) had
@@ -107,7 +111,7 @@
  * References: Robin Milner, "A Theory of Type Polymorphism in
  * Programming" (Journal of Computer and System Sciences 17, 1978);
  * Luis Damas and Robin Milner, "Principal type-schemes for functional
- * programs" (POPL 1982): six pages, the rules and the definition; Roger
+ * programs" (POPL 1982), six pages with the rules and the definition; Roger
  * Hindley, "The principal type-scheme of an object in combinatory
  * logic" (Transactions of the AMS 146, 1969); J. A. Robinson, "A
  * machine-oriented logic based on the resolution principle" (Journal
@@ -121,37 +125,40 @@
 
 exception Error of int * string
 
-(* a unit's items checked; the toplevel's values and their types, as
- * -i prints them *)
+(* checks a unit's items, and returns the toplevel's values and their
+ * types, as -i prints them *)
 val unit_ : string -> Scope.item list -> (string * string) list
 
-(* mlpp: the classes' dictionaries the unit just checked leaves to mlpp
- * (Resolve's implicit): where a name is, in the text, its line, and
- * what is to be written after it, show_list show_int, or why nothing
- * is (no instance). Then unit_ doesn't stop at a definition's type
- * error: errors has them, their lines and messages, and a definition
- * with one has the dictionaries that were found *)
+(* mlpp: the classes' dictionaries that the unit just checked leaves
+ * to mlpp (Resolve's implicit). Each one gives where a name is in the
+ * text, its line, and what is to be written after it, such as
+ * show_list show_int, or why nothing is (no instance). Then unit_ does
+ * not stop at a definition's type error: errors has those errors,
+ * with their lines and messages, and a definition with an error has
+ * the dictionaries that were found. *)
 (* the comparisons (=, <, ...) and the stores (a.(i) <- v, r := v,
- * r.f <- v) the unit just checked has on ints, chars, booleans or (),
- * where each is in the text: Lower's immediates *)
+ * r.f <- v) on ints, chars, booleans or () that the unit just checked
+ * has, each given by where it is in the text: Lower's immediates *)
 val immediates : unit -> Ast.span list
 (* the comparisons on strings: Lower's string_eqs *)
 val strings : unit -> Ast.span list
 (* the comparisons on floats: Lower's float_cmps *)
 val floats : unit -> Ast.span list
-(* min and max (Pervasives', Int's) and the unit's globals that are
- * them, each with the one it is: Lower's min_max_aliases *)
+(* min and max (Pervasives' and Int's) and the unit's globals that are
+ * one of them, each with the one it is: Lower's min_max_aliases *)
 val min_max_globals : unit -> (string * string) list
 
-(* the values of the unit just checked, their symbols and types, in
- * the order defined (mini-ml -g's descriptions: debug/Acid_ml) *)
+(* the values of the unit just checked, with their symbols and types,
+ * in the order they are defined (for mini-ml -g's descriptions:
+ * debug/Acid_ml) *)
 val global_types : unit -> (string * Scope.ty) list
 
-(* -dotnet (dotnet/Lower_il, plan_dotnet_languages.md): when [keep],
- * unit_ keeps each expression's type, by its span and kind, and each
- * variable's, by its number; asked after it, a type variable named by
- * its cell (t0, t1...), the same each time in the unit: a polymorphic
- * function's 'a is one in its type and in its body's expressions *)
+(* -dotnet (dotnet/Lower_il, plan_dotnet_languages.md): when [keep] is
+ * set, unit_ keeps each expression's type, by its span and kind, and
+ * each variable's type, by its number. When they are asked for after
+ * unit_, a type variable is named by its cell (t0, t1...), with the
+ * same name each time in the unit: a polymorphic function's 'a is the
+ * same variable in its type and in its body's expressions. *)
 val keep : bool ref
 val expr_type : Scope.expr -> Scope.ty option
 val var_type : int -> Scope.ty option

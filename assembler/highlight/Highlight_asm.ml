@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's languages/asm/Highlight_asm.ml (docs/plans/done/plan_emacs.md): lines, where it was analyze; without the definitions and the references a code map asks *)
+(* ix: this file is languages/asm/Highlight_asm.ml from the author's
+ * playground (docs/plans/done/plan_emacs.md). Its function is called
+ * lines, where it was called analyze, and it leaves out the definitions
+ * and the references that a code map asks for. *)
 
 (* See Highlight_asm.mli *)
 

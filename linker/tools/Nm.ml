@@ -1,29 +1,32 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-nm: Plan 9's nm (principia's linkers/misc/nm.c): the names an
- * executable's symbol table has (mini-ld -g's: linker/Symtab), or an
- * object's and a library's, a line each: the value, the letter, the
- * name, sorted by name.
+(* mini-nm is Plan 9's nm (principia's linkers/misc/nm.c). It lists the
+ * names in an executable's symbol table (the one mini-ld -g writes:
+ * linker/Symtab), or in an object or a library. It prints one line for
+ * each name, with the value, the letter and the name, sorted by name.
  *
  *     T text   D data   B bss   (t, d, b: static, a name<>)
- *     L a leaf function   U undefined (an object's)
+ *     L a leaf function   U undefined (in an object)
  *     with -a: f a path's component, z a history's path, m a frame,
  *     a a local, p a parameter
  *
- * -n by value, -s in the table's order; -g the global ones only; -u
- * the undefined only; -h no file's name before each line (it is there
- * with several files, or a library); -T a signature's column (0s: ix's
- * objects have none). The names starting with . or $ are left out but
- * with -a.
+ * The options are these:
+ * - -n sorts by value, and -s keeps the table's order;
+ * - -g lists the global names only, and -u the undefined ones only;
+ * - -h prints no file name before each line (the name is printed when
+ *   there are several files, or a library);
+ * - -T adds a column for the signature (0s, since ix's objects have
+ *   none).
+ * The names starting with . or $ are left out, except with -a.
  *
- * An ELF executable (Linux's: gcc's, mini-ld -H6 and -H7's) by its
- * .symtab, nm's letters (Elf_file).
+ * An ELF executable (Linux's, from gcc, or from mini-ld -H7) is
+ * read by its .symtab, and its names get nm's letters (Elf_file).
  *
  * wib:
- * An object or a library is ix's (mini-asm's, mini-cc's, mini-ml's),
- * not Plan 9's format: its names are listed with no value, as nm does
- * an object's.
+ * An object or a library is in ix's format (mini-asm's, mini-cc's or
+ * mini-ml's), not Plan 9's, so its names are listed with no value, as
+ * nm does for an object.
  *
  * References: nm(1) of Plan 9's manual. *)
 

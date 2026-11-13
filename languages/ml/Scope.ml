@@ -1,25 +1,28 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* Names resolved (plan_ml.md, decision 3; the tutorial's section 5).
- * Modules have no functors, so a module is only a name space known at
- * compile time: Scope flattens them, nested (module R = struct ... end)
- * and aliased (module P = Machine.Phys) ones included, and replaces
- * each name by what it denotes:
+(* The tree with its names resolved (plan_ml.md, decision 3; the
+ * tutorial's section 5). There are no functors, so a module is only a
+ * name space known at compile time. Scope flattens the modules,
+ * including nested ones (module R = struct ... end) and aliased ones
+ * (module P = Machine.Phys), and replaces each name by what it
+ * denotes:
  *
  * - a value by a local variable (a unique number), a global (a module's
- *   toplevel value, a symbol), or a primitive (an external);
- * - a constructor by its number among its type's constant ones or its
- *   tag among the others, and its arity; an exception by its global;
- * - a label by its field's position, the record's size, whether it is
- *   mutable: the last type declared with that label, as 1.07's.
+ *   toplevel value, which is a symbol), or a primitive (an external);
+ * - a constructor by its number among its type's constant constructors,
+ *   or by its tag among the others, and by its arity; an exception by
+ *   its global;
+ * - a label by its field's position, the record's size, and whether it
+ *   is mutable. The label is taken from the last type declared with
+ *   it, as in OCaml 1.07.
  *
  * Another unit's names come from its .mli, read as source when the unit
  * is first named (its .ml when it has none): Resolve's header says
  * what others read instead. Pervasives is opened first.
  *
- * A definition of a unit Ex, as mini-ml -dscope prints its names
- * (Ast's header has the tree before):
+ * Here is a definition of a unit Ex, as mini-ml -dscope prints its
+ * names (Ast's header shows the tree before this pass):
  *
  *     let rec sum l = match l with [] -> 0 | x :: r -> x + sum r
  *
@@ -29,17 +32,18 @@
  *     +                    Prim ("%addint", 2, _): Pervasives' external
  *     sum, in a later definition:   Global Ex.sum, the linker's symbol
  *
- * After this pass no name is looked up again: what shadows what, which
- * module a name is from, which type a constructor is of are answered,
- * and each later pass is a walk of the tree with no environment of
- * names.
+ * After this pass no name is looked up again. The questions of what
+ * shadows what, which module a name is from, and which type a
+ * constructor is of are answered, and each later pass is a walk of
+ * the tree with no environment of names.
  *
  * others:
  * OCaml does the same in its type checker, where a variable becomes
- * an Ident.t, a name and a stamp (its -dlambda prints them so too), but
- * a module stays a value: a block of the module's values, made when
- * the program starts, and M.x a field of it. That is what a functor
- * needs, a function from such a block to another. Without functors
+ * an Ident.t, a name and a stamp (its -dlambda prints them that way
+ * too). But a module stays a value: a block of the module's values,
+ * made when the program starts, and M.x is a field of it. That is what
+ * a functor needs, since it is a function from such a block to
+ * another. Without functors
  * the block is not needed, and M.x is a symbol the linker resolves,
  * as a C global is. *)
 

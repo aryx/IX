@@ -1,20 +1,21 @@
 (* The stack machine on the registers, for arm64 and arm (the simple
- * back end): the
- * slot at depth i is Ri or Fi as its value is an integer or a float
- * (R1-R15 and F1-F15 on arm64, R1-R7 and F1-F6 on arm), so an
- * expression deeper than that is refused. Every register is the
- * caller's to save, as in 5c's and 7c's convention: a call spills the
- * slots below its arguments, below the frame's locals, and reloads
- * them. Values are kept as their type makes them, extended to the
- * register's width, so that a comparison or a division of any width is
- * the register's; an operation's result is extended again.
+ * back end). The slot at depth i is Ri or Fi, depending on whether its
+ * value is an integer or a float (R1-R15 and F1-F15 on arm64, R1-R7 and
+ * F1-F6 on arm), so an expression deeper than that is refused. Every
+ * register is the caller's to save, as in 5c's and 7c's convention: a
+ * call spills the slots below its arguments to memory, below the
+ * frame's locals, and reloads them afterwards. A value is kept as its
+ * type makes it, extended to the register's width, so that a comparison
+ * or a division of any width can use the register's instruction; the
+ * result of an operation is extended again.
  *
  * What differs between the machines is the [mach] record and the
- * mnemonics (the functions at the top): arm64's 64-bit registers,
- * SCVTF; arm's MOVW, DIV (5l makes it a call), MOVWD, and no unsigned
- * conversion to a float but through a signed one.
+ * mnemonics (the functions at the top). arm64 has 64-bit registers and
+ * SCVTF. arm has MOVW, DIV (which 5l makes a call), MOVWD, and no
+ * conversion from an unsigned integer to a float except through a
+ * signed one.
  *
- * Ir's example, an instruction at a time (mini-cc -simple -S, arm):
+ * Ir's example, one instruction at a time (mini-cc -simple -S, on arm):
  *
  *     Lea y+4(FP)          MOVW $y+4(FP),R1      depth 1 is R1
  *     Load int             MOVW 0(R1),R1
@@ -25,33 +26,35 @@
  *     Op (Add, int)        ADD  R2,R1,R1
  *     Ret                  MOVW R1,R0;  RET
  *
- * Twelve instructions where compat, 5c's way, writes five for the
- * same function (Emit's header has them): each instruction of the
- * stack machine is translated alone, knowing only how deep the
- * stack is. That is the whole method, and what it costs; Opti's
- * passes, on the stack code, and Peep, on this output, are how much
- * of the difference a few local rewrites take back.
+ * That is twelve instructions, where compat, which works 5c's way,
+ * writes five for the same function (Emit's header shows them). Each
+ * instruction of the stack machine is translated alone, knowing only
+ * how deep the stack is. That is the whole method, and that is what it
+ * costs. Opti's passes, on the stack code, and Peep, on this output,
+ * show how much of the difference a few local rewrites can take back.
  *
  * cs-history:
- * A stack machine's stack kept in the registers of a real one is
- * how Niklaus Wirth's compilers make code in one pass, and what his
- * textbook teaches: the compiler keeps, as it goes, the number of
- * the next free register, and that number is the stack's height.
- * It needs no analysis and fails only on an expression too deep,
- * which nobody writes; here that is the refusal above. *)
+ * Keeping a stack machine's stack in the registers of a real machine
+ * is how Niklaus Wirth's compilers make code in one pass, and it is
+ * what his textbook teaches. As it goes, the compiler keeps the number
+ * of the next free register, and that number is the stack's height.
+ * It needs no analysis and fails only on an expression that is too
+ * deep, which nobody writes; here, that is the refusal above. *)
 
-(* how many variables the machine keeps in registers (Opti's regs):
- * integers, floats; on arm the stack's registers that a function whose
- * stack is [depth] slots at most does not reach *)
+(* how many variables the machine keeps in registers (for Opti's regs),
+ * as a count of integer registers and a count of float registers. On
+ * arm, these are the stack's registers that a function never reaches
+ * when its stack is at most [depth] slots deep. *)
 val vregs : depth:int -> int * int
 
-(* a function's code, from Lower's *)
+(* writes a function's code, from Lower's code *)
 val func : Ir.func -> unit
 
-(* What ssa/'s Ssa_gen writes its instructions with: the machine, its
- * mnemonics by type, an instruction made (with arm's middle register);
- * a register's value made its type's (extend); a relation's
- * condition, a branch's mnemonic *)
+(* What ssa/'s Ssa_gen uses to write its instructions: the machine and
+ * its mnemonics by type; functions that make an instruction (with arm's
+ * middle register); a function that extends a register's value to its
+ * type (extend); the condition of a relation, and the mnemonic of a
+ * branch. *)
 
 type mach = {
   sp : int;

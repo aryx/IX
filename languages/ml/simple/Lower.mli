@@ -1,22 +1,25 @@
-(* From Scope's tree to a stack machine, Ir's (plan_ml.md, decision 6:
- * TinyC's design, and tiny-ml's, whose code this generalizes). What
- * was Lambda, Match and Closure in the plan is here, each a part:
+(* This pass goes from Scope's tree to a stack machine, Ir's
+ * (plan_ml.md, decision 6: TinyC's design, and tiny-ml's, whose code
+ * this generalizes). What the plan called Lambda, Match and Closure is
+ * here, each as a part:
  *
- * - {b patterns} a sequence of tests, each jumping to the next clause
- *   (the tutorial's section 7): the clauses in order;
+ * - {b patterns} become a sequence of tests, each jumping to the next
+ *   clause when it fails (the tutorial's section 7), with the clauses
+ *   in order;
  * - {b closures}: a function is code with its closure in slot 0 and its
- *   parameters after, its free variables fields of the closure; a
- *   function without free variables is a static block; a call of a
- *   known function (a let or a toplevel of this unit) with all its
- *   arguments is a direct call, any other one argument at a time
- *   through the closure's first field (curry functions, eval/apply),
- *   unless its closure says it takes them all (calls_whole);
- * - {b primitives}: an external "%name" an instruction, another a call
- *   of the runtime's C.
+ *   parameters after it, and its free variables are fields of the
+ *   closure. A function without free variables is a static block. A
+ *   call of a known function (a let or a toplevel of this unit) with
+ *   all its arguments is a direct call. Any other call passes one
+ *   argument at a time through the closure's first field (curry
+ *   functions, eval/apply), unless the closure says that it takes them
+ *   all (calls_whole);
+ * - {b primitives}: an external "%name" becomes an instruction, and
+ *   another external becomes a call of the runtime's C.
  *
- * A match, in the instructions mini-ml -dir prints, shortened (Circle
- * is the block of tag 0, Rect of tag 1, Dot the integer 0: Scope's
- * numbers):
+ * Here is a match, in the instructions that mini-ml -dir prints,
+ * shortened (Circle is the block of tag 0, Rect the block of tag 1,
+ * and Dot the integer 0; these are Scope's numbers):
  *
  *     match s with                  get s; int 0; eq; jz L5
  *     | Dot -> 0                      int 0; ret
@@ -34,7 +37,8 @@
  * says whether the clauses cover every case, either: no warning for
  * a match that is not exhaustive, which is found at L7, running.
  *
- * A closure, for the function made anew at each call of scale:
+ * Here is a closure, for the function that is made anew at each call
+ * of scale:
  *
  *     let scale n l = List.map (fun x -> x * n) l
  *
@@ -51,13 +55,13 @@
  * ml_curry2_0, which takes one argument and returns a block
  * [ml_curry2_1; the closure; the argument], and ml_curry2_1, given
  * the second, calls the code of field 1 with both. f x y on an
- * unknown f is right whatever f's arity, at a block's cost; when f's
- * field 0 is ml_curry2_0 itself, f is a function of two exactly, and
- * the call goes straight to field 1 (calls_whole).
+ * unknown f is right whatever f's arity, at the cost of a block. When
+ * f's field 0 is ml_curry2_0 itself, f is a function of exactly two
+ * arguments, and the call goes straight to field 1 (calls_whole).
  *
- * The collector has its say in all of it: a block's fields are
- * values, so the code's addresses in a closure are told apart by the
- * tag (247, OCaml's Closure_tag), and every slot is a value or 0 at
+ * The collector has its say in all of it. A block's fields are
+ * values, so the code addresses in a closure are told apart by the
+ * tag (247, OCaml's Closure_tag). And every slot is a value or 0 at
  * each call and each allocation, where a collection may start (Gen).
  *
  * cs-history:
@@ -79,7 +83,7 @@
  * the copy is of its address.
  *
  * others:
- * Several arguments at once. Here, as in ocamlopt (its caml_curry
+ * Passing several arguments at once. Here, as in ocamlopt (its caml_curry
  * and caml_apply functions), the caller looks at the function's
  * arity and decides: eval/apply. In push/enter the caller pushes
  * what it has and the function, entered, counts what is on the
@@ -117,91 +121,102 @@
  * the case to make fast; ocaml-light's closure.ml and
  * translcore.ml. *)
 
-(* a unit (its module's name) and its init function M.init *)
+(* a unit, given its module's name, with its init function M.init *)
 val unit_ : string -> Scope.item list -> Ir.unit_
 
-(* the curry functions (ml_curry<n>_<k>: a closure of arity n given its
- * k+1-th argument), of every arity from 2 to 7: the program's, in its
- * start object; a unit has its own of a greater arity *)
+(* the curry functions (ml_curry<n>_<k> gives a closure of arity n its
+ * k+1-th argument), of every arity from 2 to 7. They are the
+ * program's, in its start object; a unit has its own for a greater
+ * arity. *)
 val curry_funcs : unit -> Ir.func list
 
-(* a function not known where it is called, given as many arguments as
- * it takes (its closure says), called with them all; else, and when
- * off (mini-ml -calls), an argument at a time through the curry
- * functions *)
+(* When on, a function that is not known where it is called, and is
+ * given as many arguments as it takes (its closure says how many), is
+ * called with them all. Otherwise, and when this is off (mini-ml
+ * -calls), it is called with one argument at a time through the curry
+ * functions. *)
 val calls_whole : bool ref
 
-(* each call of an application preceded by an Ir.Site, the span of the
- * function applied, which the SSA keeps (Ssa.func's sites): for
- * mini-analyze -bugs (Ml_flow), to name the SSA's calls as its facts
- * name them. Off for the compiler: no Site, the same code *)
+(* When on, each call of an application is preceded by an Ir.Site, the
+ * span of the function applied, which the SSA keeps (Ssa.func's
+ * sites). It is for mini-analyze -bugs (Ml_flow), to name the SSA's
+ * calls as its facts name them. It is off for the compiler: there is
+ * no Site, and the code is the same. *)
 val sites : bool ref
 
-(* the code's labels of the functions marked [@@zero_alloc]
- * (Annotations.zero_allocs), each with its name, for ssa's Zero_alloc *)
+(* the code labels of the functions marked [@@zero_alloc]
+ * (Annotations.zero_allocs), each with its name, for ssa's
+ * Zero_alloc *)
 val zero_allocs : (string, string) Hashtbl.t
-(* the floats marked [@@unboxed_float] (Annotations.unboxed_floats): by
- * their function's code label and their slot, their name and line, for
- * ssa's Unbox.check *)
+(* the floats marked [@@unboxed_float] (Annotations.unboxed_floats),
+ * keyed by their function's code label and their slot, with their name
+ * and line, for ssa's Unbox.check *)
 val unboxed_floats : (string * int, string * int) Hashtbl.t
-(* a known function whose body is this many nodes or fewer: its calls
- * with all its arguments are its body, in its unit (0: none; -O3's) *)
+(* A known function whose body has this many nodes or fewer is
+ * inlined: its calls with all its arguments are replaced by its body,
+ * in its unit (0 means none; -O3 sets it). *)
 val inline_most : int ref
-(* the toplevel functions of the units this one names (their
- * summaries'), inlined in this one too; set before unit_ *)
+(* the toplevel functions of the units that this one names (from their
+ * summaries), to be inlined in this one too; set before unit_ *)
 val imports : Summary.entry list -> unit
-(* this unit's toplevel functions inlined where called, for its
- * summary; after unit_ *)
+(* this unit's toplevel functions that are inlined where they are
+ * called, for its summary; called after unit_ *)
 val exports : Scope.item list -> Summary.entry list
 
-(* the symbols' names: an operator's characters as $ and their code *)
-(* the runtime's function for a relation of values not both integers *)
+(* the runtime's function for a relation between two values that are
+ * not both integers *)
 val poly_function : Ir.rel -> string
 (* the runtime's function that does what a primitive of Ir does
- * (Float2 Add: caml_addfloat...): simple's code calls it, ssa's when
- * not in place or when there is no room *)
+ * (Float2 Add: caml_addfloat...). simple's code calls it, and ssa's
+ * code calls it when the primitive is not done in place or when there
+ * is no room *)
 val runtime_function : Ir.t -> string
 
+(* the symbols' names: an operator's characters are written as $ and
+ * their code *)
 val mangle : string -> string
 
 (* the places of the comparisons on immediates (Typing.immediates),
- * compiled as the integers' (Ir.Cmp), not compare's (Ir.Poly), and of
- * the stores of immediates, without a write barrier; set before unit_ *)
+ * which are compiled as comparisons of integers (Ir.Cmp), not as
+ * compare (Ir.Poly), and of the stores of immediates, which are
+ * compiled without a write barrier; set before unit_ *)
 val immediates : (Ast.span, unit) Hashtbl.t
-(* the places of = and <> on strings (Typing.strings): the runtime's
- * caml_string_equal and notequal; set before unit_ *)
+(* the places of = and <> on strings (Typing.strings), which call the
+ * runtime's caml_string_equal and notequal; set before unit_ *)
 val string_eqs : (Ast.span, unit) Hashtbl.t
-(* the places of the comparisons on floats (Typing.floats): Ir.FloatCmp;
- * set before unit_ *)
+(* the places of the comparisons on floats (Typing.floats), compiled
+ * as Ir.FloatCmp; set before unit_ *)
 val float_cmps : (Ast.span, unit) Hashtbl.t
-(* the functions min and max inlined on ints or floats, with the
+(* the functions min and max, inlined on ints or floats, with the
  * relation of their test (Typing records their places too) *)
 val min_max : (string * Ir.rel) list
 (* the globals that are min or max, each with the one it is; set before
  * unit_ *)
 val min_max_aliases : (string, string) Hashtbl.t
 
-(* In place: a primitive of the runtime (a C function: ml_string_get,
- * caml_addfloat, int32_add) written as the processor's instructions
- * where it is used, its own Ir instruction that ssa's Emit spells
- * out (simple's Gen calls the runtime for each), the runtime's function
- * called only on the rare path (no room in the heap for the result's
- * block). The classic name is open
- * coding (MacLisp's compiler open-coded car and the arithmetic; a C
- * compiler's intrinsics, gcc's memcpy of 8 bytes as two moves). Not
- * inlining: that copies an ML function's body, here the compiler
- * knows what the primitive means, one by one. Emit.alloc_in_place is
- * the allocation's. All on, unless mini-ml -calls. *)
+(* In place: a primitive of the runtime (a C function such as
+ * ml_string_get, caml_addfloat or int32_add) is written as the
+ * processor's instructions where it is used. It gets its own Ir
+ * instruction, which ssa's Emit spells out (simple's Gen calls the
+ * runtime for each), and the runtime's function is called only on the
+ * rare path (when there is no room in the heap for the result's
+ * block). The classic name is open coding (MacLisp's compiler
+ * open-coded car and the arithmetic; a C compiler has intrinsics, as
+ * when gcc makes a memcpy of 8 bytes two moves). It is not inlining,
+ * which copies an ML function's body: here the compiler knows what
+ * each primitive means, one by one. Emit.alloc_in_place does the same
+ * for the allocation. All are on, unless mini-ml -calls is given. *)
 
-(* a string's byte (checked or not) and its length as
+(* a string's byte (checked or not) and its length, as
  * instructions (Ir.ByteGet, ByteSet, StrLen) *)
 val strings_in_place : bool ref
 (* a float's arithmetic as the processor's instructions (Ir.Float2, Float1,
  * FloatOfInt, IntOfFloat) *)
 val floats_in_place : bool ref
 (* an int32's arithmetic, logic and shifts as the processor's
- * instructions, a block taken in place for the result (Ir.Int32) *)
+ * instructions, with the result's block taken in place (Ir.Int32) *)
 val ints_in_place : bool ref
 
-(* a match of four constructors or more by a jump table (Ir.Switch) *)
+(* a match on four constructors or more, compiled to a jump table
+ * (Ir.Switch) *)
 val switches : bool ref

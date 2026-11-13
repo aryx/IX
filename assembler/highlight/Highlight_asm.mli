@@ -1,31 +1,34 @@
-(* Highlight_asm: an assembly file's tokens given their categories
-   (Highlight_code's), and what it defines and uses, for the code map:
-   the assemblers of an old Unix, as86's and gas's AT&T syntax (Linux
-   0.01's boot.s and system_call.s), Plan 9's.
+(* Highlight_asm gives the tokens of an assembly file their categories
+   (those of Highlight_code), and finds what the file defines and uses,
+   for the code map. It reads the assemblers of an old Unix, the AT&T
+   syntax of as86 and gas (Linux 0.01's boot.s and system_call.s), and
+   Plan 9's.
 
-   Read line by line, without an assembler's grammar:
+   It reads line by line, without an assembler's grammar:
 
-   - comments: /* ... */ over lines, and from | ! or # to the end of a
-     line (as86's, gas's);
-   - a statement is [label:] [mnemonic or .directive] [operands], several
-     on a line with ; between them;
-   - a label is a definition, a function to the map (Def_function); a
-     name defined by = (SIG_CHLD = 17) a value; numeric labels (1:) and
-     the registers are neither;
-   - an operand's name is a use: of a label of the file (an occurrence
-     bound to it), else of a name defined elsewhere (a reference).
+   - a comment runs from /* to */, maybe over several lines, or from |, !
+     or # to the end of the line (as in as86 and gas);
+   - a statement is [label:] [mnemonic or .directive] [operands], and a
+     line may have several statements, with ; between them;
+   - a label is a definition, which the map takes as a function
+     (Def_function); a name defined by = (SIG_CHLD = 17) is a value;
+     numeric labels (1:) and the registers are neither;
+   - a name in an operand is a use. It is a use of a label of the file
+     (an occurrence bound to it), or else of a name defined elsewhere (a
+     reference).
 
-   a.out's convention is that C's names have a leading underscore in
-   assembly (C's main is _main): a definition's and a reference's names
-   lose it, so that C's system_call and assembly's _system_call are one
-   name to the map (Code_names treats .s files as C's, one namespace).
+   In a.out's convention, C's names have a leading underscore in
+   assembly (C's main is _main). So the names of definitions and of
+   references lose it, and C's system_call and the assembly's
+   _system_call are one name to the map (Code_names treats .s files as
+   C files, in the same namespace).
 
-   Worked example (the tests'):
+   A worked example, from the tests:
 
      _system_call:            system_call: Def_function, defined
          call _sys_call_table(,%eax,4)   sys_call_table: a reference
          jmp ret_from_sys_call           bound to the file's label *)
 
-(* ix: [src] cut into lines, ready to draw (the playground's analyze,
-   its spans) *)
+(* In ix, [lines src] is [src] cut into lines, ready to draw: the spans
+   that the playground's analyze computes. *)
 val lines : string -> Highlight_code.span list array

@@ -1,32 +1,39 @@
-(* A grammar's LALR(1) automaton, and the parser's actions: what yacc
- * computes (ocamlyacc is Berkeley yacc), so that the two parse alike.
+(* The LALR(1) automaton of a grammar, and the parser's actions. They
+ * are computed as yacc computes them (ocamlyacc is Berkeley yacc), so
+ * that the two parsers parse alike.
  *
- * - The symbols by number. Terminals: 0 is the end of the input, which
- *   no lexer gives; then the tokens; then the names that are only
- *   precedences (%prec's). Non-terminals in the order of their first
- *   rule.
- * - The rules, the grammar's, then one for each start symbol,
- *   $accept: start, whose reduction is the parse's end.
- * - The LR(0) states: sets of items (a rule and a dot in it), from each
- *   start symbol's first state.
- * - The lookaheads: for each state and item, the terminals that may
- *   follow, by passing them along until nothing is added: inside a
- *   state from an item to those of the non-terminal after its dot
- *   (what may follow it there), and from an item to itself in the next
- *   state. That is LALR(1): the lookaheads of the canonical LR(1)
- *   states with the same items, merged.
- * - A state's action on a terminal: a shift, or the reduction of an
- *   item at its end whose lookaheads have the terminal. When there are
- *   two, yacc's rules: a shift against a reduction by their
- *   precedences (the token's, the rule's: its last terminal's, or
- *   %prec's), the higher wins, and on a tie the associativity (left:
- *   reduce; right: shift; none: an error); without precedences the
- *   shift, and it is counted a conflict; of two reductions the earlier
- *   rule, a conflict too.
- * - A state with no shift and one rule to reduce by has it as its
- *   default: it reduces whatever the next token, without reading it.
+ * - The symbols are numbered. Among the terminals, 0 is the end of the
+ *   input, which no lexer returns; then come the tokens, and then the
+ *   names that are only precedences (used by %prec). The non-terminals
+ *   are in the order of their first rule.
+ * - The rules are the grammar's, followed by one rule $accept: start
+ *   for each start symbol, whose reduction ends the parse.
+ * - The LR(0) states are sets of items (an item is a rule with a dot in
+ *   it), built from the first state of each start symbol.
+ * - The lookaheads are, for each state and item, the terminals that may
+ *   follow. They are passed along until nothing is added: inside a
+ *   state, from an item to the items of the non-terminal after its dot
+ *   (with what may follow that non-terminal there), and from an item to
+ *   the same item in the next state. That is LALR(1): the lookaheads of
+ *   the canonical LR(1) states that have the same items, merged.
+ * - A state's action on a terminal is a shift, or the reduction of an
+ *   item that is at its end and whose lookaheads have the terminal.
+ *   When there are two actions, yacc's rules choose:
+ *    - between a shift and a reduction, their precedences decide (the
+ *      token's, and the rule's, which is that of its last terminal or
+ *      of its %prec), and the higher one wins. On a tie, the
+ *      associativity decides: left reduces, right shifts, and none
+ *      makes it an error;
+ *    - without precedences, the shift wins, and it is counted as a
+ *      conflict;
+ *    - between two reductions, the earlier rule wins, and it is also
+ *      counted as a conflict.
+ * - A state with no shift and only one rule to reduce by has that
+ *   reduction as its default: it reduces whatever the next token is,
+ *   without reading it.
  *
- * The grammar of CLI.mli's parse, with TIMES above PLUS:
+ * Here is the grammar of the parse shown in CLI.mli, with TIMES above
+ * PLUS:
  *
  *     %left PLUS  %left TIMES
  *     e: INT (rule 0) | e PLUS e (1) | e TIMES e (2);   $accept: e (3)
@@ -36,50 +43,56 @@
  *       1    $accept: e .                      s3    s4     acc
  *            e: e . PLUS e
  *            e: e . TIMES e
- *       2    e: INT .                    r0 whatever comes: the default
+ *       2    e: INT .                    r0 whatever comes (the default)
  *       3    e: e PLUS . e               s2                        5
  *       4    e: e TIMES . e              s2                        6
  *       5    e: e PLUS e .                     r1    s4     r1
  *            e: e . PLUS e
  *            e: e . TIMES e
- *       6    e: e TIMES e .              r2 whatever comes: the default
+ *       6    e: e TIMES e .              r2 whatever comes (the default)
  *            e: e . PLUS e
  *            e: e . TIMES e
  *
- * (s2: shift and go to state 2; r1: reduce by rule 1; the last column
- * is the goto. It is mini-yacc -v's listing, in a table.) The dot is
- * how much of the rule is on the stack. State 5 is where the grammar
- * is ambiguous: an e, a PLUS and an e are there, the rule could be
- * reduced, and the next token could also be shifted, both items being
- * in the state. On PLUS the two have the same precedence, and %left
- * says reduce: 1 + 2 + 3 is (1 + 2) + 3. On TIMES the token is higher
- * than the rule (its PLUS), so it is shifted: 1 + 2 * 3 is
- * 1 + (2 * 3). In state 6 the rule is higher than both tokens: always
- * reduced. Without the two %left lines the automaton is the same and
- * yacc shifts everywhere, counting 4 conflicts: every operator would
- * group to the right.
+ * (s2 means shift and go to state 2; r1 means reduce by rule 1; the
+ * last column is the goto. This is mini-yacc -v's listing, shown as a
+ * table.) The dot shows how much of the rule is on the stack. State 5
+ * is where the grammar is ambiguous. An e, a PLUS and an e are on the
+ * stack, so the rule could be reduced, but the next token could also be
+ * shifted, since both items are in the state. On PLUS, the token and
+ * the rule have the same precedence, and %left says to reduce, so
+ * 1 + 2 + 3 is (1 + 2) + 3. On TIMES, the token is higher than the rule
+ * (whose precedence is PLUS's), so it is shifted, and 1 + 2 * 3 is
+ * 1 + (2 * 3). In state 6 the rule is higher than both tokens, so it is
+ * always reduced. Without the two %left lines, the automaton is the
+ * same, but yacc shifts everywhere and counts 4 conflicts, so every
+ * operator would group to the right.
  *
  * terminology:
- * Four parsers on one kind of table, told apart by when a state may
- * reduce. LR(0): whenever an item is at its end, with no look at the
- * next token; few grammars pass. SLR(1): when the next token may
- * follow the rule's non-terminal somewhere in the grammar (its
- * FOLLOW set). LALR(1): when it may follow it in this state, which is
- * the lookaheads above; the states are still LR(0)'s. LR(1), Knuth's:
- * the lookahead is part of the item, so a set of items met with other
- * lookaheads is another state, and there are several times more of
- * them. A grammar that is LR(1) and not LALR(1) has a reduce/reduce
- * conflict that merging two such states made; it is rare, and hard
- * to understand from yacc's message when it comes.
+ * Four kinds of parser use the same kind of table, and they differ in
+ * when a state may reduce:
+ *  - LR(0) reduces whenever an item is at its end, without looking at
+ *    the next token; few grammars pass.
+ *  - SLR(1) reduces when the next token may follow the rule's
+ *    non-terminal somewhere in the grammar (its FOLLOW set).
+ *  - LALR(1) reduces when the next token may follow it in this state,
+ *    which is what the lookaheads above say; the states are still
+ *    those of LR(0).
+ *  - LR(1), Knuth's, makes the lookahead part of the item, so the same
+ *    set of items reached with other lookaheads is another state, and
+ *    there are several times more states.
+ * A grammar that is LR(1) but not LALR(1) has a reduce/reduce conflict
+ * that the merging of two such states created. It is rare, and when it
+ * happens it is hard to understand from yacc's message.
  *
  * others:
- * The lookaheads here are a fixpoint over every item of every state,
- * the definition run until nothing changes. Berkeley yacc and bison
- * compute them for the reductions only, by Frank DeRemer and Thomas
- * Pennello's relations (1982), each set a union along a graph visited
- * once. menhir builds LR(1) states and merges those that can be
- * merged without a new conflict (David Pager's way, 1977): never a
- * conflict that LR(1) would not have.
+ * Here the lookaheads are a fixpoint over every item of every state:
+ * the definition is applied until nothing changes. Berkeley yacc and
+ * bison compute them only for the reductions, with the relations of
+ * Frank DeRemer and Thomas Pennello (1982), where each set is a union
+ * along a graph that is visited once. menhir builds LR(1) states and
+ * merges those that can be merged without a new conflict (David
+ * Pager's method, 1977), so it never has a conflict that LR(1) would
+ * not have.
  *
  * References: Aho, Sethi, Ullman, "Compilers" (1986), 4.7; Berkeley
  * yacc's lalr.c and mkpar.c for what a conflict and a
@@ -104,9 +117,10 @@ type t = {
   gotos : int array array;             (* state, non-terminal: the state, or -1 *)
   starts : int list;                   (* each start symbol's first state *)
   sr : int; rr : int;                  (* the conflicts: shift/reduce, reduce/reduce *)
-  (* what the grammar says for nothing, each with its line (0: none): the
-   * tokens in no rule, a non-terminal no start symbol leads to, a token's
-   * precedence and a rule's %prec that decide no conflict *)
+  (* the parts of the grammar that have no effect, each with its line (0
+   * when there is none): the tokens used in no rule, a non-terminal that
+   * no start symbol leads to, and a token's precedence or a rule's %prec
+   * that decides no conflict *)
   warnings : (int * string) list;
 }
 

@@ -8,8 +8,8 @@ and ocaml in a few seconds, so it's sad to require 50min when run
 under t-ix"; then, after the analysis: "I think if we reach 5min
 instead of the current 50min would be a good result for this plan".
 
-**Status: not started** (2026-11-13). The analysis below is done, and
-none of the steps has been started.
+**Status: step 0 done** (2026-11-14). The analysis below is done, the
+baseline is measured (step 0), and steps 1 to 6 have not been started.
 
 ## The problem
 
@@ -165,9 +165,59 @@ again with `-prof`, and split the profile by phase (the compilations,
 the links, tiny-build's digests, the installation). Record the numbers
 in this plan and in notes_tiny_opti_inventory.md. Run
 tiny/tests/TinyMachine_bench.sh too, natively and under node, as the
-page's baseline. Today's numbers come
+page's baseline. The numbers above come
 from two smaller sessions, and the links (33 runs of ld, 30% of the
 host's time) are not in them.
+
+Done on 2026-11-14, at c45e5910, with bin/tiny-machine as make builds
+it (dune's dev profile). Two sessions ran side by side on fresh copies
+of make self's disks, with make self's `-date` and `-seed`. A was make
+self's own session, timed; B was only the first build (`build -t all
+boot.img` in /src), under `-prof`. Both ran `build -t`, so each recipe's
+time is in the log.
+
+- **The time: 50 minutes 24 seconds** (A, 3024 s of the host), for
+  make self's whole session: the boot, the first build, `build
+  install`, and the three builds after a change (a comment in
+  TinyLibRegex.ml, a line in calc.ml, nothing). The first build is
+  most of it, but it was not timed alone without `-prof`. B, only the
+  first build, took 85 minutes with `-prof`. Both made the host's boot image byte for
+  byte, and A's 121 installed files are the host's (FSCAT and cmp, as
+  make self checks them).
+- **The instructions: 100.8 G** (B's profile), 41% of them in the kernel
+  and 59% in the programs. If the first build were all of A's time, that
+  would be 33 M instructions of the machine for each second of the host.
+  It is somewhat more, but still less than build ml's 55 M, because
+  this binary is the dev profile's (step 1).
+- **The phases**, by A's `-t` and the machine's clock (about 8 M
+  instructions for each second of that clock, so the totals are larger
+  than the host's seconds; B's split differs from A's by up to a
+  fifth, and a few short recipes show 0 ms, so these shares are good
+  to about a tenth):
+
+  | phase | share |
+  |---|---|
+  | the compilations of the units (`*.o`, 54 + 33 recipes) | 36% |
+  | the links of the programs (ml's `.start.o`, then ld) | 30% |
+  | the kernel's build in TinyKernel/ (its units and its link) | 13% |
+  | tiny-build's own work outside the recipes (the digests, the stats) | 13% |
+  | the standard library, boot.img, and the rest | 8% |
+
+  So the links are as large a part on tiny-kernel as on the host. ml
+  alone (467 s of the machine's clock) and the kernel (1490 s) are the
+  largest targets.
+- **The profile** is the same as the smaller sessions'. In the kernel:
+  `ml_string_concat` 7.8% of all the instructions, `k_string` 7.4%,
+  `ml_alloc` 5.0%, `len` 2.5%, `go` 1.9%, `ml_string_sub` 1.6%, then
+  `runnable`, `rev` and `find`, about 1.2% each: fs_lookup's work is
+  about a quarter of the whole build (step 2). In the programs, by the
+  runtime's symbols (which are at the same addresses in every program):
+  `ml_alloc` 7.1%, `compare` 2.1%, `ml_string_concat` 2.1%,
+  `ml_string_sub` 1.9%, `u_read` 1.8%, `copy` 1.8%, `length` 1.1%,
+  `sha_block` 1.1%, `collect` 1.0%, and a long tail.
+
+The page's baseline (tests/TinyMachine_bench.sh, the same day) is in
+[The page](#the-page-t-ixhtml).
 
 ### Step 1: tiny-machine compiled for speed
 
@@ -248,13 +298,29 @@ them in two ways.
   gains, with nothing to do for the page.
 - **The host runs each instruction faster** (step 5). Under node,
   tiny-machine ran 8.1 million instructions a second in October
-  (notes_tiny_opti_inventory.md, T1 and T3), which is just the 8 the
-  page asks for. A slower browser or a busy frame falls behind, and the
-  page then shows "Running at N% of full speed". Step 5's fast path is
-  in TinyMachineDevices and TinyMachineCPU, which the page shares, so
-  it gives the page room above 8. With that room, the page's rate
-  could be raised (the window's is already 20), and that is the change
-  a visitor would see most.
+  (notes_tiny_opti_inventory.md, T1 and T3), before `wfi` (T12). Step
+  0's bench gives the rates below, in the machine's instructions a
+  second, which include the time the machine slept in a `wfi` (free for
+  the host). So the sessions that compute, office and tetris, are the
+  ones that matter:
+
+  | session | native | node |
+  |---|---|---|
+  | paint | 113.8 M | 29.8 M |
+  | emacs | 171.7 M | 49.8 M |
+  | windows | 124.4 M | 39.7 M |
+  | office | 87.3 M | 27.4 M |
+  | tetris | 59.2 M | 19.6 M |
+
+  Node is about 3 times slower than native, and its worst session,
+  tetris, still has room above the page's 8. A slower browser or a busy
+  frame falls behind, and the page then shows "Running at N% of full
+  speed". Step 5's fast path is in TinyMachineDevices and
+  TinyMachineCPU, which the page shares, so it gives the page more
+  room. With tetris near 20 M under node, the page's rate could perhaps
+  already be raised to the window's 20, and step 5 would make that
+  safe on slower browsers. That is the change a visitor would see
+  most.
 
 Steps 1 and 6 are native only. js_of_ocaml compiles the bytecode of the
 whole program at once and does its own inlining, so `-opaque` does not

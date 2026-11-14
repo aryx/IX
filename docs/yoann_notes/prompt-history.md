@@ -73985,3 +73985,47 @@ Claude had verified that all 273 files change only comments, and that the gramma
 Claude had not committed yet, and proposed committing the 273-file batch together with prompt-history.md.
 Claude proposed leaving out docs/plans/plan_tiny_self_speed.md and tiny/docs, which were not its own.
 Claude then asked whether to commit and push the batch, since pushing is outward-facing.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 23:17
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed the m-IX comment pass as 5921f337, covering 279 files, before starting the build files.
+Claude ran four agents over about 136 build files, each checking that only comment lines changed.
+Claude's fixing agent corrected 31 stale facts in build-file comments, such as card size and session counts.
+Claude flagged a likely bug where the top-level mkfile builds linker twice, and noted test-speed is missing from .PHONY.
+Claude fixed a stale plan path in kernels/9pi/mkfile and rewrapped its overlong line before the pending commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-13 23:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the build-file pass as `df93e6ed`, 113 files, finishing the plain-prose pass across tiny/, m-IX and build files.
+Claude listed eight commits from `41e39394` to `df93e6ed`, covering tiny/'s .mli files, the toolchain, kernel, graphics, networking, utilities, and libraries.
+Claude noted prompt-history.md changed after the commit, so it was left out and can go in with the next one.
+Claude left `tiny/tests/TinyMachine_bench.sh` and `tiny/docs/` alone since they aren't part of the project's changes.
+Claude listed six open code fixes, including `Time.millis_to_posix` dividing by 1000, and offered to fix them.
+
+------------------------------------------------------------------------
+
+## 2026-11-14 08:08
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude laid out the remaining work after the plain-prose pass, which ended at commit `df93e6ed`. Yoann's pick is the first item: five small code bugs. Those are `Time.ml`'s missing divide by 1000, `browsers/javascript/CLI.ml`'s usage string promising nonexistent modules, `mount`'s usage string omitting `-C`, the duplicate `linker` build in the top-level `mkfile`, and `test-speed` missing from `.PHONY` in the `Makefile`. Claude also flagged leftover `old:` and `claude:` notes inside code bodies, in `shell/`, Pervasives, Marshal, Gcm, Poly1305, Zlib, raspberry's Board, Pi4 and Dwc2, and `Arm64_isa.ml`. Claude suggested doing those two groups first.

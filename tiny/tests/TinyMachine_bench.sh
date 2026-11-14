@@ -8,14 +8,17 @@
 # tiny-machine and by the same program compiled by js_of_ocaml, under
 # node; for each the seconds, the millions of instructions a second
 # (the session's last event's time is its count, to a few thousand), and
-# whether the screen at the halt is the recorded one. The page
+# whether the screen at the halt is the recorded one. That count is the
+# machine's time, so it includes the time the machine slept in a wfi,
+# which costs the host nothing: a session that idles (paint) shows a
+# higher rate than one that computes (office, tetris). The page
 # (TinyMachineWeb.ml) wants TinyMachineDevices.rate, 8 million a second, of
 # what node gives less a frame's other work.
 #
 # Usage: TinyMachine_bench.sh [session, default paint] [-prof]
 #   -prof  node's profile too: the functions' own time, the first 15
-# Needs: dune, ocamlfind, js_of_ocaml, node; tiny-kernel built
-# (./tiny-machine -n tiny-kernel does it). Not a test of make test: its
+# Needs: dune, ocamlfind, js_of_ocaml, node; tiny-kernel's boot.img and
+# disk.img built (make -C tiny/TinyKernel). Not a test of make test: its
 # numbers are the host's.
 
 set -e
@@ -26,20 +29,30 @@ K=$ROOT/tiny/TinyKernel
 S=$ROOT/tiny/tests/TinyKernel_tests
 B=$ROOT/_build/default
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-[ -f $K/_make/boot.img ] || { echo "no $K/_make/boot.img: make -C tiny/TinyKernel"; exit 1; }
+[ -f $K/_make/boot.img ] && [ -f $K/_make/disk.img ] || { echo "no $K/_make/boot.img or disk.img: make -C tiny/TinyKernel"; exit 1; }
 
 cd $ROOT
-dune build ./tiny/TinyMachine.exe ./lib_core/commons/ix_core.cma ./tiny/tiny_lib_cpu.cma ./tiny/tiny_lib_machine.cma \
-  ./tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo 2>/dev/null
-ocamlfind ocamlc -g -package caps,fpath,unix,logs,logs.fmt,fmt -linkpkg $B/lib_core/commons/ix_core.cma \
-  $B/tiny/tiny_lib_cpu.cma $B/tiny/tiny_lib_machine.cma $B/tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo -o $W/tm.bc
+# tiny-machine's libraries in the order of its native link (dune rules
+# ./tiny/TinyMachine.exe), as bytecode
+LIBS="lib_core/commons/ix_core tiny/tiny_lib_machine tiny/TinyMachine/tiny_machine_cpu
+  tiny/TinyMachine/tiny_machine_devices tiny/TinyKernel/tiny_kernel_network
+  tiny/TinyBrowser/tiny_browser_parts tiny/TinyMachine/tiny_machine_peer
+  lib_core/parallel/ix_parallel tiny/TinyLibSystem/unix/tiny_lib_system_unix"
+dune build ./tiny/TinyMachine.exe $(for l in $LIBS; do echo ./$l.cma; done) \
+  ./tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo
+ocamlfind ocamlc -g -package caps,fpath,unix,logs,logs.fmt,fmt,astring,ppx_deriving.runtime -linkpkg \
+  $(for l in $LIBS; do echo $B/$l.cma; done) $B/tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo -o $W/tm.bc
 js_of_ocaml --opt 3 $([ $prof = 1 ] && echo --pretty --debug-info) $ROOT/machine/tests/bench_js_stubs.js $W/tm.bc -o $W/tm.js 2>/dev/null
 
 n=$(tail -1 $S/$s.events | cut -d' ' -f1)
 run() { # name command...
   local name=$1; shift
+  # the programs are on the system's disk, a fresh copy grown to 64 MB for
+  # each run, as make check gives each session; and make check's date
+  # and seed (tetris's pieces are random)
+  cp $K/_make/disk.img $W/d.img; truncate -s 64M $W/d.img
   local t0=$(date +%s.%N)
-  "$@" -events $S/$s.events -screen $W/s.ppm $K/_make/boot.img > /dev/null
+  "$@" -date 820540800 -seed 1 -d $W/d.img -events $S/$s.events -screen $W/s.ppm $K/_make/boot.img > /dev/null
   local t1=$(date +%s.%N)
   local same=another; [ "$(cksum < $W/s.ppm)" = "$(cat $S/$s.cksum)" ] && same=recorded
   echo "$name $s.events: $(echo "$t1 $t0 $n" | awk '{ printf "%.1f s, %.1f million instructions a second", $1 - $2, $3 / ($1 - $2) / 1e6 }'), the screen the $same one"

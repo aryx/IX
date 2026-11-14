@@ -101,6 +101,19 @@ and the read of the file (`u_read`, the program's `ml_string_sub`,
 `ml_bytes_blit_string`: the 141 KB read before the first sound), the
 kernel's `add_samples` (a peekb and a pokeb a sample) and k_string.
 
+## The baseline of 2026-11-14
+
+Before plan_tiny_self_speed.md's steps (its step 0, at c45e5910, with
+bin/tiny-machine in dune's dev profile): make self's session took 50
+minutes 24 seconds of the host, and its first build, most of that, took
+100.8 G instructions of the machine, 41% of them in the kernel (fs_lookup's strings: about a
+quarter of the whole) and 59% in the programs (the runtime's
+`ml_alloc` alone 7%). The plan has the phases and the profile.
+tests/TinyMachine_bench.sh, the same day, in the machine's instructions
+a second (wfi's sleep included): paint 113.8 M natively and 29.8 M
+under node, emacs 171.7 and 49.8, windows 124.4 and 39.7, office 87.3
+and 27.4, tetris 59.2 and 19.6.
+
 ## Open questions
 
 1. T12's gain on the recorded sessions (tests/TinyMachine_bench.sh)

@@ -150,6 +150,24 @@ MKFS = $(call tool,tiny-mkfs)
 MACHINE = $(call tool,tiny-machine)
 MKFSBIN = $(wildcard $(MKFS))
 
+# The long runs (make run, make self and the like) use a tiny-machine
+# built by dune's release profile, about 20% faster
+# (plan_tiny_self_speed.md, step 1). dune's dev profile, the default,
+# compiles each library with -opaque, so nothing is inlined across
+# libraries, and the machine's inner loop calls TinyMachineCPU's small
+# functions from TinyMachineDevices on every instruction. The release
+# build has its own build directory, so that dune build and these runs
+# do not rebuild everything each time the profile changes. The checks
+# keep bin/'s tiny-machine, the one everyone uses, and a MACHINE given
+# on the command line wins.
+RELEASE_MACHINE = $(abspath ../../_build_release/default/tiny/TinyMachine.exe)
+ifneq ($(origin MACHINE),command line)
+run run-window self self-quick self-cores: MACHINE = $(RELEASE_MACHINE)
+run run-window self self-quick self-cores: | $(RELEASE_MACHINE)
+endif
+$(RELEASE_MACHINE): FORCE
+	cd ../.. && dune build --profile release --build-dir _build_release ./tiny/TinyMachine.exe
+
 # how the kernel gives the processes memory (KMemory.mli)
 MEMORY = partitions
 O = $(if $(filter segments pages,$(MEMORY)),_make-$(MEMORY),_make)

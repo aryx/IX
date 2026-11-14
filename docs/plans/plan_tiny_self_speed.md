@@ -8,8 +8,9 @@ and ocaml in a few seconds, so it's sad to require 50min when run
 under t-ix"; then, after the analysis: "I think if we reach 5min
 instead of the current 50min would be a good result for this plan".
 
-**Status: step 0 done** (2026-11-14). The analysis below is done, the
-baseline is measured (step 0), and steps 1 to 6 have not been started.
+**Status: steps 0 and 1 done** (2026-11-14). The analysis below is
+done, the baseline is measured (step 0), the long runs use a release
+build of tiny-machine (step 1), and steps 2 to 6 have not been started.
 
 ## The problem
 
@@ -147,7 +148,7 @@ lands on.
 | # | Step | Estimated gain | Cost | The page gains |
 |---|---|---|---|---|
 | 0 | The baseline: make self timed, and profiled | none | an hour of the machine | (its baseline too) |
-| 1 | tiny-machine built without `-opaque` | 1.2 (measured) | minutes | no: native only |
+| 1 | tiny-machine built without `-opaque` (done) | 1.27 (measured) | minutes | no: native only |
 | 2 | Looking a name up without building the directory's strings | 1.5 to 2 | small | yes: fewer instructions |
 | 3 | tiny-cc keeping scalar locals in registers | 1.5 to 2 | medium | yes: fewer instructions |
 | 4 | tiny-ml allocating inline | 1.2 to 1.4 | small to medium | yes: fewer instructions |
@@ -226,6 +227,20 @@ Build tiny-machine as mini-pi already builds mini-qemu (`dune build
 profile not to make TinyMachineCPU opaque to TinyMachineDevices.
 TinyKernel/Makefile takes tiny-machine from bin/, so the question is
 which binary bin/ gets.
+
+Done on 2026-11-14, the author's choice: dune's dev profile stays the
+default, for its quick rebuilds after an edit, and only the long runs
+use a release build. TinyKernel/Makefile builds it with `dune build
+--profile release --build-dir _build_release`, in a build directory of
+its own, so that dune build and these runs do not rebuild everything
+each time the profile changes. make run, run-window, self, self-quick
+and self-cores use it. make check keeps bin/'s, the binary everyone
+uses, and a MACHINE given on the command line still wins.
+
+Measured on step 0's images (c45e5910), self-quick's session one run
+after the other: 108.6 s with the dev build, 85.5 s with the release
+build, 21% less time (1.27 times faster), both with the host's files.
+So make self should go from about 50 minutes to about 40.
 
 ### Step 2: names looked up in place
 

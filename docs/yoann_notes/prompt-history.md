@@ -74029,3 +74029,43 @@ Claude listed six open code fixes, including `Time.millis_to_posix` dividing by 
 **Claude (summary):**
 
 Claude laid out the remaining work after the plain-prose pass, which ended at commit `df93e6ed`. Yoann's pick is the first item: five small code bugs. Those are `Time.ml`'s missing divide by 1000, `browsers/javascript/CLI.ml`'s usage string promising nonexistent modules, `mount`'s usage string omitting `-C`, the duplicate `linker` build in the top-level `mkfile`, and `test-speed` missing from `.PHONY` in the `Makefile`. Claude also flagged leftover `old:` and `claude:` notes inside code bodies, in `shell/`, Pervasives, Marshal, Gcm, Poly1305, Zlib, raspberry's Board, Pi4 and Dwc2, and `Arm64_isa.ml`. Claude suggested doing those two groups first.
+
+------------------------------------------------------------------------
+
+## 2026-11-14 14:09
+
+**Yoann:**
+
+> let's do 1 and 2
+
+**Claude (summary):**
+
+Claude said it was fixing `millis_to_posix`, since its callers pass seconds, and checking which tests depend on it.
+Claude fixed `millis_to_posix` and corrected the muddled interface comments in `Time.mli`.
+Claude also rewrote mini-node's usage string in the CLI and checked CLI.mli for module mentions.
+Claude cleaned up the mkfile's linker and `.PHONY` setup, and the build passed with only routine warnings.
+Claude started `make test` in the background and moved on to item 2 while it ran.
+
+------------------------------------------------------------------------
+
+## 2026-11-14 14:14
+
+**Yoann:**
+
+> what are you doing?
+
+------------------------------------------------------------------------
+
+## 2026-11-14 14:14
+
+**Yoann:**
+
+> I said 1 and 2 no?
+
+**Claude (summary):**
+
+Claude said it was working on items 1 and 2 as Yoann asked, and it backed out the `millis_to_posix` fix.
+Claude explained that dividing by 1000 broke `make test` on mini-files and two games' recorded frames, so `Time.mli` now documents the function instead.
+Claude noted the real fix would mean re-recording those frames, and asked whether Yoann wanted that instead.
+Claude found item 2 was much larger than stated: 721 notes across 311 files, not a dozen.
+Seven agents are working through it in parallel, and Claude will check their comment-only edits and rerun `make test` before asking Yoann to commit.

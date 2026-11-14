@@ -3,6 +3,7 @@
 __pycache__/
 _build/
 _build5/
+_build_release/
 .claude/hooks/.history.lock
 _mk/
 _make*/

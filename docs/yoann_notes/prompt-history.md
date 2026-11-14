@@ -74069,3 +74069,50 @@ Claude explained that dividing by 1000 broke `make test` on mini-files and two g
 Claude noted the real fix would mean re-recording those frames, and asked whether Yoann wanted that instead.
 Claude found item 2 was much larger than stated: 721 notes across 311 files, not a dozen.
 Seven agents are working through it in parallel, and Claude will check their comment-only edits and rerun `make test` before asking Yoann to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-14 14:14
+
+**Yoann:**
+
+> ok, tell me when it's done
+
+**Claude (summary):**
+
+Claude restored every author's `old:` note to HEAD in the pass's files, after the agents had removed them.
+Claude then removed only the `claude:` tags that agent E had put back in Option.ml, Vt.ml and Bignum.ml.
+Claude treated those tags as its own, since they came from the playground, so removing them was the right fix.
+Claude also told the still-running agents to keep the author's `old:` notes in files copied from his repositories.
+Claude saved a memory note, then found mini-files still failing with outputs one step late.
+
+------------------------------------------------------------------------
+
+## 2026-11-14 15:15
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed `fae725bd` and pushed it: 90 files, with the item 1 fixes and 215 `claude:` tags.
+Claude confirmed every `old:` note in the commit is unchanged from before.
+Claude noticed `docs/yoann_notes/prompt-history.md` is staged but absent from the commit.
+Claude did not stage that file, suspecting another session did, and left it alone.
+
+------------------------------------------------------------------------
+
+## 2026-11-14 15:16
+
+**Yoann:**
+
+> what's next? Can I close this session?
+
+**Claude (summary):**
+
+Claude said the session can be closed, since nothing is running and none of its changes are uncommitted.
+Claude pointed out that the open `tiny/docs/` files and the staged `prompt-history.md` belong to other sessions.
+Claude listed four open items: the flaky `said()` wait in `apps/files/tests/frames.sh`, comments inside `.ml` bodies, the `.md` docs, and acid's float `%g`.
+Claude noted that the `said()` wait of one second is too short when `make test` runs 160 jobs.
+Claude recommended starting with the one-line `said()` timeout fix, since it is the quickest of the four.

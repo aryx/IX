@@ -360,9 +360,45 @@ let fs_entries fs r d =
     end in
   go 0 []
 
-(* the inode under a name in directory d of tree r *)
+(* The inode under a name in directory d of tree r.
+ *
+ * opti: the entries are compared where they are, in the directory's
+ * blocks read one at a time, up to the first one with the name, and no
+ * string is made for the directory or its names. A lookup happens at
+ * each name of each path a program opens, and the old code below built
+ * the whole directory as one string, then every name of it, each time:
+ * /src has some 230 entries, and that was a quarter of make self's
+ * instructions. It made self-quick 1.42 times faster
+ * (plan_tiny_self_speed.md, step 2). An entry can straddle two blocks,
+ * so [byte] reads the directory's byte o, its block read when it is
+ * not the one in memory.
+ *
+ * old:
+ *   List.assoc_opt name (fs_entries fs r d)
+ *)
 let fs_lookup fs (r : tree) (d : inode) name : inode option =
-  List.assoc_opt name (fs_entries fs r d)
+  let size = (fs_load fs r d; fs_word 1) in
+  let a = fs_buf 3 in
+  let cur = ref (-1) in
+  let byte o =
+    let i = o / fs_bsize in
+    if i <> !cur then begin
+      let b = fs_block fs fs_ino i in
+      if b = 0 then KRaw.row_fill a 0 fs_bsize else fs_read fs b a;
+      cur := i
+    end;
+    KRaw.peekb (a + (o mod fs_bsize)) in
+  let len = String.length name in
+  let rec same e k =
+    if k = len then k = 64 || byte (e + k) = 0
+    else byte (e + k) = Char.code name.[k] && same e (k + 1) in
+  let rec go e =
+    if e + 68 > size then None
+    else if len <= 64 && same e 0 then
+      Some (byte (e + 64) lor (byte (e + 65) lsl 8) lor (byte (e + 66) lsl 16)
+            lor (byte (e + 67) lsl 24))
+    else go (e + 68) in
+  go 0
 
 (* one more name for inode n, in directory d *)
 let fs_link fs d name n =

@@ -8,9 +8,11 @@ and ocaml in a few seconds, so it's sad to require 50min when run
 under t-ix"; then, after the analysis: "I think if we reach 5min
 instead of the current 50min would be a good result for this plan".
 
-**Status: steps 0 and 1 done** (2026-11-14). The analysis below is
+**Status: steps 0 to 2 done** (2026-11-14). The analysis below is
 done, the baseline is measured (step 0), the long runs use a release
-build of tiny-machine (step 1), and steps 2 to 6 have not been started.
+build of tiny-machine (step 1), names are looked up in place (step 2),
+and steps 3 to 6 have not been started. make self went from 50 minutes
+to 28.
 
 ## The problem
 
@@ -149,7 +151,7 @@ lands on.
 |---|---|---|---|---|
 | 0 | The baseline: make self timed, and profiled | none | an hour of the machine | (its baseline too) |
 | 1 | tiny-machine built without `-opaque` (done) | 1.27 (measured) | minutes | no: native only |
-| 2 | Looking a name up without building the directory's strings | 1.5 to 2 | small | yes: fewer instructions |
+| 2 | Looking a name up without building the directory's strings (done) | 1.43 (measured) | small | yes: fewer instructions |
 | 3 | tiny-cc keeping scalar locals in registers | 1.5 to 2 | medium | yes: fewer instructions |
 | 4 | tiny-ml allocating inline | 1.2 to 1.4 | small to medium | yes: fewer instructions |
 | 5 | tiny-machine's fast path, one look for each batch | 2 to 3 | medium | yes: a faster interpreter |
@@ -251,6 +253,30 @@ all the entries (`ls`, `fs_unlink`). If that is still too slow, the
 kernel can keep a small cache from a directory and a name to an inode,
 forgotten at each change of the directory, as Unix's namei cache does.
 This step also frees core 0 for step 6.
+
+Done on 2026-11-14: `fs_lookup` reads the directory's blocks one at a
+time into a buffer and compares the name byte by byte there (an entry
+can straddle two blocks), up to the first match. Its comment keeps the
+old one-line version, `List.assoc_opt name (fs_entries fs r d)`, under
+`old:`. The cache was not needed. Measured with the release
+tiny-machine, before and after side by side on images of the same
+tree, each with the host's image and files:
+
+| | before | after | |
+|---|---|---|---|
+| self-quick | 85.5 s | 60.1 s | 1.42 times faster |
+| make self's session | 40 min 22 s | 28 min 11 s | 1.43 times faster |
+| the first build's instructions | 100.8 G | 82.4 G | 1.22 times fewer |
+| the kernel's share | 41% | 27% | |
+
+`ml_string_concat` and `k_string`, 15% of all the instructions, are
+gone from the top. The time fell more than the instructions did,
+probably because those copies were all loads and stores, which cost
+tiny-machine the most (translate and check at each access). What is
+left at the top of the kernel is another cause: its `ml_alloc` (5.8%)
+with `runnable`, `find`, `rev` and `exists` (about 8% together), which
+look like the scheduler building lists at each switch. It is not in
+this plan yet; it is a candidate after step 3.
 
 ### Step 3: tiny-cc's locals in registers
 

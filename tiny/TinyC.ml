@@ -57,7 +57,7 @@ let show_ir (d : Tree.def) : string =
       String.concat ""
         ((f ^ ":\n")
          :: List.map (fun i -> "\t" ^ Lower.show i ^ "\n")
-              (Lower.lower_function body))
+              (fst (Lower.lower_function body)))
   | Tree.Data _ -> ""
 
 (*****************************************************************************)

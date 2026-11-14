@@ -26,7 +26,17 @@ type ir =
   | Jz of label
   | Jnz of label
   | Ret of bool                       (* true with a value *)
+  (* A local or a parameter of 1 or 4 bytes whose address is never taken
+   * is read and written by these two, so that Machine can keep it in a
+   * register. *)
+  | Get of Tree.place * Types.ty     (* pushes the variable's value *)
+  | Set of Tree.place * Types.ty     (* stores the value on top in the
+                                      * variable, and keeps it *)
 
 val show : ir -> string               (* as -ir prints it *)
 
-val lower_function : Tree.stmt -> ir list
+(* A function's code, and the variables its Get and Set read and write,
+ * the heaviest first, with their type and their weight (their uses, 8
+ * times more in each loop around them). *)
+val lower_function :
+  Tree.stmt -> ir list * (Tree.place * (Types.ty * int)) list

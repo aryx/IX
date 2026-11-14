@@ -22,18 +22,21 @@ let r13 = 13
 
 (* A function's code as it is made. Its lines, each a function of the
  * frame's size, known at the end; the stack machine's depth (its top
- * register); the most registers saved across a call, and the most bytes
- * of a call's arguments; dead after a jump, until a label; the depth at
- * each label jumped to. *)
+ * register), and the deepest it went; the most registers saved across a
+ * call, and the most bytes of a call's arguments; dead after a jump,
+ * until a label; the depth at each label jumped to; the variables kept
+ * in registers, each its register and its type. *)
 type state = {
   mname : Types.sym;
   mlocals : int;
   mutable mlines : (int -> M.line) list;
   mutable msp : int;
+  mutable mdeepest : int;
   mutable msaves : int;
   mutable moutgoing : int;
   mutable mdead : bool;
   mdepth_at : (Lower.label, int) Hashtbl.t;
+  mregs : (Tree.place * (int * Types.ty)) list;
 }
 
 let at (st : state) f = st.mlines <- f :: st.mlines
@@ -42,6 +45,7 @@ let ins st (i : M.instr) = emit st (M.Instr i)
 let push (st : state) =
   st.msp <- st.msp + 1;
   if st.msp > 12 then Types.error (st.mname ^ ": an expression too deep");
+  st.mdeepest <- max st.mdeepest st.msp;
   st.msp
 let pop (st : state) = st.msp <- st.msp - 1
 let jump (st : state) l = Hashtbl.replace st.mdepth_at l st.msp
@@ -125,6 +129,27 @@ let op st (o : Tree.binop) (t : Types.ty) =
         a a b;
       extend st t a
 
+(* A variable's address, in register a: a local's below the frame's top,
+ * a parameter's above it (the frame's size f known at the end). *)
+let address st (p : Tree.place) a =
+  match p with
+  | Tree.Global s -> emit st (M.La (a, s))
+  | Tree.Local o -> at st (fun f -> M.Instr (M.Alui (M.Add, a, M.sp, f - o)))
+  | Tree.Param o -> at st (fun f -> M.Instr (M.Alui (M.Add, a, M.sp, f + o)))
+
+(* A variable kept in register r is caller-saved: its home in the frame
+ * is written before a call and read back after it, as the stack's
+ * registers are. *)
+let home p f = match p with Tree.Param o -> f + o | Tree.Local o -> f - o | _ -> 0
+let size (t : Types.ty) = if Types.size t = 1 then M.B else M.W
+let save st =
+  List.iter (fun (p, (r, t)) ->
+    at st (fun f -> M.Instr (M.Store (size t, r, M.sp, home p f)))) st.mregs
+let restore st regs =
+  List.iter (fun (p, (r, t)) ->
+    at st (fun f -> M.Instr (M.Load (size t, r, M.sp, home p f)));
+    extend st t r) regs
+
 (* a call of f, or of the address on top of the arguments: the registers
  * below them saved in their slots, the arguments in memory *)
 let call st (f : Types.sym option) k res =
@@ -137,12 +162,14 @@ let call st (f : Types.sym option) k res =
     ins st (M.Store (M.W, base + 1 + j, M.sp, 4 * j))
   done;
   st.moutgoing <- max st.moutgoing (4 * k);
+  save st;
   (match f with
    | Some f -> emit st (M.Call f)
    | None -> ins st (M.Jalr (M.lr, base + k + 1, 0)));
   for j = 1 to base do
     at st (fun fr -> M.Instr (M.Load (M.W, j, M.sp, fr - slot st j)))
   done;
+  restore st st.mregs;
   st.msp <- base;
   if res then (let d = push st in emit st (M.Mov (d, r13)))
 
@@ -161,13 +188,22 @@ let instruction (st : state) (i : Lower.ir) =
       emit st (M.Label (lab l))
   | _ when st.mdead -> ()
   | Lower.Imm v -> let a = push st in emit st (M.Li (a, Int64.to_int32 v))
-  | Lower.Place (Tree.Global s) -> let a = push st in emit st (M.La (a, s))
-  | Lower.Place (Tree.Local o) ->
-      let a = push st in
-      at st (fun f -> M.Instr (M.Alui (M.Add, a, M.sp, f - o)))
-  | Lower.Place (Tree.Param o) ->
-      let a = push st in
-      at st (fun f -> M.Instr (M.Alui (M.Add, a, M.sp, f + o)))
+  | Lower.Place p -> address st p (push st)
+  (* a variable without a register is read and written in memory, as
+   * Place with Load or Store would *)
+  | Lower.Get (p, t) ->
+      (match List.assoc_opt p st.mregs with
+       | Some (r, _) -> let a = push st in emit st (M.Mov (a, r))
+       | None -> address st p (push st); load st t)
+  | Lower.Set (p, t) ->
+      let v = st.msp in
+      (match List.assoc_opt p st.mregs with
+       | Some (r, _) -> emit st (M.Mov (r, v)); extend st t r
+       | None ->
+           let a = push st in
+           address st p a;
+           ins st (M.Store (size t, v, a, 0));
+           pop st)
   | Lower.Load t -> load st t
   | Lower.Store t -> store st t
   | Lower.Op (o, t) -> op st o t
@@ -193,12 +229,39 @@ let instruction (st : state) (i : Lower.ir) =
       epilogue st;
       st.mdead <- true
 
-let machine (name : Types.sym) locals (body : Lower.ir list) : M.line list =
+let run name locals regs body =
   let st =
-    { mname = name; mlocals = locals; mlines = []; msp = 0; msaves = 0;
-      moutgoing = 0; mdead = false; mdepth_at = Hashtbl.create 16 } in
+    { mname = name; mlocals = locals; mlines = []; msp = 0; mdeepest = 0;
+      msaves = 0; moutgoing = 0; mdead = false;
+      mdepth_at = Hashtbl.create 16; mregs = regs } in
+  (* the parameters kept in registers, read from their homes *)
+  restore st
+    (List.filter (fun (p, _) ->
+       match p with Tree.Param _ -> true | _ -> false) regs);
   List.iter (instruction st) body;
   if not st.mdead then epilogue st;
+  st
+
+(* The stack's registers that the function's code never reaches keep its
+ * variables, the heaviest first: a first run, with every variable in
+ * memory, tells how deep the stack goes (a variable in a register only
+ * makes it shallower), and the second run gives the variables the
+ * registers above that depth, up to r12.
+ *
+ * opti: every variable used to live in its frame's slot, a read being
+ * its address and a load, a write its address and a store; a loop that
+ * copies bytes took 31 instructions a byte, 23 now
+ * (plan_tiny_self_speed.md, step 3).
+ *
+ * old: a single run, with no registers: [run name locals [] body]. *)
+let machine (name : Types.sym) locals
+    ((body, vars) : Lower.ir list * (Tree.place * (Types.ty * int)) list)
+    : M.line list =
+  let deepest = (run name locals [] body).mdeepest in
+  let regs =
+    List.filteri (fun i _ -> deepest + 1 + i <= 12) vars
+    |> List.mapi (fun i (p, (t, _)) -> p, (deepest + 1 + i, t)) in
+  let st = run name locals regs body in
   let frame = Types.round (st.moutgoing + 4 + (4 * st.msaves) + locals) 8 in
   [ M.Label name;
     M.Instr (M.Alui (M.Add, M.sp, M.sp, - frame));

@@ -163,7 +163,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
       | exception Eval.Exit s -> finish s
       | exception (Eval.Error m | Word.Error m) ->
           if m <> "" then Eval.eprint (Printf.sprintf "rc (%s): %s\n" argv0 m);
-          (* claude: an error ends rc without its sigexit, as 9base's *)
+          (* an error ends rc without its sigexit, as 9base's *)
           Env.set_fn env "sigexit" None;
           finish "error"
 

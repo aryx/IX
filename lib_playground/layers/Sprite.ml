@@ -124,7 +124,7 @@ let cycle (n : int) (frames : 'a list) : 'a =
   let len = List.length frames in
   List.nth frames (((n mod len) + len) mod len)
 
-(* claude: the time is seconds since 1970 (about 1.8e9), times [fps]:
+(* the time is seconds since 1970 (about 1.8e9), times [fps]:
  * too big for js_of_ocaml's 32-bit ints, hence the modulo on floats
  * before int_of_float (see Playground.to_frac for the same problem) *)
 let frame (fps : number) (Time t : time) (frames : 'a list) : 'a =

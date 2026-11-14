@@ -19,7 +19,7 @@ typedef unsigned char uchar;
 
 #define TF_WORDS 34
 #define TF_PSR 33
-/* claude: a kernel's processes may be AArch32's (mini-9pi's arm
+/* a kernel's processes may be AArch32's (mini-9pi's arm
  * programs: its Makefile's -DTF_USER_PSR=0x10, M[4] and user mode) */
 #ifndef TF_USER_PSR
 #define TF_USER_PSR 0

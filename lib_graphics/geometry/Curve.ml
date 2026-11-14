@@ -51,7 +51,7 @@ let flatten ~(tolerance : float) (p0 : point) (p1 : point) (p2 : point) (p3 : po
       let m = Vec2.scale 0.5 (Vec2.add lc rb) in
       go (depth - 1) a lb lc m (go (depth - 1) m rb rc d acc)
   in
-  (* claude: a depth of 16 would be 65536 segments, far past any
+  (* a depth of 16 would be 65536 segments, far past any
    * tolerance worth asking for: it is there to end, not to be reached *)
   p0 :: go 16 p0 p1 p2 p3 []
 

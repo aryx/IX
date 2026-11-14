@@ -41,7 +41,7 @@ and mouse = {
 
 and pointer = { mutable xdx : int; mutable ydy : int; mutable dz : int; mutable buttons : int }
 
-(* claude: a usb-net's (hw/usb/dev-network.c, its CDC Ethernet): the
+(* a usb-net's (hw/usb/dev-network.c, its CDC Ethernet): the
  * frames for the guest, the one the guest is sending, where a frame
  * sent goes (the network: Usernet) *)
 and net = { inq : string Queue.t; outbuf : Buffer.t; mutable tx : string -> unit }
@@ -74,7 +74,7 @@ type result = Data of string | Stall | Nak | Babble
 let bytes l = String.concat "" (List.map (fun b -> String.make 1 (Char.chr (b land 0xff))) l)
 let w16 v = [ v land 0xff; (v lsr 8) land 0xff ]
 
-(* [usb]: bcdUSB, 0x0110 the hub's, 0x0100 the HID devices' (claude:
+(* [usb]: bcdUSB, 0x0110 the hub's, 0x0100 the HID devices' (
  * the keyboard's said 0x0110 before) *)
 let device_descriptor ~usb ~cls ~mps0 ~vendor ~product ~bcd ~imanu ~iprod ~iserial =
   bytes ([ 18; 1 ] @ w16 usb @ [ cls; 0; 0; mps0 ] @ w16 vendor @ w16 product @ w16 bcd @ [ imanu; iprod; iserial; 1 ])
@@ -92,7 +92,7 @@ let serial s ~path = s ^ "-" ^ path
 
 (* the hub QEMU adds when a device is attached to a one-port controller
  * (hw/usb/dev-hub.c): 8 ports, no power switching *)
-(* claude: QEMU's usb-net (hw/usb/dev-network.c): its RNDIS configuration
+(* QEMU's usb-net (hw/usb/dev-network.c): its RNDIS configuration
  * (value 2) listed first, its CDC Ethernet one (value 1) second, the
  * MAC (string 3) its netdev's with a first byte 0x40 (QEMU's
  * usbstring_mac); bulk endpoints 0x82 and 0x02 of 64 bytes, the

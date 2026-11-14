@@ -213,7 +213,7 @@ long strtol(const char *s, char **endp, int base)
 /*****************************************************************************/
 
 #ifdef __arm__
-/* claude: the ARM EABI's divisions (arm32 has no divide instruction on
+/* the ARM EABI's divisions (arm32 has no divide instruction on
  * the Pi1, and Ubuntu's libgcc is Thumb-2: plan_kernel.md) */
 static unsigned long long udivmod(unsigned n, unsigned d)
 {
@@ -271,7 +271,7 @@ static int format(char *out, const char *fmt, va_list ap)
     switch (*fmt) {
     case 'd': case 'i': case 'u': case 'x': case 'X': case 'o': case 'p': {
       unsigned long u; int base = *fmt == 'o' ? 8 : (*fmt == 'x' || *fmt == 'X' || *fmt == 'p') ? 16 : 10;
-      /* claude: an int read as an int (on arm64 its register's upper half
+      /* an int read as an int (on arm64 its register's upper half
        * is not the value's), a long as a long */
       if (*fmt == 'd' || *fmt == 'i') { long v = longs ? va_arg(ap, long) : va_arg(ap, int); if (v < 0) { sign = '-'; u = -(unsigned long)v; } else { u = v; if (plus) sign = '+'; else if (space) sign = ' '; } }
       else if (*fmt == 'p') { u = (unsigned long)va_arg(ap, void *); alt = 1; }
@@ -426,7 +426,7 @@ STUB(sinh) STUB(tan) STUB(tanh)
  * readlink, and an alternate stack for the stack overflows, mmap and
  * sigaltstack, and goes on without), or say nothing (0: no locale, no
  * terminal); the rest panics, as above. */
-/* claude: the names musl's headers leave as they are, where glibc's
+/* the names musl's headers leave as they are, where glibc's
    (above) make them strtol, strtod, __isoc99_sscanf and
    __stat64_time64: the build on macOS, clang over musl's headers
    (ix's configure) */

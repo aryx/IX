@@ -282,7 +282,7 @@ let show_prog (q : prog) =
   let s = match String.index_from_opt s 1 '\t' with Some i when i + 1 < String.length s && s.[i + 1] = ',' -> String.sub s 0 (i + 1) ^ String.sub s (i + 2) (String.length s - i - 2) | _ -> s in
   if String.length s > 0 && s.[String.length s - 1] = ',' then String.sub s 0 (String.length s - 1) else s
 
-(* claude: 5c prints END as an instruction, a tab after it *)
+(* 5c prints END as an instruction, a tab after it *)
 let listing () = String.concat "" (List.rev_map (fun q -> show_prog q ^ "\n") !progs) ^ "\tEND\t\n"
 
 (* the object: what mini-asm makes of the listing *)

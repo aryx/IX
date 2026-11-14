@@ -1,4 +1,4 @@
-(* claude: a minimal reproduction. [go] reads b.[pos] in its test and again
+(* a minimal reproduction. [go] reads b.[pos] in its test and again
  * after allocating the list cell; the second read reuses the address
  * computed for the first, which a minor GC may have made stale. *)
 let rec go b pos acc =

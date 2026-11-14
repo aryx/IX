@@ -127,7 +127,7 @@ and quoted delim = parse
 {
 let tokens (src : string) : Token_ml.t list =
   let lexbuf = Lexing.from_string src in
-  (* claude: lines found afterwards from the offsets, rather than by
+  (* lines found afterwards from the offsets, rather than by
    * counting newlines in every rule *)
   let line = ref 1 and bol = ref 0 and scanned = ref 0 in
   let place (ofs : int) : int * int =
@@ -138,7 +138,7 @@ let tokens (src : string) : Token_ml.t list =
     (!line, ofs - !bol)
   in
   let rec go acc =
-    (* claude: where the last token ended, not lexeme_start after: the
+    (* where the last token ended, not lexeme_start after: the
      * comment and string rules, called from an action, move it *)
     let offset = Lexing.lexeme_end lexbuf in
     match token lexbuf with

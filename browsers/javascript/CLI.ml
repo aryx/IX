@@ -6,9 +6,9 @@
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr; Cap.clock >
 
 let usage = "usage: mini-node [file.js | -e text]
-  file.js  its statements run; a module if it imports (or is .mjs)
-  -e       the text's
-  nothing: each line of the input run, its value shown"
+  file.js  runs the file's statements
+  -e text  runs the text's statements
+  nothing  runs each line of the input and shows its value"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let say (s : string) : unit = Console.print caps (s ^ "\n") in

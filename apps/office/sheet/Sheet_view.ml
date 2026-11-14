@@ -76,7 +76,7 @@ let column_letters col =
   String.sub name 0 (String.length name - 1)
 
 let draw ~(selection : (Formula.cell * Formula.cell) option) g (th : Theme.t) (b : Widget.box) sheet =
-  (* claude: no selection is one outside the sheet, never lit, and no ring *)
+  (* no selection is one outside the sheet, never lit, and no ring *)
   let shown = selection <> None in
   let selection = match selection with Some s -> s | None -> ((-1, -1), (-1, -1)) in
   let (left_col, top_row), (right_col, bottom_row) = corners selection in

@@ -41,7 +41,7 @@ external tf_get : int -> int = "tf_get"
 external tf_set : int -> int -> unit = "tf_set"
 external tf_init : int -> unit = "tf_init"
 external tf_copy : int -> unit = "tf_copy"
-(* claude: the running process's trap frame as bytes, whole (a word a
+(* the running process's trap frame as bytes, whole (a word a
  * register, the board's layout; their 32 bits: mini-9pi's notes) *)
 external tf_bytes : unit -> string = "tf_bytes"
 external tf_set_bytes : string -> unit = "tf_set_bytes"
@@ -102,13 +102,13 @@ external fb_pitch : unit -> int = "fb_pitch"
 external display_size : unit -> int = "display_size"
 external font_base : unit -> int = "font_base"
 
-(* claude: a peripheral's register by its offset from the peripherals'
+(* a peripheral's register by its offset from the peripherals'
  * base (0x20000000 on the Pi1): [io_get16 off high] one 16-bit half of
  * the 32-bit word, [io_set32 off hi lo] the word written from its
  * halves (a word is past the Pi1's ints) *)
 external io_get16 : int -> bool -> int = "io_get16"
 external io_set32 : int -> int -> int -> unit = "io_set32"
-(* claude: a data port read [n] bytes' worth (32-bit loads), or written
+(* a data port read [n] bytes' worth (32-bit loads), or written
  * a string's words *)
 external io_read_fifo : int -> int -> string = "io_read_fifo"
 external io_write_fifo : int -> string -> unit = "io_write_fifo"

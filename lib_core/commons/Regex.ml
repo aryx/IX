@@ -208,7 +208,7 @@ let exec1 (re : t) (s : string) (from : int) (cap : int) best =
   let push l t =
     l.ts <- Array.append l.ts [| t |];
     l.n <- l.n + 1;
-    (* claude: rregexec tests for its end exactly, and the start thread is
+    (* rregexec tests for its end exactly, and the start thread is
      * added unchecked, so C can go past it (and write out of bounds);
      * here, far enough past it stops too *)
     if l.n = l.cap - 2 || l.n > 4 * l.cap then raise Overflow

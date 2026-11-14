@@ -188,7 +188,7 @@ let sucopy (n : expr) (nn : expr) w =
         ins "MOVB" nod3 (plus nod2 i)
       done;
       regfree nod3;
-      (* claude: the words from m on, as 7c's offsets end up *)
+      (* the words from m on, as 7c's offsets end up *)
       plus nod1 m, plus nod2 m
     end
   in

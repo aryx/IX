@@ -459,7 +459,7 @@ data_entry:
 	mov	r0, #3
 	bl	user_abort
 	b	user_return
-@ claude: a probe (machine.c's io_probe: probing[0] set) is the kernel
+@ a probe (machine.c's io_probe: probing[0] set) is the kernel
 @ asking whether a device is there: its fault is the answer (probing[1]
 @ takes the link, not 0) and the kernel goes on after the instruction
 @ that faulted (the link is 8 past it). QEMU's raspi has no PWM, its
@@ -491,7 +491,7 @@ prefetch_entry:
 kernel_prefetch:
 	mov	r0, #2
 	b	fault
-@ claude: an undefined instruction from user mode is the process's (as
+@ an undefined instruction from user mode is the process's (as
 @ an abort: user_abort, kind 1; 9pi's FPA code, mini-9pi's hoc), from
 @ the kernel a kernel's fault
 undefined_entry:
@@ -771,7 +771,7 @@ klock:
 	.global fs_image
 	.global fs_image_end
 fs_image:
-	.incbin	"fs.img"			@ claude: from the build directory (as -I)
+	.incbin	"fs.img"			@ from the build directory (as -I)
 fs_image_end:
 	.align	2
 	.global fs_image_size
@@ -783,7 +783,7 @@ fs_image_size:
 	.balign	16
 	.global	font_image
 font_image:
-	.incbin	"font.bin"		@ claude: from the build directory (as -I)
+	.incbin	"font.bin"		@ from the build directory (as -I)
 
 @ the page tables of the boot: the kernel's (16KB, 16KB aligned), the
 @ vectors' second-level table (1KB) and page, the empty user table

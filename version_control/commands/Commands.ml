@@ -69,7 +69,7 @@ let init (caps : caps) args =
          | u :: _ -> Some (u ^ "/" ^ name)
          | [] -> None) in
   List.iter (fun d -> mkdir_p (Filename.concat git d)) [ "refs/heads"; "refs/remotes"; "fs"; "objects" ];
-  (* claude: repositoryformatversion 0, not git9's p9.0, which C git
+  (* repositoryformatversion 0, not git9's p9.0, which C git
    * refuses (plan_vcs.md, deliberate difference 1) *)
   let config =
     "[core]\n\trepositoryformatversion = 0\n"

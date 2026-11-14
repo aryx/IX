@@ -37,7 +37,7 @@ LIBS=lib_core lib_mime lib_crypto lib_compression lib_executable lib_networking 
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
 FIRST=$LIBS assembler
-AFTER=linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office
+AFTER=linker linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office
 all:V: libs
 	@{cd assembler && $MK 'O='$O} || exit 1
 	pids=()

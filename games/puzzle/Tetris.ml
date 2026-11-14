@@ -28,7 +28,7 @@ open Playground
  *    (called confusingly "animation")
  *  - accelerate Tick as you clear more lines, manage "level" score
  *
- * claude: done since: levels (one every 10 lines, the pieces falling
+ * done since: levels (one every 10 lines, the pieces falling
  * faster), and sound (see "Sound" below): the theme, Korobeiniki, the
  * Russian folk song Tetris made famous (its melody: public domain, the
  * bass line our own, not the Game Boy's), its tempo rising with the
@@ -259,7 +259,7 @@ let (tetriminos: piece list) = [
   Color.Rgb (232, 65, 56),  [(0, 0); (1, 0); (1, 1); (2, 1)];
  ] |> List.map (fun (color, xs) -> from_list color xs)
 
-(* claude: drawn from the seed kept in the model (Playground.pick), not
+(* drawn from the seed kept in the model (Playground.pick), not
  * OCaml's global Random: the same seed, the same pieces, in every run
  * and on every backend -- what golden frames, replays and two players
  * on two computers need (plan_networking_teaching.md, phase 0) *)
@@ -297,14 +297,14 @@ type model = {
 
   score: int;
   lines: int;
-  (* claude: lines / 10: the fall's speed and the music's tempo *)
+  (* lines / 10: the fall's speed and the music's tempo *)
   level: int;
-  (* claude: the flag music=off *)
+  (* the flag music=off *)
   music: bool;
 
   state: state;
 
-  (* claude: the next piece's randomness (see random_tetrimino) *)
+  (* the next piece's randomness (see random_tetrimino) *)
   seed: seed;
 }
 
@@ -314,7 +314,7 @@ let spawn_tetrimino model =
   let {x; y} = init_position model.width active in
   { model with next; active; position = (x, float y); seed }
 
-(* claude: from a seed, the first two pieces drawn: the flag seed=n
+(* from a seed, the first two pieces drawn: the flag seed=n
  * (see Playground.flags), e.g. for the golden frame tests, else the
  * clock, read once here and never again *)
 let initial_model (seed : seed) =
@@ -446,7 +446,7 @@ let msg_of_key = function
 (*****************************************************************************)
 (* Sound *)
 (*****************************************************************************)
-(* claude: Korobeiniki ("The Peddlers", a poem by Nikolay Nekrasov,
+(* Korobeiniki ("The Peddlers", a poem by Nikolay Nekrasov,
  * 1861, sung to a folk tune), the music of Tetris since its Soviet
  * version was ported to the West (Spectrum HoloByte, 1988; then the Game
  * Boy's, 1989). In ABC notation (audio/Abc.mli), two voices: the
@@ -490,7 +490,7 @@ let clear_lines_and_add_score model =
   in
   let lines = model.lines + nblines in
   let level = lines / 10 in
-  (* claude: the sounds of a piece landing, of lines going *)
+  (* the sounds of a piece landing, of lines going *)
   if nblines = 4 then Audio.play tetris
   else if nblines > 0 then Audio.play cleared
   else Audio.play landed;
@@ -546,11 +546,11 @@ let rotate_tetrimino model =
 let update msg model =
   (match msg with
   | Tick _ ->
-    (* claude: a row a second at level 0, 30% faster each level; a Tick
+    (* a row a second at level 0, 30% faster each level; a Tick
      * is 1/60 s (the platforms' fixed step), not the time between two
      * Ticks on this machine's clock: the same game on every machine *)
     let dy = (1. /. 60.) *. (1. +. (0.3 *. float model.level)) in
-    (* claude: harmless when already playing (Audio.loop) *)
+    (* harmless when already playing (Audio.loop) *)
     if model.music then Audio.loop "music" (music_at model.level);
     drop_tetrimino model dy |> fst
 

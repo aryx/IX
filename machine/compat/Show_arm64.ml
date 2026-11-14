@@ -71,7 +71,7 @@ let pair_operand rn offset mode =
   | P_pre -> Printf.sprintf "[%s, #%d]!" (xsp rn) offset
   | P_post -> Printf.sprintf "[%s], #%d" (xsp rn) offset
 
-(* claude: the floating point's registers, by size *)
+(* the floating point's registers, by size *)
 let fs double = if double then D else S
 let freg fsize r = Printf.sprintf "%s%d" (match fsize with S -> "s" | D -> "d" | Q -> "q") r
 

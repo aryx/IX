@@ -495,7 +495,7 @@ value timer_pending(value unit) { (void)unit; return Val_bool((TIMER[0] & (1 << 
 value timer_now(value unit) { (void)unit; return Val_long(TIMER[1] & 0x3fffffff); }
 
 /* a user's abort (start.s: kind 2 a prefetch abort, 3 a data abort;
- * claude: 1 an undefined instruction):
+ * 1 an undefined instruction):
  * runtime.c's user_fault, as arm64 says it: the exception class of an
  * abort from user mode (0x20 an instruction's, 0x24 a data's), a
  * syndrome (the class, and the FSR: its status), the faulting
@@ -505,19 +505,19 @@ void user_abort(int kind)
 {
   unsigned far, fsr;
   int ec = kind == 3 ? 0x24 : 0x20;
-  /* claude: the saved pc back on the faulting instruction (the abort's
+  /* the saved pc back on the faulting instruction (the abort's
    * lr 8 or 4 past it), so that a fault the kernel resolves (mini-9pi's
    * demand paging) restarts it */
   cur_tf[15] -= kind == 3 ? 8 : 4;
   if (kind == 1) {
-    /* claude: an undefined instruction (arm64's class 0, "unknown"), no
+    /* an undefined instruction (arm64's class 0, "unknown"), no
      * address */
     user_fault(0, 0, cur_tf[15], 0);
     return;
   }
   far = fault_address(kind != 3);
   fsr = fault_status(kind != 3);
-  /* claude: a data abort's write (the DFSR's bit 11) as arm64's WnR (ISS
+  /* a data abort's write (the DFSR's bit 11) as arm64's WnR (ISS
    * bit 6) */
   user_fault(ec, ((unsigned long)ec << 26) | (fsr & 0x40f) | (kind == 3 && (fsr & 0x800) ? 0x40 : 0),
              cur_tf[15], far);

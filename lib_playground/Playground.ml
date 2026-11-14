@@ -55,7 +55,7 @@ type time = Time of Time.posix
  * and close to 1.0 just before the next cycle. spin/wave/zigzag below
  * turn this fraction into an angle, a position, etc.
  *
- * claude: this used to be (same as Elm's toFrac):
+ * this used to be (same as Elm's toFrac):
  *
  *   let (to_frac: float -> time -> float) = fun period (Time posix) ->
  *       let ms = Time.posix_to_millis posix in
@@ -166,7 +166,7 @@ and form =
   | Polygon of color * (number (* x *) * number (* y *)) list
 
   | Image of number (* width *) * number (* height *) * string (* url *)
-  (* claude: an image already in memory, its pixels given (a video's
+  (* an image already in memory, its pixels given (a video's
    * frame, a picture decoded by the program) *)
   | Bitmap of number (* width *) * number (* height *) * Rgba_image.t
   (* ix: palette indices (Playground.mli) *)
@@ -220,7 +220,7 @@ let (words: color -> string -> shape) = fun color str ->
 
 let letters (color : color) (l : letters) : shape = shape 0. 0. 0. 1. 1. (Letters (color, l))
 
-(* claude: the font used to render [words], shared by the native and web
+(* the font used to render [words], shared by the native and web
  * backends so that text looks the same in both. It used to be each
  * backend's default: Cairo's 10 units and sans-serif font natively, the
  * browser's 16px and serif font (e.g., Times) on the web, so the web text
@@ -336,7 +336,7 @@ type mouse = {
   (* pad: not in original Playground.elm: the right button, e.g. to
    * place a block in TinyMinecraft (the left one removes) *)
   mrdown: bool;
-  (* claude: not in original Playground.elm either: the middle button
+  (* not in original Playground.elm either: the middle button
    * (the wheel pressed), e.g. to throw a grenade in mini-soldat *)
   mmdown: bool;
   (* pad: not in original Playground.elm either: how far the mouse
@@ -345,7 +345,7 @@ type mouse = {
    * Playground3d_platform.run_app3d's capture_mouse) *)
   mdx: number;
   mdy: number;
-  (* claude: not in original Playground.elm either, and the two things
+  (* not in original Playground.elm either, and the two things
    * no game here has ever needed but every application does (see
    * docs/claude_notes/plans/plan_gui_teaching.md, phase 0): the wheel,
    * in notches since the last frame (positive away from you: scrolling
@@ -399,7 +399,7 @@ type keyboard = {
   
   keys: string Set.t;  
 
-  (* claude: not in original Playground.elm: the characters typed this
+  (* not in original Playground.elm: the characters typed this
    * frame, in order ("" most frames, "a" for a key, and more than one
    * character when a key repeats or a dead key resolves). A key name
    * is not a character -- shift, layouts and dead keys are the
@@ -444,7 +444,7 @@ let keyboard_typed str keyboard =
 let keyboard_typed_reset keyboard =
   { keyboard with typed = "" }
 
-(* claude: the two backends name the same key differently -- SDL says
+(* the two backends name the same key differently -- SDL says
  * "Backspace", "Return", "Left Shift" (lowercased by Native_loop_2d),
  * a browser says "Backspace", "Enter", "Shift" -- and only the arrows
  * were ever made to agree. So one name is chosen here, the browser's
@@ -460,7 +460,7 @@ let canonical_key key =
   | "delete" -> "Delete"
   | "home" -> "Home"
   | "end" -> "End"
-  (* claude: and the rest of the browser's names, which SDL's
+  (* and the rest of the browser's names, which SDL's
    * lowercased ones missed: a terminal program reading F9 or PageDown
    * (TinyTurboPascal's Make, TinyVi's page) got "f9" and "pagedown" *)
   | "pageup" -> "PageUp"
@@ -490,7 +490,7 @@ let update_keyboard is_down key keyboard =
   | "a"          -> { keyboard with keys; ka = is_down }
   | "d"          -> { keyboard with keys; kd = is_down }
   | "space"          -> { keyboard with keys; kspace = is_down }
-  (* claude: the three that the record has always had and nothing ever
+  (* the three that the record has always had and nothing ever
    * set: an application needs them (backspace in a field, enter to
    * accept, shift to extend a selection) and so did the games that
    * read them (TinySokoban's undo, TinyGauntlet2's potion) *)
@@ -515,7 +515,7 @@ type computer = {
   time: time;
   flags: flags;
 }
-(* claude: see Playground.mli *)
+(* see Playground.mli *)
 and flags = (string * string) list
 
 let initial_computer = {
@@ -545,7 +545,7 @@ let flags_of_strings (xs : string list) : flags =
 (*****************************************************************************)
 (* Randomness *)
 (*****************************************************************************)
-(* claude: see Playground.mli *)
+(* see Playground.mli *)
 
 type seed = Lehmer.t
 
@@ -563,17 +563,17 @@ let pick (xs : 'a list) (seed : seed) : 'a * seed =
   let i, seed = random_int 0 (List.length xs -.. 1) seed in
   (List.nth xs i, seed)
 
-(* claude: see Playground.mli *)
+(* see Playground.mli *)
 type rendering = { antialiasing : bool; smooth_images : bool }
 
 let default_rendering = { antialiasing = true; smooth_images = true }
 
-(* claude: see Playground.mli *)
+(* see Playground.mli *)
 type window = { screen_size : (int * int) option; follows_window : bool; platform_keys : bool; skip_same_view : bool }
 
 let default_window = { screen_size = None; follows_window = false; platform_keys = true; skip_same_view = false }
 
-(* claude: see Playground.mli *)
+(* see Playground.mli *)
 type cursor = Arrow | Hand | Text | Crosshair | Hidden
 
 type ('model, 'msg) app =
@@ -629,8 +629,8 @@ type msg =
   | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
   | RightMouseButton of bool (* the same, for the right button *)
-  | MiddleMouseButton of bool (* claude: and for the middle one *)
-  (* claude: phase 0 of plan_gui_teaching.md; all three are consumed by
+  | MiddleMouseButton of bool (* and for the middle one *)
+  (* phase 0 of plan_gui_teaching.md; all three are consumed by
    * the Tick that follows them *)
   | Typed of string
   | MouseWheel of float
@@ -696,13 +696,13 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * to kinda ack the click
          *)
         Game (update_memory computer memory,
-          (* claude: the moves, wheel notches, double click and typed
+          (* the moves, wheel notches, double click and typed
            * characters update_memory just saw are consumed *)
           { computer with time = Time time;
             mouse = mouse_moves_reset computer.mouse;
             keyboard = keyboard_typed_reset computer.keyboard })
     | Resized (w, h) ->
-        (* claude: the screen the platform gives the program, when not
+        (* the screen the platform gives the program, when not
          * the default (Playground.window's screen_size) *)
         Game (memory, { computer with screen = to_screen (float w) (float h) })
     (* we assume the x, y is in playground coordinate system (0,0) at the
@@ -727,7 +727,7 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
     | MouseButton is_down ->
         Game (memory,
              { computer with mouse =
-                 (* claude: a click is the release of the button, so the
+                 (* a click is the release of the button, so the
                   * button up is both: mdown goes false, mclick is true
                   * for the one update that follows (the Tick then
                   * clears it, as it clears mdx and the wheel). Without

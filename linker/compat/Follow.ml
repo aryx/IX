@@ -58,7 +58,7 @@ let follow t ~ends =
           (* up to 4 instructions from p, if they end the flow *)
           let rec find (q : _ prog) i =
             if i >= 4 || (match last () with Some l -> l == q | None -> false) then None
-            (* claude: a NOP (5c -O0's) doesn't count *)
+            (* a NOP (5c -O0's) doesn't count *)
             else if q.op = Nop then (match next q with Some r -> find r i | None -> None)
             else if ends q then Some q
             else if (q.op = Bcond EQ || q.op = Bcond NE) && (match q.target with Some c -> not (is_marked c) | None -> false) then Some q

@@ -382,7 +382,7 @@ let data_bytes t =
       match d.value with
       | Asm.Str s -> for i = 0 to d.width - 1 do Bytes.set b (a + i) (if i < String.length s then s.[i] else '\000') done
       | Imm n ->
-          (* claude: in 64 bits: through an int, bit 63 was bit 62's copy *)
+          (* in 64 bits: through an int, bit 63 was bit 62's copy *)
           Binary.set_le b a d.width n
       | Addr m ->
           let v = address t d.dversion m in

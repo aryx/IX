@@ -137,7 +137,7 @@ park:
 
 // the vectors: 2KB aligned, 16 entries of 0x80 bytes; the kernel's own
 // exceptions (the first 8) stop the machine, EL0's system calls,
-// aborts and IRQs go to the kernel. claude: EL0 in AArch32 too (the
+// aborts and IRQs go to the kernel. EL0 in AArch32 too (the
 // last 4: mini-9pi's processes, 32-bit arm programs), by the same code:
 // an AArch32 process's r0-r14 are x0-x14, its pc ELR, its CPSR SPSR
 	.balign	2048
@@ -240,7 +240,7 @@ user_return:
 	ldp	x0, x1, [x0]
 	eret
 
-// claude: a probe (machine.c's io_probe: probing[0] set) is the kernel
+// a probe (machine.c's io_probe: probing[0] set) is the kernel
 // asking whether a device is there: its fault is the answer (probing[1]
 // made not 0) and the kernel goes on after the load that faulted
 // (l.s's kernel_exception says why)
@@ -339,7 +339,7 @@ swtch:
 	.balign	4096
 	.global	fs_image
 fs_image:
-	.incbin	"fs.img"			// claude: from the build directory (as -I)
+	.incbin	"fs.img"			// from the build directory (as -I)
 fs_image_end:
 	.balign	8
 	.global	fs_image_size
@@ -351,7 +351,7 @@ fs_image_size:
 	.balign	16
 	.global	font_image
 font_image:
-	.incbin	"font.bin"		// claude: from the build directory (as -I)
+	.incbin	"font.bin"		// from the build directory (as -I)
 
 // the tables: the kernel's, the boot's, the empty one (TTBR0 when no
 // process runs); cleared with the bss

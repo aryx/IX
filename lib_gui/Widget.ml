@@ -58,7 +58,7 @@ let frame color thickness (b : box) =
   [
     Fill (color, { b with y = top b -. (t /. 2.); h = t });
     Fill (color, { b with y = bottom b +. (t /. 2.); h = t });
-    (* claude: the sides stop at the bars above, so no pixel is filled
+    (* the sides stop at the bars above, so no pixel is filled
      * twice -- it would show through a translucent color *)
     Fill (color, { b with x = left b +. (t /. 2.); w = t; h = b.h -. (2. *. t) });
     Fill (color, { b with x = right b -. (t /. 2.); w = t; h = b.h -. (2. *. t) });

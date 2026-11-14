@@ -83,7 +83,7 @@ let newdevep ep nb tt mode =
    | _ -> ());
   nep
 
-(* claude: the enabled devices' endpoints 0, hubs' not (a kernel driver's
+(* the enabled devices' endpoints 0, hubs' not (a kernel driver's
  * search: Etherusb) *)
 let devices () =
   List.filter (fun e -> e.enb = 0 && e.dev.state = Denabled && not e.dev.ishub && not e.dev.isroot)

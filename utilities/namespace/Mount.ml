@@ -69,6 +69,6 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       match Sys_plan9.mount caps fd dir !flag spec with
       | () -> Exit.OK
       | exception Unix.Unix_error (e, _, _) -> fail ("mount " ^ dir) (Unix.error_message e) "mount")
-  with Usage -> Console.eprint caps "usage: mount [-a|-b] [-cnq] [-k keypattern] /srv/service dir [spec]\n"; Exit.Err "usage"
+  with Usage -> Console.eprint caps "usage: mount [-a|-b] [-cCnq] [-k keypattern] /srv/service dir [spec]\n"; Exit.Err "usage"
 
 let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))

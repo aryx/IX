@@ -5,7 +5,7 @@
 
 open Tree
 open Tree_helpers
-(* claude: the characters, from the input stack *)
+(* the characters, from the input stack *)
 open Pre
 
 module P = Parser
@@ -176,7 +176,7 @@ rule token = parse
   | "L\""
     { sync lexbuf;
       let rec go acc = match escchar '"' true with None -> List.rev acc | Some (c, _) -> go (c :: acc) in
-      (* claude: little-endian runes, as outlstring writes them *)
+      (* little-endian runes, as outlstring writes them *)
       P.LLSTRING (String.concat "" (List.map (fun c -> let b = Bytes.create 4 in Bytes.set_int32_le b 0 (Int32.of_int c); Bytes.to_string b) (go []))) }
   | '"' { sync lexbuf; P.LSTRING (lexstring ()) }
   | '\''

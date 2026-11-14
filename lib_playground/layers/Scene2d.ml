@@ -31,7 +31,7 @@ let update (computer : computer) (t : 'scene t) : 'scene t =
     keys = computer.keyboard;
     before = t.keys }
 
-(* claude: before = keys: whatever is down now counts as already down in
+(* before = keys: whatever is down now counts as already down in
  * the new scene *)
 let go (scene : 'scene) (t : 'scene t) : 'scene t =
   { t with scene; elapsed = 0.; frames = 0; before = t.keys }

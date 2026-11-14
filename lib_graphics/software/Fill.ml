@@ -181,7 +181,7 @@ let polygons_aa_simple ~rule (fb : Framebuffer.t) contours ~rgb ~alpha =
       done);
   flush ()
 
-(* claude: optimization (Opti.enabled), what polygons_aa does instead.
+(* optimization (Opti.enabled), what polygons_aa does instead.
  *
  * Coverage is accumulated per pixel row, over its sub-rows, as a list
  * of "cells", so that adding a span costs the same whatever its length.

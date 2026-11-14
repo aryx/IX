@@ -58,7 +58,7 @@ let error desc = Json.Assoc [ "error", Json.Assoc [ "class", Json.String "Generi
 type event = Pointer_event of Usb.input | Key_event of int * bool | No_event
 
 (* one command, its answer *)
-(* claude: what QMP asks of a machine: the Pi1's board, the Pi4's *)
+(* what QMP asks of a machine: the Pi1's board, the Pi4's *)
 type machine = {
   screen : unit -> (int * int * string) option;
   send_keys : int list -> hold:int -> unit;
@@ -83,7 +83,7 @@ let execute (board : machine) ~quit json =
       if List.length usages <> List.length keys then error "send-key: an unknown key"
       else (board.send_keys usages ~hold:(hold * 1000); ok)
   | "input-send-event" ->
-      (* claude: QEMU's input events: relative motion and buttons to the
+      (* QEMU's input events: relative motion and buttons to the
        * mouse (then synced, as one QMP command is), keys to the
        * keyboard *)
       let events = try args |> Json.member "events" |> Json.list with _ -> [] in

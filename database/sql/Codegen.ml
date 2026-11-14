@@ -180,7 +180,7 @@ let insert c schema table (values : Ast.literal list) =
   if List.length values <> ncols || not (List.for_all2 (fun v (col : Ast.column) -> matches v col.typ) values columns) then raise Invalid;
   emit c (Integer (tbl.root, R 0));
   emit c (Open_write (C 0, R 0, ncols));
-  (* claude: chidb takes the primary key's literal as an int even when it
+  (* chidb takes the primary key's literal as an int even when it
    * is not one (a TEXT primary key), reading its string pointer's bits;
    * refused here *)
   emit c (Integer ((match List.nth values pk with L_int n -> n | L_char _ | L_text _ | L_double _ -> raise Invalid), R 1));

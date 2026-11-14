@@ -452,7 +452,7 @@ let render ~(options : options) ~(scale : float) (fb : Framebuffer.t) (shapes : 
 (* Where the pixels go *)
 (*****************************************************************************)
 
-(* claude: the same walk as [render_shape], but collecting the pixel box
+(* the same walk as [render_shape], but collecting the pixel box
  * of each form instead of drawing it: a form's local box
  * ([local_bounds]) through its transform, except words, whose box is
  * their strokes' (as [draw_words] places them) widened by the pen *)

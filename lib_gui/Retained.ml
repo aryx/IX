@@ -167,7 +167,7 @@ let handle (i : Widget.input) (ui : ui) =
            | Some _ -> w.focused
            | None -> if on_nothing then false else w.focused
          in
-         (* claude: and the caret where the click landed, as the other
+         (* and the caret where the click landed, as the other
           * three put it (found by examples/gui4/tests/Unit_gui4) *)
          if now then w.caret <- Text.byte_of_column w.text (Look.field_column_at Theme.default w.box w.text ~caret:w.caret i.mx);
          w.focused <- now)

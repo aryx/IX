@@ -119,7 +119,7 @@ let varied (name : string) (seed : int) : sound =
 (* the mixer every sound goes to; the platform pulls its samples *)
 let mixer = Mixer.create ()
 
-(* claude: while true, nothing starts playing (silently, for tinybox's
+(* while true, nothing starts playing (silently, for tinybox's
  * previews: a program run in the menu's process, heard by no one) *)
 let muted = ref false
 
@@ -369,7 +369,7 @@ type instrument = Instrument.t
 let instruments : (string, Instrument.t) Hashtbl.t = Hashtbl.create 2
 
 let instrument (name : string) (make : unit -> Instrument.t) : instrument =
-  (* claude: muted, an instrument of its own, which the mixer never pulls *)
+  (* muted, an instrument of its own, which the mixer never pulls *)
   if !muted then make () else
   match Hashtbl.find_opt instruments name with
   | Some i when List.mem name (Mixer.instruments mixer) -> i

@@ -89,7 +89,7 @@ let lookup pgdir va =
   | Some e -> Arch.decode_page (Arch.get_entry e)
   | None -> None
 
-(* claude: a page mapped at va (mini-9pi's faults) *)
+(* a page mapped at va (mini-9pi's faults) *)
 let mapped pgdir va = lookup pgdir va <> None
 
 let set pgdir va page =
@@ -152,7 +152,7 @@ let free pgdir =
     kfree t in
   table pgdir Arch.levels
 
-(* claude: mini-9pi's, whose pages belong to its segments (shared by
+(* mini-9pi's, whose pages belong to its segments (shared by
  * processes: rfork's RFMEM): a page mapped at va (the user's, to write),
  * one unmapped (not freed), the tables freed but not the pages *)
 let map pgdir va pa = set pgdir va (Some { pa = pa; perm = User_rw })
@@ -172,7 +172,7 @@ let free_tables pgdir =
   table pgdir Arch.levels
 
 (* a copy of [0, sz) in a new space (fork's uvmcopy), or None *)
-(* claude: [lo, hi)'s pages copied into [dst] (mini-9pi's fork copies
+(* [lo, hi)'s pages copied into [dst] (mini-9pi's fork copies
  * its segments: a Plan 9 stack is at 512MB, not after the rest) *)
 let copy_range pgdir dst lo hi =
   let rec go a =

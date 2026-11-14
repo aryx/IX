@@ -204,7 +204,7 @@ let start (program : Pcode.program) : machine =
 (* instructions until something stops the machine, [k] at most; [pause]
    asked before each
 
-   claude: the loop a local function without the optional argument:
+   the loop a local function without the optional argument:
    resume calling itself with ~pause was a tail call natively, but not
    compiled to JavaScript (a call through the optional argument's
    closure), and a frame's budget of instructions, a stack frame each,

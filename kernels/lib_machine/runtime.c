@@ -557,7 +557,7 @@ void user_fault(int ec, uintptr esr, uintptr elr, uintptr far)
   CAMLreturn0;
 }
 
-/* claude: the peripherals' registers, by their offset from IO_BASE (the
+/* the peripherals' registers, by their offset from IO_BASE (the
  * 0x20000000 region where start.s maps it: mini-9pi's EMMC driver). A
  * read gives one 16-bit half of the 32-bit register (loaded whole), a
  * write takes the word's two halves: a word does not fit the Pi1's
@@ -870,7 +870,7 @@ value mem_rows(value s, value a, value stride, value n, value row)
   return Val_unit;
 }
 
-/* claude: a device's data port read [n] bytes' worth (n/4 32-bit loads,
+/* a device's data port read [n] bytes' worth (n/4 32-bit loads,
  * little-endian), or written with a string's words (the EMMC's DATA) */
 value io_read_fifo(value off, value n)
 {
@@ -898,7 +898,7 @@ value io_write_fifo(value off, value s)
   return Val_unit;
 }
 
-/* claude: the running process's trap frame as bytes (TF_WORDS words,
+/* the running process's trap frame as bytes (TF_WORDS words,
  * little-endian), read or written whole: its registers' 32 bits (a
  * negative register, the PSR's N flag) survive, which the Pi1's 31-bit
  * ints do not (mini-9pi's notes save and restore them) */

@@ -119,7 +119,7 @@ let constr b = function
 let stmt b = function
   | Create_table { name; columns } ->
       pr b (Printf.sprintf "CREATE Table %s (\n" name);
-      (* claude: chidb's Table_print stops at the 10th column *)
+      (* chidb's Table_print stops at the 10th column *)
       List.iteri (fun i (c : column) ->
         if i < 10 then begin
           if i > 0 then pr b ",\n";
@@ -128,7 +128,7 @@ let stmt b = function
         end) columns;
       pr b "\n)\n"
   | Create_index { table; column; unique; _ } ->
-      (* claude: chidb prints the column's name as the index's *)
+      (* chidb prints the column's name as the index's *)
       pr b (Printf.sprintf "CREATE Index '%s' on %s (%s)" column table column);
       if unique then pr b ", unique";
       pr b "\n"

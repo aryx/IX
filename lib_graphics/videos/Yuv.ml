@@ -6,7 +6,7 @@
 
 type range = Full | Studio
 
-(* claude: compared as ints, and rounded by adding 0.5; it was
+(* compared as ints, and rounded by adding 0.5; it was
  *
  *   max 0 (min 255 (int_of_float (Float.round v)))
  *
@@ -67,7 +67,7 @@ let of_image (range : range) (chroma : chroma) (img : Rgba_image.t) : planes =
   in
   { width; height; chroma; y; cb = sample (fun (_, cb, _) -> cb); cr = sample (fun (_, _, cr) -> cr) }
 
-(* claude: to_rgb's terms looked up. Each depends on one byte, Y, Cb or
+(* to_rgb's terms looked up. Each depends on one byte, Y, Cb or
  * Cr, so its 256 values are computed once per range; a pixel is then 3
  * additions and 3 clamps, no product, no division, no allocation --
  * the classic trick (libjpeg's jdcolor.c). The additions in to_rgb's
@@ -135,7 +135,7 @@ let to_image_floats (range : range) (p : planes) : Rgba_image.t =
   let img = Rgba_image.create ~width:p.width ~height:p.height in
   let cw, _ = chroma_size p.chroma ~width:p.width ~height:p.height in
   (* a pixel's color sample column is px / side, a shift: side is 1 or 2
-   * (claude: not a division per pixel) *)
+   * (not a division per pixel) *)
   let shift = match p.chroma with C444 -> 0 | C420 -> 1 in
   for py = 0 to p.height - 1 do
     let chroma_row = (py lsr shift) * cw in

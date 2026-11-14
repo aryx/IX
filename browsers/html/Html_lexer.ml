@@ -155,7 +155,7 @@ and emit_tag (t : t) (tag : tag) (i : int) : unit =
     emit t (End_tag tag.name);
     data t i)
   else (
-    (* claude: the names' origins (Dtd): a Netscape element keeps all
+    (* the names' origins (Dtd): a Netscape element keeps all
      * its attributes; a core one's Netscape attributes go apart *)
     let origin = Dtd.element_origin tag.name in
     let attributes, extensions =

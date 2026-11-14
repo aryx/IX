@@ -226,7 +226,7 @@ and redirect t (r : redir) ~keep (f : unit -> unit) : unit =
           | [ file ] -> file
           | l ->
               let op = fst (Show_ast.arrow k) in
-              (* claude: 9base's messages for < and > (not >>) end with a
+              (* 9base's messages for < and > (not >>) end with a
                * newline of their own *)
               raise (Error (op ^ (if l = [] then " requires file" else " requires singleton")
                             ^ if k = Append then "" else "\n"))
@@ -234,7 +234,7 @@ and redirect t (r : redir) ~keep (f : unit -> unit) : unit =
         let n =
           try Process.open_file t.caps k file
           with Unix.Unix_error (e, _, _) ->
-            (* claude: 9base's words for it: file: rc (argv0): can't open: why *)
+            (* 9base's words for it: file: rc (argv0): can't open: why *)
             eprint (Printf.sprintf "%s: rc (%s): can't open: %s\n" file t.argv0 (Unix.error_message e));
             raise (Error "")
         in

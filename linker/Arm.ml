@@ -674,7 +674,7 @@ let select ctx (p : prog) : action =
         let r = match v.reg with Some r -> r | None -> rt in
         let r, rf = if rt = r then rf, rt else r, rf in
         oprrr m sc lor (rt lsl 16) lor (rf lsl 8) lor word r)
-  (* claude: 5l's case 16, a division left for the rewriting's calls *)
+  (* 5l's case 16, a division left for the rewriting's calls *)
   | Ins (Div _ | Mod _) when fits REG REG -> one (fun () -> 0xf lsl 28)
   | Ins (Mula | Mull _ as m) when not none && fits REG REGREG ->
       one (fun () ->

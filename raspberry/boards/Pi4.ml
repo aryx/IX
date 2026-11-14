@@ -27,11 +27,11 @@ type core = {
    * EL0 *)
   tags : int array;
   code : Arm64_isa.t array;
-  (* claude: EL0 in AArch32 (mini-9pi's arm programs): the Pi1's CPU on
+  (* EL0 in AArch32 (mini-9pi's arm programs): the Pi1's CPU on
    * this core's page tables; [in32] its registers loaded from x0-x14 *)
   a32 : Arm32_isa.state;
   mutable in32 : bool;
-  mutable ran : int;                   (* claude: instructions, since the last [where] *)
+  mutable ran : int;                   (* instructions, since the last [where] *)
 }
 
 type t = {
@@ -39,8 +39,8 @@ type t = {
   mem : Memory.t;
   gic : Gic.t;
   uart : Pl011.t;
-  fb : Framebuffer.t;                  (* claude: the mailbox's (phase J) *)
-  keyboard : Usb.device option;        (* claude: on the DWC2's hub *)
+  fb : Framebuffer.t;                  (* the mailbox's (phase J) *)
+  keyboard : Usb.device option;        (* on the DWC2's hub *)
   mouse : Usb.device option;
   cfg : config;
   (* the time: the instructions a core has run since the reset (the
@@ -48,7 +48,7 @@ type t = {
    * and the counter's ticks skipped while all slept *)
   mutable now : int;
   mutable skipped : int;
-  (* claude: [now] and [skipped] at the last [where] *)
+  (* [now] and [skipped] at the last [where] *)
   mutable seen : int * int;
   mutable undefined : int list;
   inq : char Queue.t;
@@ -64,7 +64,7 @@ let quantum = 1000
 (* the counter: 62.5 ticks a simulated microsecond *)
 let count t = Int64.of_int ((t.now * 125 / (2 * t.cfg.ips)) + t.skipped)
 
-(* claude: the board's time, microseconds (the counter at 62.5 MHz) *)
+(* the board's time, microseconds (the counter at 62.5 MHz) *)
 let now t = Int64.to_int (count t) * 2 / 125
 
 (* a timer's condition, and its line to the GIC, the core's own *)
@@ -182,7 +182,7 @@ let create (cfg : config) =
   dev 0xfe104000 0x28 "rng" (Devices.rng ~pi4:true);
   dev 0xfe200000 0x100 "gpio" (Devices.regs ~fixed:[] ());
   dev 0xfe201000 0x1000 "uart0" (Pl011.device uart);
-  (* claude: the mailbox and its framebuffer, as QEMU's raspi4b: the
+  (* the mailbox and its framebuffer, as QEMU's raspi4b: the
    * VideoCore's 64MB below 1GB (min (RAM - 64MB, 1GB - 64MB):
    * hw/arm/bcm2835_peripherals.c), the framebuffer 1MB into it, the
    * board revision a Pi 4 B's with 2GB (hw/arm/raspi4b.c) *)
@@ -191,7 +191,7 @@ let create (cfg : config) =
   let vc_base = min (ram - vc_size) (0x40000000 - vc_size) in
   dev 0xfe00b880 0x40 "mailbox"
     (Devices.mailbox ~mem ~ram_size:ram ~vc_base ~board_rev:0xb03115 ~on_framebuffer:(Framebuffer.configure fb));
-  (* claude: the second USB controller, the DWC2 (QEMU's raspi4b has
+  (* the second USB controller, the DWC2 (QEMU's raspi4b has
    * it, the Pi4's own ports are on the xHCI): its hub, the devices of
    * -device on its ports in order; its interrupt SPI 73 (id 105) *)
   let devices = List.mapi (fun i name ->
@@ -201,7 +201,7 @@ let create (cfg : config) =
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   let clock = ref (fun () -> 0) in
   dev 0xfe980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Gic.set gic 105 on) ~now:(fun () -> !clock ())));
-  (* claude: the Pi1's EMMC and DMA engine, as QEMU's raspi4b keeps them
+  (* the Pi1's EMMC and DMA engine, as QEMU's raspi4b keeps them
    * (its SD card on that EMMC): mini-9pi's; their IRQs the Pi1's plus
    * 96 at the GIC (the DWC2's 9 is 105) *)
   dev 0xfe300000 0x100 "emmc" (Sdhost.device (Sdhost.create ~card:cfg.sd ~line:(fun on -> Gic.set gic (96 + 62) on)));
@@ -287,7 +287,7 @@ let feed t = if Pl011.empty t.uart && not (Queue.is_empty t.inq) then Pl011.inpu
 
 let instructions t = t.now
 
-(* claude: each core's PC, an AArch32 program's its own; a core's time
+(* each core's PC, an AArch32 program's its own; a core's time
  * not run (asleep in its turns, or all asleep: the ticks skipped) its
  * waiting *)
 let where t =
@@ -321,7 +321,7 @@ let undefined t c pc w =
 let fetch t c pc user =
   Memory.load32 t.mem (if c.st.mmu && c.st.el < 2 then Mmu64.translate c.mmu (Arm64.of_pc pc) (4 lor user) else pc)
 
-(* claude: AArch32 at EL0 (mini-9pi's arm programs under its arm64
+(* AArch32 at EL0 (mini-9pi's arm programs under its arm64
  * kernel): the Pi1's CPU runs them, their r0-r14 the core's x0-x14
  * (low halves), their pc ELR's; an exception goes back to AArch64 at
  * EL1, through the vectors' AArch32 half (0x600), SPSR's M[4] set *)
@@ -443,11 +443,11 @@ let run t ~batch =
   end;
   feed t
 
-(* claude: the framebuffer, as the window and QMP's screendump see it *)
+(* the framebuffer, as the window and QMP's screendump see it *)
 let screen t = Framebuffer.rgb t.fb
 let frame t = Framebuffer.raw t.fb
 
-(* claude: the USB keyboard and mouse's input (the window's, QMP's): a
+(* the USB keyboard and mouse's input (the window's, QMP's): a
  * key now, keys pressed and released (queued: each reported), the
  * mouse's motion and buttons *)
 let key t usage down = Option.iter (fun k -> Usb.key k usage down) t.keyboard

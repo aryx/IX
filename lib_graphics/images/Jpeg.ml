@@ -35,7 +35,7 @@ type component = {
   (* the samples that are in the picture, the rest is padding *)
   cw : int;
   ch : int;
-  (* claude: a progressive frame's: every block's 64 coefficients, in
+  (* a progressive frame's: every block's 64 coefficients, in
    * zigzag order, kept from scan to scan (Jpeg_progressive); else none *)
   coefs : int array;
 }
@@ -156,7 +156,7 @@ let decode_block (r : reader) ~(dc : Huffman.t) ~(ac : Huffman.t) ~(q : int arra
 
 (* the block's samples, level-shifted back to 0..255, at block (bx, by)
  * of the component's plane *)
-(* claude: [v] rounded and kept in 0..255, as ints; where it was
+(* [v] rounded and kept in 0..255, as ints; where it was
  *
  *   max 0 (min 255 (int_of_float (Float.round v)))
  *
@@ -286,7 +286,7 @@ let decode_scan ~(progressive : Jpeg_progressive.scan option) (s : string) (pos 
   let table (tables : Huffman.t option array) i =
     match tables.(i) with Some t -> t | None -> failwith "JPEG: a Huffman table used but not defined"
   in
-  (* claude: a progressive scan: a part of each block's coefficients,
+  (* a progressive scan: a part of each block's coefficients,
    * kept in the component (Jpeg_progressive); its pixels at the end
    * ([reconstruct]) *)
   let run = ref 0 in
@@ -346,7 +346,7 @@ let decode_scan ~(progressive : Jpeg_progressive.scan option) (s : string) (pos 
   in
   next r.pos
 
-(* claude: a progressive frame's pixels, once its scans are all read:
+(* a progressive frame's pixels, once its scans are all read:
  * each block's coefficients multiplied back and transformed, as
  * [decode_scan] does for a baseline block as it reads it *)
 let reconstruct (f : frame) ~qt ~idct ~keep : unit =
@@ -442,7 +442,7 @@ let decode_with ~(idct : float array -> float array) ~(upsampling : upsampling) 
                   | None -> failwith "JPEG: a scan of an unknown component")
             in
             incr scans;
-            (* claude: a progressive scan's band and bits, after its components *)
+            (* a progressive scan's band and bits, after its components *)
             let progressive =
               if f.progressive then Some { Jpeg_progressive.ss = byte (1 + (2 * n)); se = byte (2 + (2 * n)); ah = byte (3 + (2 * n)) lsr 4; al = byte (3 + (2 * n)) land 15 }
               else None

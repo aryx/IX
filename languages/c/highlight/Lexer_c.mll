@@ -31,7 +31,7 @@ let keywords =
     "__asm"; "asm"; "__volatile__"; "__restrict"; "__extension__";
     "__const"; "__signed__"; "__declspec" ]
 
-(* claude: back to [pos] (an index in the buffer): where the scanning
+(* back to [pos] (an index in the buffer): where the scanning
  * goes on, and where lexeme_end says the token ended *)
 let back_to (lexbuf : Lexing.lexbuf) (pos : int) : unit =
   let n = lexbuf.lex_curr_pos - pos in
@@ -120,7 +120,7 @@ and include_file = parse
 {
 let tokens (src : string) : Token_c.t list =
   let lexbuf = Lexing.from_string src in
-  (* claude: lines found afterwards from the offsets, as in Lexer_ml *)
+  (* lines found afterwards from the offsets, as in Lexer_ml *)
   let line = ref 1 and bol = ref 0 and scanned = ref 0 in
   let place (ofs : int) : int * int =
     while !scanned < ofs do

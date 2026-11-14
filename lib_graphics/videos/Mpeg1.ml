@@ -52,7 +52,7 @@ let new_frame (sq : sequence) : frame =
   let n = sq.mbw * sq.mbh * 256 in
   { y = Bytes.make n '\000'; cb = Bytes.make (n / 4) '\128'; cr = Bytes.make (n / 4) '\128' }
 
-(* claude: crop copies each row whole (Bytes.blit, a memcpy), where it
+(* crop copies each row whole (Bytes.blit, a memcpy), where it
  * was a closure, a division and a modulo per pixel:
  *
  *   Bytes.init (w * h) (fun i -> Bytes.get plane ((i / w * stride) + (i mod w)))
@@ -76,7 +76,7 @@ let to_image (sq : sequence) (f : frame) : Rgba_image.t =
 (* Motion compensation *)
 (*****************************************************************************)
 
-(* claude: [v] kept in [lo, hi], compared as ints. It replaces, in the
+(* [v] kept in [lo, hi], compared as ints. It replaces, in the
  * per-pixel code below, the obvious
  *
  *   max 0 (min 255 v)
@@ -87,7 +87,7 @@ let to_image (sq : sequence) (f : frame) : Rgba_image.t =
  * frame down to 24 (notes_opti_ocaml.md). *)
 let clamp (lo : int) (hi : int) (v : int) : int = if v < lo then lo else if v > hi then hi else v
 
-(* claude: Float.round's integer, half away from zero, without its call
+(* Float.round's integer, half away from zero, without its call
  * into C (caml_round, an external: never inlined) -- for each of a
  * block's 64 values, where it was int_of_float (Float.round v) *)
 let[@inline] round (v : float) : int = if v >= 0. then int_of_float (v +. 0.5) else -int_of_float (0.5 -. v)
@@ -100,7 +100,7 @@ let predict (row : int array) (x : int) (v : int) : int =
 (* a [size] x [size] square of [plane] (its rows [stride] long, [rows]
  * of them) at (x, y), moved by (vx, vy) half pixels: the pixels, or the
  * averages of two or four of them *)
-(* claude: two loops filling the array, where it was
+(* two loops filling the array, where it was
  *
  *   Array.init (size * size) (fun k ->
  *       let px = x + (k mod size) + fx and py = y + (k / size) + fy in ...)
@@ -109,7 +109,7 @@ let predict (row : int array) (x : int) (v : int) : int =
  * stored through the garbage collector's write barrier (caml_modify:
  * Stdlib's Array.init is polymorphic, it can't know the values are
  * ints) *)
-(* claude: the pixel at (px, py), clamped to the plane: at top level,
+(* the pixel at (px, py), clamped to the plane: at top level,
  * its plane passed, where it was a closure inside prediction,
  *
  *   let get px py = Char.code (Bytes.get plane (...)) in
@@ -160,7 +160,7 @@ let predict_macroblock (sq : sequence) ~(mx : int) ~(my : int) (refs : (frame * 
   | _ -> invalid_arg "predict_macroblock"
 
 (* a macroblock's planes written: [plane i] block i's 64 values or none *)
-(* claude: two loops, where it was
+(* two loops, where it was
  *
  *   Array.iteri (fun k v -> Bytes.set plane (((y0 + (k / size)) * stride)
  *     + x0 + (k mod size)) (Char.chr (clamp 0 255 v))) values
@@ -315,7 +315,7 @@ let slice (b : Bitstream.t) (sq : sequence) (ph : picture_header) ~(past : frame
       let r = refs fwd t.backward fv bv in
       let py, pbl, prl = if r = [] then (Array.make 256 128, Array.make 64 128, Array.make 64 128) else predict_macroblock sq ~mx ~my r in
       (* the residual of the coded blocks, added -- and, for the
-       * analyzer when it asks (claude: only then, it doubled the
+       * analyzer when it asks (only then, it doubled the
        * work), added to gray alone: what was sent *)
       let residual = Option.is_some sent in
       let ry = Array.make 256 128 and rb = Array.make 64 128 and rr = Array.make 64 128 in

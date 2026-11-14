@@ -403,4 +403,4 @@ visual-all:
   test-vs-ocaml ix ix-arm kernels-ix test-ix test-ix-fixpoint test-ix-arm \
   test-ix-fixpoint-arm test-ix-kernels self self-quick self-tix \
   self-quick-tix self-mix self-quick-mix test-all test-lite test-tix \
-  test-mix hooks test-long test-vs-github visual visual-all
+  test-mix hooks test-long test-speed test-vs-github visual visual-all

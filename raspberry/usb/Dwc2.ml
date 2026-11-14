@@ -91,7 +91,7 @@ let transfer t ch =
             set t (base + 0x14) (get t (base + 0x14) + actual);
             3                                                        (* XFERCOMPL, CHHLTD *)
         | Usb.Stall -> 0x8 lor 2
-        (* claude: an interrupt endpoint's NAK halts the channel, as
+        (* an interrupt endpoint's NAK halts the channel, as
          * QEMU's; a control or bulk one's does not: the channel stays
          * enabled, the transfer tried again when its HCINT is read
          * (QEMU's tries again from a timer: a usb-net's bulk IN left
@@ -122,7 +122,7 @@ let gintsts t =
 let update t = t.line (get t 0x08 land 1 <> 0 && gintsts t land get t 0x18 <> 0)
 
 let read t off _ =
-  (* claude: a channel still enabled (a NAK tried again) *)
+  (* a channel still enabled (a NAK tried again) *)
   if off >= 0x508 && off < 0x600 && off land 0x1f = 0x08 && get t (off - 8) land (1 lsl 31) <> 0 then transfer t ((off - 0x500) / 0x20);
   match off with
   | 0x14 -> gintsts t

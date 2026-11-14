@@ -198,7 +198,7 @@ let transfer size opc =
   | 2, 2 -> Some (true, Some X)
   | _ -> None
 
-(* claude: the floating point's loads and stores (bit 26): a single
+(* the floating point's loads and stores (bit 26): a single
  * (S), a double (D), 128 bits (Q); the literal, the pairs, the
  * immediate offsets and the register offset, as the integer ones *)
 let fsize_shift = function S -> 2 | D -> 3 | Q -> 4
@@ -305,7 +305,7 @@ let dp_reg w =
        | _ -> Undefined w)
   | _ -> Undefined w
 
-(* claude: the scalar floating point's data processing (bits 28-24
+(* the scalar floating point's data processing (bits 28-24
  * 11110, 11111 for the multiply-adds): singles (type 00) and doubles
  * (01); the conversions with the integer registers; and, bit 30 set,
  * the one Advanced SIMD scalar form a kernel's C uses: sshr, ushr d *)
@@ -346,7 +346,7 @@ let fp_dp w =
   | [%bits "0 00 11110 0 double:b 1 imm8:8 100 00000 rd:5"] -> Fmov_imm { double; rd; imm8 }
   | _ -> Undefined w
 
-(* claude: movi, a 64-bit vector (Q = 0) only: its element (8, 16, 32
+(* movi, a 64-bit vector (Q = 0) only: its element (8, 16, 32
  * bits, shifted; or op = 1, cmode 1110: a mask of bytes) repeated *)
 let simd w =
   match w with
@@ -607,7 +607,7 @@ let syndrome ec iss = Int64.of_int ((ec lsl 26) lor (1 lsl 25) lor iss)
 
 let eret st =
   let v = st.spsr.(st.el) and pc = st.elr.(st.el) in
-  (* claude: a return to AArch32 (M[4]): usr's mode bits EL0 and SP_EL0
+  (* a return to AArch32 (M[4]): usr's mode bits EL0 and SP_EL0
    * as AArch64's, the instructions the board's (Pi4: Arm32's) *)
   st.aarch32 <- I64.(v land 0x10L) <> 0L;
   let m = Int64.to_int I64.(v land 0x3ffL) in
@@ -669,7 +669,7 @@ let effective st ~addr a shift =
 let write_back st = function Some (rn, v) -> set_sp st X rn v | None -> ()
 
 (*****************************************************************************)
-(* claude: the scalar floating point *)
+(* the scalar floating point *)
 (*****************************************************************************)
 
 (* A single is computed as a double, rounded once when written: exact

@@ -52,7 +52,7 @@ let spawn caps prog args ~stdin ~stdout =
   flush_all ();
   match CapUnix.fork caps () with
   | 0 ->
-      (* claude: in the child, the descriptors put in place, then exec *)
+      (* in the child, the descriptors put in place, then exec *)
       if stdin <> Unix.stdin then Unix.dup2 stdin Unix.stdin;
       if stdout <> Unix.stdout then Unix.dup2 stdout Unix.stdout;
       List.iter (fun f -> try CapUnix.execv caps f (Array.of_list (prog :: args)) with Unix.Unix_error _ -> ()) candidates;

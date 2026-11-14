@@ -115,7 +115,7 @@ let update computer model =
       radius;
       speed;
       spinning;
-      (* claude: 60 frames a second, so a turn per second is 6 degrees
+      (* 60 frames a second, so a turn per second is 6 degrees
        * a frame *)
       angle = (if spinning then model.angle +. (6. *. speed) else model.angle);
     }

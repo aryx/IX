@@ -313,7 +313,7 @@ ulstmnt:
 | LDO stmnt LWHILE LPAREN cexpr RPAREN SEMI { Some (Dowhile (body $2, $5)) }
 | LRETURN zcexpr SEMI                   { Some (Return ($2, link (Option.get !Declare.thisfn))) }
 | LSWITCH LPAREN cexpr RPAREN stmnt
-    { (* claude: 0-(0-e), as cc.y: the switch's value, converted as an int *)
+    { (* 0-(0-e), as cc.y: the switch's value, converted as an int *)
       Some (Switch (bin Sub (cnst Tint 0L) (bin Sub (cnst Tint 0L) $3), body $5)) }
 | LBREAK SEMI                           { Some Break }
 | LCONTINUE SEMI                        { Some Continue }

@@ -42,7 +42,7 @@ let flush_out (_ : < Cap.stdout; .. >) = print_string (Buffer.contents out); Buf
 let eprint = Console.eprint
 
 (* None if it does not exist; an error if it cannot be read *)
-(* claude: mk's names are words, a path only when mk opens one *)
+(* mk's names are words, a path only when mk opens one *)
 let path name = match FS.path name with Ok p -> p | Error m -> raise (Sys_error (name ^ ": " ^ m))
 let read_file (caps : < Cap.open_in; .. >) (file : string) : string option =
   if Sys.file_exists file then Some (FS.read caps (path file)) else None

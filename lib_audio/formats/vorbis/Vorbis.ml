@@ -363,7 +363,7 @@ let dct4_simple (x : float array) : float array =
       for k = 0 to m - 1 do sum := !sum +. (x.(k) *. Float.cos (Float.pi /. float_of_int m *. (float_of_int n +. 0.5) *. (float_of_int k +. 0.5))) done;
       !sum)
 
-(* claude: opti: the same by a Fourier transform of half the size: the
+(* opti: the same by a Fourier transform of half the size: the
  * pairs (x.(2j), x.(m-1-2j)) as complex numbers, turned before (by
  * (4j+1) pi / 4m) and after (by k pi / m): with the transform's own
  * 2 pi jk / (m/2), that is (4j+1)(4k+1) pi / 4m, the cosine's angle. A block of 2048 samples: 1024 x 1024 cosines, or 512 log 512

@@ -189,7 +189,7 @@ let pad (n : int) (a : t) : int array = Array.init n (fun i -> limb a i)
  * the multiple of m that zeroes the lowest limb, and a shift by one.
  * What the tests hold [redc_mul] against. *)
 let redc_mul_simple (md : modulus) (a : int array) (b : int array) : int array =
-  (* claude: was [m = pad md.n md.m], a new array at each of the
+  (* was [m = pad md.n md.m], a new array at each of the
      thousands of products of a signature's check *)
   let n = md.n and m = md.mp in
   let t = Array.make (n + 2) 0 in
@@ -369,7 +369,7 @@ let mont_equal (a : mont) (b : mont) : bool = a = b
 
 (* a+b and a-b mod m, both below m, on the n limbs as they are -- no
    normalizing, one array each; the curves' doublings do a dozen a
-   point. (claude: was add/sub on normalized copies, then pad: three
+   point. (was add/sub on normalized copies, then pad: three
    arrays and a compare each) *)
 let mont_add (md : modulus) (a : mont) (b : mont) : mont =
   let n = md.n in

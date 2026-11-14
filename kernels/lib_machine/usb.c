@@ -284,7 +284,7 @@ value usb_transfer(value vdesc, value vpid, value vlen)
   unsigned pkts = len == 0 ? 1 : (len + mps - 1) / mps;
   unsigned i, hcint, tries;
   int split = split_hub != 0 && USB(GSNPSID) != 0x4f54294a;
-  /* claude: a channel left enabled by a transfer that did not end (its
+  /* a channel left enabled by a transfer that did not end (its
    * device unplugged: no answer) is disabled first, and waited on: a
    * channel still enabled starts nothing, and every transfer after
    * would fail, to any device */
@@ -350,7 +350,7 @@ value usb_state(value unit)
   return copy_string(s);
 }
 
-/* claude: the PID the channel's next packet would have (HCTSIZ's bits
+/* the PID the channel's next packet would have (HCTSIZ's bits
  * 29-30: 0 DATA0, 2 DATA1), after a transfer: the endpoint's data
  * toggle, which mini-9pi keeps between transfers (usbdwc's hctsiz&Pid) */
 value usb_pid(value unit)
@@ -359,7 +359,7 @@ value usb_pid(value unit)
   return Val_long((USB(HCTSIZ(0)) >> 29) & 3);
 }
 
-/* claude: a second channel, its own DMA page, for a transfer left
+/* a second channel, its own DMA page, for a transfer left
  * pending: a bulk IN the controller tries again at each NAK by itself
  * (the DWC2's, QEMU's too: a disabled channel's retries go on there),
  * started, then polled from the clock (mini-9pi's Etherusb: a frame a

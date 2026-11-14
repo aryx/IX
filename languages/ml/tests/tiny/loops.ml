@@ -12,7 +12,7 @@ let () =
   print_int !s; print_newline ();
   print_int (count 1000000 0); print_newline ();
   print_string (if even 1000001 then "even" else "odd"); print_newline ();
-  (* claude: not with a ref, let g = !f in f := (fun x -> g x * k): ocaml-light's
+  (* not with a ref, let g = !f in f := (fun x -> g x * k): ocaml-light's
    * ocamlopt makes g an alias of f, and prints 1 (plan_ml.md's Status) *)
   let f = List.fold_left (fun g k -> fun x -> g x * k) (fun x -> x) [ 1; 2; 3 ] in
   print_int (f 1); print_newline ();

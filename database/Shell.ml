@@ -58,7 +58,7 @@ let print_row t (vs : Bytecode.value list) =
     | v :: rest -> (
         if i > 0 then Buffer.add_string b sep;
         match cell t.mode v with
-        (* claude: chidb prints the type, SQL_NOTVALID, as the column *)
+        (* chidb prints the type, SQL_NOTVALID, as the column *)
         | None -> Buffer.add_string b "ERROR: Column -1 return an invalid type.\n"
         | Some s -> Buffer.add_string b s; go (i + 1) rest)
   in

@@ -14,7 +14,7 @@ type fd = int
 let ufd (n : fd) : Unix.file_descr = Obj.magic n
 let num (d : Unix.file_descr) : fd = Obj.magic d
 
-(* claude: as Plan 9's rc, a relative name is looked up in $path even
+(* as Plan 9's rc, a relative name is looked up in $path even
  * with a / in it (git/add), unless it starts with ./ or ../ *)
 let candidates ~path name =
   let starts p = String.length name >= String.length p && String.sub name 0 (String.length p) = p in
@@ -82,7 +82,7 @@ let wait_any caps = Option.map (fun (pid, st) -> pid, status_of pid st) (Procs.w
 let code (s : string) : int =
   if String.for_all (fun c -> c = '0' || c = '|') s then 0
   else
-    (* claude: as rc's atoi: the leading number, 1 if none or 0 ("3|4" is 3, "0|4" 1) *)
+    (* as rc's atoi: the leading number, 1 if none or 0 ("3|4" is 3, "0|4" 1) *)
     let n = ref 0 and i = ref 0 in
     while !i < String.length s && s.[!i] >= '0' && s.[!i] <= '9' do
       n := (!n * 10) + Char.code s.[!i] - 48; incr i done;

@@ -151,7 +151,7 @@ let run (r : Repo.t) o =
   let checkedin ~from_idx (e : ent) change =
     if cleanidx then from_idx && e.state <> Removed
     else
-      (* claude: a file of the commit; git9 tests the path with access(),
+      (* a file of the commit; git9 tests the path with access(),
        * which a directory passes too: an index line left for a file that
        * became a directory then reads as its removal, and the next commit
        * drops the directory (plan_vcs.md, deliberate difference 6) *)

@@ -4,7 +4,7 @@ type t =
   | Hex of string
   | Rgb of int * int * int
 
-(* claude: opti: Basics.clamp's comparisons, but on ints, where OCaml
+(* opti: Basics.clamp's comparisons, but on ints, where OCaml
  * compares them inline: the polymorphic clamp called the runtime's
  * compare three times a colour.
  * old: Basics.clamp 0 255 number *)

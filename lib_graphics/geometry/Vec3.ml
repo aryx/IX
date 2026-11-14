@@ -29,7 +29,7 @@ let centroid (points : t list) : t =
   let n = float_of_int (List.length points) in
   scale (1. /. n) (List.fold_left add (0., 0., 0.) points)
 
-(* claude: bugfix: spheres drawn "cut" at the top.
+(* bugfix: spheres drawn "cut" at the top.
  *
  * The symptom: every sphere was missing its top cap, the ring of faces
  * around the north pole; you could see through it to the white

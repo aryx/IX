@@ -67,7 +67,7 @@ type pstate_field = Spsel | Daifset | Daifclr
 
 type barrier = Dsb | Dmb | Isb | Clrex
 
-(* claude: the floating point's sizes, operations *)
+(* the floating point's sizes, operations *)
 type fsize = S | D | Q
 type fop2 = Fadd | Fsub | Fmul | Fdiv | Fnmul
 type fop1 = Fmov | Fabs | Fneg | Fsqrt
@@ -131,7 +131,7 @@ type t =
    * [ordered]: acquire for a load, release for a store; [rs] the
    * status register of an exclusive store *)
   | Excl of { load : bool; size : size; ordered : bool; exclusive : bool; rs : reg; rt : reg; rn : reg }
-  (* claude: the scalar floating point (the OCaml runtime's doubles:
+  (* the scalar floating point (the OCaml runtime's doubles:
    * kernels/xv6's Pi4 kernel), on v0-v31's low 64 bits (s, d); [q] a
    * 128-bit load or store (a variadic function saving v0-v7, a struct
    * copied: gcc's), its high half kept (state's fph; a scalar load or
@@ -190,8 +190,8 @@ type state = {
   mutable write_sysreg : int -> int64 -> unit;
   mutable system : state -> t -> unit;
   mutable monitor : int;
-  (* claude: v0-v31's low 64 bits, the scalar floating point's s and d *)
+  (* v0-v31's low 64 bits, the scalar floating point's s and d *)
   fp : int64 array;
-  fph : int64 array;                (* claude: their high halves (a q's) *)
-  mutable aarch32 : bool;           (* claude: EL0 in AArch32 (eret's M[4]): the board runs it *)
+  fph : int64 array;                (* their high halves (a q's) *)
+  mutable aarch32 : bool;           (* EL0 in AArch32 (eret's M[4]): the board runs it *)
 }

@@ -10,7 +10,7 @@ type entry =
   | Key of string * int * int
   | At of float * float * int * int
   | Button of bool (* the right one *) * int * int
-  | Middle of int * int (* claude: the middle button *)
+  | Middle of int * int (* the middle button *)
   | Type of string * int
   | Wheel of float * int (* ix: the wheel's notches *)
 
@@ -38,7 +38,7 @@ let parse_entry (entry : string) : (entry, string) result =
          "bad -script entry %S, expected key:n, key:a-b, at(x;y):n, click:n, rclick:n, mclick:n, wheel(notches):n or type(text):n"
          entry)
   in
-  (* claude: the last ':', not the first: the frames never hold one, and
+  (* the last ':', not the first: the frames never hold one, and
    * a text typed may (a URL, "type(about:history):3", TinyNetscape) *)
   match String.rindex_opt entry ':' with
   | None -> bad ()
@@ -116,7 +116,7 @@ let button_changes (script : t) (frame : int) : (bool * bool) list =
   List.map (fun r -> (r, true)) (List.filter (fun r -> not (List.mem r before)) now)
   @ List.map (fun r -> (r, false)) (List.filter (fun r -> not (List.mem r now)) before)
 
-(* claude: the middle button's edges, as [button_changes]' *)
+(* the middle button's edges, as [button_changes]' *)
 let middle_changes (script : t) (frame : int) : bool list =
   let down f = List.exists (function Middle (a, b) -> covers f a b | _ -> false) script in
   match (down (frame - 1), down frame) with (false, true) -> [ true ] | (true, false) -> [ false ] | _ -> []

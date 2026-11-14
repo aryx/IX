@@ -66,9 +66,9 @@ let max_difference ~(idct : float array -> float array) ~(upsampling : Jpeg.upsa
  * rounding (libjpeg's is in integers), the upsampling's *)
 let test_libjpeg () =
   [ "q75_444"; "q75_422"; "q75_420"; "gray"; "restart";
-    (* claude: the same picture in scans (Jpeg_progressive) *)
+    (* the same picture in scans (Jpeg_progressive) *)
     "progressive"; "progressive_444"; "progressive_gray"; "progressive_restart";
-    (* claude: 33 by 17: a scan of one component has fewer blocks than the MCUs do *)
+    (* 33 by 17: a scan of one component has fewer blocks than the MCUs do *)
     "progressive_odd" ]
   |> List.iter (fun name ->
          let d = max_difference ~idct:Dct.idct_aan ~upsampling:Jpeg.Triangle name in

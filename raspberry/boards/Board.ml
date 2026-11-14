@@ -91,7 +91,7 @@ type t = {
   pwm : Pwm.t;                     (* the jack's sound *)
   uart : Pl011.t;
   mini : Miniuart.t;
-  (* claude: since the last [where]: the instructions run, and the
+  (* since the last [where]: the instructions run, and the
    * time skipped at WFIs (in instructions) *)
   mutable ran : int;
   mutable waited : int;
@@ -833,7 +833,7 @@ let turn t (c : core) ~batch =
   let first = c.id = 0 in
   let svc st _ = Arm32.take st Arm32_isa.Supervisor_call ~ret:(st.Arm32_isa.r.(15) - 4) in
   let mask = (1 lsl cache_bits) - 1 in
-  (* claude: a WFI ends the batch where it is (the core waits there):
+  (* a WFI ends the batch where it is (the core waits there):
    * the time skipped at the WFI, not later in the batch between two
    * instructions -- mini-xv6's tick read the counter, the batch went
    * on to its end, 10ms were skipped there, and the compare it then

@@ -5,6 +5,9 @@
 
 type posix = float
 
+(* [n] as a time, unchanged: unlike Elm's, it does not divide by
+ * 1000. The recorded frames of the games and of mini-files depend on
+ * it, because a program's first time is millis_to_posix 1. *)
 val millis_to_posix : int -> posix
-(* (converts the seconds of a time to milliseconds) *)
+(* a time's milliseconds, if the time is in seconds *)
 val posix_to_millis : posix -> int

@@ -7,7 +7,7 @@
 
 (* See Lighting.mli *)
 
-(* claude: this is a DIRECTIONAL light -- a "sun" -- not a light at a
+(* this is a DIRECTIONAL light -- a "sun" -- not a light at a
  * position. There are 3 common kinds of light in 3D graphics, in
  * increasing order of realism/cost:
  *  - directional (what this is): infinitely far away, so its rays are
@@ -42,14 +42,14 @@
  * this constant and recompiling. *)
 let light_dir : Vec3.t = Vec3.normalize (1., 1.3, 0.6)
 
-(* claude: never fully black (a face directly facing away from the
+(* never fully black (a face directly facing away from the
  * light stays at least at ambient brightness) -- a real scene has some
  * ambient/bounced light even on surfaces not directly facing the sun,
  * and a fully-black face would look like a hole rather than a shaded
  * surface *)
 let ambient = 0.25
 
-(* claude: pure -- "how lit is a surface facing this direction",
+(* pure -- "how lit is a surface facing this direction",
  * independent of any shading mode: whether to call it once per face,
  * once per vertex, or once per pixel with an interpolated normal (or
  * not at all, without lighting) is the shading's decision, not the

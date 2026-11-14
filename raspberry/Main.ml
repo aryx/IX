@@ -37,7 +37,7 @@ window: a line a second on standard error).
  * terminal, Ctrl-A x to quit), the console's output written, the
  * screen shown 30 times a second of the host's, QMP served.
  *
- * claude: with a window, the board's time ([now], microseconds) is kept
+ * with a window, the board's time ([now], microseconds) is kept
  * from running ahead of the host's: an idle kernel's time skips to its
  * next tick (the WFI), so without it a key held 100ms of a person's
  * time lasted far longer in the board's, and 9pi's usb/kb repeated it
@@ -124,7 +124,7 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
        incr n;
        if !n land 15 = 0 then begin
          if paced then pace ();
-         (* claude: on its own line, not after a prompt *)
+         (* on its own line, not after a prompt *)
          Option.iter (fun st -> Option.iter (fun l -> Console.eprint caps ((if !at_bol then "" else "\n") ^ "mini-qemu: " ^ l ^ "\n"); at_bol := true)
            (Status.report st ~now:(now ()))) status;
          locked (fun () ->
@@ -289,7 +289,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
         Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0))) !prof;
       let log s = if !debug || !trace <> 0 then Console.eprint caps ("mini-qemu: " ^ s ^ "\n") in
       let out = Buffer.create 256 in
-      (* claude: -symbols ELF, for -status: none when not an ELF (9pi's
+      (* -symbols ELF, for -status: none when not an ELF (9pi's
        * Plan 9 a.out) *)
       let symbols = match !symbols with
         | None -> []
@@ -319,7 +319,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
                (try Pi4.load_elf board image with Elf.Bad m -> Console.eprint caps ("mini-qemu: " ^ k ^ ": " ^ m ^ "\n"); exit 1)
              else Pi4.load_raw board image
          | None -> Console.eprint caps "mini-qemu: raspi4b: -kernel only\n"; exit 2);
-        (* claude: the Pi4's framebuffer in the window and QMP's
+        (* the Pi4's framebuffer in the window and QMP's
          * screendump; the USB keyboard and mouse on its DWC2 *)
         let machine = { Qmp.screen = (fun () -> Pi4.screen board); send_keys = Pi4.send_keys board;
                         key = Pi4.key board; pointer = Pi4.pointer board } in

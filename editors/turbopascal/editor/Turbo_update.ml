@@ -11,7 +11,7 @@ open Turbo_model
 (* Update *)
 (*****************************************************************************)
 
-(* claude: Esc then a digit, F1 to F10 (0 for F10): the convention of
+(* Esc then a digit, F1 to F10 (0 for F10): the convention of
  * Midnight Commander and the terminals without function keys, for the
  * keyboards whose top row is the volume's and the screen's, the
  * desktop's or the browser's. Two keys typed one after the other, or

@@ -21,7 +21,7 @@ type body = {
   bounciness : number;
   friction : number;
   upright : bool;
-  group : int; (* claude: 0: none. Two bodies of the same group do not collide *)
+  group : int; (* 0: none. Two bodies of the same group do not collide *)
   ax : number;
   ay : number;
 }
@@ -210,7 +210,7 @@ type world = { bodies : body list; memory : Solver.memory; joints : Joint2d.t li
 
 let world (bodies : body list) : world = { bodies; memory = Solver.nothing; joints = [] }
 
-(* claude: one step of [dt] seconds of a world: [simulate]'s tick, or
+(* one step of [dt] seconds of a world: [simulate]'s tick, or
  * one of its small steps. What pushes a body (ax, ay) is left on it:
  * [simulate] uses it up when the tick is over, so that every small
  * step feels the same push *)

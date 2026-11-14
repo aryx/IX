@@ -51,7 +51,7 @@ type t = {
   (* where the caret is in the focused field, in characters; clamped
      by the field, since only it knows how long its text is *)
   cursor : int;
-  (* claude: how the mouse moved up since the last frame, and since the
+  (* how the mouse moved up since the last frame, and since the
    * press, up less down and in all: what a knob or a rotary switch,
    * dragged, turns by -- and what tells a click on one from a drag *)
   dy : float;
@@ -59,12 +59,12 @@ type t = {
   moved : float;
   (* the frame being built, in reverse order *)
   painted : Widget.paint list;
-  (* claude: and what goes over all of it, whenever it was asked for:
+  (* and what goes over all of it, whenever it was asked for:
    * an open menu's items -- Dear ImGui's popup layer, so that a menu
    * can be asked for first, where its choice is needed, and still be
    * drawn on top *)
   overlay : Widget.paint list;
-  (* claude: the fields asked for in the frame, kept into the next --
+  (* the fields asked for in the frame, kept into the next --
    * so that a click ending in a field moves the focus at the start of
    * that frame, before the fields asked earlier have drawn themselves
    * as still having it *)
@@ -106,7 +106,7 @@ let frame (input : Widget.input) (t : t) =
   let capture =
     if press then Elsewhere (* pressed; no widget has claimed it yet *)
     else if input.mdown then t.capture (* still held: the capture holds *)
-      (* claude: the frame of the release still needs the capture, to
+      (* the frame of the release still needs the capture, to
        * know where the press that ends in it began *)
     else if t.was_down then t.capture
     else Free
@@ -118,7 +118,7 @@ let frame (input : Widget.input) (t : t) =
   let focus =
     if tab then if shift then Focus.previous focus else Focus.next focus else focus
   in
-  (* claude: the release of a press that a field has held since it went
+  (* the release of a press that a field has held since it went
    * down gives that field the keys -- known now, at the start of the
    * frame, so that every field is drawn as it will be after it *)
   let focus =
@@ -171,12 +171,12 @@ let interact (t : t) (b : Widget.box) =
   let i = t.input in
   let hot =
     Widget.contains b i.mx i.my
-    (* claude: ... unless another widget's popup is showing, and then
+    (* ... unless another widget's popup is showing, and then
      * the mouse is its, wherever it goes *)
     && (match t.open_menu with Some m -> m = Widget.id b | None -> true)
     && (match t.grab with Some m -> m = Widget.id b | None -> true)
   in
-  (* claude: the first hot widget of the frame claims the press. In
+  (* the first hot widget of the frame claims the press. In
    * immediate mode the widgets are asked in drawing order, so with
    * overlapping widgets the one *behind* wins -- a retained tree hit
    * tests front to back instead (notes_gui.md section 6) *)
@@ -185,7 +185,7 @@ let interact (t : t) (b : Widget.box) =
   in
   let mine = capture = Held (id b) in
   let held = mine && i.mdown in
-  (* claude: released inside, having been pressed inside -- or with
+  (* released inside, having been pressed inside -- or with
    * nothing pressed at all, which is a click that began and ended
    * between two updates (under 1/60 s) and would otherwise be lost *)
   let clicked = hot && i.mclick && (mine || capture = Free) in
@@ -297,7 +297,7 @@ let field ~(enabled : bool) (t : t) (b : Widget.box) (text : string) =
       else Text.edit ~typed:t.input.typed ~pressed text cursor
     in
     let t = draw t (Look.field th b text ~caret:(if focused then Some cursor else None) ~enabled:true) in
-    (* claude: the caret is the focused field's alone: a field without
+    (* the caret is the focused field's alone: a field without
      * the keys clamping it to its own, shorter, text moved the caret of
      * the one being typed in (found by examples/gui4/tests/Unit_gui4) *)
     ((if focused then { t with cursor } else t), text)
@@ -324,14 +324,14 @@ let menu (t : t) (b : Widget.box) (items : string list) (chosen : int) =
   let chosen = if t.input.mclick then match under_mouse with Some i -> i | None -> chosen else chosen in
   let open_menu =
     if clicked then if was_open then None else Some me
-      (* claude: a click anywhere while it is open closes it: on an
+      (* a click anywhere while it is open closes it: on an
        * item it chose one, elsewhere it changed its mind *)
     else if was_open && t.input.mclick then None
     else t.open_menu
   in
   let t = { t with open_menu } in
   let label = match List.nth_opt items chosen with Some s -> s | None -> "" in
-  (* claude: drawn as it is after this frame's click, not before: open
+  (* drawn as it is after this frame's click, not before: open
    * on the frame of the click that opens it, as a retained toolkit
    * (which paints after its callbacks) and MVU (which draws the view
    * of the new model) show it -- rather than a frame late *)
@@ -425,7 +425,7 @@ let text_area (t : t) (b : Widget.box) (edit : Text_edit.t) =
       let edit =
         if control && pressed "z" then if shift then Text_edit.redo edit else Text_edit.undo edit
         else if control && pressed "y" then Text_edit.redo edit
-          (* claude: a shortcut is not typing. Natively Control-C
+          (* a shortcut is not typing. Natively Control-C
            * produces no character at all, but a browser's keydown
            * still carries one, so the guard has to be here *)
         else if t.input.typed <> "" && not control then Text_edit.insert t.input.typed edit

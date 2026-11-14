@@ -73,7 +73,7 @@ let rec docode mulval (hp : string) i (code : Buffer.t) r0 r1 =
  * the ops are prepended as found, from the last *)
 let search mulval len =
   let shmax = let rec go s = if s >= 30 || 1 lsl s >= mulval then s else go (s + 1) in go 1 in
-  (* claude: shmax ends at 30 when no shift reaches mulval, valmax at 2^29, as gen1's loop *)
+  (* shmax ends at 30 when no shift reaches mulval, valmax at 2^29, as gen1's loop *)
   let valmax = 1 lsl (min shmax 29) in
   let ur1 = 4 and ur0 = 8 and sr1 = 1 and sr0 = 2 in
   let hint = ref "" in

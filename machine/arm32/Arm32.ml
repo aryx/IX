@@ -86,7 +86,7 @@ let decode w =
   (* the unconditional space: clrex and the barriers (full system) *)
   | [%bits "1111 0101 0111 1111 1111 0000 0001 1111"] -> Clrex
   | [%bits "1111 0101 0111 1111 1111 0000 kind:4 1111"] when kind >= 4 && kind <= 6 -> Barrier { kind }
-  (* claude: cps (ARMv6), a bare-metal Pi1 kernel's cpsie and cpsid:
+  (* cps (ARMv6), a bare-metal Pi1 kernel's cpsie and cpsid:
    * imod 2 enables, 3 disables; M, a mode *)
   | [%bits "1111 0001 0000 imod:2 m:b 0 0000000 a:b i:b f:b 0 mode:5"]
     when (imod >= 2 || (imod = 0 && m)) && (m || mode = 0) && (imod <> 0 || not (a || i || f)) ->
@@ -126,7 +126,7 @@ let decode w =
   (* the status register: CPSR, or SPSR (privileged) *)
   | [%bits "_:4 000 10 spsr:b 0 0 1111 rd:4 0000 0000 0000"] -> Mrs { cond; rd; spsr }
   | [%bits "_:4 000 10 spsr:b 1 0 fields:4 1111 0000 0000 rm:4"] -> Msr { cond; spsr; fields; src = Sreg (rm, No_shift) }
-  (* claude: ARMv5TE's halfword multiplies (GCC emits smlabb) *)
+  (* ARMv5TE's halfword multiplies (GCC emits smlabb) *)
   | [%bits "_:4 000 10 op:2 0 rd:4 rn:4 rs:4 1 y:b x:b 0 rm:4"] ->
       let mh op = Mulhalf { cond; op; x; y; rd; rn; rm; rs } in
       (match op with
@@ -143,13 +143,13 @@ let decode w =
   | [%bits "_:4 001 10 spsr:b 10 fields:4 1111 rot:4 imm8:8"] when fields <> 0 -> Msr { cond; spsr; fields; src = Imm { imm8; rot = rot * 2 } }
   | [%bits "_:4 001 10 _:2 0 _:20"] -> Undefined w
   | [%bits "_:4 001 op:4 s:b rn:4 rd:4 rot:4 imm8:8"] -> Dp { cond; op = dp_ops.(op); s; rd; rn; op2 = Imm { imm8; rot = rot * 2 } }
-  (* claude: rev, rev16, revsh *)
+  (* rev, rev16, revsh *)
   | [%bits "_:4 011 01011 1111 rd:4 1111 r16:b 011 rm:4"] -> Rev { cond; kind = (if r16 then Rev16 else Rev32); rd; rm }
   | [%bits "_:4 011 01111 1111 rd:4 1111 1011 rm:4"] -> Rev { cond; kind = Revsh; rd; rm }
   (* ARMv6's extends, sxtb uxth sxtah...: Rn 15 for none (not the
    * dual-byte forms, 16) *)
   | [%bits "_:4 011 01 unsigned:b 1 half:b rn:4 rd:4 rot:2 00 0111 rm:4"] -> Extend { cond; signed = not unsigned; half; rd; rn; rm; rot }
-  (* claude: pkhbt, pkhtb (clang emits pkhbt, GCC does not) *)
+  (* pkhbt, pkhtb (clang emits pkhbt, GCC does not) *)
   | [%bits "_:4 011 01000 rn:4 rd:4 imm:5 tb:b 01 rm:4"] -> Pkh { cond; tb; rd; rn; rm; imm }
   | [%bits "_:4 011 _:20 1 _:4"] -> Undefined w
   (* a word or a byte, at an immediate offset or a shifted register's *)

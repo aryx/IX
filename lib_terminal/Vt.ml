@@ -385,7 +385,7 @@ let named_key (name : string) : string option =
   | "F2" -> Some "\x1bOQ"
   | "F3" -> Some "\x1bOR"
   | "F4" -> Some "\x1bOS"
-  (* claude: xterm's F5 to F12, numbered with gaps, as the VT220's were *)
+  (* xterm's F5 to F12, numbered with gaps, as the VT220's were *)
   | "F5" -> Some "\x1b[15~"
   | "F6" -> Some "\x1b[17~"
   | "F7" -> Some "\x1b[18~"
@@ -396,7 +396,7 @@ let named_key (name : string) : string option =
   | "F12" -> Some "\x1b[24~"
   | _ -> None
 
-(* claude: a named key with Control or Alt, as xterm sends it: the
+(* a named key with Control or Alt, as xterm sends it: the
    modifier as a parameter, 1 + 2 for Alt + 4 for Control -- ESC [ 20 ;
    5 ~ is Control-F9, ESC [ 1 ; 3 A Alt-up; a key of one byte with Alt
    is Escape then the byte, Meta as terminals send it *)
@@ -414,11 +414,11 @@ let key ~(alt : bool) ~(ctrl : bool) (name : string) : string option =
   | _ when ctrl && String.length name = 1 && Char.lowercase_ascii name.[0] >= 'a' && Char.lowercase_ascii name.[0] <= 'z' ->
       let c = String.make 1 (Char.chr (Char.code (Char.lowercase_ascii name.[0]) - Char.code 'a' + 1)) in
       Some (if alt then "\x1b" ^ c else c)
-  (* claude: the two a terminal sends without a letter, Emacs's C-SPC
+  (* the two a terminal sends without a letter, Emacs's C-SPC
      (set the mark: NUL, C-@) and C-/ (undo: 0x1F, C-_) *)
   | " " | "space" | "Space" | "@" when ctrl -> Some "\x00"
   | "/" | "_" | "-" when ctrl -> Some "\x1f"
-  (* claude: Control and a digit, which ASCII has no code for: xterm's
+  (* Control and a digit, which ASCII has no code for: xterm's
      modifyOtherKeys, ESC [ 27 ; 5 ; <the digit's code> ~ (Control-9
      ESC [ 27 ; 5 ; 57 ~), one key to a program that does not know it
      (Line_discipline.split_keys), Control and an F key to TinyTurboPascal

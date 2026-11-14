@@ -55,7 +55,7 @@ let is_banner (t : Token_ml.t) : bool = t.kind = Comment && String.length t.text
  * (polymorphic variants in the playground's, which mini-ml has not) *)
 type binder = No_binder | Let_top | Let_inside | Type_binder
 
-(* claude: what the neighbours say; (the playground's:) the tree then says better where it
+(* what the neighbours say; (the playground's:) the tree then says better where it
  * can ("From the tree" below) *)
 let guess (toks : Token_ml.t list) : (Token_ml.t * category) list =
   (* the code, without the comments, for looking at neighbours *)
@@ -234,7 +234,7 @@ let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list = guess t
  * (Names_ml: a parameter, a local, a field), where the text parses; not
  * of a capability, which the repository's habits say better (caps).
  * (The playground's second pass is over a tree of its own parser's.)
- * claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
+ * rev_map and rev, not List.map: OCaml 4.14's map recurses once
  * a token *)
 let lines (src : string) : span list array =
   let names = Names_ml.names src in

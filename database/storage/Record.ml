@@ -17,7 +17,7 @@ let get_varint32 b off =
   let byte i = Char.code (Bytes.get b (off + i)) land 0x7f in
   (byte 0 lsl 21) lor (byte 1 lsl 14) lor (byte 2 lsl 7) lor byte 3
 
-(* claude: chidb's putVarint32 keeps 28 bits, 7 a byte, the high bit
+(* chidb's putVarint32 keeps 28 bits, 7 a byte, the high bit
  * set on the first three *)
 let put_varint32 b off v =
   let at i shift more = Bytes.set b (off + i) (Char.chr (((v lsr shift) land 0x7f) lor if more then 0x80 else 0)) in
@@ -52,7 +52,7 @@ let pack (vs : value list) : string =
 let types b off =
   let size = Char.code (Bytes.get b off) in
   let rec go pos acc =
-    (* claude: the byte read once, into a variable: reading it again after
+    (* the byte read once, into a variable: reading it again after
      * the list cell's allocation miscompiles on arm64 (OCaml 4.11 to 5.3),
      * the second read reusing an address a minor GC made stale
      * (docs/bugs/ocaml.md) *)

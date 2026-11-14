@@ -10,7 +10,7 @@
 
 open Highlight_code
 
-(* claude: not $, an immediate's prefix ($_do_divide_error: a use) *)
+(* not $, an immediate's prefix ($_do_divide_error: a use) *)
 let is_start c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_' || c = '.'
 let is_ident c = is_start c || (c >= '0' && c <= '9')
 let is_digit c = c >= '0' && c <= '9'
@@ -26,7 +26,7 @@ let contains_s (s : string) (sub : string) : bool =
 
 let lines (src : string) : span list array =
   let lines = String.split_on_char '\n' src in
-  (* claude: ARM's assembly comments with @ and writes immediates with #
+  (* ARM's assembly comments with @ and writes immediates with #
    * (mov r0, #0x40); x86's gas comments with # (the ~/ix pass: ARM lines
    * cut at their immediates) *)
   let arm = List.exists (fun l -> let t = String.trim l in String.length t > 0 && t.[0] = '@') lines || List.exists (fun l -> contains_s l " @ " || contains_s l "\t@ ") lines in
@@ -49,7 +49,7 @@ let lines (src : string) : span list array =
           add y start (String.sub l start (!i - start)) Comment
         end
         else if c = '/' && !i + 1 < n && l.[!i + 1] = '*' then in_comment := true
-        (* claude: # a comment anywhere (gas's), not only first on a line *)
+        (* # a comment anywhere (gas's), not only first on a line *)
         else if c = '|' || c = '!' || (c = '#' && ((not arm) || !first)) || (arm && c = '@') || (c = '/' && !i + 1 < n && l.[!i + 1] = '/') then begin
           add y !i (String.sub l !i (n - !i)) Comment;
           i := n
@@ -83,7 +83,7 @@ let lines (src : string) : span list array =
           while !j < n && (l.[!j] = ' ' || l.[!j] = '\t') do incr j done;
           let next = if !j < n then Some l.[!j] else None in
           if !first && next = Some ':' then (add y s text Def_function; i := !j + 1)
-          (* claude: NAME = value, an assembler's constant: a definition
+          (* NAME = value, an assembler's constant: a definition
            * for the names, but drawn as a constant, not as large as a
            * label (a file's structure is its labels) *)
           else if !first && next = Some '=' then (add y s text Constructor; first := false)

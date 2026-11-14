@@ -241,7 +241,7 @@ let pollwait ep =
   let elapsed = now_ms () - ep.lastpoll in
   if elapsed < ep.pollival then Proc.tsleep (ep.pollival - elapsed)
 
-(* claude: an IN transfer of up to n bytes left pending on channel 1
+(* an IN transfer of up to n bytes left pending on channel 1
  * (usb.c's second, its own page: the controller tries again at each
  * NAK by itself), polled: a finished one's bytes, or None, and the next
  * one started -- a kernel driver's, from the clock (Etherusb), which
@@ -266,7 +266,7 @@ let inpoll ep n =
         Some (Machine.Phys.read (usb_buffer1 ()) k)
       end
 
-(* claude: an IN transfer tried once, for the clock, which must not
+(* an IN transfer tried once, for the clock, which must not
  * wait (Kusb: a keyboard's reports): its bytes, or None when the
  * device has nothing to say (a NAK) *)
 let intry ep n =

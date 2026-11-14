@@ -22,7 +22,7 @@ let get = function Some v -> v | None -> invalid_arg "option is None"
 let bind o f = match o with None -> None | Some v -> f v
 let join = function Some (Some _ as o) -> o | _ -> None
 let map f o = match o with None -> None | Some v -> Some (f v)
-(* claude: real OCaml only added Option's let* / let+ much later (5.5,
+(* real OCaml only added Option's let* / let+ much later (5.5,
    as a nested Syntax submodule alongside a new "product" function) --
    not backported here since we don't target OCaml 5; the one-liner
    would just be "let ( let* ) o f = bind o f" / "let ( let+ ) o f =

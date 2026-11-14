@@ -87,7 +87,7 @@ let draw_simple (fb : Framebuffer.t) (image : image) (m : Affine.t) ~filter ~alp
     done
   done
 
-(* claude: optimization (Opti.enabled), the same pixels as draw_simple
+(* optimization (Opti.enabled), the same pixels as draw_simple
  * but without its per-pixel overhead, about 10 small allocations per
  * pixel (the (u, v) pair from Affine.apply, a [color] record per texel
  * read and per lerp):

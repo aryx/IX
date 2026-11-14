@@ -65,7 +65,7 @@ _syscall6v(word n, word a1, word a2, word a3, word a4, word a5, word a6)
 	return _syscall6(n, a1, a2, a3, a4, a5, a6);
 }
 
-/* claude: how far the kernel's own memory goes, and how far it may
+/* how far the kernel's own memory goes, and how far it may
  * (physical addresses: machine.c's heap_top and heap_limit, libc.c's
  * for the Makefile's build). The heap here is mini-ml's runtime's, two
  * arrays in the image's own data: the kernel's memory ends where the

@@ -63,7 +63,7 @@ let save (r : Repo.t) c paths =
              end
              else e.name <- None
            end
-           (* claude: git9 leaves an entry it has just made here (an
+           (* git9 leaves an entry it has just made here (an
             * untracked directory, or a file on the way to a path) with
             * a zero hash; such an entry is dropped *)
            else if e.fresh then e.name <- None);

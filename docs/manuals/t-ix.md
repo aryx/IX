@@ -23,7 +23,14 @@ beyond that. The toolchain runs on tiny-kernel too, as `cc`, `ml`,
 `as` and `ld`, and each tool makes the same files as the host's, byte
 for byte
 ([plan_tiny_self_hosting.md](../plans/done/plan_tiny_self_hosting.md),
-step 7). Only tiny-cpu stays on the host.
+step 7). Only tiny-cpu stays on the host. `make -C tiny/TinyKernel
+self` checks it: tiny-kernel rebuilds its image and its system from
+`/src` with its own tools, and they must be the host's byte for byte
+(hours; `self-quick` rebuilds a few targets in a few minutes, and
+`make self-quick-tix` runs it from ix's top directory). These runs,
+and `make run`, use a tiny-machine built in dune's release profile,
+about 20% faster than `bin/`'s
+([plan_tiny_self_speed.md](../plans/plan_tiny_self_speed.md), step 1).
 
 ## 1. The quick way
 
@@ -723,8 +730,8 @@ TinyDebugger.mli):
   them. It has buttons for `s`, `n` and `c`, which an empty command
   line also takes as keys.
 
-To try the toolchain and these two programs after `make run` (in
-`tiny/`), `/examples` has two programs to build:
+To try the toolchain and these two programs after
+`make -C tiny/TinyKernel run`, `/examples` has two programs to build:
 
 - `hello.c`, whose `square` function comes from `square.s`, written by
   hand;
@@ -749,8 +756,11 @@ image:
 
 They are built in `/src`, beside their sources, and copied to `/lib`
 by `cd /src; build install`, which also makes them again after a
-change. On the host, `tiny-build TINY=tiny- LIB=lib install` in
-`tiny/` does the same for `tiny/examples/`.
+change. On the host, `tiny/TinyKernel/Makefile` does the same into
+its `_make/system`, by `tiny-build TINY=tiny- BIN=d/bin LIB=d/lib
+EXAMPLES=d/examples install` in `tiny/`. In `tiny/examples/`,
+`tiny-build TINY=tiny- LIB=../TinyKernel/_make/system/lib` then builds
+the examples with that `/lib`.
 
 `dial` gives a descriptor on a connection to another machine, given
 its address as text (`"10.0.0.1"` is the wire's other end) and a

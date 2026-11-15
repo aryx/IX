@@ -28,6 +28,9 @@ type proc = {
   mutable since : int option; mutable traced : KFiles.trace option;
   mutable core : int option; mutable doomed : bool;
   mutable cmd : string; mutable memory : int;
+  (* released, no longer in procs: the scheduler asks after each trap,
+   * which a walk of procs made a cost of its own (KScheduler's next) *)
+  mutable gone : bool;
 }
 
 (* the processes, in the order the scheduler goes through them; how

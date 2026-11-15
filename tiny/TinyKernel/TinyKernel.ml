@@ -102,7 +102,7 @@ let () =
     slot = 0; mem = KMemory.mem_empty (); pid = 1; state = Ready; parent = None;
     fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
     since = None; traced = None; core = None; doomed = false;
-    cmd = ""; memory = 0;
+    cmd = ""; memory = 0; gone = false;
   } in
   incr next_pid;
   procs := [ p ];

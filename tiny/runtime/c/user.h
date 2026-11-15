@@ -33,8 +33,10 @@ int fork(void);
 // the program at path, argv its arguments (16 at most); -1 if it fails
 int exec(char *path, char **argv);
 // a child running the program at path (exec's arguments): fork and
-// exec in one, nothing of this process copied; its pid, -1 if it fails
-int spawn(char *path, char **argv);
+// exec in one, nothing of this process copied; its pid, -1 if it fails.
+// The child has this process's descriptors but those whose bit is set in
+// hidden (descriptor k, bit k): the ones an exec would not pass on
+int spawn(char *path, char **argv, int hidden);
 int wait(int*);
 int getpid(void);
 int open(char*, int);

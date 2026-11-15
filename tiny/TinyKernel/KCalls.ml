@@ -77,6 +77,7 @@ let rec exit_proc p status =
 
 and release q =
   KMemory.mem_release q.mem;
+  q.gone <- true;
   procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
 (* fork: a new slot and a partition of the parent's size, the partition
@@ -110,7 +111,7 @@ let with_room p f =
 let child p s = {
   slot = s; mem = KMemory.mem_empty (); pid = !next_pid; state = Ready;
   parent = Some p.pid; fds = p.fds; cwd = p.cwd; since = None; traced = None;
-  core = None; doomed = false; cmd = p.cmd; memory = p.memory;
+  core = None; doomed = false; cmd = p.cmd; memory = p.memory; gone = false;
 }
 
 (* the child made a process: its trace if p's children are traced, its
@@ -124,7 +125,7 @@ let adopt p q =
                                  watchers = 0; call = None; ret = None;
                                  step = false; over = None }
    | _ -> ());
-  List.iter (fun (_, f) -> share f) p.fds;
+  List.iter (fun (_, f) -> share f) q.fds;
   procs := !procs @ [ q ];
   result p q.pid
 
@@ -270,16 +271,22 @@ let sys_exec p =
     load_prog p node argv;
     match p.traced with Some t -> t.stops <- []; KIO.stop p "exec" | None -> ())
 
-(* spawn(path, argv): a fork and an exec in one, a child that starts
- * in the program; its pid, or -1. Nothing of the parent is copied: a
- * fork copies the parent's whole partition (16 MB for tiny-build, at
- * each recipe) for the exec to throw it away a moment later. What a
- * child does between the two (a dup, a close) the parent does around
- * the spawn: the child has the parent's descriptors at the spawn *)
+(* spawn(path, argv, hidden): a fork and an exec in one, a child that
+ * starts in the program; its pid, or -1. Nothing of the parent is
+ * copied: a fork copies the parent's whole partition (16 MB for
+ * tiny-build, at each recipe) for the exec to throw it away a moment
+ * later. What a child does between the two (a dup, a close) the parent
+ * does around the spawn: the child has the parent's descriptors at the
+ * spawn, but those whose bit is set in hidden (descriptor k, bit k),
+ * the ones a program's library opened for itself and that its exec
+ * would close (TinyLibSystem's private_fds: Unix's close-on-exec,
+ * posix_spawn's file actions). *)
 let sys_spawn p =
   let node, argv = program p in
+  let hidden = reg p 3 in
   with_room p (fun () ->
     let q = child p (free_slot ()) in
+    q.fds <- List.filter (fun (k, _) -> k > 30 || (hidden lsr k) land 1 = 0) q.fds;
     load_prog q node argv;
     adopt p q)
 
@@ -682,7 +689,7 @@ let returned p n =
 let called p n =
   syscall p n;
   match p.traced, p.state with
-  | _ when not (List.exists (fun q -> q.pid = p.pid) !procs) -> ()
+  | _ when p.gone -> ()
   | Some t, Ready when t.calls -> returned p n
   | Some t, Ready when t.step -> KIO.stop p "step"
   | Some t, Waiting _ when t.calls -> t.ret <- Some n

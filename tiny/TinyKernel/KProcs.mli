@@ -67,6 +67,7 @@ type proc = {
   mutable doomed : bool;
   mutable cmd : string;
   mutable memory : int;
+  mutable gone : bool;   (* released, out of procs *)
 }
 
 (* In the order the scheduler goes through them. *)

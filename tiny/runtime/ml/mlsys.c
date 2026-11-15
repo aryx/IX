@@ -316,10 +316,11 @@ u_exec(value path, value args)
 	return exec((char*)path, argv) * 2 + 1;
 }
 
-// a child running the program at path, its arguments as u_exec's: its
+// a child running the program at path, its arguments as u_exec's,
+// without the descriptors in hidden (spawn's mask, an ML integer): its
 // pid, or -1
 value
-u_spawn(value path, value args)
+u_spawn(value path, value args, value hidden)
 {
 	char *argv[64];
 	int n;
@@ -331,7 +332,7 @@ u_spawn(value path, value args)
 	if((args & 1) == 0)
 		return -1 * 2 + 1;
 	argv[n] = 0;
-	return spawn((char*)path, argv) * 2 + 1;
+	return spawn((char*)path, argv, hidden >> 1) * 2 + 1;
 }
 
 // a child's end waited for: its pid and, 256 times it, its status's

@@ -377,7 +377,8 @@ hello
 [12] close(0) = 0
 [12] dup(6) = 0
 [12] close(6) = 0
-[12] fork() = 14
+[12] stat("/bin/wc", 0x*) = 0
+[12] spawn("/bin/wc", 0x*) = 14
 [12] wait(0x*) = 13
 [12] wait(0x*) = 14
 [12] close(0) = 0
@@ -398,8 +399,6 @@ hello
 [13] close(5) = 0
 [13] exit(0)
 [13] exited 0
-[14] close(5) = 0
-[14] exec("/bin/wc", 0x*) = 0
 [14] read(0, "hello\n", 4096) = 6
 [14] read(0, "", 4096) = 0
 [14] write(1, "      1       1       6\n", 24) = 24
@@ -433,11 +432,14 @@ u_write:	addi	sp, sp, -32
 6	ml_run+*
 7	main+*
 8	_start
-% % fork() = 25
+% % stat("/bin/echo", 0x*) = 0
+spawn("/bin/echo", 0x*) = 25
 wait(0x*) = 25
-fork() = 26
+stat("/bin/sleep", 0x*) = 0
+spawn("/bin/sleep", 0x*) = 26
 wait(0x*) = 26
-fork() = 27
+stat("/bin/echo", 0x*) = 0
+spawn("/bin/echo", 0x*) = 27
 wait(0x*) = 27
 close(1) = 0
 dup(5) = 1

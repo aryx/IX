@@ -484,6 +484,42 @@ What limits the parallel cores, in the order to look at it:
 make self is not yet changed to use the cores: 8 min 52 s is the best
 measured, against the 5 minutes aimed at.
 
+### After step 6: the scheduler, and fork's copy
+
+Done on 2026-11-15, each measured on one core, side by side on images
+of the same tree, with the host's image and files:
+
+1. The scheduler's lists. Nearly every tick of the timer (2.4 million
+   in the first build, one per 21,500 instructions) moved the process
+   last by remaking the list (`filter`, its `rev`, then `@`), and
+   `next` walked the list to see the process still there: with
+   `runnable`'s own walk, about 13% of all the instructions. `last` now
+   does nothing when the process is last already (nearly always in a
+   build), else one pass; a process's `gone`, set when it is released,
+   replaces the walk. The order of the processes is the same.
+   self-quick 27.2 s to 25.2 s (1.08 times faster); make self's
+   session 13 min 13 s to 12 min 12 s.
+2. kcopy.s's `k_copy`, fork's copy of a partition, eight words a turn
+   while 32 bytes are left, as principia's memmove does its chunks of
+   32 bytes: 2.5 instructions a word instead of 6.
+3. rc spawns a simple command (the author: "we can keep fork/exec but
+   leverage spawn that that be a faster path for the common case"): a
+   fork copied rc's whole partition, a megabyte and more, for the exec
+   to drop it. fork and exec stay for the rest (a child shell, a
+   pipeline's stage, Unix, a program not found). A spawned child had
+   the descriptors rc's library opened for itself, which exec closes
+   (make check saw a program's first open become 6, not 5), so spawn
+   takes a third argument, a mask of the descriptors the child does not
+   get (Unix's close-on-exec, posix_spawn's file actions), from the
+   library's private ones; tiny-build's recipes, spawned too, gain it.
+   Steps/t6 went further: no fork, and spawn given a map of the child's
+   0, 1 and 2 only.
+
+2 and 3: self-quick 25.5 s to 24.1 s (1.06 times faster); make self's
+session 12 min 12 s to 11 min 50 s (1.03; 4.3 times since step 0, about
+220 times the host's 3.2 s). Left at the kernel's top: `fs_lookup`'s
+byte reads (`fs_get`, `same`, `byte`, by peekb), `row_copy`, `runnable`.
+
 ## The page (t-ix.html)
 
 The page runs the same tiny-machine (TinyMachineDevices and

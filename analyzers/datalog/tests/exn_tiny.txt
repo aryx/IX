@@ -4,7 +4,7 @@
 # itself, with its functions that do (compare.sh's exn_lines). Not tried
 # yet: the 11 "raised in" lines; tiny-cc's Division_by_zero false when
 # tried (1 / 0 and 7 % 0 said or folded, not raised).
-tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 485
+tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 490
 tiny-cc: TinyC.ml: the toplevel may let Division_by_zero escape
 tiny-cc: TinyC.ml: the toplevel may let Not_found escape, raised in emit, go, Parser.assign_expr, loop, Parser.primary, Tree.binop_name
 tiny-cc: Types.ml: the toplevel may let Failure escape, raised in Parser.block, go, Parser:fun at line 557, TinyC.main, init

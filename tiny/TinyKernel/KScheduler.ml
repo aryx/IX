@@ -181,8 +181,28 @@ let dispatch () =
       | None -> ()
   done
 
-(* last in the round *)
-let last p = procs := List.filter (fun q -> q.pid <> p.pid) !procs @ [ p ]
+(* Last in the round, the others' order kept.
+ *
+ * opti: this runs at nearly every tick of the timer (a slice is a tick),
+ * 2.4 million times in make self's first build, and the list made again
+ * each time (a filter, its reversal, an append) was, with next's walk to
+ * see that p is still there, about a quarter of the kernel's
+ * instructions (plan_tiny_self_speed.md). In a build one process works
+ * and the others wait, so p is nearly always last already: nothing to
+ * do then, and otherwise one pass that leaves p out and puts it at the
+ * end.
+ *
+ * old:
+ *   let last p = procs := List.filter (fun q -> q.pid <> p.pid) !procs @ [ p ]
+ *)
+let last p =
+  let rec at_end l =
+    match l with [ q ] -> q.pid = p.pid | _ :: rest -> at_end rest | [] -> false in
+  let rec moved l =
+    match l with
+    | [] -> [ p ]
+    | q :: rest -> if q.pid = p.pid then moved rest else q :: moved rest in
+  if not (at_end !procs) then procs := moved !procs
 
 (* the loop: a process run until it traps, the trap handled; the same
  * process again unless its time is up or it cannot go on (then it goes
@@ -226,13 +246,13 @@ and run p =
  * is set again for the next tick; an interrupt that came before the
  * instruction ran is taken, and the process run again. A step that
  * makes a call that waits stops when the call ends (waited). *)
-and step p (t : KFiles.trace) =
+and step (p : proc) (t : KFiles.trace) =
   KMemory.mem_window p.mem;
   let cause = KMachine.cause_of (KMachine.k_step (KMachine.frame p.slot)) in
   let ran = cause <> Trap_intr || KMachine.k_tval () land 1 <> 0 in
   let timer = trapped p cause (KMachine.k_tval ()) in
   if cause <> Trap_intr then count_ticks ();
-  if ran && List.exists (fun q -> q.pid = p.pid) !procs then begin
+  if ran && not p.gone then begin
     (match t.over with
      | Some a when List.exists (fun (b, _) -> b = a) t.stops ->
          KMemory.mem_store p.mem a 0
@@ -266,7 +286,7 @@ and trapped p (cause : KMachine.cause) tval =
 (* the same process again unless its time is up or it cannot go on
  * (the other cores given what can run first: what p's call made ready) *)
 and next p timer =
-  let alive = List.exists (fun q -> q.pid = p.pid) !procs in
+  let alive = not p.gone in
   if alive && (not timer) && (match p.state with Ready -> true | _ -> false)
   then (dispatch (); run p)
   else begin
@@ -282,7 +302,7 @@ let back k p cause tval =
   if p.doomed then KCalls.exit_proc p (-1)
   else begin
     let timer = cause = KMachine.Trap_intr || trapped p cause tval in
-    let alive = List.exists (fun q -> q.pid = p.pid) !procs in
+    let alive = not p.gone in
     if alive && (not timer) && elsewhere p
        && (match p.state with Ready -> true | _ -> false)
     then give k p

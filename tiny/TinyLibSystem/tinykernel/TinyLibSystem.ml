@@ -92,7 +92,7 @@ external u_seed : unit -> int = "u_seed"
 
 external u_fork : unit -> int = "u_fork"
 external u_exec : string -> string list -> int = "u_exec"
-external u_spawn : string -> string list -> int = "u_spawn"
+external u_spawn : string -> string list -> int -> int = "u_spawn"
 external u_waits : unit -> int = "u_waits"
 external u_kill : int -> int = "u_kill"
 external u_trace : int -> int = "u_trace"
@@ -172,6 +172,10 @@ let raw_console _caps raw = ignore (u_rawcons (if raw then 1 else 0))
 (* the descriptors made here, which a program run is not to have *)
 let private_fds = ref []
 let keep fd = private_fds := fd :: !private_fds; fd
+(* the same as spawn's mask: a spawned child does not have them, as an
+ * exec closes them (descriptors above 30 are none of a mask's) *)
+let hidden () =
+  List.fold_left (fun m d -> if d <= 30 then m lor (1 lsl d) else m) 0 !private_fds
 
 (* a path for the kernel's calls, which take strings (not !!: / is
  * the integers' division in this file) *)
@@ -468,11 +472,11 @@ let shell caps vars script =
               k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n")
             vars)
      ^ script ^ "\n");
-  let pid = u_spawn "/bin/rc" [ "rc"; "-e"; file ] in
+  let pid = u_spawn "/bin/rc" [ "rc"; "-e"; file ] (hidden ()) in
   if pid < 0 then (ignore (u_unlink file); None) else Some pid
 
 let spawn _caps file argv =
-  let p = u_spawn (str file) argv in
+  let p = u_spawn (str file) argv (hidden ()) in
   if p < 0 then None else Some p
 
 let exit _caps e =

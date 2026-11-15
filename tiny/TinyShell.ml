@@ -703,7 +703,47 @@ and command caps (inplace : bool) (argv : string list) =
       List.iter (fun pid -> set_status (wait caps pid)) (List.rev !background);
       background := []
   | _ when inplace -> exec caps argv
-  | _ -> set_status (wait caps (fork caps (fun () -> exec caps argv)))
+  | _ -> set_status (wait caps (launch caps argv))
+
+(* A program started in a child, its pid.
+ *
+ * opti: spawned where the system can (tiny-kernel), the program found
+ * in the PATH as exec finds it: a fork copied this shell's whole
+ * partition, a megabyte and more for an ML program whose heap spans it,
+ * for the exec to throw it away, and that copy was the kernel's hottest
+ * loop (k_copy) in a build, where rc runs every recipe's commands
+ * (plan_tiny_self_speed.md). The redirections are already this shell's
+ * (with_fds, around command), and a spawned child has the descriptors
+ * of its parent at the spawn; it also has the ones this shell's
+ * library opened for itself (TinyLibSystem's private_fds, which exec
+ * closes), open and unused. Where there is no spawn (TinyLibSystem's
+ * Unix one fails), or the program is not found, a fork and an exec as
+ * before, which also gives the variables as the environment (tiny-kernel
+ * has none) and says "not found". Windows has no fork at all, only
+ * CreateProcess, a spawn; and fork's cost and its other troubles are
+ * Baumann et al.'s "A fork() in the road" (HotOS 2019).
+ *
+ * old:
+ *   | _ -> set_status (wait caps (fork caps (fun () -> exec caps argv)))
+ *)
+and launch caps argv =
+  let name = match argv with n :: _ -> n | [] -> "" in
+  let files =
+    if String.contains name '/' then [ name ]
+    else
+      List.map (fun d -> Filename.concat d name)
+        (String.split_on_char ':' (String.concat "" (get "PATH")))
+  in
+  let spawned =
+    match List.find_opt (fun f -> TSys.exists caps (Fpath.v f)) files with
+    | Some f ->
+        TSys.flush caps;
+        (try TSys.spawn caps (Fpath.v f) argv with Failure _ -> None)
+    | None -> None
+  in
+  match spawned with
+  | Some pid -> pid
+  | None -> fork caps (fun () -> exec caps argv)
 
 and redirs caps rs =
   rs |> List.map (function

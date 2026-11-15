@@ -264,9 +264,19 @@ let rec lower (emit : ir -> unit) (k : targets) (s : Tree.stmt) =
   | Tree.Return None -> emit (Ret false)
   | Tree.Return (Some e) -> value e; emit (Ret true)
 
+(* A value dropped does not need what only computed it from the value
+ * below with a constant: x++ as a statement is x += 1, then - 1, then
+ * dropped, and the - 1 goes. *)
+let rec unused (code : ir list) =
+  match code with
+  | Ext _ :: rest -> unused rest
+  | Op (Tree.A (Tree.Add | Tree.Sub), _) :: Imm _ :: rest -> unused rest
+  | _ -> code
+
 let lower_function (body : Tree.stmt) =
   let code = ref [] in
-  let emit i = code := i :: !code in
+  let emit i =
+    code := (match i with Drop -> Drop :: unused !code | _ -> i :: !code) in
   in_register := variables body;
   lower emit { brk = None; cont = None; cases = ref [] } body;
   List.rev !code, !in_register

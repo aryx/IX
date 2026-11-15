@@ -233,3 +233,30 @@ failures look like the programs'.
   matched the shell running the pkill (its command line contains the
   pattern), which killed it. (Also in `notes_debugging_techniques.md`,
   technique 10.)
+
+## 13. Before committing an optimization of a code generator
+
+An optimization of a compiler's back end changes the code of every
+program and is meant to change none of their outputs, which is what the
+differential fuzzers check best. `make test-long` runs 30 random
+programs of each tiny compiler; for a change of the back end, run many
+more, with a seed of your own, before committing. For tiny-cc
+(plan_tiny_self_speed.md's step 3: variables in registers, operands read
+in place, immediates):
+
+```
+F=/tmp/fuzz; mkdir -p $F
+./tiny/tests/TinyC_fuzz.py --32 $F 200 7
+RECORD=1 ./tiny/tests/TinyC_test.sh $F/*.c
+```
+
+The generator writes the programs and TinyC_test.sh, with RECORD=1,
+compiles each one with the host's cc for its expected output, then with
+tiny-cc, and runs it on tiny-cpu. `TinyML_fuzz.py --31` and
+`TinyML_test.sh` do the same for tiny-ml. The random programs are
+small, so they find a wrong instruction in the generator well, but not
+a wrong decision that only a large function makes (too few registers,
+a variable spilled around a call): the toolchain's own runs (make test,
+which builds tiny-kernel and the programs with the new compiler, and
+make self-quick-tix, where they build themselves) are the other half of
+the check.

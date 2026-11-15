@@ -8,11 +8,11 @@ and ocaml in a few seconds, so it's sad to require 50min when run
 under t-ix"; then, after the analysis: "I think if we reach 5min
 instead of the current 50min would be a good result for this plan".
 
-**Status: steps 0 to 2 done** (2026-11-14). The analysis below is
+**Status: steps 0 to 3 done** (2026-11-15). The analysis below is
 done, the baseline is measured (step 0), the long runs use a release
 build of tiny-machine (step 1), names are looked up in place (step 2),
-and steps 3 to 6 have not been started. make self went from 50 minutes
-to 28.
+tiny-cc keeps variables in registers (step 3), and steps 4 to 6 have
+not been started. make self went from 50 minutes to 28 after step 2.
 
 ## The problem
 
@@ -152,7 +152,7 @@ lands on.
 | 0 | The baseline: make self timed, and profiled | none | an hour of the machine | (its baseline too) |
 | 1 | tiny-machine built without `-opaque` (done) | 1.27 (measured) | minutes | no: native only |
 | 2 | Looking a name up without building the directory's strings (done) | 1.43 (measured) | small | yes: fewer instructions |
-| 3 | tiny-cc keeping scalar locals in registers | 1.5 to 2 | medium | yes: fewer instructions |
+| 3 | tiny-cc keeping scalar locals in registers (done) | 1.49 on self-quick (measured) | medium | yes: fewer instructions |
 | 4 | tiny-ml allocating inline | 1.2 to 1.4 | small to medium | yes: fewer instructions |
 | 5 | tiny-machine's fast path, one look for each batch | 2 to 3 | medium | yes: a faster interpreter |
 | 6 | Several cores by default, on OCaml 5's domains | 2 to 3, after step 2 | small | no: no domains in a page |
@@ -290,6 +290,38 @@ collector. A word-at-a-time copy (a memcpy in the C library, used by
 the runtime's string functions) is a second, smaller change, and it
 only makes sense if the first one leaves the copies at the top of the
 profile.
+
+Done on 2026-11-14 and 15, in two commits. TinyC/Machine.ml's comment
+at its top follows a loop that copies bytes through the stages, from 31
+instructions an iteration to 11:
+
+1. Lower finds the variables of 1 or 4 bytes whose address is never
+   taken, weighs them by their uses (8 times more in each loop), and
+   reads and writes them by Get and Set. Machine runs a function twice:
+   the first run, with every variable in memory, tells how deep the
+   stack goes, and the second gives the registers above that depth,
+   up to r12, to the heaviest variables, saved around each call. The
+   loop takes 23 instructions.
+2. A slot of the stack can have its value in a variable's register or
+   be a constant not loaded yet, so that an instruction reads the
+   variable's register directly and takes a constant as its immediate.
+   A value dropped is not computed (x++ as a statement), and an
+   instruction writes a variable's register directly. 11 instructions.
+
+Measured on self-quick, with the release tiny-machine, side by side on
+images of the same tree, each with the host's files:
+
+| | self-quick | |
+|---|---|---|
+| step 2 | 59.2 s | |
+| 1, the variables in registers | 52.4 s | 1.13 times faster |
+| 2, operands in place, immediates | 39.8 s | 1.30 times faster |
+| step 3 | | 1.49 times faster |
+
+The fuzzer (TinyC_fuzz.py, 200 programs against the host's cc), make
+test and make self-quick-tix pass. The word-at-a-time copy is left for
+after step 4, with the other routines that a profile may still show at
+its top; the author suggested writing a few of them in assembly then.
 
 ### Step 4: tiny-ml's allocation inline
 

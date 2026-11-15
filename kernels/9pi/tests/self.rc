@@ -14,7 +14,10 @@
 #   tests/self/'s programs, one in C and one in OCaml, linked (ld) with
 #   those alone (all of lib_core.a takes 6 minutes)
 #   mk's arguments: 'ML=time ml -m 5' ..., each compile's time too
-LIBS=(lib_core lib_crypto lib_compression lib_networking lib_graphics \
+# (the top mkfile's LIBS, in its order: lib_mime and lib_executable were
+# missing, and apps/media/play, browsers/netscape and linker/tools failed
+# without them, on the card and on Linux)
+LIBS=(lib_core lib_mime lib_crypto lib_compression lib_executable lib_networking lib_graphics \
  lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms \
  lib_playground/platforms/draw lib_playground/platforms/software \

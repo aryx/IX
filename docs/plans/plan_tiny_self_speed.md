@@ -13,8 +13,10 @@ done, the baseline is measured (step 0), the long runs use a release
 build of tiny-machine (step 1), names are looked up in place (step 2),
 tiny-cc keeps variables in registers (step 3), tiny-ml allocates
 inline (step 4), tiny-machine reads memory directly in a stretch
-(step 5), and step 6 has not been started. make self went from 50
-minutes to 18 after step 4.
+(step 5), and step 6 is measured (four parallel cores, 1.5 times, not
+yet make self's default). make self went from 50 minutes 24 seconds to
+13 minutes 13 seconds on one core (3.8 times), and to 8 minutes 52
+seconds on four (5.7 times); 5 minutes is not reached.
 
 ## The problem
 
@@ -157,7 +159,7 @@ lands on.
 | 3 | tiny-cc keeping scalar locals in registers (done) | 1.49 on self-quick (measured) | medium | yes: fewer instructions |
 | 4 | tiny-ml allocating inline (done) | 1.10 on self-quick (measured) | small to medium | yes: fewer instructions |
 | 5 | tiny-machine's fast path, one look for each batch (done) | 1.47 on self-quick (measured) | medium | yes: a faster interpreter |
-| 6 | Several cores by default, on OCaml 5's domains | 2 to 3, after step 2 | small | no: no domains in a page |
+| 6 | Several cores by default, on OCaml 5's domains (measured, not the default) | 1.49 with 4 cores (measured) | small | no: no domains in a page |
 
 Steps 1 to 5 together make an estimated factor of 6 to 15, which takes
 50 minutes to between 3 and 8. Step 6 is what should make the 5
@@ -423,6 +425,9 @@ false and true):
 | paint, natively | 116.4 M/s | 174.3 M/s | 1.50 |
 | paint, under node | 32.1 M/s | 39.1 M/s | 1.22 |
 
+make self's session: 18 min 6 s to 13 min 13 s (1.37 times faster;
+3.8 times since step 0's 50 min 24 s), the host's image.
+
 Both hosts gain, and every recorded screen is the same (a machine's
 time is its count of instructions, which the path does not change).
 The goal of 113 M a second is passed natively for every session but
@@ -436,6 +441,48 @@ and with `-cores-parallel` each core runs on an OCaml 5 domain
 (`_build5`; OCaml 5.5.1 is installed here). Once step 2 has made the
 kernel cheap, make the parallel setup what make self (and make run)
 use when OCaml 5 is there, and measure it with 4 and 8 cores.
+
+Measured on 2026-11-15, on step 5's images, tiny-machine built by
+OCaml 5.5.1 in release (`opam exec --switch=5.5.1 -- dune build
+--build-dir _build5 --profile release`), each run with the host's
+image:
+
+| make self's session | time |
+|---|---|
+| step 5, OCaml 4.14, one core | 13 min 13 s |
+| OCaml 5, one core | 13 min 23 s |
+| OCaml 5, `-cores 4 -cores-parallel`, `build -j 4` | 8 min 52 s (1.49 times faster) |
+| the same, the nested builds given `-j 4` too ($NPROC) | 9 min 29 s |
+| OCaml 5, `-cores 8 -cores-parallel`, `build -j 8` | over 12 min 35 s, stopped in its first build |
+
+So four cores gain 1.5 times, and more do not help. The build ran 2.1
+recipes at once on average. To see why, tiny-build's `-t` now ends
+with the critical path: the chain of recipes, each its prerequisite's,
+whose times add up most, which no -j shortens. It names the two nested
+builds, `stdlib` and `kernel` (`cd TinyKernel && build`), each run one
+recipe at a time. tiny-build now gives each recipe its -j as $NPROC
+(mk's name; tiny-kernel has no environment, so a Buildfile passes it
+on: `build -j $NPROC`), but given to the nested builds it made the run
+slower, more processes than four cores serve, and the Buildfile does
+not pass it.
+
+What limits the parallel cores, in the order to look at it:
+
+1. tiny-machine's report of each core (core k: programs, kernel, idle)
+   counts the time skipped asleep in a `wfi` as instructions, so it
+   says 80 to 99% idle and shows nothing useful. It should count the
+   instructions run and the time asleep apart.
+2. A domain whose core is asleep spins: the 4 cores took 2121 s of the
+   host's CPU for 532 s, and 8 domains on 12 host cores starve the busy
+   ones. A domain should block until an interrupt (its timer, another
+   core's).
+3. The kernel runs on core 0 alone, and every core's system call waits
+   for it: the scheduler's lists (`runnable`, `find`, `rev`, `exists`,
+   about 9% of all the instructions) and the collector's extra work
+   since step 4 are the next costs to cut there.
+
+make self is not yet changed to use the cores: 8 min 52 s is the best
+measured, against the 5 minutes aimed at.
 
 ## The page (t-ix.html)
 

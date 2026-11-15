@@ -169,7 +169,10 @@ runtime/ml/mlsys.o: runtime/ml/mlsys.c runtime/ml/ml.c runtime/c/user.h
 # never up to date, and the library's build runs each time. That build
 # knows which units to make again (by its digests, in
 # TinyLibCore/.tiny-build). stdlib.a is made with stdlib, as a .tmi is
-# made with its .o. On the disk, they are in /lib/ml.
+# made with its .o. On the disk, they are in /lib/ml. It runs one recipe
+# at a time, even under build -j 4: given this build's -j ($NPROC), its
+# recipes and the outer ones together were too many for tiny-kernel's
+# four cores, and make self-cores took 9 min 29 s instead of 8 min 52 s.
 stdlib:
 	cd TinyLibCore && $BUILD ML=^$ML AR=^$AR
 $STDLIB: stdlib
@@ -427,7 +430,8 @@ paint: $CRT runtime/c/draw.o user/paint.o
 
 # The kernel is made by its own Buildfile, TinyKernel/Buildfile, from
 # its units, its assembly and the library. Like the library's build, it
-# runs each time (kernel is not a file), and it runs after the library's.
+# runs each time (kernel is not a file), and it runs after the library's,
+# one recipe at a time as the library's does.
 # TinyKernel/kernel.img is made with it.
 kernel: $STDLIB
 	cd TinyKernel && $BUILD ML=^$ML CC=^$CC AS=^$AS LD=^$LD

@@ -13,11 +13,16 @@ let usage =
 let help = usage ^ {|
 
 The targets out of date remade, by the rules of the Buildfile (-f: another),
-N recipes at once (-j); up to date by content, not time (the stamps kept in
+N recipes at once (-j; a recipe has it as $NPROC, mk's name, for a build
+it runs: cd dir && build -j $NPROC); up to date by content, not time (the
+stamps kept in
 .tiny-build). -n: the recipes printed, not run; -g: the graph, for dot;
 -t: each recipe's time as it ends, then the times by kind of target (bin/*,
 ml/*.s), and what was not a recipe's (the digests, the graph); with -j,
-the recipes' sum and how many ran at once on average.
+the recipes' sum and how many ran at once on average. Last, the critical
+path: the chain of recipes, each its prerequisite's, that takes longest,
+which no -j shortens; the recipes on it are what to make faster, or to
+need less, for a build to use more cores.
 A NAME=value is that variable's value, over the Buildfile's (mk's): tiny-build
 TINY=tiny- on the host, where the tools are tiny-ml, tiny-cc..., for a
 Buildfile that says ${TINY}ml.
@@ -499,9 +504,14 @@ let build
       when digest_file caps n.name <> None
            && Hashtbl.find_opt stamps n.name = Some (stamp n) -> finish n; true
     | Recipe r ->
+      (* NPROC, this build's -j, mk's name: a build in the recipe is
+       * given it (cd dir && build -j $NPROC), since tiny-kernel has no
+       * environment to pass it on; not in the stamp, so that another -j
+       * remakes nothing *)
       let own =
         [ "target", [ n.name ]; "stem", [ r.stem ];
-          "prereq", List.map (fun d -> d.name) n.deps ]
+          "prereq", List.map (fun d -> d.name) n.deps;
+          "NPROC", [ string_of_int jobs ] ]
       in
       let shown = Hashtbl.copy vars in
       List.iter (fun (k, v) -> Hashtbl.replace shown k v) own;
@@ -572,10 +582,52 @@ let build
 (* Reporting times (-t) *)
 (*****************************************************************************)
 
+(* -t's critical path: the chain of recipes, each waiting for the one
+ * before it (its prerequisite), whose times add up to the most. No -j
+ * makes the build shorter than this chain, and the recipes' sum divided
+ * by it is the most that can run at once on average. So it says what to
+ * change in a Buildfile to use more cores: a recipe on the chain made
+ * faster, or a prerequisite on it that is not needed, dropped. A node's
+ * finish is its recipe's time after its latest prerequisite's finish
+ * (0 when it ran no recipe), with that prerequisite, the chain's next. *)
+let critical caps (roots : node list) =
+  let ms = Hashtbl.create 101 in
+  List.iter (fun (name, t) -> Hashtbl.replace ms name t) !times;
+  let memo = Hashtbl.create 101 in
+  let rec finish (n : node) =
+    match Hashtbl.find_opt memo n.name with
+    | Some x -> x
+    | None ->
+        let latest, by =
+          List.fold_left (fun (t, by) d ->
+            let t', _ = finish d in
+            if t' > t then (t', Some d) else (t, by)) (0, None) n.deps in
+        let own = match Hashtbl.find_opt ms n.name with Some t -> t | None -> 0 in
+        let x = (latest + own, by) in
+        Hashtbl.replace memo n.name x;
+        x
+  in
+  let rec chain (n : node) acc =
+    let acc = match Hashtbl.find_opt ms n.name with
+      | Some t -> (n.name, t) :: acc
+      | None -> acc in
+    match snd (finish n) with Some d -> chain d acc | None -> acc
+  in
+  List.iter (fun root ->
+    let length, _ = finish root in
+    let recipes = List.fold_left (fun acc (_, t) -> acc + t) 0 !times in
+    TSys.print caps
+      (Printf.sprintf "%8d ms        the critical path to %s, at most %d.%d at once:\n"
+         length root.name (recipes / max 1 length)
+         (recipes * 10 / max 1 length mod 10));
+    List.iter (fun (name, t) ->
+      TSys.print caps (Printf.sprintf "%8d ms  %s\n" t name)) (chain root []))
+    roots
+
 (* -t, at the end: the times by kind of target: its
  * directory and its extension (bin/*, ml/*.s, *.o), and the rest of the
- * run's, which was no recipe's *)
-let report caps total =
+ * run's, which was no recipe's; then the critical path *)
+let report caps total roots =
   let kind name =
     let dir = Filename.dirname name and base = Filename.basename name in
     let ext =
@@ -608,7 +660,8 @@ let report caps total =
       (Printf.sprintf
          "%8d ms        the recipes', %d.%d at once\n%8d ms        in all\n"
          recipes (recipes / max 1 total) (recipes * 10 / max 1 total mod 10)
-         total)
+         total);
+  critical caps roots
 
 (*****************************************************************************)
 (* Entry point *)
@@ -660,9 +713,11 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
       | ts, _ -> ts
     in
     let stamps = load caps in
+    let roots = ref [] in
     let ok =
       targets |> List.for_all (fun t ->
         let root = graph rules (TSys.exists caps) t in
+        roots := !roots @ [ root ];
         if !dot then begin
           TSys.print caps "digraph G {\n";
           order root |> List.iter (fun n ->
@@ -675,7 +730,7 @@ let run (caps : < caps; .. >) (argv : string array) : Exit.t =
         else build caps vars stamps (max 1 !jobs) !dry !timed root)
     in
     if not !dry then save caps stamps;
-    if !timed then report caps (TSys.millis caps - began);
+    if !timed then report caps (TSys.millis caps - began) !roots;
     if ok then Exit.OK else Exit.Code 1
   with Error msg -> Exit.Err msg
 

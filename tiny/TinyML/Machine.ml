@@ -234,15 +234,52 @@ let op (st : state) o =
   | IsInt -> alui M.And a a 1; tagged a
   | Tag -> ins (M.Load (M.B, a, a, -4)); tagged a
 
-(* a block of n fields from the runtime, in r13 *)
-let alloc (st : state) tag n =
+(* a block of n fields from the runtime, in r13, the stack's registers
+ * kept *)
+let alloc_c (st : state) tag n =
   spill st;
   st.mcargs <- max st.mcargs 2;
   emit st (M.Li (r13, Int32.of_int n));
   ins st (M.Store (M.W, r13, sp, 0));
   emit st (M.Li (r13, Int32.of_int tag));
   ins st (M.Store (M.W, r13, sp, 4));
-  c_call st "ml_alloc"
+  c_call st "ml_alloc";
+  reload st
+
+(* A block of n fields, in r13, the stack's registers kept.
+ *
+ * opti: the block is taken from the heap here, by the runtime's
+ * ml_heap (ml.c): its next word moved past the block, the header
+ * written. ml_alloc is called only when a stack is past its limit or
+ * the block does not fit, to say the overflow or to collect. ml_alloc,
+ * called for every block, was 14% of make self's instructions
+ * (plan_tiny_self_speed.md, step 4), and its call spilled the stack's
+ * registers and read them back.
+ *
+ * old: alloc_c, always. *)
+let alloc (st : state) tag n =
+  if n > 1000 then alloc_c st tag n
+  else begin
+    let slow = label () and done_ = label () in
+    emit st (M.La (lr, "ml_heap"));
+    ins st (M.Load (M.W, r13, lr, 8));
+    emit st (M.Branch_to (M.Ltu, r13, vsp, lab slow));
+    ins st (M.Load (M.W, r13, lr, 12));
+    emit st (M.Branch_to (M.Ltu, sp, r13, lab slow));
+    ins st (M.Load (M.W, r13, lr, 0));
+    ins st (M.Alui (M.Add, r13, r13, 4 * (n + 1)));
+    ins st (M.Load (M.W, lr, lr, 4));
+    emit st (M.Branch_to (M.Ltu, lr, r13, lab slow));
+    emit st (M.La (lr, "ml_heap"));
+    ins st (M.Store (M.W, r13, lr, 0));
+    ins st (M.Alui (M.Add, r13, r13, -4 * n));
+    emit st (M.Li (lr, Int32.of_int ((n lsl 10) lor tag)));
+    ins st (M.Store (M.W, lr, r13, -4));
+    emit st (M.Jump (lab done_));
+    emit st (M.Label (lab slow));
+    alloc_c st tag n;
+    emit st (M.Label (lab done_))
+  end
 
 (* a call of ML: the closure in r13, the arguments in r1..rn *)
 let call (st : state) t n tail =
@@ -390,11 +427,9 @@ let instruction (st : state) (i : ir) =
   | Alloc (tag, n) ->
       alloc st tag n;
       for k = 0 to n - 1 do
-        get st (spill_slot st (st.msp - k)) lr;
-        ins st (M.Store (M.W, lr, r13, 4 * k))
+        ins st (M.Store (M.W, st.msp - k, r13, 4 * k))
       done;
       st.msp <- st.msp - n;
-      reload st;
       result st
   | Blank (tag, n) ->
       alloc st tag n;
@@ -402,7 +437,6 @@ let instruction (st : state) (i : ir) =
       for k = 0 to n - 1 do
         ins st (M.Store (M.W, lr, r13, 4 * k))
       done;
-      reload st;
       result st
   | Op o -> op st o
   | Call (t, n, tail) -> call st t n tail

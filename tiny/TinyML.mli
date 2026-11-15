@@ -280,8 +280,9 @@
  * Each is cheap thanks to the stack machine or the value stack:
  * - arm32: a second back end for the stack machine (the one for
  *   tiny-machine took 150 lines);
- * - inline allocation: keep the heap pointer and limit in two
- *   registers, and call the collector only when a block does not fit;
+ * - the heap pointer and its limit in two registers: allocation is
+ *   already inline (TinyML/Machine.ml's alloc), but it reads them from
+ *   memory, the runtime's ml_heap, at each block;
  * - fewer spills: at a call, spill only the registers below the
  *   arguments (the arguments are passed in registers and could stay
  *   there);

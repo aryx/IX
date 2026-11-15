@@ -48,15 +48,62 @@ long ml_slimit;
 /* The heap, the collector */
 /*****************************************************************************/
 
-/* the memory, the includer's (ml_init_heap): the value stack's base,
- * the heap's two halves and their size in words */
+/* The memory, which the includer gives to ml_run. A program on
+ * tiny-kernel (mlsys.c's main), from its low addresses up:
+ *
+ *   _end                vlimit     heap0       heap0 + half    slimit   top
+ *    |                    |          |               |           |       |
+ *    +------+-------------+---+------+---------------+-----------+---+---+
+ *    | code |  value stack -> |      |  half (from)  |  half     |  <- machine
+ *    | data |  ML's frames    |      |  the heap     |  (other)  |  stack, C
+ *    +------+-------------+---+------+---------------+-----------+---+---+
+ *         vbase (ml_vsp, r12, grows up)              (sp grows down) argv
+ *
+ * The kernel (kruntime.c) has the same pieces at fixed addresses, with
+ * no stack limits. The collector copies what is live from one half to
+ * the other, and the halves swap: from is the heap in use, other the
+ * free one. Within from:
+ *
+ *    from                   hp               limit              from + maxheap
+ *     +-----------------------+----------------+ - - - - - - - - - - +
+ *     | blocks                | free           |  not in use yet     |
+ *     +-----------------------+----------------+ - - - - - - - - - - +
+ *     |<--------------- size words ----------->|
+ *
+ * A collection that leaves less than half of size free doubles size,
+ * up to maxheap, the half's. A block is a header word, n << 10 | tag,
+ * then its n fields; its value points at the first field, the header
+ * at -1:
+ *
+ *     p - 1   p       p + 1         p + n
+ *     +-------+-------+-------+ ... +
+ *     |n|tag  | field | field |     |
+ *     +-------+-------+-------+ ... +
+ *
+ * ml_heap (below) holds the four words that an allocation checks:
+ *
+ *     ml_heap[0]  hp      the next free word
+ *     ml_heap[1]  limit   from + size
+ *     ml_heap[2]  vlimit  the value stack's limit (none: the highest address)
+ *     ml_heap[3]  slimit  the machine stack's (none: 0)
+ *
+ * The value stack's base, the heap's two halves and their size in
+ * words: */
 static value *vbase;
 static value maxheap;
 static value *from;           /* the heap: from..limit, allocated up to hp */
 static value *other;          /* the other half */
-static value *hp;
-static value *limit;
 static value size;
+
+/* What tiny-ml's code reads and writes to allocate a block itself
+ * (TinyML/Machine.ml's alloc): the heap's next free word and its limit,
+ * then the value stack's limit and the machine stack's (ml_vlimit and
+ * ml_slimit, or none). The code calls ml_alloc only when the block
+ * does not fit or a stack is past its limit: to collect, or to say the
+ * stack overflowed. */
+value *ml_heap[4];
+#define hp ml_heap[0]
+#define limit ml_heap[1]
 static value *lo;             /* the collector's: the space collected, */
 static value *hi;
 static value *next;           /* and where the next copy goes */
@@ -729,6 +776,12 @@ ml_run(value *stack, value *space0, value *space1, value words, value initial)
 	other = space1;
 	hp = from;
 	limit = from + size;
+	/* no limit: the highest address for the value stack, 0 for the
+	 * machine stack, which grows down */
+	ml_heap[2] = ml_vlimit;
+	if(ml_vlimit == 0)
+		ml_heap[2] = (value*)-1;
+	ml_heap[3] = (value*)ml_slimit;
 	ml_vsp = vbase;
 	ml_start(vbase);
 }

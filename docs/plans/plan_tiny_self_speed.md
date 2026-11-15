@@ -153,7 +153,7 @@ lands on.
 | 1 | tiny-machine built without `-opaque` (done) | 1.27 (measured) | minutes | no: native only |
 | 2 | Looking a name up without building the directory's strings (done) | 1.43 (measured) | small | yes: fewer instructions |
 | 3 | tiny-cc keeping scalar locals in registers (done) | 1.49 on self-quick (measured) | medium | yes: fewer instructions |
-| 4 | tiny-ml allocating inline | 1.2 to 1.4 | small to medium | yes: fewer instructions |
+| 4 | tiny-ml allocating inline (done) | 1.10 on self-quick (measured) | small to medium | yes: fewer instructions |
 | 5 | tiny-machine's fast path, one look for each batch | 2 to 3 | medium | yes: a faster interpreter |
 | 6 | Several cores by default, on OCaml 5's domains | 2 to 3, after step 2 | small | no: no domains in a page |
 
@@ -318,6 +318,16 @@ images of the same tree, each with the host's files:
 | 2, operands in place, immediates | 39.8 s | 1.30 times faster |
 | step 3 | | 1.49 times faster |
 
+make self's session, the same way: 28 min 11 s to 19 min 21 s (1.46
+times faster; 2.6 times since step 0's 50 min 24 s), the host's image.
+The first build, by -prof: 82.4 G instructions to 56.9 G, the kernel
+28%. At the top now: `ml_alloc`, 14% of all the instructions (9.4% in
+the programs, 4.5% in the kernel), which is step 4; the kernel's
+scheduler lists (`runnable`, `go`, `find`, `rev`, `exists`), about
+9.5%; then `compare` 2.5%, the collector (`copy`, `collect`, `wosize`)
+about 3%, and the strings (`u_read`, `ml_string_concat`,
+`ml_string_sub`) about 4%.
+
 The fuzzer (TinyC_fuzz.py, 200 programs against the host's cc), make
 test and make self-quick-tix pass. The word-at-a-time copy is left for
 after step 4, with the other routines that a profile may still show at
@@ -333,6 +343,29 @@ still finds every root there). The same step can make a test of a
 constructor a branch on the word, without making a boolean first.
 Whether the collector needs a larger first heap (fewer collections,
 each one copying the same live data) is measured here.
+
+Done on 2026-11-15, for the allocation. The runtime's heap pointer and
+limit are the first two words of `ml_heap` (ml.c), with the two
+stacks' limits after them (none: the highest address for the value
+stack, 0 for the machine stack). TinyML/Machine.ml's `alloc` checks
+the two stacks and the room for the block, moves the heap pointer and
+writes the header itself, about 16 instructions, and the fields are
+stored from the stack's registers. Only a stack past its limit or a
+block that does not fit calls `ml_alloc`, which reports the overflow
+or collects, as before. Its old version is kept as `alloc_c`, which a
+block of more than 1000 fields still uses. A deep recursion that
+allocates on its way down still ends in "Fatal error: stack overflow
+(the value stack)", the same as before.
+
+| | self-quick | instructions |
+|---|---|---|
+| step 3 | 39.3 s | 2.21 G |
+| step 4 | 35.8 s | 2.00 G |
+| | 1.10 times faster | |
+
+`ml_alloc` was about 9% of self-quick's instructions and is gone from
+the top of its profile. The test of a constructor and the first heap's
+size are not done.
 
 ### Step 5: tiny-machine's fast path
 

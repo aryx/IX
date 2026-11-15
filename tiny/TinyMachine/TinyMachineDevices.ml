@@ -824,6 +824,23 @@ let calm mc =
 let what mc =
   if not (supervisor mc) then 0 else if mc.waiting then 2 else 1
 
+(* The window the stretch's accesses go through, for
+ * TinyMachineCPU.step_in: lo, hi and off, as [check] translates for the
+ * mode; empty with the pages (a walk for each page) or the split
+ * segments, which [check] alone does. Nothing in a stretch can change
+ * the mode, the window or satp: that is a register of control written
+ * ([touched]), a trap or an eret. *)
+let window mc =
+  let c = mc.csr in
+  let paged = c.(satp) land 0x80000000 <> 0 in
+  if not !TinyMachineCPU.direct then (0, 0, 0)
+  else if supervisor mc then
+    (if paged && c.(satp) land user_only = 0 then (0, 0, 0) else (0, memsize, 0))
+  else if paged then (0, 0, 0)
+  else if c.(status) land relocate = 0 then (c.(base), c.(bound), 0)
+  else if c.(status) land split = 0 then (0, c.(bound), c.(base))
+  else (0, 0, 0)
+
 let ticks mc (env : TinyMachineCPU.env) n =
   if not !batched then
     for _i = 1 to n do
@@ -851,12 +868,13 @@ let ticks mc (env : TinyMachineCPU.env) n =
         k := 0
       end;
       let pc = ref m.pc in
+      let lo, hi, off = window mc in
       (try
          while !k > 0 && not mc.touched do
            pc := m.pc;
            c.(time) <- TinyMachineCPU.m32 (c.(time) + 1);
            decr k;
-           TinyMachineCPU.step env m
+           TinyMachineCPU.step_in env m lo hi off devices
          done
        with Trap (cause_v, tval_v) ->
          trap mc cause_v tval_v

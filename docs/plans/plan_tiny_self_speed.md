@@ -8,11 +8,13 @@ and ocaml in a few seconds, so it's sad to require 50min when run
 under t-ix"; then, after the analysis: "I think if we reach 5min
 instead of the current 50min would be a good result for this plan".
 
-**Status: steps 0 to 3 done** (2026-11-15). The analysis below is
+**Status: steps 0 to 5 done** (2026-11-15). The analysis below is
 done, the baseline is measured (step 0), the long runs use a release
 build of tiny-machine (step 1), names are looked up in place (step 2),
-tiny-cc keeps variables in registers (step 3), and steps 4 to 6 have
-not been started. make self went from 50 minutes to 28 after step 2.
+tiny-cc keeps variables in registers (step 3), tiny-ml allocates
+inline (step 4), tiny-machine reads memory directly in a stretch
+(step 5), and step 6 has not been started. make self went from 50
+minutes to 18 after step 4.
 
 ## The problem
 
@@ -154,7 +156,7 @@ lands on.
 | 2 | Looking a name up without building the directory's strings (done) | 1.43 (measured) | small | yes: fewer instructions |
 | 3 | tiny-cc keeping scalar locals in registers (done) | 1.49 on self-quick (measured) | medium | yes: fewer instructions |
 | 4 | tiny-ml allocating inline (done) | 1.10 on self-quick (measured) | small to medium | yes: fewer instructions |
-| 5 | tiny-machine's fast path, one look for each batch | 2 to 3 | medium | yes: a faster interpreter |
+| 5 | tiny-machine's fast path, one look for each batch (done) | 1.47 on self-quick (measured) | medium | yes: a faster interpreter |
 | 6 | Several cores by default, on OCaml 5's domains | 2 to 3, after step 2 | small | no: no domains in a page |
 
 Steps 1 to 5 together make an estimated factor of 6 to 15, which takes
@@ -367,6 +369,24 @@ allocates on its way down still ends in "Fatal error: stack overflow
 the top of its profile. The test of a constructor and the first heap's
 size are not done.
 
+make self's session: 19 min 21 s to 18 min 6 s (1.07 times faster),
+the host's image; the first build 56.9 G instructions to 52.6 G. Less
+than self-quick's gain, because the collector does more: `copy` 0.80
+G to 1.50 G, `collect` 0.58 G to 1.07 G. A probable cause, not
+checked yet: an allocation no longer spills the stack's registers, so
+a frame's spill slots keep older values longer, and the collector,
+which scans every slot, copies data that is already dead. A follow-up.
+
+Not seen by make test and self-quick, but by make check (run on
+2026-11-15 for step 5): step 3's first part changed three recorded
+screens and the text session, all legitimately. debug shows ping's
+registers and code, now different; officepaint, tetris and trace's
+attachment follow the programs' speed (paint reads more of the
+mouse's moves, the piece falls further, trace attaches after the loop's
+first wait); u_write's frame is 32 bytes. Their sums and check.expected
+were recorded again with step 5. make check belongs in the gate of a
+change of tiny-cc or tiny-ml too.
+
 ### Step 5: tiny-machine's fast path
 
 Within one batch of `ticks`, nothing can change the mode or the
@@ -378,6 +398,36 @@ without calling `translate` on each access. The slow path stays for
 the pages, the devices and the first tick of a batch. The goal is that
 tiny-machine runs about as fast as tiny-cpu does (113 M instructions a
 second) or faster.
+
+Done on 2026-11-15. TinyMachineCPU's `step_in` takes a window [lo,
+hi), an offset and a top: a fetch, load or store whose address is in
+the window, and whose result is below top (the devices), reads or
+writes memory directly; any other goes by `env` as before, which traps
+or reaches the device. `step` is `step_in` with an empty window.
+TinyMachineDevices's `window` gives the mode's window once a stretch
+of `ticks`: the kernel's whole memory, a user program's partition
+(relocate: [0, bound) moved by base) or window ([base, bound)), and
+none with the pages or the split segments, which `check` alone does.
+`direct` is false under `-prof`, whose fetch counts each pc.
+
+Measured on the same images, the old path against the new (`direct`
+false and true):
+
+| | old | new | |
+|---|---|---|---|
+| self-quick (release) | 40.8 s | 27.7 s | 1.47 times faster |
+| tetris, natively | 58.6 M/s | 88.5 M/s | 1.51 |
+| tetris, under node | 22.7 M/s | 32.7 M/s | 1.44 |
+| office, natively | 104.4 M/s | 168.0 M/s | 1.61 |
+| office, under node | 33.8 M/s | 53.2 M/s | 1.57 |
+| paint, natively | 116.4 M/s | 174.3 M/s | 1.50 |
+| paint, under node | 32.1 M/s | 39.1 M/s | 1.22 |
+
+Both hosts gain, and every recorded screen is the same (a machine's
+time is its count of instructions, which the path does not change).
+The goal of 113 M a second is passed natively for every session but
+tetris. Further, the batch could also skip decode_kept's hash (a
+decoded instruction kept by its address instead of its word).
 
 ### Step 6: several cores by default
 

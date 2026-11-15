@@ -1,10 +1,10 @@
 # TinyWindows.ml's theirs: 15 windows at most (the kernel asked about 31 descriptors)
 tiny/TinyBrowser/Screen.ml:91: stack: first calls itself, not a tail call, over a list
-tiny/TinyC/Lower.ml:119: stack: Lower.lower calls itself, not a tail call, over a list
-tiny/TinyC/Lower.ml:123: stack: Lower.lower calls itself, not a tail call, over a list
-tiny/TinyC/Lower.ml:128: stack: Lower.lower calls itself, not a tail call, over a list
-tiny/TinyC/Lower.ml:135: stack: Lower.lower calls itself, not a tail call, over a list
-tiny/TinyC/Lower.ml:145: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:220: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:224: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:229: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:236: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:246: stack: Lower.lower calls itself, not a tail call, over a list
 tiny/TinyC/Parser.ml:173: stack: Parser.declarator calls itself, not a tail call, over a list
 tiny/TinyC/Parser.ml:176: stack: Parser.declarator3 calls itself, not a tail call, over a list
 tiny/TinyC/Parser.ml:337: stack: Parser.call_args calls itself, not a tail call, over a list
@@ -54,9 +54,9 @@ tiny/TinyML/Types.ml:49: evalorder: operands at 49:12 and 49:21, both with an ef
 tiny/TinyMachine.ml:373: int31: in TinyMachine's toplevel, 0xa1b2c3d4: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:13: int31: in TinyMachineCPU.m32, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:14: int31: in TinyMachineCPU.signed, 0x80000000; 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyMachine/TinyMachineCPU.ml:157: int31: in TinyMachineCPU:fun at line 156, 0xffffffff: not on the Pi 1's 31 bits
-tiny/TinyMachine/TinyMachineCPU.ml:181: int31: in TinyMachineCPU:fun at line 179, 0xffffffff; x lsl 32: not on the Pi 1's 31 bits
-tiny/TinyMachine/TinyMachineCPU.ml:191: int31: in TinyMachineCPU:fun at line 190, x lsr 32; 0xffffffff; x lsr 33: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:191: int31: in TinyMachineCPU:fun at line 190, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:217: int31: in TinyMachineCPU:fun at line 215, 0xffffffff; x lsl 32: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:227: int31: in TinyMachineCPU:fun at line 226, x lsr 32; 0xffffffff; x lsr 33: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:45: int31: in TinyMachineCPU.load, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:56: int31: in TinyMachineCPU.alu, -2147483648: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:132: int31: in TinyMachineDevices.console_read, 0xfffffffe; 0xffffffff: not on the Pi 1's 31 bits
@@ -70,6 +70,7 @@ tiny/TinyMachine/TinyMachineDevices.ml:717: int31: in TinyMachineDevices.from_no
 tiny/TinyMachine/TinyMachineDevices.ml:724: stack: place calls itself, not a tail call, over a list
 tiny/TinyMachine/TinyMachineDevices.ml:804: int31: in until, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:809: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:835: int31: in TinyMachineDevices.window, 0x80000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:56: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyOffice/Drawing.ml:42: stack: take calls itself, not a tail call, over a list
 tiny/TinyOffice/File.ml:78: stack: any calls itself, not a tail call, over a list

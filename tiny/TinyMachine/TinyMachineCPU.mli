@@ -217,6 +217,14 @@ val plain : sys:(machine -> int -> unit) -> env
 
 (* [boot] puts the image at 0 and sp at the top of memory *)
 val step : env -> machine -> unit
+(* [step_in env m lo hi off top]: step, but an access whose address is
+ * in [lo, hi) is to memory at the address plus off, when that is below
+ * top, without env; any other access is env's. A machine around the CPU
+ * gives the window its mode has for a stretch of instructions. [direct]
+ * is false while profiled counts the fetches: then the window must be
+ * empty (0 0 0 0). *)
+val step_in : env -> machine -> int -> int -> int -> int -> unit
+val direct : bool ref
 val boot : string -> machine
 
 (* [image name bytes] checks that the bytes fit in the memory. [show]

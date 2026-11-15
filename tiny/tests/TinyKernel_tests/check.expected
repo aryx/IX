@@ -423,7 +423,7 @@ exited 1
 % exec
 _start:	jal	lr, 0x* <main>
 break
-u_write:	addi	sp, sp, -40
+u_write:	addi	sp, sp, -32
 0	u_write
 1	eprint+*	0 0x* 0x* 2
 2	main+*	0 0x* 0 0x* 1 0 ...
@@ -433,7 +433,8 @@ u_write:	addi	sp, sp, -40
 6	ml_run+*
 7	main+*
 8	_start
-% % fork() = 25
+% % wait(0x*) = 24
+fork() = 25
 wait(0x*) = 25
 fork() = 26
 wait(0x*) = 26

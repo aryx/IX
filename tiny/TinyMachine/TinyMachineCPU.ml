@@ -114,9 +114,35 @@ let decode_kept w =
  * that closure at every step. *)
 let set (r : int array) d v = if d <> 0 then r.(d) <- m32 v
 
-let step env m =
+(* Faster: memory reached directly.
+ *
+ * opti: env's fetch, load and store are closures, and a machine around
+ * the CPU (TinyMachineDevices) checks the mode and translates the
+ * address at each one: about 400 of the host's instructions for each
+ * of the machine's, where tiny-cpu's plain memory needs a quarter
+ * (plan_tiny_self_speed.md, step 5). But for many instructions in a
+ * row the translation is the same, an address's window [lo, hi) moved
+ * by off, so [step_in] is given it and reads and writes memory itself
+ * when the address is in the window and the result below top (the
+ * devices start there); otherwise it calls env, which traps or reaches
+ * the device. An empty window (lo = hi = 0) is the plain step: every
+ * access by env. [direct] false (profiled's fetch counts each pc)
+ * keeps it empty.
+ *
+ * old: [step] alone, every access by env. *)
+let direct = ref true
+
+(* where address a is in memory: -1 when not in the window, or not
+ * below top *)
+let inside lo hi off top a =
+  let a = addr a in
+  if ult a lo || not (ult a hi) then -1
+  else (let p = addr (a + off) in if p < top then p else -1)
+
+let step_in env m lo hi off top =
   let pc = m.pc in
-  let w = env.fetch m pc in
+  let p = inside lo hi off top pc in
+  let w = if p >= 0 then load m W p else env.fetch m pc in
   match if !keep_decoded then decode_kept w else decode w with
   | None -> env.illegal m w
   | Some i ->
@@ -126,14 +152,22 @@ let step env m =
        | Alu (op, d, a, b) -> set r d (alu op r.(a) r.(b))
        | Alui (op, d, a, imm) -> set r d (alu op r.(a) (m32 imm))
        | Lui (d, imm) -> set r d (imm lsl 16)
-       | Load (s, d, a, off) -> set r d (env.load m s (r.(a) + off))
-       | Store (s, d, a, off) -> env.store m s (r.(a) + off) r.(d)
+       | Load (s, d, a, k) ->
+           let va = r.(a) + k in
+           let p = inside lo hi off top va in
+           set r d (if p >= 0 then load m s p else env.load m s va)
+       | Store (s, d, a, k) ->
+           let va = r.(a) + k in
+           let p = inside lo hi off top va in
+           if p >= 0 then store m s p r.(d) else env.store m s va r.(d)
        | Branch (c, d, a, off) ->
            if compare c r.(d) r.(a) then m.pc <- addr (pc + 4 + (4 * off))
        | Jal (d, off) -> set r d (pc + 4); m.pc <- addr (pc + 4 + (4 * off))
        | Jalr (d, a, off) ->
            let t = word (r.(a) + off) in set r d (pc + 4); m.pc <- t
        | Sys n -> env.sys m n)
+
+let step env m = step_in env m 0 0 0 0
 
 let boot image =
   let m = { r = Array.make 16 0; pc = 0; mem = Bytes.make !memsize '\000' } in
@@ -176,6 +210,8 @@ type profile = (int, int ref) Hashtbl.t
 let profile () : profile = Hashtbl.create 4096
 
 let profiled (env : env) (p : profile) (where : machine -> int * int) =
+  (* every fetch by env, so that each one is counted *)
+  direct := false;
   { env with fetch = (fun m pc ->
       let mode, base = where m in
       let k = (((base lsl 1) lor mode) lsl 32) lor (pc land 0xffffffff) in

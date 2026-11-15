@@ -74,8 +74,14 @@ COPY . .
 RUN eval $(opam env) && make
 
 # Test: lite (make test-lite, the default) or all (make test-all); or
-# make self-tix, self-mix
+# make self-tix, self-mix. make self's whole output goes to /src/self.out
+# and only its last lines to the log: BuildKit keeps 2 MB of a step's
+# log, which mix's kernel and card builds fill in its first minutes, so
+# GitHub's log of the nightly job stopped there, 85 minutes before the
+# result (self.sh's ok and FAIL lines, a failed directory's errors)
 ARG TESTS=lite
 RUN eval $(opam env) && \
   if [ "$SELF" = mix ]; then kernels/ocaml-light.sh arm; fi && \
-  if [ -n "$SELF" ]; then make self-$SELF; else make test-${TESTS}; fi
+  if [ -n "$SELF" ]; then \
+    make self-$SELF > /src/self.out 2>&1; s=$?; tail -80 /src/self.out; exit $s; \
+  else make test-${TESTS}; fi

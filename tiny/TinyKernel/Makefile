@@ -160,13 +160,39 @@ MKFSBIN = $(wildcard $(MKFS))
 # do not rebuild everything each time the profile changes. The checks
 # keep bin/'s tiny-machine, the one everyone uses, and a MACHINE given
 # on the command line wins.
+#
+# make self also runs on four cores, each on a host's core (an OCaml 5
+# domain, -cores-parallel), its builds with -j 4: 5 min 50 s instead of
+# 11 min 50 s on one (plan_tiny_self_speed.md, step 7). That needs a
+# tiny-machine built by OCaml 5, so when opam has the switch OCAML5 (as
+# tests/lite.sh and mini-pi look for it) the release build is OCaml 5's,
+# in _build5; without it, make self runs on one core as before (the
+# cores in turns would be no faster). Only tiny-machine is OCaml 5's:
+# the tools stay the default OCaml's, whose objects are the host's
+# (tests/lite.sh: OCaml 5's Marshal writes other bytes). The cores make
+# a run vary (which recipe starts first), not what make self checks;
+# SELF_CORES= SELF_J=1 gives the one core's run, the same each time.
+OCAML5 = 5.5.1
+ifneq ($(filter run self,$(MAKECMDGOALS)),)
+DOMAINS := $(shell command -v opam > /dev/null && opam switch list -s 2> /dev/null | grep -qx $(OCAML5) && echo yes)
+endif
+ifeq ($(DOMAINS),yes)
+RELEASE_MACHINE = $(abspath ../../_build5/default/tiny/TinyMachine.exe)
+RELEASE_DUNE = opam exec --switch=$(OCAML5) -- dune build --build-dir _build5
+SELF_CORES = -cores 4 -cores-parallel
+SELF_J = 4
+else
 RELEASE_MACHINE = $(abspath ../../_build_release/default/tiny/TinyMachine.exe)
+RELEASE_DUNE = dune build --build-dir _build_release
+SELF_CORES =
+SELF_J = 1
+endif
 ifneq ($(origin MACHINE),command line)
-run run-window self self-quick self-cores: MACHINE = $(RELEASE_MACHINE)
-run run-window self self-quick self-cores: | $(RELEASE_MACHINE)
+run run-window self self-quick: MACHINE = $(RELEASE_MACHINE)
+run run-window self self-quick: | $(RELEASE_MACHINE)
 endif
 $(RELEASE_MACHINE): FORCE
-	cd ../.. && dune build --profile release --build-dir _build_release ./tiny/TinyMachine.exe
+	cd ../.. && $(RELEASE_DUNE) --profile release ./tiny/TinyMachine.exe
 
 # how the kernel gives the processes memory (KMemory.mli)
 MEMORY = partitions
@@ -271,7 +297,7 @@ $(O)/run.img: $(O)/disk.img
 $(O)/runsrc.img: $(O)/src.img
 	$(call grown,$<,$@)
 run: $(O)/boot.img $(O)/run.img $(O)/runsrc.img
-	$(MACHINE) -d $(O)/run.img -d $(O)/runsrc.img $(O)/boot.img
+	$(MACHINE) $(SELF_CORES) -d $(O)/run.img -d $(O)/runsrc.img $(O)/boot.img
 run-window: $(O)/boot.img $(O)/run.img $(O)/runsrc.img
 	$(MACHINE) -window -d $(O)/run.img -d $(O)/runsrc.img $(O)/boot.img
 
@@ -300,7 +326,7 @@ MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap 
 # that a run is the same each time, for tiny-vcs's commits and the
 # files' dates. It needs override because a tiny-machine can be given as
 # MACHINE on the command line.)
-check check-parts self self-quick self-cores: override MACHINE := $(MACHINE) -date 820540800 -seed 1
+check check-parts self self-quick: override MACHINE := $(MACHINE) -date 820540800 -seed 1
 # The check's parts run side by side, J at a time unless make was given
 # -j. Each session's text goes in $(O)/check/NN.out, and these files are
 # put together in their order; each screen and sound goes in its own
@@ -457,12 +483,15 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # host's tools and by tiny-kernel's, so a change of the code changes
 # both, and a difference means that a tool of tiny-kernel's (tiny-ml's
 # code, the runtime, the kernel) is wrong. And each file that build
-# install put on the disk must be the host's, _make/system's. It takes
-# about 50 minutes, so it is not in check.
+# install put on the disk must be the host's, _make/system's. Its builds
+# run with -j 4 on four cores when tiny-machine has OCaml 5's domains
+# (SELF_CORES, above): about 6 minutes, 12 on one core (50 before
+# plan_tiny_self_speed.md), so it is not in check. None of these checks
+# depends on the order the recipes ran in, which the cores change.
 FSCAT = $(abspath ../../_build/default/tiny/tests/KFS_tests/Cat.exe)
 self: $(O)/boot.img $(O)/disk.img $(O)/src.img
 	$(call grown,$(O)/disk.img,$(O)/self.img); $(call grown,$(O)/src.img,$(O)/selfsrc.img)
-	timeout 36000 $(MACHINE) -d $(O)/self.img -d $(O)/selfsrc.img $(O)/boot.img < $(T)/self.keys > $(O)/self.out
+	sed 's|^build |build -j $(SELF_J) |' $(T)/self.keys | timeout 36000 $(MACHINE) $(SELF_CORES) -d $(O)/self.img -d $(O)/selfsrc.img $(O)/boot.img > $(O)/self.out
 	for f in 'comment: compiled 1 linked 0' 'calc: compiled 1 linked 1 image 0' 'last: compiled 0 linked 0'; do \
 	  grep -q "$$f" $(O)/self.out || { echo "tiny-kernel: self: not \"$$f\":"; cat $(O)/self.out; exit 1; }; done
 	$(FSCAT) $(O)/self.img usr/glenda/self/first.img > $(O)/self.boot.img
@@ -483,25 +512,8 @@ self-quick: $(O)/boot.img $(O)/disk.img $(O)/src.img
 	sed -E $(MASK) $(O)/self-quick.out | diff $(T)/self-quick.expected -
 	rm $(O)/self-quick.img $(O)/self-quicksrc.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
 
-# self on several cores (plan_tiny_multicore.md): tiny-machine -cores 4,
-# with each build run with -j 4. Only the image of the first build is
-# compared with the host's (the recipes' lines are in the order they
-# started, which depends on the cores). By default the cores run in
-# turns, so the run is the same each time, and as slow as one core on
-# the host. To run on the host's cores, each core on a domain, build
-# tiny-machine with OCaml 5 (in _build5, as ./mini-pi -P does), and run
-#   make self-cores CORES='-cores 4 -cores-parallel' \
-#     MACHINE=../../_build5/default/tiny/TinyMachine.exe
-CORES = -cores 4
-self-cores: $(O)/boot.img $(O)/disk.img $(O)/src.img
-	$(call grown,$(O)/disk.img,$(O)/self-cores.img); $(call grown,$(O)/src.img,$(O)/self-coressrc.img)
-	sed 's|^build |build -j 4 |' $(T)/self.keys | timeout 36000 $(MACHINE) $(CORES) -d $(O)/self-cores.img -d $(O)/self-coressrc.img $(O)/boot.img > $(O)/self-cores.out
-	$(FSCAT) $(O)/self-cores.img usr/glenda/self/first.img > $(O)/self-cores.boot.img
-	cmp $(O)/boot.img $(O)/self-cores.boot.img
-	rm $(O)/self-cores.img $(O)/self-coressrc.img $(O)/self-cores.out $(O)/self-cores.boot.img && echo "tiny-kernel: self-cores ok, its image the host's"
-
 clean:
 	rm -rf $(O)
 
-.PHONY: all run run-window check check-parts self self-quick self-cores clean FORCE
+.PHONY: all run run-window check check-parts self self-quick clean FORCE
 .SECONDARY:

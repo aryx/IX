@@ -8,17 +8,35 @@ and ocaml in a few seconds, so it's sad to require 50min when run
 under t-ix"; then, after the analysis: "I think if we reach 5min
 instead of the current 50min would be a good result for this plan".
 
-**Status: steps 0 to 5 done** (2026-11-15). The analysis below is
-done, the baseline is measured (step 0), the long runs use a release
-build of tiny-machine (step 1), names are looked up in place (step 2),
-tiny-cc keeps variables in registers (step 3), tiny-ml allocates
-inline (step 4), tiny-machine reads memory directly in a stretch
-(step 5), and step 6 is measured (four parallel cores, not yet make
-self's default); then the scheduler, fork's copy and the parallel cores
-(below step 6). make self went from 50 minutes 24 seconds to 11 minutes
-50 seconds on one core (4.3 times), and to 5 minutes 50 seconds on
-four (8.6 times, about 110 times the host's 3.2 seconds); 5 minutes is
-nearly reached.
+**Status: done** (2026-11-15; the author: "we're close to 5min; maybe
+we can consider this plan done", then step 7 for CI and make self's
+default). make self went from 50 minutes 24 seconds to 5 minutes 50
+seconds on four cores (8.6 times faster; about 110 times the host's 3.2
+seconds, from about 945), and to 11 minutes 50 seconds on one (4.3
+times).
+
+## Results
+
+| | make self | since step 0 |
+|---|---|---|
+| step 0, the baseline | 50 min 24 s | |
+| 1, tiny-machine in dune's release profile | 40 min 22 s | 1.25 |
+| 2, a name looked up in place (KFS) | 28 min 11 s | 1.79 |
+| 3, tiny-cc's variables in registers, operands in place | 19 min 21 s | 2.6 |
+| 4, tiny-ml's allocation inline | 18 min 6 s | 2.8 |
+| 5, tiny-machine's memory reached directly | 13 min 13 s | 3.8 |
+| the scheduler's lists | 12 min 12 s | 4.1 |
+| k_copy unrolled, rc's spawn | 11 min 50 s | 4.3 |
+| 6, four cores in parallel (OCaml 5) | 7 min 49 s | 6.4 |
+| idle cores blocking, another core's slice 8 ticks | **5 min 50 s** | **8.6** |
+| 7, the cores make self's default and CI's | (the same) | |
+
+Each is measured side by side with the one before, on images of the
+same tree, with the host's image and files; each step's section below
+has its numbers and what it changed. The page (t-ix.html) gains what
+steps 2 to 5 gave: tiny-machine 1.2 to 1.6 times faster under node.
+
+What is left to do is at the end, [Next, not done](#next-not-done).
 
 ## The problem
 
@@ -161,7 +179,8 @@ lands on.
 | 3 | tiny-cc keeping scalar locals in registers (done) | 1.49 on self-quick (measured) | medium | yes: fewer instructions |
 | 4 | tiny-ml allocating inline (done) | 1.10 on self-quick (measured) | small to medium | yes: fewer instructions |
 | 5 | tiny-machine's fast path, one look for each batch (done) | 1.47 on self-quick (measured) | medium | yes: a faster interpreter |
-| 6 | Several cores by default, on OCaml 5's domains (measured, not the default) | 1.49 with 4 cores (measured) | small | no: no domains in a page |
+| 6 | Several cores, on OCaml 5's domains (done, with the parallel cores' fixes below) | 2.0 with 4 cores, 11 min 50 s to 5 min 50 s (measured) | small | no: no domains in a page |
+| 7 | The cores make self's default, and CI's (done) | the 2.0 above, where OCaml 5 is | small | no |
 
 Steps 1 to 5 together make an estimated factor of 6 to 15, which takes
 50 minutes to between 3 and 8. Step 6 is what should make the 5
@@ -561,9 +580,40 @@ Done on 2026-11-15, make self-cores (`-cores 4 -cores-parallel`, build
 
 The kernel on core 0 alone (master and slaves, as the first
 multiprocessor Unixes) keeps it without a lock; tiny/README.md now has
-it as tiny-kernel's twist, not as what it drops. make self is not yet
-changed to run on the cores (OCaml 5's domains needed): 5 min 50 s
-there, 11 min 50 s on one core.
+it as tiny-kernel's twist, not as what it drops.
+
+### Step 7: the cores by default, in make self and in CI
+
+Added on 2026-11-15 (the author: "part of the goal is also to make CI
+and running make self faster for faster development loop"). The four
+cores' run passed all that make self checks (the rebuilds' counts, the
+first image, the 121 files installed), so make self is that run now:
+
+- TinyKernel/Makefile: when opam has the switch OCAML5 (5.5.1, looked
+  for as tests/lite.sh does, and only for make self and make run), the
+  release tiny-machine is built by it in _build5, and make self runs
+  `-cores 4 -cores-parallel` with build -j 4; make run has the four
+  cores too. Without the switch, one core, as before. Only tiny-machine
+  is OCaml 5's; the tools stay 4.14's, whose objects are the host's.
+  `SELF_CORES= SELF_J=1` gives the one core's run, the same each time.
+  self-cores is gone, folded into self.
+- Dockerfile: for SELF=tix, a second switch, OCaml 5.5.1, with the same
+  packages, created with --no-switch so that ix is still built by 4.14;
+  ocaml-caps's commit is one argument, CAPS, for both switches.
+
+Tested with CI's own image on this Mac (`docker build --build-arg
+SELF=tix .`, arm64 where GitHub's runners are x86_64): 13 min 21 s in
+all, the second switch 2 min 13 s, make self-tix 7 min 18 s on the four
+cores, its image and files the host's. .dockerignore now leaves out
+_build5, _build_release and the _make directories, as a checkout has
+none (they put macOS's binaries in the image).
+
+The nightly job (.github/workflows/self.yml), on 2026-11-15 at steps 1
+and 2: 49 min in all, of which make self-tix 39.7 min and the image's
+setup about 8 (OCaml 4.14 from its sources 2.3 min, the packages 2.4,
+make 1.2); the second switch adds a few minutes to the setup. The mix
+job (m-IX in mini-9pi, about 93 min) is the workflow's longer one, and
+not this plan's.
 
 ## The page (t-ix.html)
 
@@ -637,7 +687,7 @@ Each step is kept only if all of these pass:
    and it must not make the page slower.
 4. **The code stays readable**: a fast path that doubles a piece of
    code is kept only if its gain is large. The rule of
-   [t-IX's inventory of optimizations](../notes/notes_tiny_opti_inventory.md)
+   [t-IX's inventory of optimizations](../../notes/notes_tiny_opti_inventory.md)
    holds: a gain that is not measured is not kept.
 
 ## Not in this plan
@@ -654,3 +704,21 @@ Each step is kept only if all of these pass:
   a function). Step 4 takes the cheap part of it. The rest can come
   later if the value stack's traffic is at the top of the profile once
   steps 2 to 5 are done.
+
+## Next, not done
+
+The author stopped here (2026-11-15): "let's stop on optimizing the
+self job for tix". What the last profiles and runs point to, the
+largest first, for a later plan:
+
+| | what | helps | estimated gain |
+|---|---|---|---|
+| A | tiny-machine: a decoded instruction kept by its address within a stretch, not found again by its word's hash (decode_kept) at each step | everything, the page most | 1.1 to 1.2 |
+| B | the nightly job's setup: Docker's layers kept between runs (each night builds OCaml 4.14, and for tix 5.5.1 too, from their sources, and installs their packages: about 8 minutes, and 2 more for the second switch) | the nightly job | 5 to 8 min a run |
+| C | the collector since step 4: an allocation no longer spills the stack's registers, so a frame's spill slots keep older values longer and the collector copies data already dead (copy and collect did about twice the work) | everything | 1.03 to 1.05 |
+| D | KFS's lookup reading the directory a byte at a time by peekb (fs_get, same, byte): words, compared four bytes at a time; and a few of the runtime's routines in assembly (compare, the copies of strings), as the author suggested | everything | small each |
+| E | more cores: 8 were slower than 4 before the parallel cores' fixes; core 0, which runs the kernel alone, decides how far they go, now that it has room | make self | not measured |
+
+Outside this plan, the nightly workflow's other job, mix (m-IX built
+in mini-9pi under QEMU, about 93 minutes), failed every night of
+2026-11-11 to 15, and is now its longest.

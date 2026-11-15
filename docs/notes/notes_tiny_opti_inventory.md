@@ -6,11 +6,14 @@ the tiny programs. Started 2026-10-27 (the author, after play's WAV
 was made to keep up: "maybe we can start a notes_tiny_opti_inventory.md
 like we did for mix").
 
-Scope: tiny/ from 2026-10-08 to 2026-10-27. Sources: the commit
-messages (each row gives its commit), the code's old: comments and
-switches. Every number is copied from the commit with the setting it
-gives, except T12 and T13's, measured for this note. Not yet gathered:
-the tiny-cc and tiny-as sides, the tiny programs' own
+Scope: tiny/ from 2026-10-08 to 2026-10-27, then T14 to T21, the
+steps of plans/done/plan_tiny_self_speed.md (2026-11-13 to 15, make
+self 50 min 24 s to 5 min 50 s), each measured against the one before
+it. Sources: the commit messages (each row gives its commit), the
+code's old: and opti: comments and switches. Every number is copied
+from the commit with the setting it gives, except T12 and T13's,
+measured for this note. Not yet gathered: the tiny-as side, the tiny
+programs' own
 algorithms (TinyBrowser, TinyOffice), and the second pass every row
 deserves (each gain measured alone again, on today's tree).
 
@@ -46,6 +49,14 @@ host.
 | T11 | The machine's speed a setting, 20 M with a window | TinyMachine, kentry.s; 29662089 | not a saving: the machine 2.5 times faster for a person watching, the programs' pace by ticks kept | +157 -54 | `-rate n` |
 | T12 | `wfi`: the kernel idle asleep, the time added at once | TinyMachineDevices `extra`, `tick`, `ticks`; kentry.s's k_idle1 (2026-10-27; first as a guess from a jump to itself, `idle_skipped`, 51096869) | play's run (boot, the 6.4 s WAV, sleep 2: 9.6 s of machine time) at -rate 20: 11.0 s of the host to 8.7 | +45 | `batched` (false: each tick, asleep or not) |
 | T13 | A sound's write that waits woken when the ring has room, not every 10 ms | KIO `Voice`, KDevices `speak` (2026-10-27) | the same run: 135M busy instructions to 88M; with T12 6.1 s of the host | +18 -10 | none (old: comment) |
+| T14 | tiny-machine of dune's release profile for the long runs (no -opaque) | TinyKernel/Makefile, 4f8252ab | make self 50 min 24 s to 40 min 22 s | +18 | MACHINE= |
+| T15 | A name looked up in the directory's blocks, no string made | KFS `fs_lookup`, bb473aa2 | make self 40:22 to 28:11; instructions 100.8 G to 82.4 G | +38 -2 | none (old: comment) |
+| T16 | tiny-cc: scalar variables in registers, operands read in place, immediates | TinyC Lower, Machine; 99b9ce29, fdf7a9c6 | a copy loop 31 to 11 instructions a byte; make self 28:11 to 19:21 | +433 -76 | none (old: comments) |
+| T17 | tiny-ml: a block allocated inline, ml_alloc only to collect | TinyML Machine `alloc`, ml.c `ml_heap`; 8545b4e1 | self-quick 39.3 s to 35.8 s; make self 19:21 to 18:06 | +101 -13 | `alloc_c` for big blocks |
+| T18 | tiny-machine: memory reached directly in a stretch's window | TinyMachineCPU `step_in`, TinyMachineDevices `window`; 0838a492 | self-quick 1.47x; the bench natively 1.5 to 1.6x, under node 1.2 to 1.6x; make self 18:06 to 13:13 | +73 -10 | `direct` |
+| T19 | The scheduler: last in one pass or none, a process's gone | KScheduler `last`, KProcs; 1d6eacf3 | make self 13:13 to 12:12 | (part of +147 -33) | none (old: comment) |
+| T20 | k_copy eight words a turn; rc spawning a simple command, a mask of the descriptors | kcopy.s, TinyShell `launch`, KCalls `sys_spawn`; 1d6eacf3 | make self 12:12 to 11:50 | (same) | fork and exec kept |
+| T21 | Cores in parallel: idle ones blocking, core 0 dozing, another core's slice 8 ticks | TinyMachine.ml, KScheduler `give`; 3d32bc3d | make self-cores 7:49 to 5:50 (host CPU 1863 s to 885 s) | +116 -18 | SELF_CORES= |
 
 ## Worth it?
 

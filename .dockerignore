@@ -1,6 +1,11 @@
 _build
+_build5
+_build_release
 .git
 _mk
+# what TinyKernel/Makefile builds (O=_make-x too): images, the system's
+# files, and the release tiny-machines above
+**/_make*
 # what a kernel's Makefile builds: the image is a fresh checkout's
 kernels/*/build
 kernels/*/*.img

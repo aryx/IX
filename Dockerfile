@@ -44,8 +44,9 @@ COPY dune-project ./
 # ocaml-caps has before opam's repository has it (0.1.1: Cap.clock,
 # Cap.pipe, CapUnix.getpid; CapSys.set_signal and the files', CapUnix's
 # network, mkfifo, setitimer, _exit). A new ocaml-caps for ix is a new
-# hash here
-RUN eval $(opam env) && opam pin add -y -n caps git+https://github.com/aryx/ocaml-caps.git#e1b05e74f5326187491125dad1312df87d109afb
+# hash here (CAPS, for tix's second switch too, below)
+ARG CAPS=git+https://github.com/aryx/ocaml-caps.git#e1b05e74f5326187491125dad1312df87d109afb
+RUN eval $(opam env) && opam pin add -y -n caps ${CAPS}
 RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler js_of_ocaml ppx_deriving menhir
 
 # For make self (.github/workflows/self.yml, --build-arg SELF=tix or
@@ -58,6 +59,15 @@ RUN if [ "$SELF" = mix ]; then apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-arm \
     gcc-arm-linux-gnueabihf fdisk && \
   git clone -q https://github.com/aryx/ocaml-light /root/ocaml-light; fi
+# tix's make self runs tiny-kernel on four cores, each on an OCaml 5
+# domain (tiny/TinyKernel/Makefile's OCAML5, plan_tiny_self_speed.md's
+# step 7): a second switch, for tiny-machine alone, with the same
+# packages (--no-switch: ix itself is built by the first). Without it,
+# make self runs on one core, twice as long
+RUN if [ "$SELF" = tix ]; then \
+  opam switch create 5.5.1 --no-switch -v && \
+  opam pin add -y -n --switch=5.5.1 caps ${CAPS} && \
+  opam install -y --switch=5.5.1 dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler js_of_ocaml ppx_deriving menhir; fi
 
 # Build
 COPY . .

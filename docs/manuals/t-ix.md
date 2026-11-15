@@ -30,7 +30,7 @@ self` checks it: tiny-kernel rebuilds its image and its system from
 `make self-quick-tix` runs it from ix's top directory). These runs,
 and `make run`, use a tiny-machine built in dune's release profile,
 about 20% faster than `bin/`'s
-([plan_tiny_self_speed.md](../plans/plan_tiny_self_speed.md), step 1).
+([plan_tiny_self_speed.md](../plans/done/plan_tiny_self_speed.md), step 1).
 
 ## 1. The quick way
 

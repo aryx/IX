@@ -34,10 +34,14 @@ cp "$card" "$build/card.img"
 
 # 1. the build on the card
 # (the card's ml with MLOPT as mkconfig's, -O3 unless set: its objects
-# Linux's)
+# Linux's. Each command timed only with SELF_TIMES=1: each time is a
+# process more for each of the build's 1,300 commands, part of mk's
+# 0.24 s a command on the card, and mk's own time, each directory's,
+# is self.rc's, kept in BUILD/times.txt either way)
+t=; [ -n "${SELF_TIMES:-}" ] && t='time '
 cat > "$build/session.cmds" <<EOF
 cd /src
-T=('ML=time ml -m 5 ${MLOPT:--O3}' 'LD=time ld -m 5 -map' 'CC=time cc -m 5' 'AS=time asm -m 5' 'AR=time ar')
+T=('ML=${t}ml -m 5 ${MLOPT:--O3}' 'LD=${t}ld -m 5 -map' 'CC=${t}cc -m 5' 'AS=${t}asm -m 5' 'AR=${t}ar')
 rc kernels/9pi/tests/self.rc $q \$T > /tmp/self.log >[2=1]
 grep FAILED /tmp/self.log
 du -s /src/_mk

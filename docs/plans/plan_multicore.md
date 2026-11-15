@@ -773,3 +773,75 @@ mini-qemu is still very slow"):
   too); mini-qemu's default clock, `-ips 30`, is a machine slower than
   a Pi 2 (`-ips 200` is a board's pace: the memory on `-ips`); one busy
   rio is one core, which `-cores-parallel` does not make faster.
+
+## The self-build on four cores: measured, and how to find the lock's cost
+
+Measured on 2026-11-15, in CI's image (`docker build` of the committed
+tree, arm64 Linux on a Mac, QEMU's raspi2b), for the nightly mix job
+(make self-mix, about 90 minutes on one core, QEMU on one host core;
+plan_tiny_self_speed.md did the same for t-IX). make self-quick, its
+part of lib_core and two programs, the Pi 2's kernel built with SMP=1
+as check-cores builds it (boot.rc then gives mk NPROC=4):
+
+| self-quick, mk on the card | one core | four cores |
+|---|---|---|
+| mk's time | 55 s | 50 to 51 s |
+| its commands' times added up | 36 s | 85 to 87 s |
+| commands at once, on average | 0.65 | 1.7 |
+| QEMU on the host | one core | 2.4 cores (median), up to 3.2; 6 threads |
+
+mk did run its jobs side by side, and QEMU ran the cores on host
+threads (the default for an ARM guest; `-accel tcg,thread=multi` the
+same), but each command took about 2.4 times as long, so four cores
+gave 1.1 times. The files made were Linux's either way. The likely
+causes, not yet told apart: the big lock (a core that waits for it
+spins with its interrupts off, by ldrex and strex, which QEMU emulates
+across its threads at a cost), and the TLB maintenance a page table's
+change broadcasts to every core, which makes QEMU stop all of them. So
+make self-mix stays on one core (kernels/9pi/Makefile unchanged).
+
+Without each command's `time` (tests/self.sh's SELF_TIMES, off by
+default since), mk on one core took 55 s instead of 59 s.
+
+How to find where four cores lose their time, cheapest first:
+
+1. **Count the lock's waits.** runtime.c's `idle_us` already keeps
+   each core's idle time for /dev/sysstat, and is careful that a core
+   waiting for the lock is not idle; nothing counts that wait. A
+   counter beside it, each core's time spent in the loop around
+   `klock_try` (the board's clock before and after, as `idle_begin`
+   and `idle_end` read it), shown as one more column of
+   /dev/sysstat, says how much of a run the lock takes. `cat
+   '#c/sysstat'` before and after self-quick, or in a loop on the
+   card, gives it per core.
+2. **Who holds it, and doing what.** `doing_` (runtime.c: each core's
+   process, program and system call, kept for the watchdog's last
+   words) says what the holder does. A table of what the holder was
+   doing when another core began to wait (a count per system call's
+   name, or "trap", "fault", "the collector") names the offending
+   calls: a read that copies a file through the kernel, a page fault,
+   the collector run with the lock held.
+3. **Where each core's PC is, from outside.** QEMU's monitor (`-qmp`
+   or `-monitor`, `info cpus`) gives each vCPU's PC; sampled every
+   tenth of a second during self-quick and named by the kernel's
+   symbols (kernel.elf, as mini-qemu's `-symbols`), the share of
+   samples inside `klock_try`'s loop is the spinning, core by core,
+   without changing the kernel.
+4. **Lock or TLB, from the host.** `perf top` (or `perf record -t`) on
+   QEMU's vCPU threads, on Linux: time in QEMU's helpers for
+   exclusive loads and stores is the lock's spinning; time in
+   `tlb_flush_*_all_cpus_synced` and `cpu_exec_step_atomic` (all the
+   vCPUs stopped) is the TLB's broadcast or an atomic step.
+5. **The same under mini-qemu.** `-cores-parallel` with `-status N`
+   (section 4.6 of docs/manuals/mini-qemu.md: where the guest is, its
+   hot functions) shows `klock_try` among a core's hot functions when
+   it spins; `-prof` counts the first core only, so a profile of each
+   core is a small change there.
+
+What would follow from each: the lock's waits dominate, behind a few
+system calls: give those calls their own lock, or do their copies
+outside the lock (After the big lock, above); the spinning itself is
+the cost: wait with `wfe` and wake with `sev` where a core gives the
+lock, so a waiting core sleeps instead of hammering the exclusive
+monitor; the TLB's broadcasts dominate: flush only the current core's
+entries where the change is the current process's alone.

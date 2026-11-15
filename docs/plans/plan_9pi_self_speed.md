@@ -1,4 +1,4 @@
-# Plan: m-IX building itself in mini-9pi in under 10 minutes (`kernels/9pi/`, `kernels/lib_machine/`, `languages/ml/runtime/`)
+# Plan: m-IX building itself in mini-9pi in 25 minutes on one core, under 10 on four (`kernels/9pi/`, `kernels/lib_machine/`, `languages/ml/runtime/`)
 
 The author (2026-11-15), after t-IX's self-build went from 50 minutes
 to under 10 ([plan_tiny_self_speed.md](done/plan_tiny_self_speed.md)):
@@ -39,8 +39,29 @@ elsewhere, in mini-9pi's kernel and in the programs' own code (the
 floor, the same build by m-IX's ARM programs under qemu-arm with
 Linux's kernel, is step 0's last measure).
 
-**The goal is make self-mix's build in under 10 minutes**, on one
-core first; then CI's whole mix job in about 15.
+**The floor** (2026-11-15, CI's image on this Mac): the same build,
+tests/self.rc, by m-IX's own ARM programs (mini-mk O=5's: mini-ml
+compiled by mini-ml...) under qemu-arm, with Linux's kernel, one job:
+1,155 s, about 19 minutes (79 directories, before self.rc's list was
+fixed; about 20 for its 81). So on one host's core:
+
+| the same build | one job | |
+|---|---|---|
+| on Linux, the tools compiled by OCaml | 90 s | 1 |
+| the floor: m-IX's ARM programs under qemu-arm | about 20 min | 13 |
+| on the card: the same programs in mini-9pi, QEMU's whole machine | 55 to 60 min here, about 85 in CI | 40 |
+
+mini-9pi and the machine QEMU emulates (its MMU, the SD card) cost
+about three times the floor: that is what this plan can take away. The
+floor itself is QEMU's translation times mini-ml's code against
+OCaml's (and ints of 31 bits): faster only by mini-ml's code generator,
+another plan.
+
+**So the goals:** make self-mix's build in about 25 minutes on one core
+(the floor and a kernel's small share, from about 60), and **in under 10
+minutes on the Pi 2's four cores** (the floor divides by the cores, as
+make test-ix-fixpoint-arm's runs show; mini-9pi's SMP first, step 6).
+Then CI's whole mix job in about 15.
 
 ## How to measure, in minutes, not an hour
 

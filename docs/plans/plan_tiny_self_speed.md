@@ -13,10 +13,12 @@ done, the baseline is measured (step 0), the long runs use a release
 build of tiny-machine (step 1), names are looked up in place (step 2),
 tiny-cc keeps variables in registers (step 3), tiny-ml allocates
 inline (step 4), tiny-machine reads memory directly in a stretch
-(step 5), and step 6 is measured (four parallel cores, 1.5 times, not
-yet make self's default). make self went from 50 minutes 24 seconds to
-13 minutes 13 seconds on one core (3.8 times), and to 8 minutes 52
-seconds on four (5.7 times); 5 minutes is not reached.
+(step 5), and step 6 is measured (four parallel cores, not yet make
+self's default); then the scheduler, fork's copy and the parallel cores
+(below step 6). make self went from 50 minutes 24 seconds to 11 minutes
+50 seconds on one core (4.3 times), and to 5 minutes 50 seconds on
+four (8.6 times, about 110 times the host's 3.2 seconds); 5 minutes is
+nearly reached.
 
 ## The problem
 
@@ -519,6 +521,49 @@ of the same tree, with the host's image and files:
 session 12 min 12 s to 11 min 50 s (1.03; 4.3 times since step 0, about
 220 times the host's 3.2 s). Left at the kernel's top: `fs_lookup`'s
 byte reads (`fs_get`, `same`, `byte`, by peekb), `row_copy`, `runnable`.
+
+### The parallel cores again
+
+Done on 2026-11-15, make self-cores (`-cores 4 -cores-parallel`, build
+-j 4, OCaml 5), each run with the host's image:
+
+| | make self, four cores |
+|---|---|
+| step 6 | 8 min 52 s |
+| with the scheduler, k_copy and spawn (below) | 7 min 49 s |
+| a core with nothing to run blocks (host CPU 1863 s to 1200 s) | 7 min 47 s |
+| core 0 asleep waits for the others' interrupt, or 1 ms | 8 min 5 s |
+| another core's slice 8 ticks, not 1 | **5 min 50 s** |
+
+1. A core on its own domain with nothing to run (kentry.s's slave:
+   asleep, its timer off) waited by running ticks of sleep in a loop,
+   a host's core each, its clock billions of instructions ahead. It
+   now waits on a condition that another core's interrupt signals.
+2. tiny-machine's report of each core now says the instructions run
+   (a program's, the kernel's) apart from the time asleep, which it
+   counted as instructions (80 to 99% idle). It showed the bottleneck:
+   core 0 ran 25.8 G instructions, 94% of them the kernel's, about as
+   many as one host's core runs in the time, while the others waited
+   for it.
+3. Core 0 asleep while the others run waits for their interrupt (a
+   byte in a pipe) or a millisecond, instead of moving its clock to its
+   timer in turn after turn: its kernel's instructions 24.2 G to 19.5
+   G, no faster.
+4. The kernel runs on core 0 alone, and the end of another core's slice
+   is a trap core 0 handles, nearly always to give the same process
+   back. With a slice of one tick (2.5 ms) these round trips were most
+   of core 0's work; with 8 ticks (20 ms, within what systems choose:
+   4.3BSD's 100 ms, Windows' 20 to 30 ms on a desktop), core 0 ran
+   12.7 G instructions, 8.4 G of them the kernel's, and make
+   self-cores took 5 min 50 s: 8.6 times faster than step 0's 50 min
+   24 s, about 110 times the host's 3.2 s. Core 0's own slice is one
+   tick still, so one core and make check are unchanged.
+
+The kernel on core 0 alone (master and slaves, as the first
+multiprocessor Unixes) keeps it without a lock; tiny/README.md now has
+it as tiny-kernel's twist, not as what it drops. make self is not yet
+changed to run on the cores (OCaml 5's domains needed): 5 min 50 s
+there, 11 min 50 s on one core.
 
 ## The page (t-ix.html)
 

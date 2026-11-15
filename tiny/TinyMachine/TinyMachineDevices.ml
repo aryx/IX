@@ -496,6 +496,11 @@ let translate mc m access va =
   if mc.csr.(satp) land 0x80000000 = 0 then check mc access va
   else walk mc m access va
 
+(* what wakes core k when it is given the cores' interrupt: nothing in
+ * turns; a core asleep on its own domain (TinyMachine.ml's
+ * -cores-parallel) waits for it *)
+let ipi_wake : (int -> unit) ref = ref (fun _ -> ())
+
 (* the cores' interrupt: core k's raised, from this one *)
 let ipi_send mc k =
   if k >= 0 && k < Array.length mc.ipis then begin
@@ -503,8 +508,20 @@ let ipi_send mc k =
     let rec set () =
       let v = Atomic.get mc.ipis.(k) in
       if not (Atomic.compare_and_set mc.ipis.(k) v (v lor bit)) then set () in
-    set ()
+    set ();
+    !ipi_wake k
   end
+
+(* whether core mc sleeps until another core's interrupt and nothing
+ * else: asleep (wfi), its timer off (timecmp all ones, as kentry.s's
+ * slave sets it while it has no process), no interrupt pending. Its
+ * domain can then wait instead of spinning, its clock left as it is *)
+let idle_until_ipi mc =
+  mc.waiting && mc.csr.(timecmp) = 0xffffffff && pending mc = 0
+
+(* whether core mc sleeps (wfi) with no interrupt it takes pending: its
+ * next [ticks] would only move its clock to its timer *)
+let asleep mc = mc.waiting && pending mc land mc.csr.(ie_csr) = 0
 
 (* a load and a store: the pages or the window, then memory or a device
  * (core 0's: another faults, but on the cores' word) *)

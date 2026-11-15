@@ -153,6 +153,15 @@ val supervisor : machine -> bool
 val window_base : machine -> int
 val ticks : machine -> TinyMachineCPU.env -> int -> unit
 
+(* For cores on domains of their own: [idle_until_ipi mc], whether the
+ * core sleeps until another core's interrupt and nothing else, so that
+ * its domain can wait; [ipi_wake], called with core k when k is sent
+ * that interrupt, to wake it (nothing by default, the cores in turns). *)
+val idle_until_ipi : machine -> bool
+val ipi_wake : (int -> unit) ref
+(* [asleep mc]: mc sleeps (wfi) with no interrupt it takes pending *)
+val asleep : machine -> bool
+
 (* These are what a host does between two [ticks]. An empty packet does
  * not reach the kernel: at its time it comes back to [send], and so it
  * serves as the clock of the other end. *)

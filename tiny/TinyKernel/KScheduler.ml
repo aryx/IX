@@ -162,13 +162,26 @@ let anywhere p = p.core = None
 let elsewhere p = p.core = None && not (KIO.traced p)
 
 (* The other cores (kentry.s's slave). A process given to core k: its
- * frame, its window and a slice in k's mailbox, then k's interrupt *)
+ * frame, its window and a slice in k's mailbox, then k's interrupt.
+ *
+ * opti: the slice is 8 ticks, 20 ms of the machine's time, where core
+ * 0's own is one tick. The end of another core's slice is a trap that
+ * core 0 handles (back, then dispatch and give again, nearly always the
+ * same process: with build -j 4 on four cores few processes wait), on
+ * the one core that also serves every other core's system calls; with
+ * one tick, these round trips were most of core 0's kernel work, and
+ * make self-cores went from 7 min 47 s to 5 min 50 s with 8
+ * (plan_tiny_self_speed.md). 20 ms is within what systems choose:
+ * 4.3BSD's round robin was every 100 ms, Linux's O(1) scheduler gave
+ * 100 ms, Windows gives a desktop's thread 2 clock ticks (20 to 30 ms).
+ *
+ * old: KMachine.tick, a slice of one tick. *)
 let give k p =
   p.core <- Some k;
   on.(k) <- Some p;
   let m = KMachine.mailbox k in
   KMemory.mem_post p.mem (m + 4);
-  KMachine.poke (m + 12) KMachine.tick;
+  KMachine.poke (m + 12) (8 * KMachine.tick);
   KMachine.poke m (KMachine.frame p.slot);
   KMachine.poke KMachine.ipi_dev k
 

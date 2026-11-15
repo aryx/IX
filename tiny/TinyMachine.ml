@@ -628,28 +628,85 @@ let run
     Console.eprint caps
       "tiny-machine: -cores-parallel: no domains in this OCaml; in turns\n";
   let failed = Atomic.make None in
-  if parallel then
-    List.iter (fun (h, env) ->
+  (* A core on its own domain that sleeps until another core's interrupt
+   * (kentry.s's slave with no process) waits on its condition, which
+   * that interrupt signals, instead of running ticks of sleep in a
+   * loop: those spun a host's core each (2121 s of CPU for 532 s, make
+   * self-cores with four) and moved the core's clock ahead by billions
+   * of instructions. The interrupt's bit is set before the signal, and
+   * looked at under the lock, so none is missed. *)
+  let locks = Array.init o.cores (fun _ -> Parallel.lock ())
+  and conds = Array.init o.cores (fun _ -> Parallel.cond ()) in
+  let wake k =
+    Parallel.take locks.(k); Parallel.signal conds.(k); Parallel.give locks.(k) in
+  (* Core 0, this loop's, asleep while the others run: it waits for
+   * their interrupt (a byte in this pipe), or a millisecond, the time
+   * its timer, the console, the window and the network are looked at.
+   * Its sleep used to be skipped to its next timer at once, in turn
+   * after turn: it handled the timer's empty ticks as fast as the host
+   * could run them, about half of its instructions in make self-cores,
+   * on the core that serves every other core's system calls. *)
+  let wakeup =
+    if parallel then begin
+      let r, w = CapUnix.pipe caps ~cloexec:true () in
+      Unix.set_nonblock r; Unix.set_nonblock w;
+      Some (r, w)
+    end
+    else None in
+  let wake k =
+    match wakeup with
+    | Some (_, w) when k = 0 ->
+        (* (the pipe full: a wake is already there to be read) *)
+        (try ignore (Unix.write_substring w "i" 0 1)
+         with Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) -> ())
+    | _ -> wake k in
+  let doze () =
+    match wakeup with
+    | Some (r, _) ->
+        (match Unix.select [ r ] [] [] 0.001 with
+         | _ :: _, _, _ ->
+             (* (the wakes read, as many as came; none left: nothing) *)
+             let b = Bytes.create 64 in
+             (try ignore (Unix.read r b 0 64)
+              with Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) -> ())
+         | _ -> ())
+    | None -> () in
+  if parallel then begin
+    TinyMachineDevices.ipi_wake := wake;
+    List.iteri (fun i (h, env) ->
+      let k = i + 1 in
       Parallel.spawn (fun () ->
         try
           while Atomic.get failed = None do
-            TinyMachineDevices.ticks h env 1024
+            if TinyMachineDevices.idle_until_ipi h then begin
+              Parallel.take locks.(k);
+              while Atomic.get failed = None
+                    && TinyMachineDevices.idle_until_ipi h do
+                Parallel.wait conds.(k) locks.(k)
+              done;
+              Parallel.give locks.(k)
+            end
+            else TinyMachineDevices.ticks h env 1024
           done
         with e -> ignore (Atomic.compare_and_set failed None (Some e))))
-      others;
+      others
+  end;
+  (* each core's instructions run, a program's or the kernel's, and the
+   * share of its time it slept (wfi), which is no instruction run *)
   let spent () =
     List.iteri (fun k (h : TinyMachineDevices.machine) ->
       let u = h.spent.(0) and s = h.spent.(1) and i = h.spent.(2) in
-      let all = max 1 (u + s + i) in
-      let pc v = 100 * v / all in
+      let ran = max 1 (u + s) and all = max 1 (u + s + i) in
       Console.eprint caps
         (Printf.sprintf
-           "tiny-machine: core %d: %.1f M instructions: programs %d%%, \
-            kernel %d%%, idle %d%%\n"
-           k (float_of_int all /. 1e6) (pc u) (pc s) (pc i)))
+           "tiny-machine: core %d: %.1f M instructions run: programs %d%%, \
+            kernel %d%%; asleep %d%% of its time\n"
+           k (float_of_int (u + s) /. 1e6) (100 * u / ran) (100 * s / ran)
+           (100 * i / all)))
       (mc :: List.map fst others) in
   let halted n =
     ignore (Atomic.compare_and_set failed None (Some Exit));
+    if parallel then Array.iteri (fun k _ -> wake k) conds;
     if others <> [] then spent ();
     Option.iter (fun f -> FS.write caps f (ppm m)) o.screen_file;
     Option.iter (fun f ->
@@ -679,8 +736,10 @@ let run
       if t land (polled - 1) = 0 && !waiting <> [] then
         Option.iter forwards peer;
       TinyMachineDevices.ticks mc env (1024 - (t land 1023));
-      if parallel then
-        (match Atomic.get failed with Some e -> raise e | None -> ())
+      if parallel then begin
+        (match Atomic.get failed with Some e -> raise e | None -> ());
+        if TinyMachineDevices.asleep mc then doze ()
+      end
       else
         List.iter (fun (h, env) ->
           TinyMachineDevices.ticks h env (1024 - (t land 1023))) others

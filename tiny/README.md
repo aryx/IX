@@ -234,7 +234,8 @@ kept:
   descriptor 4, and a window system passes them on as a pipe would.
   The disk is the root, in a union with the boot image's files. rc is
   the shell, build reads mk's language, and cc, as and ld make Plan 9's
-  kind of a.out.
+  kind of a.out. Programs are linked statically, as on Plan 9 and by
+  mini-ld: there is no dynamic linking.
 - **Unix's conventions, as seen from outside.** An object is a `.o`, a
   library a `.a`, and assembly a `.s`. Programs are in `/bin`, what
   they link with is in `/lib`, and the sources are in `/src`.
@@ -256,9 +257,9 @@ dropped:
 - **Configuration.** There is no configure script and no install
   prefix: there is one Buildfile, and `build install` copies the
   results into `/lib`.
-- **Dynamic linking and ELF.** Programs are linked statically into an
-  a.out whose header is three words. An object file is tiny-as's items,
-  marshalled (`TinyLibMachine`), not ELF.
+- **ELF.** mini-ld writes an ELF for Linux; tiny-ld writes only an
+  a.out, whose header is three words. An object file is tiny-as's
+  items, marshalled (`TinyLibMachine`), not ELF.
 - **Compatibility.** There is no POSIX: the system calls are the
   kernel's own, and the instructions are TinyCPU's. tiny-ml has no
   floats, functors, labeled arguments or objects (`TinyML.mli`).

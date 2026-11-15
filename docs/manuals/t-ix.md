@@ -731,18 +731,30 @@ TinyDebugger.mli):
   line also takes as keys.
 
 To try the toolchain and these two programs after
-`make -C tiny/TinyKernel run`, `/examples` has two programs to build:
+`make -C tiny/TinyKernel run`, `/examples` has small programs to
+build, most of them twice, once in C and once in ML:
 
-- `hello.c`, whose `square` function comes from `square.s`, written by
-  hand;
-- `helloml.ml`, with a tree, a closure, an exception and enough lists
-  that tiny-ml's collector runs.
+| C | ML | what it shows |
+|---|---|---|
+| `hello.c` | `helloml.ml` | a print; hello's `square` comes from `square.s`, written by hand, and helloml has a tree, a closure, an exception and enough lists that tiny-ml's collector runs |
+| `shapes.c` | `shapesml.ml` | a picture drawn: rectangles, lines and a text, as messages on descriptor 3 (§7.3) |
+| `fetch.c` | `fetchml.ml` | a document of another machine, by Gopher (§5.5): `./fetch hello.txt` |
+| `procs.c` | `procsml.ml` | a shell's pipeline by hand: a pipe, `fork`, `exec` and `wait` |
+| | `game.ml` | a ball in a box, the arrows turning it, on TinyLibPlayground (§7.5) |
+| | `gui.ml` | a counter with two buttons, on TinyLibGUI (§7.6) |
 
-It also has the `Buildfile` that builds them with `/lib`'s runtimes
-(`tiny/examples/` on the host, to read and edit there):
+`spin.s` is prof's example, with `spin.prof`, its profile made on the
+host by tiny-cpu (`prof spin.prof -u spin.map`). Each file's header
+says how to run it. `/examples` also has `korobeiniki.wav` for `play`
+(§7.3) and `report.ixd` for the office (§7.8).
+
+The `Buildfile` there builds them with `/lib`'s runtimes
+(`tiny/examples/` on the host, to read and edit there); `build` makes
+all of them, `build gui` one by its name:
 
     cd /examples; build; ./hello; ./helloml   # as, cc, ml, ld, then each one's output
     trace ./hello                             # its write and its exit
+    trace -f ./procs                          # the calls of both processes, the child's too
     debug ./hello                             # b square, c, bt, r, x/i pc 3, s, q
     debug ./helloml                           # b insert, c, bt: an ML frame's slots
 
@@ -751,8 +763,10 @@ image:
 
 - `/lib/c` has C's runtime (`start.o` first), tiny-kernel's calls
   (`sys.o`, `draw.o` and `net.o`), and their headers (`user.h` first);
-- `/lib/ml` has tiny-ml's library (its `.tmi` and `stdlib.a`) and its
-  runtime (`mlsys.o` and `end.o`).
+- `/lib/ml` has tiny-ml's library (its `.tmi` and `stdlib.a`), its
+  runtime (`mlsys.o` and `end.o`), and the libraries a program that
+  draws stands on, each after the ones it uses (`TinyLibSystem.o`,
+  `TinyLibDraw.o`, `TinyLibPlayground.o` and `TinyLibGUI.o`).
 
 They are built in `/src`, beside their sources, and copied to `/lib`
 by `cd /src; build install`, which also makes them again after a

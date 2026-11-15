@@ -32,6 +32,8 @@ else:
 addrs = [a for a, _ in syms]
 count, total = collections.Counter(), 0
 for l in open(samples):
+    # (a line of # is a comment: qemupcs.py's modes)
+    if l.startswith("#"): print(l.rstrip()); continue
     pc, n = l.split(); pc, n = int(pc, 16) & MASK, int(n); total += n
     i = bisect.bisect_right(addrs, pc) - 1
     count[syms[i][1] if i >= 0 else "(user)"] += n

@@ -49,8 +49,9 @@ keep_notes() { # notes answer
   return 0
 }
 
-# a report without its line numbers
-bare_line() { sed -E 's/:[0-9]+/:/g; s/ line [0-9]+/ line/g'; }
+# a report without its line numbers, those in its message too (evalorder's
+# "operands at 10:14 and 11:14", which an edit above moves like the report's)
+bare_line() { sed -E 's/ [0-9]+:/ :/g; s/:[0-9]+/:/g; s/ line [0-9]+/ line/g'; }
 
 # its lines kept, a file's in the unknown left out; a file a line, first
 # (a line that is no file: awk's first file never empty)

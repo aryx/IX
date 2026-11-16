@@ -37,7 +37,7 @@ mini-ml links mini-cc in 18 s (bugs/ix.md).
 ## Where the time goes
 
 **The kernel is its scheduler.** A profile of each build under mini-qemu
-(`-prof`, mapped by `kernels/9pi/tests/perf/pcprof.py`, which now reads
+(`-prof`, mapped by `scripts/pcprof.py`, which now reads
 `mini-ld -v`'s listing too) says the same of both: when no process
 runs, and between two, the kernel is in `Proc.all ()`:
 

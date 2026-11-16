@@ -92,7 +92,7 @@
  * twin:
  * mini-qemu has the same pair, with sampling: -prof F counts every
  * 1024th pc (raspberry/observe/Prof.ml), and a script maps them to a
- * kernel's functions (kernels/9pi/tests/perf/pcprof.py).
+ * kernel's functions (scripts/pcprof.py).
  *
  * Plan 9's emulators had the idea first: vi and 5i count every
  * instruction fetched by its address, and with the program's symbol

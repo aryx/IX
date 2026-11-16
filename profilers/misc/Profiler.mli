@@ -43,7 +43,7 @@
  * tools. It does what machine/tests/profile.sh did from mini-5i -t's
  * trace, which has a line of text for each instruction (a thousand
  * million of them for mini-doom's start), and what
- * kernels/9pi/tests/perf/pcprof.py did for mini-qemu's.
+ * scripts/pcprof.py did for mini-qemu's.
  *
  * cs-history:
  * Unix's prof (1973) read mon.out, a histogram of the program counter

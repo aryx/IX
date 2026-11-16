@@ -3,7 +3,7 @@
  * only the AArch64 state is profiled, not the AArch32 programs).
  * [contents] gives the counts as lines "pc count", with the PC in
  * hexadecimal and the most sampled PC first, for
- * kernels/9pi/tests/perf/pcprof.py to map to a kernel's functions.
+ * scripts/pcprof.py to map to a kernel's functions.
  *
  * It is mini-qemu's -prof FILE (docs/manuals/mini-qemu.md, section
  * 4.5), the first of plan_monitor.md's counters. It found that 38% of

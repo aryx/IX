@@ -250,7 +250,7 @@ works: Ctrl-A x, QMP's `quit`, closing the window, or SIGTERM.
 `pcprof.py` maps them to the kernel's functions:
 
     mini-qemu -M raspi1ap ... -prof /tmp/prof.txt
-    kernels/9pi/tests/perf/pcprof.py /tmp/prof.txt _make/9pi/pi1-ocaml/kernel.elf
+    scripts/pcprof.py /tmp/prof.txt _make/9pi/pi1-ocaml/kernel.elf
 
      37.8% __aeabi_idivmod
      17.9% memmove

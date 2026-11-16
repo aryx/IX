@@ -49,4 +49,4 @@ for k, v in b.items():
     # (the kernel is at 0x80000000 and up; a program below 1 GB)
     if n > 0 and not (user and int(k, 16) >= 0x40000000): print(k, n)
 PY
-python3 tests/perf/pcprof.py $d/steady.txt $symbols ${3:-30}
+python3 ../../scripts/pcprof.py $d/steady.txt $symbols ${3:-30}

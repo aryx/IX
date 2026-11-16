@@ -13,9 +13,9 @@
 # for it (plan_9pi_self_speed.md, step 0).
 #
 #   qemupcs.py SOCK OUT [CORE]       (CORE: 0 by default)
-#   cd kernels/9pi && (tests/perf/qemupcs.py /tmp/qmp.sock /tmp/pcs.txt &) && \
+#   cd kernels/9pi && (../../scripts/qemupcs.py /tmp/qmp.sock /tmp/pcs.txt &) && \
 #     make self-quick QEMU="qemu-system-arm -qmp unix:/tmp/qmp.sock,server=on,wait=off"
-#   tests/perf/pcprof.py /tmp/pcs.txt ../../_make/9pi/pi2-ocaml-ix/kernel.elf
+#   ../../scripts/pcprof.py /tmp/pcs.txt ../../_make/9pi/pi2-ocaml-ix/kernel.elf
 
 import collections, json, os, re, socket, sys, time
 
@@ -43,7 +43,13 @@ cmd("qmp_capabilities")
 pcs = collections.Counter(); modes = collections.Counter(); n = 0
 try:
     while True:
+        # (the cores stopped first: a running core's R15 is QEMU's last
+        # copy of it, written when its code leaves a translated block or
+        # calls QEMU, so the samples favoured a device's or a page's
+        # code; stopped, each core's PC is where it is, to a block)
+        cmd("stop")
         text = cmd("human-monitor-command", {"command-line": "info registers -a"}).get("return", "")
+        cmd("cont")
         cpu = pc = None
         for line in text.splitlines():
             m = re.match(r"CPU#(\d+)", line)

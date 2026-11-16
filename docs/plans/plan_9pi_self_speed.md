@@ -78,10 +78,10 @@ with the card's build), in CI's own image, the committed tree:
 
 and inside it, the files changed copied in, then:
 
-- **the guest's profile**: kernels/9pi/tests/perf/qemupcs.py samples
+- **the guest's profile**: scripts/qemupcs.py samples
   each core's PC and mode through QEMU's monitor, 50 times a second
   (`make self-quick QEMU="qemu-system-arm -qmp unix:SOCK,server=on,wait=off"`),
-  and tests/perf/pcprof.py names them by kernel.elf's symbols: the
+  and scripts/pcprof.py names them by kernel.elf's symbols: the
   kernel's functions, and the user programs' share;
 - **the build's own log**: the card's /tmp/self.log, each command's
   time with SELF_TIMES=1, readable while the build runs from a copy of
@@ -142,7 +142,7 @@ before, with the files Linux's. The gains are guesses from the profile.
 
 | # | step | where | guess |
 |---|---|---|---|
-| 0 | the baseline: self-quick profiled (done); the full build timed and profiled on one core | tests/perf/qemupcs.py | |
+| 0 | the baseline: self-quick profiled (done); the full build timed and profiled on one core | scripts/qemupcs.py | |
 | 1 | pages zeroed while the core is idle: a list of zeroed pages, kalloc's first choice | lib_machine's Mmu.ml, the idle loop | up to 1.1 to 1.2 |
 | 2 | a smaller heap to start, on mini-9pi: 1 or 2 MB a half instead of 4 (fewer pages zeroed, more collections) | languages/ml/runtime/gc.c | 1.05 to 1.15 |
 | 3 | the SD card: fewer reads (Kfs's cache large enough for a build that reads the same libraries again), larger reads, then the controller's DMA | 9pi's Kfs, the SD driver | 1.1 to 1.3 |

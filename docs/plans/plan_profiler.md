@@ -28,7 +28,7 @@ hopefully it can help optimizing this doom game and mini-ml and more";
 |---|---|---|
 | `mini-5i -s` | a program's instructions, exactly | a run |
 | `machine/tests/profile.sh` | by function, from `mini-5i -t`'s trace: a line of text an instruction | mini-doom's start, a thousand million instructions: most of an hour |
-| mini-qemu `-prof F`, `kernels/9pi/tests/perf/pcprof.py`, `steady.sh` | a whole system's pcs, one in 1024, by the kernel's functions or one program's | Python, one program at a time |
+| mini-qemu `-prof F`, `scripts/pcprof.py`, `steady.sh` | a whole system's pcs, one in 1024, by the kernel's functions or one program's | Python, one program at a time |
 | tiny-prof (`tiny/TinyProfiler`) | tiny-machine's profile by tiny-ld's maps, the kernel's and the programs' apart, `-diff` | t-ix's only |
 | the meters (`stats=on`, `Browser_profile`) | a program's parts, in ms | a program's own |
 

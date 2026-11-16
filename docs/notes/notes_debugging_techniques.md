@@ -511,7 +511,7 @@ became necessary:
   the major collector: 20% that are not the game's). Two runs, the
   keys held 4 seconds and 24, and the samples of the first taken from
   the second's: what is left is 20 seconds of frames
-  (kernels/9pi/tests/perf/pcprof.py reads it).
+  (scripts/pcprof.py reads it).
 - **The same samples against the program's symbols**: the addresses
   below the kernel's are the program's, and `mini-ld -v` with the
   game's own link command gives its listing; pcprof.py takes a
@@ -854,7 +854,7 @@ pid. The session's kill took the wrapper and left the emulator
 running, then `kill -TERM` made it write the profile. The kernel's
 samples (addresses above 0x80000000) are read with the kernel's ELF
 (`nm -n _make/9pi/pi1-ocaml-ixu/kernel.elf`); the program's with its map
-(`kernels/9pi/tests/perf/pcprof.py` takes either).
+(`scripts/pcprof.py` takes either).
 
 **The order, for next time:**
 1. Fill the table: each build that runs here, and a second program on

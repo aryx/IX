@@ -994,3 +994,62 @@ cameltry the same, mini-ml compiling three of its units 0.11% fewer;
 tests/bench.sh within 0.2% (interp 0.16% fewer, limbs 0.15%). Kept for
 the case it fixes, the rewritten turbulent 13% fewer instructions than
 it was.
+
+## 2026-11-16, found profiling a compile: the assembly read back, and a division a digit
+
+The author, on what else could shorten make test-all and make self:
+"ok I like your plan, let's do it in order, starting with 1", mini-ml
+as a compiler (test-all's four suites that build ix, and the 19
+minutes of m-IX building itself under qemu-arm, the floor of
+plan_9pi_self_speed.md). mini-ml for arm (O=5, -O3) compiling three of
+its units (simple/Lower.ml, Typing.ml, ssa/Ssa_build.ml) under
+mini-5i, in million instructions:
+
+| | Lower | Typing | Ssa_build | all | |
+|---|---|---|---|---|---|
+| before | | | | 8,082 | 1 |
+| int_of_string without a division a digit | 3,570 | 1,934 | 1,846 | 7,350 | 0.909 |
+| the assembler's reader: the text not split again, a register's and a punctuation's tests | | | | 6,625 | 0.820 |
+| tokens a line at a time, expressions by precedence, = with a constant | | | | 6,233 | 0.771 |
+| a string pattern by the strings' equality | 2,970 | 1,614 | 1,579 | 6,163 | 0.763 |
+
+What the profile (mini-5i -prof, mini-prof) said, which was not the
+collector (its 24% of October is gone):
+
+- parse_int (the runtime's strings.c), 8%: before each digit it
+  divided to see whether the number would overflow, a 64-bit division
+  that on arm is vlrt.c's loop of 64 turns, 1,800 instructions, for
+  each digit of some 100 thousand numbers. The division now only for a
+  number of 2^59 or more.
+- The assembly read back, 40%: mini-ml prints a unit's assembly as
+  text, then reads it with the assembler's Parser_asm (CLI's output),
+  and saves the Asm.obj that makes. The reader split the text in
+  lines, trimmed each and joined them again to look for # lines (now
+  only when the text has a #); made the list of the whole file's
+  tokens, 200 thousand alive to the end for the collector to copy (now
+  a line's at a time); tried each name as R0 to R15 and F0 to F7 with
+  int_of_string_opt, an exception for each that is not; and went down
+  six levels of a grammar's functions for each operand, comparing the
+  next token's string with ten operators (now precedence climbing).
+  mini-asm on Typing's 27,405 lines: 689 to 554 million, the same
+  object. mini-asm and mini-cc read with the same code.
+- ml_equal: x = C and x <> C with a constant constructor, an int or a
+  char now compare the words (Lower's constant), and a string pattern
+  calls caml_string_equal, where both went through the generic
+  comparison. Not under mini-ml -calls.
+
+mini-5i itself could not list a directory on macOS (getdents64 found
+the directory's name by /proc/self/fd), so mini-ml under it found no
+Pervasives; Host now remembers the path of each directory it opens.
+
+On the card (make self-quick-mix in CI's image, one run each): 53 s of
+mk before, 52 after, the 89 files Linux's byte for byte: the kernel is
+65% of that build, so the compiler's gain waits for
+plan_9pi_self_speed.md's steps.
+
+What is left in Typing's compile (1,614 million): the text's round
+trip still about a third (Printf's doprn 5%, the assembler's lexer 4%
+and parser 5%, Marshal's writer 5%), which emitting Asm's instructions
+with no text between would take away, a change of the back ends; hash
+tables 14% (833 thousand hash_univ_param), whose callers the flat
+profile does not say; the collector's scan 6%.

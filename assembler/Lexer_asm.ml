@@ -65,20 +65,34 @@ let preprocess caps (dir : Fpath.t) (text : string) : string =
     |> List.rev
     |> String.concat "\n"
   in
-  lines dir text
+  (* opti: a text with no # has no #include and no #define, and is its
+   * own result: a compiler's output, which mini-ml and mini-cc assemble
+   * here, was split in lines, each trimmed, and joined again. *)
+  if String.contains text '#' then lines dir text else text
 
 let is_ident_start c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c = '_' || c = '.' || c = '\xc2'
 let is_ident c = is_ident_start c || (c >= '0' && c <= '9') || c = '\xb7'
 let is_digit c = c >= '0' && c <= '9'
 
-(* the tokens of a file, each with its line *)
-let tokens (text : string) : (token * int) list =
-  let n = String.length text and line = ref 1 and acc = ref [] in
+type lexer = { text : string; mutable pos : int; mutable line : int }
+
+let lexer (text : string) : lexer = { text; pos = 0; line = 1 }
+
+(* opti: the tokens a line at a time, as the parser takes them, not a
+ * list of the whole file's: a compiler's output of 27,000 lines was 200
+ * thousand tokens alive to the end, which each collection copied, a
+ * fifth of the assembler's time.
+ * old: tokens : string -> (token * int) list *)
+let line_tokens (lx : lexer) : (token * int) list =
+  let text = lx.text in
+  let n = String.length text and line = ref lx.line and acc = ref [] in
   let add t = acc := (t, !line) :: !acc in
   let rec go i =
-    if i < n then
+    (* (the text's end is an Eol too, the last) *)
+    if i >= n then (add Eol; lx.pos <- n + 1)
+    else
       let c = text.[i] in
-      if c = '\n' then (add Eol; incr line; go (i + 1))
+      if c = '\n' then (add Eol; incr line; lx.pos <- i + 1)
       else if c = ';' then (add Eol; go (i + 1))
       else if c = ' ' || c = '\t' || c = '\r' then go (i + 1)
       else if c = '/' && i + 1 < n && text.[i + 1] = '/' then
@@ -141,12 +155,15 @@ let tokens (text : string) : (token * int) list =
       end
       else if c = '\'' && i + 2 < n && text.[i + 2] = '\'' then (add (Int (Int64.of_int (Char.code text.[i + 1]))); go (i + 3))
       else begin
-        let two = if i + 1 < n then String.sub text i 2 else "" in
-        if List.mem two [ "<<"; ">>"; "->"; "@>"; "<>" ] then (add (Punct two); go (i + 2))
+        (* << >> -> @> <>, by their characters (not a string made of the
+         * two at each punctuation, looked for in the list of the five) *)
+        let d = if i + 1 < n then text.[i + 1] else ' ' in
+        if (d = '>' && (c = '<' || c = '>' || c = '-' || c = '@')) || (c = '<' && d = '<')
+        then (add (Punct (String.sub text i 2)); go (i + 2))
         else if String.contains "()[],$:+-*/%&|^~=<>@!" c then (add (Punct (String.make 1 c)); go (i + 1))
         else raise (Error (!line, Printf.sprintf "unexpected character %C" c))
       end
   in
-  go 0;
-  add Eol;
+  if lx.pos <= n then go lx.pos;
+  lx.line <- !line;
   List.rev !acc

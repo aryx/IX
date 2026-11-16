@@ -13,6 +13,9 @@ let is_condition s = cond_of_string s <> None || s = "AL" || s = "NV"
 
 type state = {
   arch : arch;
+  lex : L.lexer;
+  (* the tokens of the line being read, and after its last one the next
+   * line's: empty at the end of the file only *)
   mutable toks : (L.token * int) list;
   consts : (string, int64) Hashtbl.t;       (* name = expr *)
   labels : (string, int) Hashtbl.t;         (* name: -> its pc *)
@@ -28,36 +31,61 @@ let line st = match st.toks with (_, l) :: _ -> l | [] -> 0
 let error st msg = raise (Error (line st, msg))
 let peek st = match st.toks with (t, _) :: _ -> t | [] -> L.Eol
 let peek2 st = match st.toks with _ :: (t, _) :: _ -> t | _ -> L.Eol
-let next st = match st.toks with (t, _) :: rest -> st.toks <- rest; t | [] -> L.Eol
-let accept st p = if peek st = L.Punct p then (ignore (next st); true) else false
+let next st =
+  match st.toks with
+  | [ (t, _) ] -> st.toks <- L.line_tokens st.lex; t
+  | (t, _) :: rest -> st.toks <- rest; t
+  | [] -> L.Eol
+(* the next token is the punctuation p (not peek st = L.Punct p, which
+ * makes a token and compares the two as any values: asked several times
+ * an operand) *)
+let at st (p : string) = match st.toks with (L.Punct q, _) :: _ -> q = p | _ -> false
+let at2 st (p : string) = match st.toks with _ :: (L.Punct q, _) :: _ -> q = p | _ -> false
+let accept st p = if at st p then (ignore (next st); true) else false
 let expect st p = if not (accept st p) then error st ("expected " ^ p)
 
 (* expressions: numbers, constants, 'c', unary - ~ +, binary * / % + - << >> & ^ |, ( ) *)
+(* a binary operator's level, the loosest 0; -1 for another punctuation
+ * (-> <> @> are none) *)
+let level_of (p : string) : int =
+  if String.length p = 1 then
+    match p.[0] with
+    | '|' -> 0 | '^' -> 1 | '&' -> 2 | '+' | '-' -> 4 | '*' | '/' | '%' -> 5
+    | _ -> -1
+  else if p = "<<" || p = ">>" then 3
+  else -1
+
 let rec expr st = binary st 0
 
-and binary st level =
-  let ops = [| [ "|" ]; [ "^" ]; [ "&" ]; [ "<<"; ">>" ]; [ "+"; "-" ]; [ "*"; "/"; "%" ] |] in
-  if level = Array.length ops then unary st
-  else begin
-    let v = ref (binary st (level + 1)) in
-    let rec loop () =
-      match peek st with
-      | L.Punct p when List.mem p ops.(level) ->
-          ignore (next st);
-          let w = binary st (level + 1) in
-          (* (an error at the line, not OCaml's exception: $(1/0)) *)
-          if (p = "/" || p = "%") && w = 0L then error st "division by zero";
-          v := (match p with
-            | "|" -> Int64.logor !v w | "^" -> Int64.logxor !v w | "&" -> Int64.logand !v w
-            | "<<" -> Int64.shift_left !v (Int64.to_int w) | ">>" -> Int64.shift_right !v (Int64.to_int w)
-            | "+" -> Int64.add !v w | "-" -> Int64.sub !v w | "*" -> Int64.mul !v w
-            | "/" -> Int64.div !v w | _ -> Int64.rem !v w);
-          loop ()
-      | _ -> ()
-    in
-    loop ();
-    !v
-  end
+(* an expression of the operators of level min and tighter, each taking
+ * what is on its left.
+ * opti: the operand read, then the operator looked at once (precedence
+ * climbing): most expressions are a number alone, which went down seven
+ * calls, a level each, each making the table of the operators and
+ * looking the next token up in its level's list.
+ * old: let ops = [| [ "|" ]; [ "^" ]; [ "&" ]; [ "<<"; ">>" ]; [ "+"; "-" ]; [ "*"; "/"; "%" ] |] in
+ *   if level = Array.length ops then unary st
+ *   else (let v = ref (binary st (level + 1)) in
+ *     ... | L.Punct p when List.mem p ops.(level) -> ... binary st (level + 1) ...) *)
+and binary st min =
+  let v = ref (unary st) in
+  let rec loop () =
+    match peek st with
+    | L.Punct p when level_of p >= min ->
+        ignore (next st);
+        let w = binary st (level_of p + 1) in
+        (* (an error at the line, not OCaml's exception: $(1/0)) *)
+        if (p = "/" || p = "%") && w = 0L then error st "division by zero";
+        v := (match p with
+          | "|" -> Int64.logor !v w | "^" -> Int64.logxor !v w | "&" -> Int64.logand !v w
+          | "<<" -> Int64.shift_left !v (Int64.to_int w) | ">>" -> Int64.shift_right !v (Int64.to_int w)
+          | "+" -> Int64.add !v w | "-" -> Int64.sub !v w | "*" -> Int64.mul !v w
+          | "/" -> Int64.div !v w | _ -> Int64.rem !v w);
+        loop ()
+    | _ -> ()
+  in
+  loop ();
+  !v
 
 and unary st =
   match next st with
@@ -72,9 +100,14 @@ and unary st =
 (* a ( that opens a base, (R1) (SB) ..., not an expression *)
 (* the register names: R0-R15, SP, PC on arm; R0-R30, ZR, RSP on arm64 *)
 let register arch s =
-  let num prefix =
-    let n = String.length prefix in
-    if String.length s > n && String.sub s 0 n = prefix then int_of_string_opt (String.sub s n (String.length s - n))
+  (* opti: a number is read only after the letter and a character that
+   * can start one; this is asked of every name of a file, several
+   * times, and int_of_string_opt fails by an exception.
+   * old: if String.length s > n && String.sub s 0 n = prefix then
+   *   int_of_string_opt (String.sub s n (String.length s - n)) *)
+  let num (letter : char) =
+    if String.length s > 1 && s.[0] = letter && ((s.[1] >= '0' && s.[1] <= '9') || s.[1] = '-' || s.[1] = '+')
+    then int_of_string_opt (String.sub s 1 (String.length s - 1))
     else None
   in
   match arch, s with
@@ -85,19 +118,18 @@ let register arch s =
   | _, ("CPSR" | "SPSR" | "FPSR" | "FPCR") -> Some (Special s)
   | _ -> (
       let max = match arch with Arm -> 15 | Arm64 -> 31 in
-      match num "R", num "F" with
-      | Some r, _ when r >= 0 && r <= max -> Some (Reg r)
-      | _, Some f when f >= 0 && f <= 31 -> Some (FReg f)
-      | _ -> None)
+      match num 'R' with
+      | Some r when r >= 0 && r <= max -> Some (Reg r)
+      | _ -> (match num 'F' with Some f when f >= 0 && f <= 31 -> Some (FReg f) | _ -> None))
 
 let opens_base st =
-  peek st = L.Punct "("
+  at st "("
   && (match peek2 st with L.Ident ("SB" | "FP" | "PC" | "SP" | "R") -> true | L.Ident s -> register st.arch s <> None | _ -> false)
 
 (* R1, or R(expr): 5a's R(TMP), a register named by a constant *)
 let reg st =
   match next st with
-  | L.Ident "R" when peek st = L.Punct "(" -> ignore (next st); let r = Int64.to_int (expr st) in expect st ")"; r
+  | L.Ident "R" when at st "(" -> ignore (next st); let r = Int64.to_int (expr st) in expect st ")"; r
   | L.Ident s -> (match register st.arch s with Some (Reg r) -> r | _ -> error st ("not a register: " ^ s))
   | _ -> error st "expected a register"
 
@@ -109,7 +141,7 @@ let shift_after st r =
       let kind = match p with "<<" -> Lsl | ">>" -> Lsr | "->" -> Asr | _ -> Ror in
       let by = match peek st with
         | L.Ident s when (match register st.arch s with Some (Reg _) -> true | _ -> false) -> By_reg (reg st)
-        | L.Ident "R" when peek2 st = L.Punct "(" -> By_reg (reg st)
+        | L.Ident "R" when at2 st "(" -> By_reg (reg st)
         | _ -> By_imm (Int64.to_int (unary st))
       in
       Some { reg = r; kind; by }
@@ -119,7 +151,7 @@ let shift_after st r =
 let base st =
   expect st "(";
   let b = match next st with
-    | L.Ident "R" when peek st = L.Punct "(" -> expect st "("; let r = Int64.to_int (expr st) in expect st ")"; R r
+    | L.Ident "R" when at st "(" -> expect st "("; let r = Int64.to_int (expr st) in expect st ")"; R r
     | L.Ident "SB" -> SB | L.Ident "FP" -> FP | L.Ident "PC" -> PC
     | L.Ident "SP" when st.arch = Arm64 -> SP
     | L.Ident "SP" -> SP
@@ -147,13 +179,13 @@ type named = Mem_ref of mem | Label_ref of string * int64
 let named st s =
   let static = accept st "<>" in
   let off = match peek st with L.Punct ("+" | "-") -> expr st | _ -> 0L in
-  if peek st = L.Punct "(" then Mem_ref { base = base st; name = Some { sym = s; static }; off; index = None }
+  if at st "(" then Mem_ref { base = base st; name = Some { sym = s; static }; off; index = None }
   else Label_ref (s, off)
 
 (* a register, maybe shifted: R1, R1<<2, R1>>R2, R2<<2(R1) *)
 let shifted_reg st r =
   match shift_after st r with
-  | Some sh when peek st = L.Punct "(" ->
+  | Some sh when at st "(" ->
       (* R2<<2(R1): a shifted index *)
       let b = base st in
       Mem { base = b; name = None; off = 0L; index = Some sh }
@@ -174,7 +206,7 @@ let rec operand st : operand =
           match named st s with Mem_ref m -> Addr m | Label_ref _ -> error st ("$" ^ s ^ ": no (SB)"))
       | _ ->
           let v = expr st in
-          if peek st = L.Punct "(" then Addr { base = base st; name = None; off = v; index = None } else Imm v)
+          if at st "(" then Addr { base = base st; name = None; off = v; index = None } else Imm v)
   | L.Punct "[" ->
       ignore (next st);
       let rec regs acc =
@@ -191,13 +223,13 @@ let rec operand st : operand =
       let b = reg st in
       expect st ")";
       Pair (a, b)
-  | L.Ident "SPR" when st.arch = Arm64 && peek2 st = L.Punct "(" ->
+  | L.Ident "SPR" when st.arch = Arm64 && at2 st "(" ->
       ignore (next st); ignore (next st);
       let v = expr st in
       expect st ")";
       Spr v
   (* R(expr), with a constant: 5a's R(Q); and R1 *)
-  | L.Ident "R" when peek2 st = L.Punct "(" -> shifted_reg st (reg st)
+  | L.Ident "R" when at2 st "(" -> shifted_reg st (reg st)
   | L.Ident s when register st.arch s <> None -> (
       match register st.arch s with
       | Some (Reg r) -> ignore (next st); shifted_reg st r
@@ -216,7 +248,7 @@ let rec operand st : operand =
   | _ ->
       let off = if opens_base st then 0L else expr st in
       (* a bare number: TEXT's flag, a count *)
-      if peek st <> L.Punct "(" then Imm off else
+      if not (at st "(") then Imm off else
       let b = base st in
       match b with
       | PC -> Target (st.pc + Int64.to_int off)
@@ -254,16 +286,17 @@ let named_sym st =
 (* the items of a file, and their lines *)
 let parse caps (arch : arch) (file : Fpath.t) (text : string) : obj =
   let text = try L.preprocess caps (Fpath.parent file) text with Sys_error m -> raise (Error (0, m)) in
-  let toks = try L.tokens text with L.Error (l, m) -> raise (Error (l, m)) in
-  let st = { arch; toks; consts = Hashtbl.create 8; labels = Hashtbl.create 64; pc = 0; fixups = []; next_fix = 0; indexed = None } in
+  let lex = L.lexer text in
+  let toks = try L.line_tokens lex with L.Error (l, m) -> raise (Error (l, m)) in
+  let st = { arch; lex; toks; consts = Hashtbl.create 8; labels = Hashtbl.create 64; pc = 0; fixups = []; next_fix = 0; indexed = None } in
   let items = ref [] in
   let add item l = items := (item, l) :: !items; (match item with Globl _ | Data _ -> () | _ -> st.pc <- st.pc + 1) in
   let rec lines () =
     let l = line st in
     match next st with
     | L.Eol -> if st.toks <> [] then lines ()
-    | L.Ident s when peek st = L.Punct ":" -> ignore (next st); Hashtbl.replace st.labels s st.pc; lines ()
-    | L.Ident s when peek st = L.Punct "=" -> ignore (next st); Hashtbl.replace st.consts s (expr st); lines ()
+    | L.Ident s when at st ":" -> ignore (next st); Hashtbl.replace st.labels s st.pc; lines ()
+    | L.Ident s when at st "=" -> ignore (next st); Hashtbl.replace st.consts s (expr st); lines ()
     | L.Ident "TEXT" ->
         let n, _ = named_sym st in
         expect st ",";

@@ -43,11 +43,19 @@ let stat_of (s : Unix.LargeFile.stats) : Host_calls.stat =
 
 let create (caps : caps) : Host_calls.t =
   let dirs = Hashtbl.create 4 in
+  (* a directory's path by its fd, kept at its open: /proc/self/fd is
+   * Linux's only (on macOS no program listed a directory), and is still
+   * asked for an fd the program was given open *)
+  let paths : (int, string) Hashtbl.t = Hashtbl.create 4 in
+  let path_of n =
+    match Hashtbl.find_opt paths n with
+    | Some path -> path
+    | None -> Unix.readlink (Printf.sprintf "/proc/self/fd/%d" n) in
   let dir_of n =
     match Hashtbl.find_opt dirs n with
     | Some d -> d
     | None ->
-        let path = Unix.readlink (Printf.sprintf "/proc/self/fd/%d" n) in
+        let path = path_of n in
         let d = (Unix.opendir path, path) in
         Hashtbl.replace dirs n d; d in
   {
@@ -55,17 +63,23 @@ let create (caps : caps) : Host_calls.t =
     write = (fun f s -> wrap (fun () -> Unix.write_substring (fd f) s 0 (String.length s)));
     openat = (fun dir path flags mode -> wrap (fun () ->
       let path = match dir with
-        | Some d when Filename.is_relative path -> Filename.concat (Unix.readlink (Printf.sprintf "/proc/self/fd/%d" d)) path
+        | Some d when Filename.is_relative path -> Filename.concat (path_of d) path
         | _ -> path in
       let acc : Unix.open_flag list = match flags land 3 with 0 -> [ O_RDONLY ] | 1 -> [ O_WRONLY ] | _ -> [ O_RDWR ] in
       let bits = [ 0o100, Unix.O_CREAT; 0o200, O_EXCL; 0o1000, O_TRUNC; 0o2000, O_APPEND; 0o4000, O_NONBLOCK;
                    0o400, O_NOCTTY; 0o2000000, O_CLOEXEC ] in
       let f = Unix.openfile path (acc @ List.filter_map (fun (b, fl) -> if flags land b <> 0 then Some fl else None) bits) mode in
       (* O_DIRECTORY, 0o40000 on arm *)
-      if flags land 0o40000 <> 0 && (Unix.fstat f).st_kind <> S_DIR then (Unix.close f; raise (Unix.Unix_error (ENOTDIR, "open", path)));
+      let is_dir = flags land 3 = 0 && (Unix.fstat f).st_kind = S_DIR in
+      if flags land 0o40000 <> 0 && not is_dir then (Unix.close f; raise (Unix.Unix_error (ENOTDIR, "open", path)));
+      (* (absolute: the program may change its directory before it reads this one) *)
+      if is_dir then
+        Hashtbl.replace paths (int_of_fd f)
+          (if Filename.is_relative path then Filename.concat (CapUnix.getcwd caps ()) path else path);
       int_of_fd f));
     close = (fun f -> wrap (fun () ->
       (match Hashtbl.find_opt dirs f with Some (d, _) -> Unix.closedir d; Hashtbl.remove dirs f | None -> ());
+      Hashtbl.remove paths f;
       Unix.close (fd f)));
     fstat = (fun f -> wrap (fun () -> stat_of (Unix.LargeFile.fstat (fd f))));
     stat = (fun p -> wrap (fun () -> stat_of (Unix.LargeFile.stat p)));

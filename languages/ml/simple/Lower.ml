@@ -329,7 +329,13 @@ let rec test (acc : (int * binding) list) own s (p : Scope.pattern) fail =
   | Pconstraint (p, _) -> test acc own s p fail
   | Pconst (Int n) -> rel Eq n; acc
   | Pconst (Char c) -> rel Eq (Char.code c); acc
-  | Pconst (String str) -> check [ Block (string_block str); Op (Poly Eq) ]; acc
+  (* OPTIMIZATION: a string pattern by the runtime's string equality, as
+   * = on two strings (string_eqs); what is matched is a string. A
+   * match on a name tries its cases in turn: mini-asm's register and
+   * its lines, 740 thousand calls of ml_equal, each compare's walk.
+   * old: Op (Poly Eq) (kept with mini-ml -calls) *)
+  | Pconst (String str) ->
+      check [ Block (string_block str); (if !calls_whole then CallC ("caml_string_equal", 2) else Op (Poly Eq)) ]; acc
   | Pconst (Float f) -> check [ Block (float_block f); Op (Poly Eq) ]; acc
   | Pconst (Int32 n) -> check [ Block (boxed_int_block 32 n); Op (Poly Eq) ]; acc
   | Pconst (Int64 n) -> check [ Block (boxed_int_block 64 n); Op (Poly Eq) ]; acc
@@ -458,6 +464,20 @@ let string_eqs : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
  * old: Poly r (simple's Gen tested for two floats at run time, ssa's
  * Emit called the runtime) *)
 let float_cmps : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
+(* OPTIMIZATION (constant): = and <> with a constant that is no block (an
+ * integer, a character, a constructor without arguments: l <> [], o =
+ * None, tok = Eol): the two words compared, as ==; a value is equal to
+ * such a constant only when it is the same word. Typing's immediates
+ * are the comparisons of two ints; these are of a variant's values,
+ * where a block on the other side made Poly call compare (mini-asm: 785
+ * thousand calls of ml_equal for a file of 27,000 lines).
+ * old: Poly Eq, Poly Ne *)
+let rec constant (e : Scope.expr) : bool =
+  match e.e with
+  | Econst (Int _ | Char _) -> true
+  | Econs ({ kind = Const _; _ }, []) -> true
+  | Econstraint (e, _) -> constant e
+  | _ -> false
 
 (* OPTIMIZATION (min_max): min and max on ints or floats (their place
  * in immediates or float_cmps): the comparison and the choice here,
@@ -925,6 +945,7 @@ and app env (f : Scope.expr) args tl =
       operands env (List.map (fun e -> E e) (List.rev (first n)));
       (match List.assoc_opt p ops with
        | Some (Poly r) when Hashtbl.mem immediates f.span -> emit (Op (Cmp r))
+       | Some (Poly ((Eq | Ne) as r)) when !calls_whole && List.exists constant (first n) -> emit (Op (Cmp r))
        | Some (Poly r) when Hashtbl.mem float_cmps f.span && !floats_in_place ->
            emit (FloatCmp r)
        | Some (Poly Eq) when Hashtbl.mem string_eqs f.span ->

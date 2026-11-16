@@ -18,4 +18,13 @@ exception Error of int * string
  * #define NAME text, which are the only directives the inputs use. *)
 val preprocess : < Cap.open_in; .. > -> Fpath.t -> string -> string
 
-val tokens : string -> (token * int) list
+(* A text being read, a line at a time. *)
+type lexer
+
+val lexer : string -> lexer
+
+(* The tokens of the next line, each with its line, the Eol that ends it
+ * the last: a line is a newline's, so one with semicolons has several
+ * Eol, and one that opens a comment goes on to the line that closes it.
+ * After the last line, the text's end, which is an Eol too; then []. *)
+val line_tokens : lexer -> (token * int) list

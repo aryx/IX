@@ -282,17 +282,15 @@ and trapped p (cause : KMachine.cause) tval =
   | Trap_intr -> interrupts tval
   | Trap_illegal when KIO.traced p ->
       KIO.stop p
-        (if tval = 0 then "break" else "illegal " ^ string_of_int tval);
+        (if tval = 0 then "break" else Printf.sprintf "illegal %d" tval);
       false
   (* (a page not touched yet, or one a fork shares: pages) *)
   | Trap_fault when KMemory.mem_fault p.mem tval -> false
   | Trap_fault when KIO.traced p ->
-      KIO.stop p ("fault " ^ string_of_int tval); false
+      KIO.stop p (Printf.sprintf "fault %d" tval); false
   | Trap_illegal | Trap_fault ->
-    KMachine.puts ("ml: " ^ string_of_int p.pid ^ ": trap "
-          ^ string_of_int (KMachine.cause_code cause)
-          ^ " at " ^ string_of_int (reg p 16) ^ ", "
-          ^ string_of_int tval ^ ": killed\n");
+    KMachine.puts (Printf.sprintf "ml: %d: trap %d at %d, %d: killed\n"
+      p.pid (KMachine.cause_code cause) (reg p 16) tval);
     KCalls.exit_proc p (-1);
     false
 

@@ -55,11 +55,10 @@ let () =
         | Ready -> "ready"
         | Waiting _ -> "waiting"
         | Stopped -> "stopped" in
-      string_of_int p.pid ^ " "
-      ^ (match p.parent with Some pp -> string_of_int pp | None -> "0")
-      ^ " " ^ state ^ " "
-      ^ (match p.core with Some k -> string_of_int k | None -> "-") ^ " "
-      ^ string_of_int (p.memory / 1024) ^ " " ^ p.cmd ^ "\n") !procs))
+      Printf.sprintf "%d %d %s %s %d %s\n" p.pid
+        (match p.parent with Some pp -> pp | None -> 0) state
+        (match p.core with Some k -> string_of_int k | None -> "-")
+        (p.memory / 1024) p.cmd) !procs))
 
 (* a register of its frame (r1..r15, the pc as 16), as kentry.s saved it *)
 let reg p k = KMachine.peek (KMachine.frame p.slot + (4 * k))

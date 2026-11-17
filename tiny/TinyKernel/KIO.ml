@@ -133,7 +133,7 @@ let pause p line =
   match p.traced with
   | Some t -> t.step <- false; t.said <- t.said @ [ line ^ "\n" ]
   | None -> ()
-let stop p why = pause p ("stopped " ^ string_of_int (reg p 16) ^ " " ^ why)
+let stop p why = pause p (Printf.sprintf "stopped %d %s" (reg p 16) why)
 
 (* bytes in hexadecimal, two digits each *)
 let hex_bytes l =
@@ -174,8 +174,9 @@ let command (t : KFiles.trace) q words =
   | [ "d"; s ], _ -> unset (addr s); say "ok"
   | [ "r" ], _ ->
       say (String.concat " " (List.init 16 (fun k ->
-        (if k = 15 then "pc" else "r" ^ string_of_int (k + 1))
-        ^ " " ^ string_of_int (reg q (k + 1)))))
+        let v = reg q (k + 1) in
+        if k = 15 then Printf.sprintf "pc %d" v
+        else Printf.sprintf "r%d %d" (k + 1) v)))
   | [ "m"; s; k ], _ ->
       (match int_of_string_opt s, int_of_string_opt k with
        | Some a, Some n when n > 0 && n <= 1024 ->

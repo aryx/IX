@@ -63,7 +63,7 @@ let rec exit_proc p status =
     | Some t when t.tracer = p.pid -> detach t
     | _ -> ()) !procs;
   (match p.traced with
-   | Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ]
+   | Some t -> t.said <- t.said @ [ Printf.sprintf "exited %d\n" status ]
    | None -> ());
   List.iter (fun q -> if q.parent = Some p.pid then q.parent <- None) !procs;
   ended := List.filter (fun e -> e.end_parent <> p.pid) !ended;
@@ -160,8 +160,7 @@ let header bytes =
 (* a file of the disk as a program's, to share its text (KMemory's
  * key; its stamp is its date and size) *)
 let disk_key fs r i =
-  "disk " ^ string_of_int (KFS.fs_disk fs) ^ " " ^ string_of_int r ^ " "
-  ^ string_of_int i
+  Printf.sprintf "disk %d %d %d" (KFS.fs_disk fs) r i
 
 (* Loads a file's program into p, in a partition of the size it asks for
  * (rounded up to whole megabytes), from address 0. Its arguments are put
@@ -173,7 +172,7 @@ let load_prog p (node : KFiles.node option) argv =
   (* (an image's file never changes; a file of memory is not shared) *)
   let key, date =
     match node with
-    | Some (Rom (at, _)) -> "rom " ^ string_of_int at, ""
+    | Some (Rom (at, _)) -> Printf.sprintf "rom %d" at, ""
     | Some (Disk (fs, r, i)) ->
         disk_key fs r i, string_of_int (KFS.fs_date fs r i)
     | _ -> "", "" in
@@ -199,7 +198,7 @@ let load_prog p (node : KFiles.node option) argv =
   if size > memory - 0x10000 || memory > KMemory.mem_high - KMemory.mem_low
   then raise Bad;
   (* the text written only when it is not shared already *)
-  let stamp = if date = "" then "" else date ^ " " ^ string_of_int n in
+  let stamp = if date = "" then "" else Printf.sprintf "%s %d" date n in
   let from =
     match KMemory.mem_load p.mem key stamp tsize size memory with
     | Text_new -> 0
@@ -685,7 +684,7 @@ let syscall p n =
  * (runnable). An exit has no after (its end is said), and an exec's is
  * its stop at its new program's first instruction. *)
 let returned p n =
-  KIO.pause p ("ret " ^ string_of_int n ^ " " ^ string_of_int (reg p 1))
+  KIO.pause p (Printf.sprintf "ret %d %d" n (reg p 1))
 let called p n =
   syscall p n;
   match p.traced, p.state with
@@ -699,8 +698,8 @@ let call p n =
   | Some t when t.call <> None -> t.call <- None; called p n
   | Some t when t.calls ->
       t.call <- Some n;
-      KIO.pause p ("call " ^ String.concat " " (List.map string_of_int
-                                             [ n; reg p 1; reg p 2; reg p 3 ]))
+      KIO.pause p
+        (Printf.sprintf "call %d %d %d %d" n (reg p 1) (reg p 2) (reg p 3))
   | _ -> syscall p n
 
 (* a traced process whose wait ended, stopped if its tracer asked for

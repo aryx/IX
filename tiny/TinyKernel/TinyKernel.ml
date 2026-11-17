@@ -41,13 +41,12 @@ let () =
        KMemory.pages := says "pages"
    | None -> ());
   let mb = (KMemory.mem_high - KMemory.mem_low) / KMemory.part in
-  KMachine.puts ("tiny-kernel: TinyKernel.ml, "
-        ^ string_of_int mb ^ " MB for "
-        ^ string_of_int KMachine.nslots ^ " processes, "
-        ^ string_of_int KMachine.cores
-        ^ (if KMachine.cores = 1 then " core" else " cores")
-        ^ (if !KMemory.segments then ", in segments\n"
-           else if !KMemory.pages then ", in pages\n" else "\n"));
+  KMachine.puts (Printf.sprintf
+    "tiny-kernel: TinyKernel.ml, %d MB for %d processes, %d %s%s\n"
+    mb KMachine.nslots KMachine.cores
+    (if KMachine.cores = 1 then "core" else "cores")
+    (if !KMemory.segments then ", in segments"
+     else if !KMemory.pages then ", in pages" else ""));
   (* The disk, when there is one, is the root: the top becomes a union
    * of the disk's root, of /boot and /dump, and of the image's files.
    * Its snapshots are in /dump, each under the number of the boot that
@@ -85,11 +84,11 @@ let () =
     let top : KFiles.node =
       Union [ Disk (fs, 0, 1); Dir (ref more); KFiles.root ] in
     KFiles.top := top;
-    KMachine.puts ("tiny-kernel: / on a disk of " ^ string_of_int blocks
-          ^ " KB, " ^ string_of_int (List.length dumps) ^ " snapshots in /dump"
-          ^ (if blocks2 = 0 then ""
-             else "; /src on a disk of " ^ string_of_int blocks2 ^ " KB")
-          ^ "\n")
+    KMachine.puts (Printf.sprintf
+      "tiny-kernel: / on a disk of %d KB, %d snapshots in /dump%s\n"
+      blocks (List.length dumps)
+      (if blocks2 = 0 then ""
+       else Printf.sprintf "; /src on a disk of %d KB" blocks2))
   end;
   (* the first process: /bin/sh, the console its 0, 1 and 2; and for the
    * programs it runs, which inherit them, the screen its 3 (a

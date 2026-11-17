@@ -26,6 +26,10 @@ void d_draw(int dst, int src, int mask, int x0, int y0, int x1, int y1,
 // a rectangle of a colour
 void d_fill(int dst, int src, int x0, int y0, int x1, int y1);
 void d_line(int dst, int src, int x0, int y0, int x1, int y1);
+// an ellipse's outline, a pixel thick, of centre (cx, cy) and half
+// axes a and b (at most 16383); d_fillellipse fills it
+void d_ellipse(int dst, int src, int cx, int cy, int a, int b);
+void d_fillellipse(int dst, int src, int cx, int cy, int a, int b);
 // a text (a character is 8 by 16), its top left corner at (x, y)
 void d_text(int dst, int src, int x, int y, char *s);
 // a row of n pixels, a byte each, its left end at (x, y)

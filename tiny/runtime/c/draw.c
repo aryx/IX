@@ -69,6 +69,20 @@ d_line(int dst, int src, int x0, int y0, int x1, int y1)
 }
 
 void
+d_ellipse(int dst, int src, int cx, int cy, int a, int b)
+{
+	d_start('e', 13);
+	d_put(dst); d_put(src); d_put(cx); d_put(cy); d_put(a); d_put(b);
+}
+
+void
+d_fillellipse(int dst, int src, int cx, int cy, int a, int b)
+{
+	d_start('E', 13);
+	d_put(dst); d_put(src); d_put(cx); d_put(cy); d_put(a); d_put(b);
+}
+
+void
 d_text(int dst, int src, int x, int y, char *s)
 {
 	int n;

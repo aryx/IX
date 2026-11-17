@@ -161,7 +161,7 @@ MKFSBIN = $(wildcard $(MKFS))
 # keep bin/'s tiny-machine, the one everyone uses, and a MACHINE given
 # on the command line wins.
 #
-# make self also runs on four cores, each on a host's core (an OCaml 5
+# make self, make run and make run-window also run on four cores, each on a host's core (an OCaml 5
 # domain, -cores-parallel), its builds with -j 4: 5 min 50 s instead of
 # 11 min 50 s on one (plan_tiny_self_speed.md, step 7). That needs a
 # tiny-machine built by OCaml 5, so when opam has the switch OCAML5 (as
@@ -173,7 +173,7 @@ MKFSBIN = $(wildcard $(MKFS))
 # a run vary (which recipe starts first), not what make self checks;
 # SELF_CORES= SELF_J=1 gives the one core's run, the same each time.
 OCAML5 = 5.5.1
-ifneq ($(filter run self,$(MAKECMDGOALS)),)
+ifneq ($(filter run run-window self,$(MAKECMDGOALS)),)
 DOMAINS := $(shell command -v opam > /dev/null && opam switch list -s 2> /dev/null | grep -qx $(OCAML5) && echo yes)
 endif
 ifeq ($(DOMAINS),yes)
@@ -304,7 +304,7 @@ $(O)/runsrc.img: $(O)/src.img
 run: $(O)/boot.img $(O)/run.img $(O)/runsrc.img
 	$(MACHINE) $(SELF_CORES) -d $(O)/run.img -d $(O)/runsrc.img $(O)/boot.img
 run-window: $(O)/boot.img $(O)/run.img $(O)/runsrc.img
-	$(MACHINE) -window -d $(O)/run.img -d $(O)/runsrc.img $(O)/boot.img
+	$(MACHINE) $(SELF_CORES) -window -d $(O)/run.img -d $(O)/runsrc.img $(O)/boot.img
 
 # The recorded sessions, each checked against its screen's sum. The
 # browser's sessions read ../tests/www's pages.

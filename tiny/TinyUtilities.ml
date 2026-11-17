@@ -600,8 +600,8 @@ let touch (caps : < Cap.stderr; Cap.open_in; Cap.open_out; .. >) args =
 (*****************************************************************************)
 
 (* the processes, a line each in /dev/ps (or the file given, a copy of
- * it): its pid, its parent's, its state, its memory in KB, its command
- * line, in the scheduler's order; printed by pid, in columns under
+ * it): its pid, its parent's, its state, its core (- when on none), its
+ * memory in KB, its command line, in the scheduler's order; printed by pid, in columns under
  * their names, the numbers to the right, a program by its name alone
  * (-a: its whole command line, as Plan 9's ps -a) *)
 let ps (caps : < filter; .. >) args =
@@ -614,28 +614,29 @@ let ps (caps : < filter; .. >) args =
     each_input caps "ps" [ file ] (fun c ->
       lines c (fun line _ ->
         match String.split_on_char ' ' line with
-        | pid :: parent :: state :: kb :: cmd ->
+        | pid :: parent :: state :: core :: kb :: cmd ->
             let cmd =
               if List.mem 'a' flags then String.concat " " cmd
               else match cmd with c :: _ -> last_part c | [] -> "" in
-            rows := (pid, parent, state, kb, cmd) :: !rows
+            rows := (pid, parent, state, core, kb, cmd) :: !rows
         | _ -> ())) in
-  let pid (p, _, _, _, _) =
+  let pid (p, _, _, _, _, _) =
     int_of_string_opt p ||| 0 in
   let all =
-    ("PID", "PARENT", "STATE", "KB", "CMD")
+    ("PID", "PARENT", "STATE", "CORE", "KB", "CMD")
     :: List.sort (fun a b -> compare (pid a) (pid b)) !rows in
   let width column =
     List.fold_left (fun w row -> max w (String.length (column row))) 0 all in
-  let wpid = width (fun (p, _, _, _, _) -> p)
-  and wparent = width (fun (_, p, _, _, _) -> p)
-  and wstate = width (fun (_, _, s, _, _) -> s)
-  and wkb = width (fun (_, _, _, k, _) -> k) in
+  let wpid = width (fun (p, _, _, _, _, _) -> p)
+  and wparent = width (fun (_, p, _, _, _, _) -> p)
+  and wstate = width (fun (_, _, s, _, _, _) -> s)
+  and wcore = width (fun (_, _, _, c, _, _) -> c)
+  and wkb = width (fun (_, _, _, _, k, _) -> k) in
   let right w s = String.make (w - String.length s) ' ' ^ s in
-  if status = 0 then List.iter (fun (pid, parent, state, kb, cmd) ->
+  if status = 0 then List.iter (fun (pid, parent, state, core, kb, cmd) ->
     print caps (right wpid pid ^ " " ^ right wparent parent ^ " " ^ state
                 ^ String.make (wstate - String.length state + 1) ' '
-                ^ right wkb kb ^ " " ^ cmd ^ "\n")) all;
+                ^ right wcore core ^ " " ^ right wkb kb ^ " " ^ cmd ^ "\n")) all;
   status
 
 (* each process named by its pid ended, as a fault ends one *)

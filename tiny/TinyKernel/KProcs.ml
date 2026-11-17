@@ -45,7 +45,8 @@ type ending = { end_parent : int; end_pid : int; end_status : int }
 let ended : ending list ref = ref []
 
 (* /dev/ps: a line a process, in the scheduler's order; running is on a
- * core now (the reader itself, on core 0 for its call) *)
+ * core now (the reader itself, on core 0 for its call), the number
+ * after the state, - for a process on none *)
 let () =
   KFiles.ps_hook := (fun () ->
     String.concat "" (List.map (fun p ->
@@ -57,6 +58,7 @@ let () =
       string_of_int p.pid ^ " "
       ^ (match p.parent with Some pp -> string_of_int pp | None -> "0")
       ^ " " ^ state ^ " "
+      ^ (match p.core with Some k -> string_of_int k | None -> "-") ^ " "
       ^ string_of_int (p.memory / 1024) ^ " " ^ p.cmd ^ "\n") !procs))
 
 (* a register of its frame (r1..r15, the pc as 16), as kentry.s saved it *)

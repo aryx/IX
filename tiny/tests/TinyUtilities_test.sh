@@ -256,8 +256,8 @@ done
 check "date -n: the seconds given" '[ "$($TU date -n 100)" = 100 ]'
 # ps and kill, which have no twin (mini-ps reads Plan 9's /proc): ps on
 # a copy of tiny-kernel's /dev/ps
-printf '12 1 running 32768 /bin/ps -a\n1 0 waiting 1024 sh\n' > $W/ps
-check "ps: by pid, in columns, the program's name" '[ "$($TU ps $W/ps)" = "$(printf "PID PARENT STATE      KB CMD\n  1      0 waiting  1024 sh\n 12      1 running 32768 ps")" ]'
+printf '12 1 running 0 32768 /bin/ps -a\n1 0 waiting - 1024 sh\n' > $W/ps
+check "ps: by pid, in columns, the program's name" '[ "$($TU ps $W/ps)" = "$(printf "PID PARENT STATE   CORE    KB CMD\n  1      0 waiting    -  1024 sh\n 12      1 running    0 32768 ps")" ]'
 check "ps -a: the whole command line" '$TU ps -a $W/ps | grep -q " /bin/ps -a$"'
 check "ps: nothing printed when there is no /dev/ps" '! $TU ps $W/nosuch > out 2>/dev/null && [ ! -s out ]'
 check "kill: a process ended" 'sleep 30 & p=$!; $TU kill $p; wait $p; [ $? = 137 ]'

@@ -43,7 +43,9 @@ let () =
   let mb = (KMemory.mem_high - KMemory.mem_low) / KMemory.part in
   KMachine.puts ("tiny-kernel: TinyKernel.ml, "
         ^ string_of_int mb ^ " MB for "
-        ^ string_of_int KMachine.nslots ^ " processes"
+        ^ string_of_int KMachine.nslots ^ " processes, "
+        ^ string_of_int KMachine.cores
+        ^ (if KMachine.cores = 1 then " core" else " cores")
         ^ (if !KMemory.segments then ", in segments\n"
            else if !KMemory.pages then ", in pages\n" else "\n"));
   (* The disk, when there is one, is the root: the top becomes a union

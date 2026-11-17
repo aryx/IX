@@ -1,0 +1,19 @@
+day 0: 2000-01-01
+day 59: 2000-02-29
+day 366: 2001-01-01
+day 36524: 2099-12-31
+Mercury: 393,264, 424,247, 393,264
+Venus: 365,241, 400,275, 365,241
+Earth: 393,199, 359,247, 393,199
+Mars: 451,244, 404,189, 451,244
+Jupiter: 479,186, 346,161, 479,186
+Saturn: 483,141, 301,157, 483,141
+Uranus: 525,374, 534,115, 525,374
+Neptune: 531,428, 588,109, 531,428
+start: day 0 (2000-01-01), 2 a frame
+up twice, a frame: day 8 (2000-01-09), 8 a frame
+space, a frame: day 8 (2000-01-09), 8 a frame, paused
+down, space, a frame: day 12 (2000-01-13), 4 a frame
+r: day 0 (2000-01-01), 4 a frame
+down three times (one a frame at the least): day 0 (2000-01-01), 1 a frame
+the ground the same value at the next frame: true

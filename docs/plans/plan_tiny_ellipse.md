@@ -7,11 +7,10 @@ ellipse) document, so we can have ellipses in the playground, in
 tiny-office drawing, etc. it's an interesting cross-cutting exercise
 and whole system extension".
 
-**Status: steps 1 to 8 done** (2026-11-17): the kernel's `e` and `E`,
+**Status: steps 1 to 9 done** (2026-11-17): the kernel's `e` and `E`,
 TinyLibDraw, tiny-windows, the C runtime, the playground's `Ellipse`
-and `Disc`, TinyLibGUI's redrawing, the office's oval, and troff's
-three printouts of it. Left: the orrery (step 9) and the
-documentation (step 10).
+and `Disc`, TinyLibGUI's redrawing, the office's oval, troff's three
+printouts of it, and the orrery. Left: the documentation (step 10).
 
 ## Why this is worth doing
 
@@ -297,6 +296,15 @@ frame copies that image with one draw, draws the other shapes over
 it, and copies the result to the screen. So the orbits and the Sun,
 which do not move, go in the ground, a `Group` drawn once, and a
 frame costs one copy plus the planets' discs.
+
+(Done: TinyAppOrrery.ml, with circles for orbits, as the author chose
+over Kepler's ellipses, which are left as an exercise. Kepler's
+second law is dropped with them, so Mercury can be up to 24 degrees
+off its true place. A planet's angle is its mean longitude on
+2000-01-01 plus its share of a turn, and its sine comes from a table
+of a quarter turn in 64 steps. The test on the host checks the dates,
+the places, the keys and the screen; TinyKernel's orrery.events runs
+it in a window on tiny-machine.)
 
 ### 10. The documentation
 

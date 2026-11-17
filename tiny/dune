@@ -182,6 +182,13 @@
  (modules TinyAppTetris)
  (libraries tiny_lib_playground))
 
+; TinyAppOrrery.ml, orrery, the Solar System from above, on TinyLibPlayground
+(library
+ (name tiny_app_orrery)
+ (wrapped false)
+ (modules TinyAppOrrery)
+ (libraries tiny_lib_playground))
+
 ; TinyAppSquare.ml, square, the playground's first game, a page: its test
 ; on the host (tests/TinyLibPlayground_tests)
 (library

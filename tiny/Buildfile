@@ -56,7 +56,7 @@
 # The programs, listed by their names in /bin, and then the kernel
 # (TinyKernel/).
 PROGS = sh rc emacs office troff play mltests paint windows square tetris \
-    calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld \
+    orrery calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld \
     ar cc ml trace debug
 
 all: $PROGS kernel
@@ -315,7 +315,7 @@ debug: $CRT $MLRT debug.start.o $STDLIB $DEBUG_UNITS $MLEND
 
 # windows is the window system. Then come emacs; office, and troff,
 # which prints office's documents; www, the browser; play, tetris,
-# square, calc and temp, which run on the playground; and bigmem, a test
+# orrery, square, calc and temp, which run on the playground; and bigmem, a test
 # of a big memory.
 
 WINDOWS_UNITS = $SYS $DRAWLIB TinyWindows.o user/windows.o
@@ -373,6 +373,11 @@ play: $CRT $MLRT play.start.o $STDLIB $PLAY_UNITS $MLEND
 TETRIS_UNITS = $SYS $DRAWLIB $PLAYGROUND TinyAppTetris.o user/tetris.o
 tetris.start.o: $STDLIB $TETRIS_UNITS
 tetris: $CRT $MLRT tetris.start.o $STDLIB $TETRIS_UNITS $MLEND
+	$LD -map -s -n -o $target $prereq
+
+ORRERY_UNITS = $SYS $DRAWLIB $PLAYGROUND TinyAppOrrery.o user/orrery.o
+orrery.start.o: $STDLIB $ORRERY_UNITS
+orrery: $CRT $MLRT orrery.start.o $STDLIB $ORRERY_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
 SQUARE_UNITS = $SYS $DRAWLIB $PLAYGROUND TinyAppSquare.o user/square.o

@@ -1,4 +1,5 @@
 TinyAppCalculator.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyAppCalculator.mli
+TinyAppOrrery.o: TinyLibPlayground.tmi TinyAppOrrery.mli
 TinyAppSquare.o: TinyLibPlayground.tmi
 TinyAppTemperature.o: TinyLibGUI.tmi TinyAppTemperature.mli
 TinyAppTetris.o: TinyLibPlayground.tmi TinyAppTetris.mli
@@ -34,6 +35,7 @@ user/calc.o: TinyAppCalculator.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/debug.o: TinyDebugger.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/emacs.o: TinyEditorScreen.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/office.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice.tmi
+user/orrery.o: TinyAppOrrery.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/play.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.tmi
 user/square.o: TinyAppSquare.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/temp.o: TinyAppTemperature.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi

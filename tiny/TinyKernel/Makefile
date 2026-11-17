@@ -45,6 +45,8 @@
 #                       speaker's samples as a WAV, checked against
 #                       their sum, and play's sounds, with
 #                       /examples/korobeiniki.wav played;
+#                     - orrery.events (orrery in a window: the time
+#                       made faster twice, then paused);
 #                     - calc.events (calc, on ../TinyLibGUI.ml, in a
 #                       window: 12 * 3 = by its buttons, + 6 by the
 #                       keys, a press taken back, a button held);
@@ -308,7 +310,7 @@ run-window: $(O)/boot.img $(O)/run.img $(O)/runsrc.img
 
 # The recorded sessions, each checked against its screen's sum. The
 # browser's sessions read ../tests/www's pages.
-SCREENS = paint windows nested play tetris calc temp debug emacs emacsmx emacscolors office officesheet officedraw officepaint \
+SCREENS = paint windows nested play tetris orrery calc temp debug emacs emacsmx emacscolors office officesheet officedraw officepaint \
 	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory wwwsearch
 # What changes with the programs' code and the kernel's timing is masked
 # in check.out before it is compared:

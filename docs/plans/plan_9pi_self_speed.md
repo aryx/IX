@@ -240,6 +240,52 @@ Next: the page not zeroed when written whole, compared again; the four
 cores measured again (the faults were two thirds of the lock's waits);
 the data segment's pages, read at each exec as the text was.
 
+The same day, after the kept text (kernel 34260254 on one core,
+f3664f4b built with SMP=1), each comparison's two stamps looked at:
+
+- the zeroing of a page with its count computed once and eight words a
+  turn (kernel 3d283f21): 31 s and 32 s, against 32 s and 32 s. Nothing.
+  The 12 s measured in the allocation were not the loop's, and were not
+  looked for further;
+- four cores: 28 s and 29 s, against 31 s and 32 s on one, 1.1 times as
+  before the kept text. mk -u on the card says four jobs ran at once for
+  15 of lib_core's 26 s, so the build asks for the four cores and does
+  not get them: the faults were not what kept them waiting;
+- two traps met again, both seen by the stamp: SMP=1 given to the top
+  Makefile is not passed on, and given to kernels/9pi's it compiles
+  nothing when the kernel is already built (make does not see a flag
+  change; touch lib_machine/runtime.c).
+
+Then the kernel's time measured again, one core, 31 s: system calls
+11.4 s, faults 8.8 s (146,000), idle 1.9 s; the programs themselves
+about 9 s.
+
+- 21,900 of the faults still read a text's page from its file: 19,000
+  of them rc's, echo's and bind's, which are the kernel's own in /boot
+  and were not kept (Kfs's files only). Kept too, one line of Fault.ml:
+  26 s, 25 s and 26 s against 32 s (kernels 9f9a2825 and 34260254).
+- 105,000 faults are a zeroed page of bss or stack, 3 s of them the
+  allocation. Not cleaning the cache after the zeros (tried for the
+  measure only: the tables need it) gives nothing.
+- rc writes its 80 variables to /env before each command: 24,000 of
+  the build's 31,700 creates, with as many writes and closes. Written
+  only when changed (the Plan 9 Unix library, 25 lines, by each
+  variable's qid version), the system calls go from 158,000 to 79,000,
+  and the time does not move: 26 s and 26 s both ways on a quiet
+  machine. Those calls were the cheap ones. Not kept.
+- the system calls that cost are the card's: a create by cc is 12 ms,
+  by mkdir 25 ms.
+- four cores with /boot's texts kept: 24 s and 25 s, against 26 s on
+  one. Four shells that only compute take 0.26 s at once on four cores
+  and 0.61 s on one (0.19 s for one alone), so the emulator and the
+  scheduler do give the cores: it is the kernel's two thirds of the
+  build, under the one lock, that they wait for. Each core waited 10.6
+  s of 29 for the lock, half of it behind a fault.
+
+A measure that was noise, said so: the same kernel gave 26 s and 40 s
+(and another 54 s then 27 s) while the host was busy. The host's load
+is now printed beside each time.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

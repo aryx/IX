@@ -36,8 +36,10 @@ let read_image c off n =
  * code is slow to write again, and its code is translated again
  * (plan_9pi_self_speed.md).
  * By the file: its device's number, its qid's path and version (Kfs
- * counts a file's changes), the text's length. Kfs's files only: a
- * server's may give no version. All are let go when their pages are
+ * counts a file's changes), the text's length. Kfs's files, and the
+ * kernel's own in /boot (Devroot: rc, echo and bind, which never
+ * change, were most of the texts' pages still read); not a
+ * server's, which may give no version. All are let go when their pages are
  * more than text_max, 64 MB, and when no page is left (Mmu.on_empty).
  * A kept text's pages are mapped to be read only, and a write to one
  * (a program's own, a debugger's breakpoint) takes the text out of the
@@ -48,7 +50,7 @@ let text_max = 16384
 
 let text_key (s : segment) =
   match s.kind, s.image with
-  | Text, Some c when c.dev = 'x' -> Printf.sprintf "%d %d %d %d" c.devno c.qid.path c.qid.vers s.flen
+  | Text, Some c when c.dev = 'x' || c.dev = '/' -> Printf.sprintf "%c %d %d %d %d" c.dev c.devno c.qid.path c.qid.vers s.flen
   | _ -> ""
 let kept s = let k = text_key s in k <> "" && (try Hashtbl.find texts k == s with Not_found -> false)
 

@@ -40,8 +40,13 @@ let () =
   let rec fill pa = if pa >= lo then begin kfree pa; fill (pa - pgsize) end in
   fill (hi - pgsize)
 
+(* what a kernel does when no page is left, to give some back (mini-9pi:
+ * the programs' texts it kept, Fault) *)
+let on_empty = ref (fun () -> ())
+
 (* a zeroed page, or None *)
 let kalloc () =
+  if !free_head = 0 then !on_empty ();
   let pa = !free_head in
   if pa = 0 then None
   else begin free_head := Phys.get32 pa; decr free_count; Phys.zero pa pgsize; Some pa end

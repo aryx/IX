@@ -12,7 +12,9 @@ let files = [ "cons", 0o660; "consctl", 0o220; "bintime", 0o664; "cputime", 0o44
               "sysstat", 0o444;
               "time", 0o664; "user", 0o666; "zero", 0o444; "kmesg", 0o440; "kprint", 0o440;
               (* (not 9pi's: 9front's, the keys as they go down and up: below) *)
-              "kbd", 0o440 ]
+              "kbd", 0o440;
+              (* (9pi's is its version's number; here the kernel's stamp) *)
+              "osversion", 0o444 ]
 
 let qdir = 0
 let numsize = 12
@@ -220,6 +222,10 @@ let read (c : chan) n off =
   | "ppid" -> readnum off n p.parent numsize
   | "pgrpid" -> readnum off n 1 numsize
   | "user" -> readstr off n !Dev.eve
+  (* which kernel this is: the checksum of its objects (Machine.stamp),
+   * for one who built a kernel and wants to know that it is the one
+   * running (tests/self.sh says it with the build's time) *)
+  | "osversion" -> readstr off n (Machine.stamp () ^ "\n")
   | "kmesg" -> readstr off n (Buffer.contents kmesg)
   (* the clock (Dev.epoch): the seconds, the nanoseconds, the ticks and how many a second *)
   | "time" ->

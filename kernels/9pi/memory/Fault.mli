@@ -56,8 +56,10 @@
  * No page ever leaves: there is no swap, and no reclaiming of a text
  * page that could be read again. When memory runs out, the process
  * that asked is ended with a note saying so (Main.fault), and the rest
- * go on. A text page can be written by its program, because it is
- * mapped for writing. The plan for a swap is plan_kernel_swap.md.
+ * go on. A text page can be written by its program: it is mapped to
+ * be read only while the text is kept for the next exec, and the first
+ * write takes it out of the kept ones. The plan for a swap is
+ * plan_kernel_swap.md.
  *
  * others:
  * xv6 has one table, the process's: exec reads the whole program in,
@@ -80,6 +82,18 @@ open Errors
 (* a new segment, with no page yet; the last three arguments are its
  * image, and the offset and length of its bytes in the file *)
 val create : seg_kind -> int -> int -> chan option -> int -> int -> segment
+
+(* [text pgdir base top c flen] is exec's text segment for the file c,
+ * whose first flen bytes it is: the one kept from an earlier run of
+ * the same file, all its pages mapped in pgdir, or a new one, kept for
+ * the next. A program's text stays after its last process, until its
+ * file changes, memory runs out, or the kept pages are too many. The
+ * reference to c is taken: the segment's, or closed. *)
+val text : int -> int -> int -> chan -> int -> segment
+
+(* [unkeep s] takes a text out of those kept, before it is written (a
+ * debugger's breakpoint): the next exec of its file reads it again *)
+val unkeep : segment -> unit
 
 (* the segment of p that holds va *)
 val segment : proc -> int -> segment option

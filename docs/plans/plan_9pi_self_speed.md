@@ -149,11 +149,96 @@ before, with the files Linux's. The gains are guesses from the profile.
 | 4 | each command's `time` off on the card (done) | tests/self.sh | 1.07 |
 | 5 | the programs: ml's and ld's own time, profiled with their maps (mini-ld -map) as the kernel is with its symbols; ld 20%, perhaps libraries linked whole | languages/ml, linker | not known |
 | 6 | the four cores again, once the kernel costs less: the big lock's waits counted, then the fix they point to (plan_multicore.md) | the SMP kernel | 2 to 3, later |
-| 7 | CI: Docker's layers kept between nights, OCaml not built again each time | .github/workflows/self.yml | 5 to 8 minutes a night |
 
 The order: 2 is one line to measure, so first; then 1, the larger cause
 in the kernel; then 3; then the full build timed again (step 0's full
 run) before 5 and 6.
+
+(A step 7 was here, CI keeping Docker's layers between nights: taken
+out, the author's rule being that the time is taken from ix itself,
+its kernel and its compiler, not from CI's caches.)
+
+## 2026-11-17: the kernel's time by its own clock, and a program's text kept
+
+The author: "let's do it" (the kernel's steps), then "maybe we should
+reset the change and focus on the multicore", "it's 1.1x we should
+hope to get closer to 2x", and on the text kept, "sounds very adhoc and
+specialized ... is it something mainstream kernels (bsds, linux) do?",
+"I usually prefer general mechanisms and opti, but it also depends on
+the LOC it requires and how it complicates things".
+
+**A method's mistake first.** Three comparisons of this day said "no
+gain" and had compared a kernel with itself: the changed files were
+copied over the tree with their own times (cp -a), older than the
+objects of the run before, so nothing was built again. The author:
+"that's a big mistake; what we could have done to detect more easily
+we were not running the right modified kernel?", "maybe a stamp or
+version displayed". So the kernel now has a stamp, the checksum of the
+objects it is linked from, in `/dev/osversion`, and tests/self.sh says
+it with the time: "31 s of mk on the card, kernel 34260254". Two runs
+compared must show two stamps. What those comparisons had said is not
+known: pages zeroed while the core is idle (its counters, a kernel
+that was built, do hold: 5,480 pages given zeroed ahead, 179,081
+zeroed at the fault: one core is never idle in a build, the SD driver
+polls, so step 1 waits for other cores); a page not zeroed when it is
+written whole (to do again).
+
+**Where the kernel's time goes**, by the board's clock read at each
+entry from user mode and each way back (a scratch kernel; self-quick,
+57 s of build on the card's clock, one core):
+
+| | time | count | each |
+|---|---|---|---|
+| page faults | 20.5 s | 183,000 | 112 microseconds |
+| system calls | 11.8 s | 156,000 | 76 |
+| interrupts | 0.3 s | 4,000 | |
+| idle | 1.9 s | | |
+
+The kernel 57% of the build, as step 0's samples said, the faults
+alone 36%. Inside a fault: the page's allocation 12.4 s (170,000
+pages, 73 microseconds each: its zeros), the image read from Kfs's
+cache 6.4 s (66,000 pages, 98 each), the copy into the page 0.1 s (2
+each, the page then written a second time), the rest under a second
+(the mapping, the breakpoint's test, the way back). So the first
+write of a page given again is what costs under QEMU, and a third of
+the pages are a program's text, read again at each exec.
+
+On four cores (SMP=1; 50 s where one core took 57): each core waits
+17 s of the 50 for the kernel's lock and is idle 13 to 23; of the 68
+seconds waited, the holder was in a page fault for 44 (65%), then Open
+5.6, Create 3.8, Pwrite 3.1, an interrupt 3.0, Close 2.1, Pread 1.9.
+The cores wait for each other's faults: fewer and cheaper faults
+before finer locks.
+
+**A program's text kept** (Fault.text; Plan 9's cached images,
+principia's attachimage and imagereclaim): the text segment stays
+after its last process, by one more reference, and the next exec of
+the same file gets it, all its pages mapped at once. By the file's
+device, qid path and version, and the text's length; Kfs's files
+only, whose version now counts a file's changes since the boot (it
+was 0). Mapped to be read only; a write (the program's, a debugger's
+breakpoint, the kernel's copy into it) takes the text out of the kept
+ones first. All let go past 64 MB of them, and when no page is left.
+Linux's and the BSDs' way, one cache of files' pages mapped and not
+copied, is the general one, and not possible here without a second
+cache: the card's file system has blocks of 512 or 1,024 bytes, so a
+file's page is four or eight blocks of Kfs's cache, never one of its
+pages.
+
+| self-quick, one core, mk on the card | |
+|---|---|
+| before, two runs | 52 s, 51 s |
+| a program's text kept, two runs | 32 s, 32 s |
+
+1.6 times, more than the text pages' own cost (11 s by the clock
+above): QEMU translated each program's code again at each run, and
+the pages that had held code were the slow ones to write. The 89
+files Linux's byte for byte each time. Not measured yet: the whole
+build, and the four cores with it.
+
+Next: the page not zeroed when written whole, compared again; the four
+cores measured again (the faults were two thirds of the lock's waits);
+the data segment's pages, read at each exec as the text was.
 
 ## The gate
 

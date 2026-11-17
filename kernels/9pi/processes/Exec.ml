@@ -104,7 +104,7 @@ let exec p path args =
    * rest at their first touch (Fault) *)
   let pgdir = match Mmu.create () with Some d -> d | None -> Kchan.close c; raise (Error enovmem) in
   Kchan.incref c;
-  let segs = [ Fault.create Text utzero t (Some c) 0 (hdr_size + text);
+  let segs = [ Fault.text pgdir utzero t c (hdr_size + text);
                Fault.create Data t d (Some c) (hdr_size + text) data;
                Fault.create Bss d b None 0 0;
                Fault.create Stack (ustktop - ustksize) ustktop None 0 0 ] in

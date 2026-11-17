@@ -81,6 +81,9 @@ val pgroundup : int -> int
 val kalloc : unit -> int option
 val kfree : int -> unit
 val nfree : unit -> int
+(* called by [kalloc] when no page is free, before it gives up: a
+ * kernel's way to give back pages it only keeps *)
+val on_empty : (unit -> unit) ref
 (* takes [n] pages that follow each other in memory, not zeroed, at
  * once (at the boot, when the free pages are still in order), or
  * returns None *)

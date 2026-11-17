@@ -26,6 +26,32 @@ let read_image c off n =
   go ();
   Buffer.contents b
 
+(* opti: a program's text kept after its last process, for the next
+ * exec of the same file (Plan 9's cached images, its imagereclaim's
+ * other half). The segment itself is kept, by one more reference, and
+ * an exec that finds it maps all its pages at once: none is read from
+ * the file again, and none faults. m-IX built on the card runs ml 700
+ * times, each one's text 400 pages read, copied and faulted in, a
+ * third of the build's page faults; and under QEMU a page that held
+ * code is slow to write again, and its code is translated again
+ * (plan_9pi_self_speed.md).
+ * By the file: its device's number, its qid's path and version (Kfs
+ * counts a file's changes), the text's length. Kfs's files only: a
+ * server's may give no version. All are let go when their pages are
+ * more than text_max, 64 MB, and when no page is left (Mmu.on_empty).
+ * A kept text's pages are mapped to be read only, and a write to one
+ * (a program's own, a debugger's breakpoint) takes the text out of the
+ * cache first: unkeep.
+ * old: exec's Fault.create Text ..., a new segment each time *)
+let texts : (string, segment) Hashtbl.t = Hashtbl.create 61
+let text_max = 16384
+
+let text_key (s : segment) =
+  match s.kind, s.image with
+  | Text, Some c when c.dev = 'x' -> Printf.sprintf "%d %d %d %d" c.devno c.qid.path c.qid.vers s.flen
+  | _ -> ""
+let kept s = let k = text_key s in k <> "" && (try Hashtbl.find texts k == s with Not_found -> false)
+
 let map pgdir pg pa = if not (Mmu.map pgdir pg pa) then raise (Error enovmem)
 
 (* SG_RONLY, segattach's attribute: the segment's pages mapped to be
@@ -35,6 +61,7 @@ let sg_ronly = 0o40
 let map_seg pgdir s pg pa =
   match s.kind with
   | Attached a when a land sg_ronly <> 0 -> if not (Mmu.map_ro pgdir pg pa) then raise (Error enovmem)
+  | Text when kept s -> if not (Mmu.map_ro pgdir pg pa) then raise (Error enovmem)
   | _ -> map pgdir pg pa
 
 (* a page of s made: zeroed, or read from the image; recorded, mapped *)
@@ -92,6 +119,25 @@ let let_go pa =
 
 let shareable s = s.kind = Data || s.kind = Bss
 
+let release pgdir segs =
+  List.iter (fun s ->
+    s.sref <- s.sref - 1;
+    if s.sref = 0 then begin
+      Hashtbl.iter (fun _ pa -> let_go pa) s.pages;
+      Hashtbl.clear s.pages;
+      match s.image with Some c -> Kchan.close c | None -> ()
+    end) segs;
+  if pgdir <> 0 then Mmu.free_tables pgdir
+
+(* a kept text out of the cache: the cache's reference given back *)
+let unkeep s =
+  if kept s then begin
+    Hashtbl.remove texts (text_key s);
+    release 0 [ s ]
+  end
+
+let unkeep_all () = List.iter unkeep (Hashtbl.fold (fun _ s l -> s :: l) texts [])
+
 (* the page at pg of s made the segment's own, mapped to be written:
  * copied if another holds it too *)
 let own pgdir s pg =
@@ -119,6 +165,15 @@ let fault (p : proc) va =
       (* a mapped page's fault is its rights': a write to a page shared
        * since a fork, or the program's error *)
       if shared p.pgdir s pg then begin own p.pgdir s pg; Machine.mmu_switch p.pgdir; true end
+      (* (a write to a text's page mapped to be read only, a kept
+       * text's, or one that was when this process mapped it: the text
+       * no longer kept, the page the process's to write as any text's) *)
+      else if s.kind = Text && (match Mmu.lookup p.pgdir pg with Some page -> page.perm = Page.User_ro | None -> false) then begin
+        unkeep s;
+        map p.pgdir pg (Hashtbl.find s.pages pg);
+        Machine.mmu_switch p.pgdir;
+        true
+      end
       else if Mmu.mapped p.pgdir pg then false
       else begin fill p.pgdir s pg; true end
 
@@ -142,15 +197,30 @@ let validaddr (p : proc) addr len =
 
 let page pgdir s va = fill pgdir s (va land lnot (pgsize - 1))
 
-let release pgdir segs =
-  List.iter (fun s ->
-    s.sref <- s.sref - 1;
-    if s.sref = 0 then begin
-      Hashtbl.iter (fun _ pa -> let_go pa) s.pages;
-      Hashtbl.clear s.pages;
-      match s.image with Some c -> Kchan.close c | None -> ()
-    end) segs;
-  if pgdir <> 0 then Mmu.free_tables pgdir
+(* exec's text: the kept one of this file, all its pages mapped, or a
+ * new one, kept from now on. c is the caller's reference to the file,
+ * the segment's when it is new, closed when it is not. *)
+let text pgdir base top (c : chan) flen =
+  let s = create Text base top (Some c) 0 flen in
+  let k = text_key s in
+  match (if k = "" then None else try Some (Hashtbl.find texts k) with Not_found -> None) with
+  | Some t when t.base = base && t.top = top ->
+      t.sref <- t.sref + 1;
+      (try Hashtbl.iter (fun pg pa -> if not (Mmu.map_ro pgdir pg pa) then raise (Error enovmem)) t.pages
+       with e -> t.sref <- t.sref - 1; raise e);
+      Kchan.close c;
+      t
+  | _ ->
+      if k <> "" then begin
+        if Hashtbl.fold (fun _ t n -> n + Hashtbl.length t.pages) texts 0 > text_max then unkeep_all ();
+        (* (one of the same file at another address: not met, let go) *)
+        (try unkeep (Hashtbl.find texts k) with Not_found -> ());
+        Hashtbl.add texts k s;
+        s.sref <- 2
+      end;
+      s
+
+let () = Mmu.on_empty := unkeep_all
 
 let dup s from pgdir share =
   if share then begin

@@ -129,8 +129,17 @@ $D/images.$O: $FS $KLIB/font1.bin
 # its tables, kernel.img.aout, which mini-where uses to name a panic's
 # addresses.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/images.$O $D/start.$O $STDOBJS ${ALL_ML:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
-$IMAGE: $OBJS
-	$LD -g -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+$IMAGE: $OBJS $D/stamp.$O
+	$LD -g -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS $D/stamp.$O
+
+# The kernel's stamp (machine.c's kernel_stamp): the checksum of the
+# objects it is linked from, as 8 hex digits, a DATA of its own linked
+# last. A kernel whose sources changed and were compiled has another
+# stamp; one that was not built again has the stamp it had.
+$D/stamp.$O: $OBJS
+	cat $OBJS | cksum | awk '{ printf "%08x", $1 }' > $D/stamp.txt
+	echo > $D/stamp.s
+	$AS -data kernel_stamp'='$D/stamp.txt -o $target $D/stamp.s
 
 clean:V:
 	rm -rf $D

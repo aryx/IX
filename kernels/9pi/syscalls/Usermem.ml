@@ -29,7 +29,11 @@ let user_string (p : proc) addr max =
     with Not_found -> Buffer.add_string b s; go (a + k) (left - k) in
   go addr max
 
+(* (a text written: no longer one kept for the next exec, Fault.text) *)
+let unkeep (p : proc) a = match Fault.segment p a with Some s when s.kind = Text -> Fault.unkeep s | _ -> ()
+
 let user_write (p : proc) addr s =
+  unkeep p addr;
   Fault.validaddr p addr (String.length s);
   if not (Mmu.copyout p.pgdir addr s) then raise (Error ebadarg)
 
@@ -58,6 +62,7 @@ let rec debug_write (p : proc) a s =
   let n = String.length s in
   if n > 0 then begin
     let m = min n (Mmu.pgsize - (a land (Mmu.pgsize - 1))) in
+    unkeep p a;
     let pa = debug_page p a in
     Machine.Phys.write pa (String.sub s 0 m);
     Machine.Phys.sync pa m;

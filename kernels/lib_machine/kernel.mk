@@ -275,8 +275,14 @@ $(B)/fs.img: $(FS) | $(B)
 $(B)/font.bin: $(LIB)/font1.bin | $(B)
 	cp $< $@
 
-$(B)/kernel.elf: $(OBJS) $(BD)/kernel.ld
-	$(KLD) -T $(BD)/kernel.ld -o $@ $(OBJS)
+$(B)/kernel.elf: $(OBJS) $(B)/stamp.o $(BD)/kernel.ld
+	$(KLD) -T $(BD)/kernel.ld -o $@ $(OBJS) $(B)/stamp.o
+
+# the kernel's stamp (machine.c's kernel_stamp): the checksum of its
+# objects, 8 hex digits, as mkkernel's
+$(B)/stamp.o: $(OBJS)
+	cat $(OBJS) | cksum | awk '{ printf "const char kernel_stamp[] = \"%08x\";\n", $$1 }' > $(B)/stamp.c
+	$(KCC) $(CFLAGS) -c $(B)/stamp.c -o $@
 
 ifeq ($(COMPILER),ix)
 # The kernel built by ix's own tools (the kernel's mkfile and mkkernel:

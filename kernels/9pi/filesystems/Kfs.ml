@@ -18,7 +18,17 @@ let seen : (int * int, string * int) Hashtbl.t = Hashtbl.create 64
 let fs_of (c : chan) = snd (List.nth !attached c.devno)
 
 let is_dir fs i = Xv6fs.kind fs i = Xv6fs.Dir
-let qid_of fs i = { path = i; vers = 0; typ = (if is_dir fs i then Qt_dir else Qt_file) }
+(* A file's version, its qid's: how many times it was changed since the
+ * boot (written, cut, made, removed), by its device and its number. The
+ * card keeps none. Fault's kept texts are by it: a program made again
+ * is not run from the text of the one before. *)
+let versions : (int * int, int) Hashtbl.t = Hashtbl.create 64
+let changed (c : chan) i =
+  let k = (c.devno, i) in
+  let v = try Hashtbl.find versions k with Not_found -> 0 in
+  Hashtbl.remove versions k; Hashtbl.add versions k (v + 1)
+let qid_of (c : chan) fs i =
+  { path = i; vers = (try Hashtbl.find versions (c.devno, i) with Not_found -> 0); typ = (if is_dir fs i then Qt_dir else Qt_file) }
 
 (* xv6 keeps no permissions: what every file is said to have *)
 let perm_of fs i = if is_dir fs i then 0o777 else 0o666
@@ -166,7 +176,7 @@ let start_writer () =
 let dir_of (c : chan) i name =
   let fs = fs_of c in
   failing (fun () ->
-    let d = Dev.mkdir c name (qid_of fs i) (if is_dir fs i then 0 else Xv6fs.size fs i) (perm_of fs i) in
+    let d = Dev.mkdir c name (qid_of c fs i) (if is_dir fs i then 0 else Xv6fs.size fs i) (perm_of fs i) in
     match Xv6fs.mtime fs i with 0 -> d | secs -> { d with d_mtime = secs })
 
 (* the time, for what is written *)
@@ -209,7 +219,7 @@ let init () =
       failing (fun () ->
         if not (is_dir fs c.qid.path) then raise (Error enotdir);
         match Xv6fs.lookup fs c.qid.path name with
-        | Some i -> if name <> ".." && name <> "." then Hashtbl.replace seen (c.devno, i) (name, c.qid.path); qid_of fs i
+        | Some i -> if name <> ".." && name <> "." then Hashtbl.replace seen (c.devno, i) (name, c.qid.path); qid_of c fs i
         | None -> raise (Error enonexist)));
     Dev.stat = (fun c -> dir_of c c.qid.path (try fst (Hashtbl.find seen (c.devno, c.qid.path)) with Not_found -> "/"));
     Dev.dirs = (fun c ->
@@ -219,11 +229,12 @@ let init () =
       let fs = fs_of c in
       failing (fun () ->
         if is_dir fs c.qid.path && (m.access <> Oread || m.trunc) then raise (Error eperm);
-        if m.trunc then begin Xv6fs.truncate fs c.qid.path; Xv6fs.set_mtime fs c.qid.path (now ()) end);
+        if m.trunc then begin Xv6fs.truncate fs c.qid.path; Xv6fs.set_mtime fs c.qid.path (now ()); changed c c.qid.path end);
       c);
     Dev.read = (fun c n off -> failing (fun () -> Xv6fs.read (fs_of c) c.qid.path off n));
     Dev.write = (fun c s off ->
       failing (fun () -> Xv6fs.write (fs_of c) c.qid.path off s; Xv6fs.set_mtime (fs_of c) c.qid.path (now ()));
+      changed c c.qid.path;
       String.length s);
     (* the directory's channel becomes the new file's *)
     (* (a directory: DMDIR, the permissions' sign: Systab's perm_arg) *)
@@ -232,10 +243,12 @@ let init () =
       let i = failing (fun () -> Xv6fs.create fs c.qid.path name (if perm < 0 then Xv6fs.Dir else Xv6fs.File)) in
       failing (fun () -> Xv6fs.set_mtime fs i (now ()));
       Hashtbl.replace seen (c.devno, i) (name, c.qid.path);
-      c.qid <- qid_of fs i);
+      changed c i;
+      c.qid <- qid_of c fs i);
     Dev.remove = (fun c ->
       let name, parent = try Hashtbl.find seen (c.devno, c.qid.path) with Not_found -> raise (Error eperm) in
       failing (fun () -> Xv6fs.remove (fs_of c) parent name);
+      changed c c.qid.path;
       Hashtbl.remove seen (c.devno, c.qid.path));
     (* what of an entry may change (-1, "": unchanged): the name, in its
      * directory, and the time; permissions only to what they are *)

@@ -139,6 +139,19 @@ value bus_alias16(value unit) { (void)unit; return Val_long((BUS_ALIAS >> 16) & 
 value ram_all(value unit) { (void)unit; return Val_long(board_ram_all()); }
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
 value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }
+/* The kernel's stamp: 8 hex digits, the checksum of the objects it is
+ * linked from (mkkernel's and kernel.mk's stamp), linked in after
+ * them. It says which kernel runs: two builds with the same stamp are
+ * the same code, and a change that was not compiled shows as the stamp
+ * of the kernel before (mini-9pi's /dev/osversion). */
+extern char kernel_stamp[];
+value machine_stamp(value unit)
+{
+  value s = alloc_string(8);
+  (void)unit;
+  memmove(String_val(s), kernel_stamp, 8);
+  return s;
+}
 value font_base(value unit) { (void)unit; return Val_long((uintptr)font_image - KERNBASE); }
 
 /*****************************************************************************/

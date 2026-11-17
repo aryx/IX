@@ -46,6 +46,7 @@ cd /src
 mk -k 'MK=time mk' $t $o $q > /tmp/self.log >[2=1]
 grep '^mk: cd ' /tmp/self.log
 du -s /src/_mk
+cat /dev/osversion
 /src/_mk/5-plan9/kernels/9pi/tests/self/hello-c
 /src/_mk/5-plan9/kernels/9pi/tests/self/hello-ml
 EOF
@@ -136,5 +137,8 @@ else echo "ok self: the $same files made on the card are Linux's, byte for byte 
 # each directory's time on the card, mk's line (BUILD/times.txt)
 awk '/^cd [^ ]+ && time mk /{d=$2} /r \t mk /{for(i=1;i<=NF;i++) if($i ~ /r$/){sub(/r$/,"",$i); t[d]+=$i; break}}
   END{for(k in t) printf "%-40s %6.0f\n", k, t[k]}' "$build/card.log" | sort > "$build/times.txt"
-echo "self: $(awk '{s+=$2} END{printf "%d", s}' "$build/times.txt") s of mk on the card (BUILD/times.txt)"
+# (and which kernel it was: its stamp, the checksum of its objects, so
+# that two runs compared are seen to be two kernels, or the same one)
+stamp=$(grep -a -A1 '^% cat /dev/osversion' "$build/console.txt" | tail -1 | tr -d '\r')
+echo "self: $(awk '{s+=$2} END{printf "%d", s}' "$build/times.txt") s of mk on the card (BUILD/times.txt), kernel $stamp"
 exit $status

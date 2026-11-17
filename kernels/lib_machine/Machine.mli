@@ -340,6 +340,9 @@ external bus_alias16 : unit -> int = "bus_alias16"
  * its physical address and its size *)
 external fs_base : unit -> int = "fs_base"
 external fs_size : unit -> int = "fs_size"
+(* the kernel's stamp, 8 hex digits: the checksum of the objects it was
+ * linked from, so that a kernel says which build it is *)
+external stamp : unit -> string = "machine_stamp"
 
 (* The framebuffer is the screen's pixels as memory, a row after
  * another, which the VideoCore sends to the display; the kernel asks

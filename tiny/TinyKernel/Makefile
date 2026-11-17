@@ -191,8 +191,13 @@ ifneq ($(origin MACHINE),command line)
 run run-window self self-quick: MACHINE = $(RELEASE_MACHINE)
 run run-window self self-quick: | $(RELEASE_MACHINE)
 endif
+# -window runs another program, which tiny-machine looks for beside
+# itself (TinyMachine.ml's window_open), so in the same build directory;
+# run-window's variable is also its prerequisites'.
+RELEASE_PROGRAMS = ./tiny/TinyMachine.exe
+run-window: RELEASE_PROGRAMS += ./tiny/TinyMachine/TinyMachineWindow.exe
 $(RELEASE_MACHINE): FORCE
-	cd ../.. && $(RELEASE_DUNE) --profile release ./tiny/TinyMachine.exe
+	cd ../.. && $(RELEASE_DUNE) --profile release $(RELEASE_PROGRAMS)
 
 # how the kernel gives the processes memory (KMemory.mli)
 MEMORY = partitions

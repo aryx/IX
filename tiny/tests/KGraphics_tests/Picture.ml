@@ -92,8 +92,8 @@ let picture bits size =
   (* ellipses: circles of radius 0 to 10, outlines then filled; wide
    * and tall ones; cut by each side of the screen; a huge one whose
    * top only is on the screen *)
-  let ellipse_ dst src cx cy a b = D.msg 'e' [ dst; src; cx; cy; a; b ] in
-  let fill_ellipse_ dst src cx cy a b = D.msg 'E' [ dst; src; cx; cy; a; b ] in
+  let ellipse_ dst src cx cy a b = D.d_ellipse dst src (cx, cy) a b in
+  let fill_ellipse_ dst src cx cy a b = D.d_fill_ellipse dst src (cx, cy) a b in
   for r = 0 to 10 do
     send (ellipse_ 0 black (40 + (30 * r)) 510 r r ^
           fill_ellipse_ 0 blue (40 + (30 * r)) 540 r r)

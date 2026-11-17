@@ -12,8 +12,8 @@ open TinyOffice
 
 module P = TinyLibPlayground
 
-(* a shape's leaves at their places: "rect colour x y w h", "words
- * colour x y |text|" *)
+(* a shape's leaves at their places: "rect colour x y w h", "ellipse
+ * colour x y w h", "disc colour x y w h", "words colour x y |text|" *)
 let rec leaves x y s acc =
   match s with
   | P.Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
@@ -21,6 +21,11 @@ let rec leaves x y s acc =
   | P.Rect (c, w, h) ->
     ("rect " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
      ^ " " ^ string_of_int w ^ " " ^ string_of_int h, w > 1 && h > 1)
+    :: acc
+  | P.Ellipse (c, w, h) | P.Disc (c, w, h) ->
+    ((match s with P.Disc _ -> "disc " | _ -> "ellipse ") ^ string_of_int c
+     ^ " " ^ string_of_int x ^ " " ^ string_of_int y ^ " " ^ string_of_int w
+     ^ " " ^ string_of_int h, true)
     :: acc
   | P.Words (c, t) ->
     ("words " ^ string_of_int c ^ " " ^ string_of_int x ^ " "

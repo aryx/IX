@@ -42,7 +42,7 @@
  *   concatenates the messages and writes them when it wants them shown.
  * - {b Numbers take two bytes}, where libdraw's take four: a screen of
  *   1024 by 768 needs no more.
- * - {b There are eight letters} (a f d l s t p c), one for each
+ * - {b There are ten letters} (a f d l e E s t p c), one for each
  *   operation that KGraphics keeps.
  * - {b The messages can be parsed too} ([d_shape]), which libdraw has
  *   no need for: on Plan 9 a window's program writes to the kernel's draw
@@ -83,6 +83,12 @@ val d_free : image -> string
 val d_draw : image -> image -> image -> rect -> point -> string
 val d_fill : image -> image -> rect -> string
 val d_line : image -> image -> point -> point -> string
+
+(* [d_ellipse dst src c a b] draws the outline, a pixel thick, of the
+ * ellipse of centre c and half axes a and b (at most 16383); a circle
+ * of radius r has a = b = r. [d_fill_ellipse] fills it. *)
+val d_ellipse : image -> image -> point -> int -> int -> string
+val d_fill_ellipse : image -> image -> point -> int -> int -> string
 val d_text : image -> image -> point -> string -> string
 
 (* [d_styled dst src p style s] draws s in a style whose bits are bold

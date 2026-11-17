@@ -58,6 +58,10 @@ let d_fill dst src (r : rect) = d_draw dst src (-1) r (0, 0)
  * left corner at (x, y) *)
 let d_line (dst : image) (src : image) ((xa, ya) : point) ((xb, yb) : point) =
   msg 'l' [ dst; src; xa; ya; xb; yb ]
+let d_ellipse (dst : image) (src : image) ((cx, cy) : point) a b =
+  msg 'e' [ dst; src; cx; cy; a; b ]
+let d_fill_ellipse (dst : image) (src : image) ((cx, cy) : point) a b =
+  msg 'E' [ dst; src; cx; cy; a; b ]
 let d_text (dst : image) (src : image) ((x, y) : point) s =
   msg 's' [ dst; src; x; y; String.length s ] ^ s
 let d_styled (dst : image) (src : image) ((x, y) : point) (style : style) s =
@@ -88,7 +92,7 @@ let shape s i =
   | 'a' -> 15, 1
   | 'f' -> 3, 1
   | 'd' -> 19, 3
-  | 'l' -> 13, 2
+  | 'l' | 'e' | 'E' -> 13, 2
   | 's' ->
       if i + 11 > String.length s then 11, 2
       else if int16 s (i + 9) < 0 then -1, 0

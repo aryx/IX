@@ -30,10 +30,13 @@ let key_of_byte (c : char) : key =
  * it (bold and the others, below) *)
 type colour = int
 
-(* a rectangle of a colour (its width, its height), words of a colour,
- * shapes together, a shape moved (to the right, down) *)
+(* a rectangle of a colour (its width, its height), the ellipse in such
+ * a box (its outline, or filled), words of a colour, shapes together,
+ * a shape moved (to the right, down) *)
 type shape =
   | Rect of colour * int * int
+  | Ellipse of colour * int * int
+  | Disc of colour * int * int
   | Words of colour * string
   | Group of shape list
   | Move of int * int * shape
@@ -127,6 +130,15 @@ let ink c =
 let rec draw dst x y shape =
   match shape with
   | Rect (c, w, h) -> put (D.d_fill dst (ink c) (x, y, x + w, y + h))
+  (* (an even width or height has no middle pixel: the last column or
+   * row of the box is left out) *)
+  | Ellipse (c, w, h) when w > 0 && h > 0 ->
+      put (D.d_ellipse dst (ink c) (x + ((w - 1) / 2), y + ((h - 1) / 2))
+             ((w - 1) / 2) ((h - 1) / 2))
+  | Disc (c, w, h) when w > 0 && h > 0 ->
+      put (D.d_fill_ellipse dst (ink c) (x + ((w - 1) / 2), y + ((h - 1) / 2))
+             ((w - 1) / 2) ((h - 1) / 2))
+  | Ellipse _ | Disc _ -> ()
   | Words (c, s) ->
       put (if c < 256 then D.d_text dst (ink c) (x, y) s
            else if c land fat_pixels <> 0 then

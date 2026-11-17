@@ -72,7 +72,8 @@
  * - floating-point coordinates under a transformation (move, scale,
  *   rotate, fade); here a shape is in pixels, at integer positions,
  *   with y going down from the top left corner of the window;
- * - circles, polygons and images;
+ * - polygons and images (circles and ellipses are kept, with their box
+ *   as their place instead of their centre);
  * - text in several sizes (the machine has a single 8x16 font);
  * - ABC's notation and instruments (a tune is notes in Hz on the
  *   kernel's waves);
@@ -109,8 +110,8 @@
  *   descriptor 4;
  * - redraw only what changed, for every shape and not just the
  *   background, by comparing the shapes of two models;
- * - circles and polygons, once KGraphics.ml draws them (ellipses and
- *   filled polygons are among its exercises, for these shapes);
+ * - polygons, once KGraphics.ml draws them (filled polygons are among
+ *   its exercises, for this shape);
  * - a second game: a Snake, or a Pong;
  * - record and replay: a game is pure and init takes a seed, so the
  *   seed and the keys of each frame reproduce a whole game (demos, bug
@@ -160,10 +161,17 @@ val key_of_byte : char -> key
  * office's words: [bold], [italic], [underlined], [large] (16x32
  * characters). [fat_pixels] is for a row of a paint picture instead:
  * each character is a colour letter (see [pixel_letters]) drawn as a
- * 4x4 square. *)
+ * 4x4 square.
+ *
+ * [Ellipse] and [Disc] are the outline and the inside of the ellipse in
+ * a box of that width and height, placed as a [Rect] is; a circle's box
+ * is square. When the width or the height is even, the box has no
+ * middle pixel, and its last column or row is left out. *)
 type colour = int
 type shape =
   | Rect of colour * int * int
+  | Ellipse of colour * int * int
+  | Disc of colour * int * int
   | Words of colour * string
   | Group of shape list
   | Move of int * int * shape

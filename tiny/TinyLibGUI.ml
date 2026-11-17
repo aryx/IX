@@ -453,7 +453,7 @@ let window_size caps =
       | _ -> answer () in
   answer ()
 
-(* a shape's leaves, each a rectangle or words at its place in the
+(* a shape's leaves, each a rectangle, an ellipse or words at its place in the
  * window, in their order, on acc *)
 let rec leaves x y s acc =
   match s with
@@ -469,6 +469,8 @@ type area = int * int * int * int
 let area_of (x, y, leaf) : area =
   match leaf with
   | P.Rect (_, w, h) -> x, y, x + w, y + h
+  | P.Ellipse (_, w, h) -> x, y, x + w, y + h
+  | P.Disc (_, w, h) -> x, y, x + w, y + h
   | P.Words (c, s) ->
       x, y, x + (P.char_width c * String.length s) + P.overhang c,
         y + P.char_height c
@@ -555,6 +557,10 @@ let paint (erased : area list) (l, (mark : drawn)) =
          * next): all of it, where it changed or was uncovered *)
         if mark <> Untouched || List.exists (meets (area_of l)) erased then
           P.draw 0 x y leaf
+    | P.Ellipse _ | P.Disc _ ->
+        (* all of it too, when an erasing uncovered some of it: a curve
+         * cannot be cut to a rectangle as a [Rect] is *)
+        if List.exists (meets (area_of l)) erased then P.draw 0 x y leaf
     | P.Words (c, s) ->
         (* its characters that changed, and those an erasing uncovered
          * (the columns it met: a cursor that moved, one character),
@@ -587,7 +593,7 @@ type part =
   | Changed of ((int * int * P.shape) * drawn) list
   | Same of (int * int * P.shape) list * area
 
-let repaint shown now =
+let repaint_leaves shown now =
   let rec pairs olds news erased parts =
     match olds, news with
     | (o, _, _) :: os, (n, nl, b) :: ns when o == n ->
@@ -620,6 +626,28 @@ let repaint shown now =
     P.flush ()
   end
 
+(* a shape with its leaves and their box: the old ones when it is the
+ * very same *)
+let fresh n =
+  let l = leaves 0 0 n [] in
+  let b =
+    List.fold_left (fun (x0, y0, x1, y1) leaf ->
+      let (a0, b0, a1, b1) = area_of leaf in
+      min x0 a0, min y0 b0, max x1 a1, max y1 b1)
+      (max_int, max_int, min_int, min_int) l in
+  (n, l, b)
+
+let rec with_leaves olds news =
+  match olds, news with
+  | (o, ol, ob) :: os, n :: ns ->
+      (if o == n then (n, ol, ob) else fresh n) :: with_leaves os ns
+  | [], n :: ns -> fresh n :: with_leaves [] ns
+  | _, [] -> []
+
+let repaint shown now =
+  let olds = with_leaves [] shown in
+  repaint_leaves olds (with_leaves olds now)
+
 (* The program, until its typed says None or the keys end: its picture
  * drawn where it changed, then the keys or the mouse waited for. The
  * console is raw meanwhile (rawcons): its ^C is a key, not the kill of
@@ -628,25 +656,9 @@ let run_canvas caps (c : 'm canvas) =
   let w, h = window_size caps in
   TSys.raw_console caps true;
   let fds = keys_and_mouse in
-  (* a shape with its leaves and their box: the old ones when it is the
-   * very same *)
-  let fresh n =
-    let l = leaves 0 0 n [] in
-    let b =
-      List.fold_left (fun (x0, y0, x1, y1) leaf ->
-        let (a0, b0, a1, b1) = area_of leaf in
-        min x0 a0, min y0 b0, max x1 a1, max y1 b1)
-        (max_int, max_int, min_int, min_int) l in
-    (n, l, b) in
-  let rec with_leaves olds news =
-    match olds, news with
-    | (o, ol, ob) :: os, n :: ns ->
-        (if o == n then (n, ol, ob) else fresh n) :: with_leaves os ns
-    | [], n :: ns -> fresh n :: with_leaves [] ns
-    | _, [] -> [] in
   let rec loop model shown =
     let now = with_leaves shown (c.picture model) in
-    repaint shown now;
+    repaint_leaves shown now;
     if TSys.ready fds None = Some TSys.fd_stdin then begin
       let s = TSys.read TSys.fd_stdin 16 in
       let rec typed i model =

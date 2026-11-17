@@ -35,8 +35,8 @@ tiny/TinyLibGUI.ml:181: stack: TinyLibGUI.differ calls itself, not a tail call, 
 tiny/TinyLibGUI.ml:332: stack: TinyLibGUI.title_x calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:399: stack: titles calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:408: stack: rows calls itself, not a tail call, over a list
-tiny/TinyLibGUI.ml:644: stack: with_leaves calls itself, not a tail call, over a list
-tiny/TinyLibGUI.ml:645: stack: with_leaves calls itself, not a tail call, over a list
+tiny/TinyLibGUI.ml:644: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
+tiny/TinyLibGUI.ml:645: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
 tiny/TinyLibPlayground.ml:66: stack: pairs calls itself, not a tail call, over a list
 tiny/TinyML/Compile.ml:430: stack: Compile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/Compile.ml:468: stack: Compile.app calls itself, not a tail call, over a list

@@ -113,6 +113,18 @@ let () =
     TinyLibGUI.over tb { TinyLibGUI.up with m_focus = Some (fx, fy) } in
   TinyLibGUI.redraw [] [] (down shapes)
     (List.map (fun (box, s) -> box, TinyLibPlayground.Move (0, 200, s)) over);
+  (* a canvas's picture changed twice, on a white ground: a disc moved
+   * (its old box erased) over a square, then the square moved from
+   * under it (the disc uncovered there, drawn again); so one whole disc
+   * and one square *)
+  let ground = TinyLibPlayground.(Move (380, 400, Rect (255, 240, 70))) in
+  let disc x = TinyLibPlayground.(Move (x, 420, Disc (0xf0, 31, 31))) in
+  let square x = TinyLibPlayground.(Move (x, 430, Rect (0, 10, 10))) in
+  let d = disc 460 in
+  let one = [ ground; square 470; disc 400 ] and two = [ ground; square 470; d ] in
+  TinyLibGUI.repaint [] one;
+  TinyLibGUI.repaint one two;
+  TinyLibGUI.repaint two [ ground; square 560; d ];
   KGraphics.arena 0xf4b000 0xb4000;
   let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in

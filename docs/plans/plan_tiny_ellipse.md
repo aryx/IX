@@ -7,7 +7,9 @@ ellipse) document, so we can have ellipses in the playground, in
 tiny-office drawing, etc. it's an interesting cross-cutting exercise
 and whole system extension".
 
-**Status: step 1 done** (2026-11-17): the kernel's `e` and `E`.
+**Status: steps 1 to 6 done** (2026-11-17): the kernel's `e` and `E`,
+TinyLibDraw, tiny-windows, the C runtime, the playground's `Ellipse`
+and `Disc`, and TinyLibGUI's redrawing.
 
 ## Why this is worth doing
 
@@ -199,6 +201,14 @@ both shapes and checks the messages produced.
 The case in `area_of`. A test in TinyLibGUI_tests shows a view with a
 disc, then a view with the disc moved, and checks that the old place
 is erased.
+
+(Done: `paint` had the same fall-through, `| _ -> ()`, so an ellipse
+that did not change but was uncovered in part by an erasing kept a
+hole; it is now drawn whole, as a styled text is. The test goes through
+`repaint`, the canvas's path, exported for it; the widgets' `redraw`
+erases a widget by its first rectangle and never looks at a leaf. With
+either fix taken out, the recorded screen differs: the old disc stays,
+or a white square is left in the disc.)
 
 ### 7. The office: TinyOffice/Drawing.ml (about 20 lines)
 

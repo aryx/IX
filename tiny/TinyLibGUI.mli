@@ -98,8 +98,9 @@
  *   library keeps the widgets' mouse;
  * - {b the canvas} ([run_canvas]): the program draws its whole window
  *   as shapes (emacs, the office, the debugger), and the library draws
- *   only what changed, comparing the shapes' leaves (rectangles and
- *   words at their places), as [redraw] compares the widgets' shapes.
+ *   only what changed, comparing the shapes' leaves (rectangles,
+ *   ellipses and words at their places), as [redraw] compares the
+ *   widgets' shapes.
  *
  * context:
  * Below this library are TinyLibPlayground, TinyLibDraw and
@@ -272,11 +273,17 @@ type 'm canvas = {
 }
 
 (* [run_canvas c] runs until None or the end of the keys, then paints the
- * window white. Each change redraws only the leaves (rectangles and
- * words) that differ from the old ones at the same place, after
- * repainting what lies under them; a word is redrawn from its first
- * differing character. The console is raw meanwhile, so ^C is a key. *)
+ * window white. Each change redraws only the leaves (rectangles,
+ * ellipses and words) that differ from the old ones at the same place,
+ * after repainting what lies under them; a word is redrawn from its
+ * first differing character, and an ellipse uncovered in part is
+ * redrawn whole. The console is raw meanwhile, so ^C is a key. *)
 val run_canvas : < Cap.clock; Cap.keyboard; .. > -> 'm canvas -> unit
+
+(* [repaint shown now] is what [run_canvas] does after each change:
+ * the picture [now] drawn where it differs from [shown], on image 0.
+ * The tests use it. *)
+val repaint : TinyLibPlayground.shape list -> TinyLibPlayground.shape list -> unit
 
 (* The window's size. Inside tiny-windows, it is the answer to an ENQ;
  * with no answer within half a second, it is the whole screen of the

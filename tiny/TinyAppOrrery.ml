@@ -51,13 +51,17 @@ let quarter = Array.of_list [
   891; 903; 915; 926; 936; 946; 955; 964; 972; 980; 987; 993; 999; 1004;
   1009; 1013; 1016; 1019; 1021; 1023; 1024; 1024 ]
 
-(* the sine of an angle in 4096ths of a turn, times 1024: the table's
- * two nearest steps, and the line between them *)
+(* The sine of an angle in 4096ths of a turn, times 1024: the table's
+ * two nearest steps, and the line between them. Within a quarter, r
+ * goes from 0 to 1024 included (the second and fourth quarters count
+ * down from 1024), so a step that falls on the table is read alone:
+ * the last one, 64, has no next one. *)
 let sin a =
   let a = a land 4095 in
   let within r =
     let i = r / 16 and f = r mod 16 in
-    quarter.(i) + ((quarter.(i + 1) - quarter.(i)) * f / 16) in
+    if f = 0 then quarter.(i)
+    else quarter.(i) + ((quarter.(i + 1) - quarter.(i)) * f / 16) in
   let r = a mod 1024 in
   match a / 1024 with
   | 0 -> within r

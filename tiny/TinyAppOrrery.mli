@@ -56,6 +56,11 @@ type planet = {
 }
 val planets : planet list
 
+(* [sin a] and [cos a] for an angle a in 4096ths of a turn, times 1024
+ * (any a, taken modulo a turn). *)
+val sin : int -> int
+val cos : int -> int
+
 (* [place p d] is where planet p is on the screen d days after
  * 2000-01-01. *)
 val place : planet -> int -> int * int

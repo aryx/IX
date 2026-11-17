@@ -15,6 +15,17 @@ let () =
    * a multiple of 400), a year later, the end of 2099 *)
   List.iter (fun d -> Printf.printf "day %d: %s\n" d (date d))
     [ 0; 59; 366; 36524 ];
+  (* the sine and the cosine at the quarters and around them (a quarter
+   * is 1024: the table's last step, read alone), then at every angle
+   * of a turn, how far the point (cos, sin) is from the circle *)
+  List.iter (fun a -> Printf.printf "angle %d: sin %d, cos %d\n" a (sin a) (cos a))
+    [ 0; 1; 1023; 1024; 1025; 2048; 3072; 4095; 4096; -1 ];
+  let worst = ref 0. in
+  for a = 0 to 4095 do
+    let r = Float.sqrt (float_of_int ((sin a * sin a) + (cos a * cos a))) in
+    worst := Float.max !worst (Float.abs (r -. 1024.))
+  done;
+  Printf.printf "every angle: at most %.1f off a circle of 1024\n" !worst;
   (* each planet's place on the first day, after a quarter of its
    * period, and after a whole period (back where it was) *)
   List.iter (fun (p : planet) ->

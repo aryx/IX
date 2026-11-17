@@ -1,4 +1,4 @@
-# The programs of make self-quick (tests/self.rc -q). Each is built and
+# The programs of make self-quick (the top mkfile's self-quick). Each is built and
 # linked on the card as on Linux, as t-ix's self-quick links ping. One
 # is in C, over lib_core's C library. The other is in OCaml, started
 # with Pervasives alone rather than all of lib_core.a (which

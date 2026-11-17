@@ -24,7 +24,7 @@
 # usage: run.sh 5|7 workdir prog.ml|dir...
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc
+export MKSHELL=mini-rc MINI=mini-
 set -u
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 IX=$ROOT/_build/default

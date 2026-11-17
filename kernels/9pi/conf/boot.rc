@@ -60,8 +60,8 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 		# what Plan 9's termrc gives its programs, mk's among them,
 		# when the card has ix's sources and tools
 		# (docs/plans/plan_self_hosting.md): the machine's type
-		# (mkfiles/mkconfig names ix's tools ml, ld... by it, and
-		# mini-ml, mini-ld... on Linux, which has none), its cores
+		# (mkfiles/mkconfig takes the machine and the system to
+		# build for from it; Linux has none), its cores
 		# (mk's jobs at once: a line of #c/sysstat each), and the
 		# recipes' shell
 		objtype=arm

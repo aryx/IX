@@ -18,7 +18,7 @@
 # (and mkfiles/fixpoint.sh: ix built again by what mini-mk built here)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc
+export MKSHELL=mini-rc MINI=mini-
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # only ix's programs: nothing of goken's builds (its .s files are the inputs below)
 export PATH=$ROOT/bin:$PATH

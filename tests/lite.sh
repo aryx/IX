@@ -40,7 +40,7 @@
 # and a session editing this file would change a run under way)
 {
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc
+export MKSHELL=mini-rc MINI=mini-
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH
@@ -530,7 +530,7 @@ elif ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
 else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
 # make self-mix's make ix in a fresh tree: each directory after those
 # whose objects it takes (here _mk/5-plan9 hides a wrong order)
-job "make self-mix's order: each directory after those whose objects it takes" kernels/9pi/tests/ixdirs.sh
+job "the top mkfile's order: each directory after those whose objects it takes" kernels/9pi/tests/ixdirs.sh
 # mini-9pi for the Pi 1 built by ix (mini-ml's OCaml, mini-cc -O3's C),
 # from nothing in this run's own directory, booted under mini-qemu to
 # rc's prompt on principia's card (about 75 s): the other jobs' kernels

@@ -155,7 +155,7 @@ for p in ${@:-$all}; do
   esac
   dir=$(dirname $mk)
   rm -f $bin
-  link=$(cd $dir && MKSHELL=mini-rc PATH=$ROOT/bin:$PATH mini-mk 2>&1 | grep -E '^mini-ld' | tail -1)
+  link=$(cd $dir && MKSHELL=mini-rc MINI=mini- PATH=$ROOT/bin:$PATH mini-mk 2>&1 | grep -E '^mini-ld' | tail -1)
   [ -x $bin ] && [ -n "$link" ] || { echo "$p: not built"; failures=$((failures + 1)); continue; }
   set -- $link; shift
   (cd $dir && $ROOT/bin/mini-ld -g "$@" -o $W/prog) || { echo "$p: not linked with -g"; failures=$((failures + 1)); continue; }

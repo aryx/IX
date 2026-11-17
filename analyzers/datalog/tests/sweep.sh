@@ -44,6 +44,6 @@ one() { # a mkfile
 export -f one
 export out limit FLAG
 for mk in $(programs); do
-  needs_gen $mk && (cd $(dirname $mk) && MKSHELL=mini-rc PATH=$PWD/../../bin:$OLDPWD/bin:$PATH timeout 600 mini-mk > /dev/null 2>&1)
+  needs_gen $mk && (cd $(dirname $mk) && MKSHELL=mini-rc MINI=mini- PATH=$PWD/../../bin:$OLDPWD/bin:$PATH timeout 600 mini-mk > /dev/null 2>&1)
 done
 programs | xargs -P 8 -n 1 bash -c '. analyzers/datalog/tests/mk_units.sh; one "$0"' | sort | tee $out/SUMMARY

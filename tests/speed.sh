@@ -45,7 +45,7 @@
 #               window; under QEMU on mini-9pi it is 5 to 6, cameltry 36)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc
+export MKSHELL=mini-rc MINI=mini-
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH

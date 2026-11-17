@@ -2,32 +2,42 @@
 # The tools are the installed ones (make install, or PATH=$TOP/bin:$PATH):
 # mini-mk reads this, mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm,
 # mini-ar and mini-ld do the work. Included after TOP is set.
-# The recipes are rc's, on Linux too (mini-rc: MKSHELL=mini-rc in the
-# environment, as kernels/9pi's Makefile and tests/lite.sh give it;
-# mini-mk's own default on Plan 9), so that mini-9pi builds ix from
-# the same mkfiles (docs/plans/plan_self_hosting.md).
+#
+# The tools are named as on mini-9pi's card: ml, cc, asm, ld, ar, lex,
+# yacc, mk, rc and walk. On the host they are mini-ml, mini-cc and so
+# on, the same names after mini-, so mini-mk MINI=mini- runs these
+# mkfiles there (as tiny-build TINY=tiny- runs tiny/Buildfile); MINI
+# may also be in the environment, where the scripts and the Makefiles
+# put it. No mkfile gives MINI a value: a mini-mk started by a recipe
+# takes it from the environment, as it was given to the first one.
+# The recipes are rc's on both, so that mini-9pi builds ix from the
+# same mkfiles (docs/plans/plan_self_hosting.md): the host has
+# MKSHELL=mini-rc in its environment, as the Makefiles and tests/lite.sh
+# give it (no mkfile can say it for the others: an included file's
+# MKSHELL is its own), and mini-mk's own default on Plan 9 is rc.
 
 # (what depends on the system is mkfiles/config.rc's, rc's work: a
 # backquote each was an rc and an echo, read by every mini-mk)
-# TOOLPRE, the tools' names: mini-ml on Linux, ml on mini-9pi's card,
-# which sets $objtype as Plan 9 does (its mk reads it; Linux has none);
 # O, the machine: 7 (arm64) or 5 (arm), as Plan 9's letters; on Plan 9
-# its own, by $objtype; OS (below)
+# its own, by $objtype, which mini-9pi sets as Plan 9 does (Linux has
+# none); OS (below)
 <|. $TOP/mkfiles/config.rc machine
 # (MLOPT: mini-ml's optimizations, config.rc's: -O3 unless MLOPT is set)
-ML=${TOOLPRE}ml -m $O $MLOPT
+# (TIMES: what goes before each compile and link, nothing, or time:
+# mini-mk TIMES=time says each one's time, on mini-9pi its kernel's)
+ML=$TIMES ${MINI}ml -m $O $MLOPT
 # (MLEXE, the compiler's file, config.rc's: what the objects depend on)
-CC=${TOOLPRE}cc -m $O
-AS=${TOOLPRE}asm -m $O
-AR=${TOOLPRE}ar
-LD=${TOOLPRE}ld -m $O -map
-LEX=${TOOLPRE}lex
-YACC=${TOOLPRE}yacc
+CC=$TIMES ${MINI}cc -m $O
+AS=$TIMES ${MINI}asm -m $O
+AR=$TIMES ${MINI}ar
+LD=$TIMES ${MINI}ld -m $O -map
+LEX=${MINI}lex
+YACC=${MINI}yacc
 # (for the shell's commands: walk, Plan 9's find; rc, for mkfiles/units.rc;
 # mk, for a directory's builds by another's)
-WALK=${TOOLPRE}walk
-RC=${TOOLPRE}rc
-MK=${TOOLPRE}mk
+WALK=${MINI}walk
+RC=${MINI}rc
+MK=${MINI}mk
 
 # the system the programs are for: linux, or plan9 (plan_rio.md: for
 # mini-9pi; arm only today: mini-mk O=5 OS=plan9), its executables

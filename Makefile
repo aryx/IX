@@ -15,6 +15,7 @@
 # (the mkfiles' recipes are rc scripts, run by mini-rc: see
 # mkfiles/mkconfig)
 export MKSHELL = mini-rc
+export MINI = mini-
 all:
 	dune build
 # tix builds t-IX alone (tiny/) and mix builds m-IX (the rest), as

@@ -8,7 +8,7 @@
 # usage: lib_core/commons/tests/sources.sh    (after dune build)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc
+export MKSHELL=mini-rc MINI=mini-
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 export PATH=$ROOT/bin:$PATH
 cd $ROOT/lib_core/commons/tests

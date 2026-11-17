@@ -62,6 +62,7 @@
 
 # (The mkfiles' recipes are in rc, run by mini-rc: see mkfiles/mkconfig.)
 export MKSHELL = mini-rc
+export MINI = mini-
 MAKEFLAGS += --no-builtin-rules
 
 PRINCIPIA ?= $(HOME)/principia
@@ -377,10 +378,6 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
-  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows/rio windows/rio/tests windows/desktop apps/misc apps/files profilers/misc apps/media/play apps/music/rebirth games \
-  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog languages/tiger editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
-  typesetting/man networking browsers/lynx browsers/netscape apps/maps assembler linker linker/tools languages/dotnet languages/ml languages/c builder generators/lex generators/yacc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -391,13 +388,11 @@ KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
 QEMU_BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(QEMU_BOOT))
-# (The libraries are built first, in their order, by the top mkfile's
-# libs target, because a program's mkfile takes their archives as they
-# are.)
+# (The programs are the top mkfile's, built for the card's machine and
+# system: its libraries, then its directories for Plan 9, the same
+# build as make self runs on the card.)
 ix: | $(B)
-	cd $(IX) && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 libs > /dev/null
-	for d in $(IXDIRS); do (cd $(IX)/$$d && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null) || exit 1; done
-	cd $(IX)/games && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 PLATFORM=software > /dev/null
+	cd $(IX) && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
 	$(MAKE) B=$(BUILD)/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTDIR="$(BOOTDIR_IX)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IX)
 # With a USB keyboard and mouse: the same image, with mini-usbd in its
 # bootdir (in Plan 9 the driver is a program; ix's own is
@@ -925,7 +920,7 @@ card-self: ix
 	$(MAKE) SELF=1 $(BUILD)/card-self.img
 # ix built by ix on that card, on the Pi 2 under QEMU (with one core:
 # boot.rc's NPROC). Each file it makes is compared with Linux's from
-# the same sources (tests/self.sh, tests/self.rc; $(BUILD)/self/).
+# the same sources (tests/self.sh, the top mkfile; $(BUILD)/self/).
 # self-quick builds a part of lib_core (its C library, the runtime,
 # three units) and two programs linked with them, one in C and one in
 # OCaml, and runs them (tests/self/). It takes 4 minutes, where self

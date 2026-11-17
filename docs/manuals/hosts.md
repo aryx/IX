@@ -60,7 +60,7 @@ Three facts decide the rest:
 | mini-netscape | SDL, dune; mini-mk's: frames to files | dune; a known bug, deep recursion in async JavaScript dies by SIGBUS (a thread's stack of 512 KB: `docs/plans/bugs/ix.md`) | no |
 | mini-office, mini-drscheme, mini-squeak | SDL, dune | dune | no |
 | mini-chidb, mini-git, mini-diff, mini-merge3 | yes, dune and mini-mk | dune | no |
-| mini-scheme, mini-prolog, mini-pascal, mini-smalltalk | yes, dune and mini-mk | dune | no; on the card too (`kernels/9pi/Makefile`'s `IXDIRS`) |
+| mini-scheme, mini-prolog, mini-pascal, mini-smalltalk | yes, dune and mini-mk | dune | no; on the card too (the top mkfile's `PLAN9`) |
 | mini-datalog, mini-forth | yes, dune and mini-mk | dune | not built for mini-9pi |
 | mini-dotnet | yes: dune's interprets; mini-mk's has its JIT too, arm64's code (`languages/dotnet/mkfile`) | dune, interpreting | no; on mini-9pi too, the card's `dotnet`, its JIT arm's. A program's assemblies are the same files on every system |
 | mini-tiger, mini-csc, and mini-ml, mini-cc, mini-datalog with `-dotnet` | yes, dune and mini-mk; they write .NET assemblies | dune | no; mini-tiger on the card too, mini-csc not built for mini-9pi. What they write runs by mini-dotnet and by Microsoft's `dotnet` (Linux here; macOS *inferred*) |

@@ -22,7 +22,7 @@
 #   10 minutes; 5: about an hour)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc
+export MKSHELL=mini-rc MINI=mini-
 O=${1:-7}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

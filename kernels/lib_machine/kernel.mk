@@ -26,7 +26,6 @@
 # fs.img from its fs.img.o, and the failed link deleted it:
 # docs/plans/done/plan_kernel.md.)
 # (The mkfiles' recipes are in rc, run by mini-rc: see mkfiles/mkconfig.)
-export MKSHELL = mini-rc
 export MINI = mini-
 MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:

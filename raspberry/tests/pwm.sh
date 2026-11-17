@@ -12,7 +12,7 @@
 # this against but the numbers (pwm/tone.c says what they should be).
 # usage: pwm.sh [mini-qemu]
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc MINI=mini-
+export MINI=mini-
 cd "$(dirname "$0")/../.."
 M=${1:-_build/default/raspberry/Main.exe}
 (cd raspberry/tests/pwm && mini-mk O=5 > /dev/null 2>&1) || { echo "pwm.sh: mini-mk O=5 failed in raspberry/tests/pwm"; exit 1; }

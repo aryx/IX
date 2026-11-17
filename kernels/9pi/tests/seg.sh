@@ -31,7 +31,7 @@ printf '#!/boot/rc -m /boot/rcmain\n/boot/echo segments:\n/boot/seg\n/boot/echo 
 # made again without this boot's files: /boot/seg did not exist)
 touch -t 200001010000 $W/boot.rc
 mini-mkbootdir $b/kernels/9pi/bootdir $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/rcmain rc=$BIN/rc echo=$BIN/echo seg=$W/seg &&
-  (cd $ROOT/kernels/9pi && MKSHELL=mini-rc MINI=mini- NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
+  (cd $ROOT/kernels/9pi && MINI=mini- NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
   { echo "the kernel not relinked:"; tail -3 $W/mk.log | cut -c1-200; exit 1; }
 out=$W/out.txt
 # (timeout: if this script is interrupted, the emulator does not outlive it)

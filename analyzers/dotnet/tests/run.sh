@@ -45,7 +45,7 @@ fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 parser() {
   [ -f _mk/7/$1/Parser.ml ] && return
   if [ -n "$build" ]; then
-    (cd $1 && MKSHELL=mini-rc MINI=mini- PATH=$PWD/../../bin:$PATH mini-mk B=../../_mk/7 \
+    (cd $1 && MINI=mini- PATH=$PWD/../../bin:$PATH mini-mk B=../../_mk/7 \
        ../../_mk/7/$1/Parser.ml ../../_mk/7/$1/Lexer.ml > $W/parser.log 2>&1) ||
       { echo "FAIL $1's parser and lexer by mini-mk"; tail -3 $W/parser.log; exit 1; }
   else

@@ -21,7 +21,7 @@
 
 IX=$(cd "$(dirname "$0")/.." && pwd)
 cd $IX || exit 1
-export MKSHELL=mini-rc MINI=mini- PATH=$IX/bin:$PATH
+export MINI=mini- PATH=$IX/bin:$PATH
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 # variables of a mkfile as mini-mk reads them: MKFILE VAR...
 vars() {

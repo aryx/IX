@@ -23,7 +23,7 @@ set -e
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 D=$(mkdir -p "$1" && cd "$1" && pwd)
 cd $ROOT
-export PATH=$ROOT/bin:$PATH MKSHELL=mini-rc MINI=mini-
+export PATH=$ROOT/bin:$PATH MINI=mini-
 X=$D/mk/5-plan9
 log() { echo $D/mk.$(echo $1 | tr / _).log; }
 mk() { (cd $1 && NPROC=32 mini-mk O=5 OS=plan9 B=$X "${@:2}") > $(log $1) 2>&1 ||

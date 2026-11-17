@@ -24,7 +24,7 @@ build() { local T=$D/$(name "$1")
   rm -rf "${T:?}"; mkdir -p $T; git -C $ROOT archive $C | tar -x -C $T
   (cd $ROOT && for f in ${OVERLAY:-}; do cp $f $T/$f; done)
   (cd $T && make all > $T.all.log 2>&1) || { echo "$1: make all failed"; return 1; }
-  export PATH=$T/bin:$PATH MKSHELL=mini-rc MINI=mini- NPROC=8 MLOPT="$(opts "$1")"
+  export PATH=$T/bin:$PATH MINI=mini- NPROC=8 MLOPT="$(opts "$1")"
   (cd $T && mini-mk O=5 OS=linux libs > $T.libs.log 2>&1) || { echo "$1: libs failed"; return 1; }
   for d in assembler languages/ml games/fps/doom games/fps/quake games/arcade; do
     (cd $T/$d && mini-mk O=5 > $T.$(basename $d).log 2>&1) || { echo "$1: $d failed"; return 1; }

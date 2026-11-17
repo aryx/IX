@@ -8,7 +8,7 @@ open Common
 
 let help = {|usage: mini-mk [-f file] [-aeiknstuH] [-d[egp]] [-w file] [var=value ...] [target ...]
 Plan 9's mk, faithfully: the targets out of date remade by the rules of the
-mkfile (-f: another), each recipe run by $MKSHELL (sh by default). A mkfile:
+mkfile (-f: another), each recipe run by $MKSHELL (mini-rc by default). A mkfile:
   hello: hello.o
   	cc -o $target $prereq
   %.o: %.c
@@ -120,7 +120,17 @@ let run (caps : < caps; .. >) (argv : string array) : int =
     let assigns, targets = List.partition (fun a -> String.contains a '=') rest in
     let env = Procs.split_env (CapUnix.environment caps ()) in
     let pid = CapUnix.getpid caps () in
-    let mk = Mkfile.create ~env ~default_shell:[ "sh" ] in
+    (* the recipes' shell when no MKSHELL says one: the rc of the same
+     * family, by this program's own name, mini-rc for mini-mk and rc for
+     * mk on mini-9pi (Plan 9's mk runs rc); sh under another name
+     * (old: sh always, as plan9port's mk, and every caller of mini-mk
+     * on ix's mkfiles, whose recipes are rc's, said MKSHELL=mini-rc) *)
+    let own_rc =
+      let name = Filename.basename argv.(0) in
+      let n = String.length name in
+      if n >= 2 && String.sub name (n - 2) 2 = "mk" then String.sub name 0 (n - 2) ^ "rc" else "sh"
+    in
+    let mk = Mkfile.create ~env ~default_shell:[ own_rc ] in
     let io : Mkfile.io = {
       read_file = read_file caps;
       output = (fun mk ~shell ~stdin cmd ->

@@ -82,7 +82,7 @@ copy /src/_mk "$build/card-mk" ""
 rm -f "$build/fs.img"
 
 # 3. the same build on Linux
-(cd "$build/src" && PATH=$ix/bin:$PATH MKSHELL=mini-rc NPROC=4 \
+(cd "$build/src" && PATH=$ix/bin:$PATH NPROC=4 \
   mini-mk -k MINI=mini- O=5 OS=plan9 ${MLOPT:+"MLOPT=$MLOPT"} $q > "$build/linux.log" 2>&1)
 
 # 4. the two compared

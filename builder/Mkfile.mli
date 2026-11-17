@@ -54,7 +54,8 @@
  * the line it was read at, so one mkfile can use both rc and sh, and an
  * included file starts again from the default (mk(1)). The default is
  * $MKSHELL from the environment if set -- principia's mk honours it,
- * which xix's build relies on (env.sh) -- and sh otherwise.
+ * which xix's build relies on (env.sh) -- and otherwise the rc named
+ * as the program is (CLI: mini-rc for mini-mk, rc for mk on mini-9pi).
  *
  * References: mk(1), "The mkfile"; principia's parse.c (parse, rhead,
  * rbody), lex.c (assline, bquote) and rule.c (addrule); Bob Flandrena,

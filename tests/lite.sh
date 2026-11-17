@@ -40,7 +40,7 @@
 # and a session editing this file would change a run under way)
 {
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
-export MKSHELL=mini-rc MINI=mini-
+export MINI=mini-
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH
@@ -477,7 +477,10 @@ ix() {
   mk apps/media/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
   mk typesetting/man & pids+=($!)
-  mk browsers/javascript & pids+=($!)
+  # (browsers/javascript is a library, made by libs with its mini-node:
+  # built again here, beside browsers/netscape which reads its lib.a, it
+  # removed and made the archive again when a time was a tie, on macOS,
+  # where OCaml's stat has whole seconds, and netscape's link found none)
   mk browsers/engine/tests & pids+=($!)
   mk browsers/netscape & pids+=($!)
   mk apps/files & pids+=($!)

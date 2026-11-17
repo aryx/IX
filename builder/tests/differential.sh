@@ -63,7 +63,7 @@ run_case() {
           args=${line#'#!args'}; args=${args# }
           echo "\$ mk $args"
           # shellcheck disable=SC2086
-          env -i PATH="$PATH" HOME=/nonexistent "$TIMEOUT" 20 $prog $args 2>&1 </dev/null
+          env -i PATH="$PATH" HOME=/nonexistent MKSHELL=sh "$TIMEOUT" 20 $prog $args 2>&1 </dev/null
           echo "[exit $?]";;
       esac
     done

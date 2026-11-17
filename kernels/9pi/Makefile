@@ -61,7 +61,6 @@
 #                         and its console
 
 # (The mkfiles' recipes are in rc, run by mini-rc: see mkfiles/mkconfig.)
-export MKSHELL = mini-rc
 export MINI = mini-
 MAKEFLAGS += --no-builtin-rules
 

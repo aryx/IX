@@ -17,7 +17,7 @@ status=0
 for o in 5 7; do
   arch=arm; qemu=qemu-arm; [ $o = 7 ] && { arch=arm64; qemu=qemu-aarch64; }
   command -v $qemu > /dev/null || { echo "skip mem_check $arch (no $qemu)"; continue; }
-  (cd $IX/lib_core && MKSHELL=mini-rc MINI=mini- PATH=$IX/bin:$PATH mini-mk O=$o > /dev/null) || { echo "FAIL mem_check $arch: lib_core"; status=1; continue; }
+  (cd $IX/lib_core && MINI=mini- PATH=$IX/bin:$PATH mini-mk O=$o > /dev/null) || { echo "FAIL mem_check $arch: lib_core"; status=1; continue; }
   I=$IX/lib_core/libc/include
   if $IX/bin/mini-cc -m $o -I$I -I$I/utf -I$I/arch/$arch -D$arch -Dlinux -o $W/t.$o $D/mem_check.c &&
      $IX/bin/mini-ld -m $o -o $W/t$o $W/t.$o $IX/_mk/$o/lib_core/libc.a && $qemu $W/t$o; then

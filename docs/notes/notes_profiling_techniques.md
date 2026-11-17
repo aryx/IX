@@ -165,7 +165,7 @@ it does not have (`1_000_000`, labels, `Option`).
   arm64 (OCaml fuses a multiplication and an addition; a few % of
   mini-doom's pixels): compare each compiler's frames with its own.
 - Build both in a worktree of HEAD (other sessions change the tree),
-  with `MKSHELL=mini-rc` and `MINI=mini-` for mini-mk by hand.
+  with `MINI=mini-` for mini-mk by hand.
 
 What it found the first time (2026-10-23, mini-doom, a frame): mini-ml
 17.87 million, OCaml 7.13: 2.5 times. And something of the program,

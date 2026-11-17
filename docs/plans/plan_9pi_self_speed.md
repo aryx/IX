@@ -316,6 +316,21 @@ in C, the kernel's lock held, and could give it back as a copy of
 pixels does (runtime.c's imag_out); the file system would then need a
 lock of its own, since another process could enter it meanwhile.
 
+That tried, and not kept. Four cores with the DMA's moves, make
+self-quick: 20 s, 20 s, 19 s and 20 s (kernel a83d9bb6), against 23 s
+on one core. With the kernel's lock given back while a move runs (a
+function in C around the controller's start and its wait, as
+imag_out), and a lock that sleeps around each transfer and each call
+of Kfs and Kdos, taken again by its holder (60 lines over 9 files): 21
+s, 22 s, 21 s and 21 s (kernel 04a26262), the pairs in turn, the 89
+files Linux's each time. A second and a half slower. Why was not
+looked into. Two guesses, neither measured: each transfer now pays
+the lock's two exchanges and wakes the processes that slept on the
+card; and QEMU serves a move inside the write that starts it, holding
+its own lock, which the other cores need for their timer and their
+interrupts. On a board, where a move takes the card's time, it could
+be otherwise.
+
 A measure that was noise, said so: the same kernel gave 26 s and 40 s
 (and another 54 s then 27 s) while the host was busy. The host's load
 is now printed beside each time.

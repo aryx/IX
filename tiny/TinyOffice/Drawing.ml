@@ -15,13 +15,15 @@ open Model
  *     box 10 10 80 30 cpu
  *     arrow 90 25 160 60
  *     text 20 70 a note
+ *     oval 170 50 60 30 io
  *
  * a box and its label; an arrow, across then up or down (a block
- * diagram's connector: what the shapes draw is rectangles, and a
- * slanted line would need another kind); words. pic's idea (Brian
- * Kernighan, 1982: a picture as lines of text), drawn with the mouse. *)
+ * diagram's connector: the playground's shapes have no slanted line);
+ * words; an oval, the ellipse in its box, and its label. pic's idea
+ * (Brian Kernighan, 1982: a picture as lines of text), drawn with the
+ * mouse. *)
 
-let tools = [ "box"; "arrow"; "text" ]
+let tools = [ "box"; "arrow"; "text"; "oval" ]
 
 (* a drawing's shapes: their kind, their numbers, their label *)
 let figures (data : string) : (string * int list * string) list =
@@ -49,6 +51,17 @@ let figure_line ((kind, nums, label) : string * int list * string) : string =
     (kind :: List.map (fun n -> " " ^ string_of_int n) nums
      @ (if label = "" then [ "\n" ] else [ " "; label; "\n" ]))
 
+(* a box's or an oval's label, in the middle of its box at (x, y), cut
+ * to what fits in its width *)
+let centred (colour : int) (x : int) (y : int) (w : int) (h : int)
+    (label : string) : P.shape =
+  let label =
+    if 8 * String.length label > w - 4 then
+      String.sub label 0 (max 0 ((w - 4) / 8))
+    else label in
+  P.Move (x + ((w - (8 * String.length label)) / 2), y + ((h - 16) / 2),
+          P.Words (colour, label))
+
 (* a shape drawn, the box's corner at (ox, oy); an arrow's head is
  * rectangles narrowing to its end, along its last stretch *)
 let figure_shapes (ox : int) (oy : int) (colour : int)
@@ -56,16 +69,14 @@ let figure_shapes (ox : int) (oy : int) (colour : int)
   match kind, nums with
   | "box", [ x; y; w; h ] ->
       let x = ox + x and y = oy + y in
-      let label =
-        if 8 * String.length label > w - 4 then
-          String.sub label 0 (max 0 ((w - 4) / 8))
-        else label in
       [ P.Move (x, y, P.Rect (colour, w, 1));
         P.Move (x, y + h - 1, P.Rect (colour, w, 1));
         P.Move (x, y, P.Rect (colour, 1, h));
         P.Move (x + w - 1, y, P.Rect (colour, 1, h));
-        P.Move (x + ((w - (8 * String.length label)) / 2), y + ((h - 16) / 2),
-              P.Words (colour, label)) ]
+        centred colour x y w h label ]
+  | "oval", [ x; y; w; h ] ->
+      let x = ox + x and y = oy + y in
+      [ P.Move (x, y, P.Ellipse (colour, w, h)); centred colour x y w h label ]
   | "arrow", [ x0; y0; x1; y1 ] ->
       let x0 = ox + x0 and y0 = oy + y0 and x1 = ox + x1 and y1 = oy + y1 in
       let head = List.init 4 (fun k ->
@@ -83,17 +94,19 @@ let figure_shapes (ox : int) (oy : int) (colour : int)
 (* what a stroke of a tool makes, from (x0, y0) to (x1, y1) *)
 let stroked (tool : int) (x0 : int) (y0 : int) (x1 : int) (y1 : int)
     : string * int list * string =
-  if tool = 0 then
-    "box", [ min x0 x1; min y0 y1; abs (x1 - x0); abs (y1 - y0) ], ""
+  let around = [ min x0 x1; min y0 y1; abs (x1 - x0); abs (y1 - y0) ] in
+  if tool = 0 then "box", around, ""
   else if tool = 1 then "arrow", [ x0; y0; x1; y1 ], ""
-  else "text", [ x1; y1 ], ""
+  else if tool = 2 then "text", [ x1; y1 ], ""
+  else "oval", around, ""
 
-(* the shape a stroke made, added; a box or an arrow too small is a
- * click, not a shape *)
+(* the shape a stroke made, added; a box, an oval or an arrow too small
+ * is a click, not a shape *)
 let draw_stroke (o : office) (tool : int)
     ((x0, y0, x1, y1) : int * int * int * int) =
   let b = selected_box o in
-  if tool = 2 || (tool = 0 && abs (x1 - x0) >= 8 && abs (y1 - y0) >= 8)
+  if tool = 2
+     || ((tool = 0 || tool = 3) && abs (x1 - x0) >= 8 && abs (y1 - y0) >= 8)
      || (tool = 1 && abs (x1 - x0) + abs (y1 - y0) >= 8) then
     change o (b.data ^ figure_line (stroked tool x0 y0 x1 y1))
 
@@ -110,7 +123,7 @@ let sketch_key (o : office) (tool : int) (k : P.key) =
            (List.map figure_line (List.rev rest @ f kind nums label)))
     | [] -> () in
   match k with
-  | P.Char '\t' -> o.editing <- Sketch ((tool + 1) mod 3, None)
+  | P.Char '\t' -> o.editing <- Sketch ((tool + 1) mod List.length tools, None)
   | P.Char c when c >= ' ' && c < '\127' ->
       relabel (fun kind nums label -> [ kind, nums, label ^ String.make 1 c ])
   | P.Backspace ->

@@ -7,15 +7,15 @@
  *     box 10 10 80 30 cpu              +--------+
  *     arrow 90 25 160 60               |  cpu   |----+
  *     text 20 70 a note                +--------+    |
- *                                                    v
- *                                       a note
+ *     oval 130 70 60 30 io                           v
+ *                                       a note    ( io )
  *
- * There are three kinds of shapes: a box with its label; an arrow,
+ * There are four kinds of shapes: a box with its label; an arrow,
  * which goes across then up or down, like a connector in a block
- * diagram (the shapes can only draw rectangles, and a slanted line
- * would need a new kind); and words. The left button drags out a box or
- * an arrow, or places a text. What is typed becomes the label of the
- * last shape.
+ * diagram (the playground has no slanted line, which would need a new
+ * kind of shape); words; and an oval with its label, the ellipse in
+ * its box. The left button drags out a box, an arrow or an oval, or
+ * places a text. What is typed becomes the label of the last shape.
  *
  * cs-history:
  * pic (Brian Kernighan, 1982, a troff preprocessor) describes a
@@ -31,8 +31,8 @@ val tools : string list
 val figures : string -> (string * int list * string) list
 
 (* [draw_stroke office tool (x0, y0, x1, y1)] adds the shape made by a
- * stroke to the selected drawing. A box or an arrow that is too small
- * counts as a click, not a shape. *)
+ * stroke to the selected drawing. A box, an oval or an arrow that is
+ * too small counts as a click, not a shape. *)
 val draw_stroke :
   Model.office -> int -> int * int * int * int -> unit
 

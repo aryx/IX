@@ -14,6 +14,10 @@ module P = TinyLibPlayground
 
 (* a shape's leaves at their places: "rect colour x y w h", "ellipse
  * colour x y w h", "disc colour x y w h", "words colour x y |text|" *)
+let box kind c x y w h =
+  kind ^ " " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
+  ^ " " ^ string_of_int w ^ " " ^ string_of_int h
+
 let rec leaves x y s acc =
   match s with
   | P.Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
@@ -22,11 +26,8 @@ let rec leaves x y s acc =
     ("rect " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
      ^ " " ^ string_of_int w ^ " " ^ string_of_int h, w > 1 && h > 1)
     :: acc
-  | P.Ellipse (c, w, h) | P.Disc (c, w, h) ->
-    ((match s with P.Disc _ -> "disc " | _ -> "ellipse ") ^ string_of_int c
-     ^ " " ^ string_of_int x ^ " " ^ string_of_int y ^ " " ^ string_of_int w
-     ^ " " ^ string_of_int h, true)
-    :: acc
+  | P.Ellipse (c, w, h) -> (box "ellipse" c x y w h, true) :: acc
+  | P.Disc (c, w, h) -> (box "disc" c x y w h, true) :: acc
   | P.Words (c, t) ->
     ("words " ^ string_of_int c ^ " " ^ string_of_int x ^ " "
      ^ string_of_int y ^ " |" ^ t ^ "|", true)
@@ -148,17 +149,22 @@ let () =
   show "a box dragged from 30 60 to 110 90, cpu typed: its label" o;
   keys o "\t";
   drag o 1 110 75 190 130;
-  keys o "\t\t";
+  keys o "\t\t\t";
   drag o 1 150 130 230 160;
   keys o "mem";
-  show "Tab: an arrow, across then down; Tab twice: a box again, mem" o;
+  show "Tab: an arrow, across then down; Tab three times: a box again, mem" o;
   keys o "\t\t";
   click o 1 40 190;
   keys o "a notes\127";
   show "Tab twice: text; a click, a notes typed, Backspace" o;
-  keys o "\t";
+  keys o "\t\t";
   click o 1 250 80;
-  show "Tab: a box; a click is no box (too small)" o;
+  show "Tab twice: a box; a click is no box (too small)" o;
+  keys o "\t\t\t";
+  drag o 1 300 120 240 160;
+  keys o "io";
+  click o 1 280 60;
+  show "Tab three times: an oval, dragged up and left, io; a click is none" o;
   file "the page" o;
   keys o "\007";
   show "C-g: the drawing left" o

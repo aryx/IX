@@ -1094,7 +1094,7 @@ data is text.
 |---|---|---|
 | text | Insert's Text, C-o | as it is shown: a click puts the cursor, a drag selects; Format's Bold, Italic, Underline, Large, Plain (C-b, Tab, C-u, C-l) on the selection or what is typed next; Edit's Cut, Copy, Paste (C-w, C-y) |
 | sheet | Insert's Sheet, C-x t | a cell chosen by a click or the arrows, what is typed shown in the status line, Enter puts it; numbers, text, formulas after `=` (`+ - * /`, parentheses, cells, `sum(b1:b3)`); errors in the cell (`#SYNTAX`, `#REF`, `#TEXT`, `#DIV0`, `#CYCLE`); the Sheet menu names it, or makes a chart of a column |
-| drawing | Insert's Drawing, C-x d | the left button drags a box or an arrow, or places a text (Draw's tools, Tab); what is typed is the last shape's label |
+| drawing | Insert's Drawing, C-x d | the left button drags a box, an arrow or an oval, or places a text (Draw's tools, Tab); what is typed is the last shape's label |
 | paint | Insert's Paint, C-x p | the left button paints, thin or thick; Paint's ten colours, or a digit; Clear |
 | chart | a sheet's Chart of this column | bars of the sheet's cells, its values at each view: it follows its sheet |
 

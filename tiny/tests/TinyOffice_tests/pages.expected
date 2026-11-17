@@ -651,7 +651,7 @@ top
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
-== Tab: an arrow, across then down; Tab twice: a box again, mem
+== Tab: an arrow, across then down; Tab three times: a box again, mem
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -692,7 +692,7 @@ top
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
-== Tab: a box; a click is no box (too small)
+== Tab twice: a box; a click is no box (too small)
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -713,6 +713,29 @@ top
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
+== Tab three times: an oval, dragged up and left, io; a click is none
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    words 0 58 67 |cpu|
+    words 0 178 137 |mem|
+    words 0 40 190 |a note|
+    ellipse 0 240 120 60 40
+    words 0 262 132 |io|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |drawing: oval (Tab: another); the left button dra|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+    words 0 216 1 |Page|
+  shape 4
 == the page: the file
 \box[10 40 300 160]{
 ```drawing
@@ -720,6 +743,7 @@ box 20 20 80 30 cpu
 arrow 100 35 180 90
 box 140 90 80 30 mem
 text 30 150 a note
+oval 230 80 60 40 io
 ```
 }
 --
@@ -733,6 +757,8 @@ text 30 150 a note
     words 0 58 67 |cpu|
     words 0 178 137 |mem|
     words 0 40 190 |a note|
+    ellipse 0 240 120 60 40
+    words 0 262 132 |io|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |diagram (modified)    the menus above; a click ed|

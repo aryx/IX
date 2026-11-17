@@ -7,9 +7,9 @@ ellipse) document, so we can have ellipses in the playground, in
 tiny-office drawing, etc. it's an interesting cross-cutting exercise
 and whole system extension".
 
-**Status: steps 1 to 6 done** (2026-11-17): the kernel's `e` and `E`,
+**Status: steps 1 to 7 done** (2026-11-17): the kernel's `e` and `E`,
 TinyLibDraw, tiny-windows, the C runtime, the playground's `Ellipse`
-and `Disc`, and TinyLibGUI's redrawing.
+and `Disc`, TinyLibGUI's redrawing, and the office's oval.
 
 ## Why this is worth doing
 
@@ -225,6 +225,12 @@ or a white square is left in the disc.)
   that is a separate change).
 - A test in TinyOffice_tests/Pages.ml: a page with an oval, saved and
   read back, and drawn.
+
+(Done: the label is centred by one function for the box and the oval.
+The Tab counts of Pages.ml and of TinyKernel's officedraw.events,
+written for three tools, were changed so that each step still makes
+the shape it says; officedraw's diagram now has an oval, "file",
+which is the first ellipse drawn on tiny-machine in a window.)
 
 ### 8. The printouts: TinyTroff.ml (about 30 lines)
 

@@ -226,7 +226,7 @@ let office_menus (o : office) : (string * (string * command) list) list =
      | Sketch (tool, _) ->
          let mark k s = (if k = tool then "* " else "  ") ^ s in
          [ ("Draw", [ (mark 0 "Box", Do_tool 0); (mark 1 "Arrow", Do_tool 1);
-                      (mark 2 "Text", Do_tool 2) ]) ]
+                      (mark 2 "Text", Do_tool 2); (mark 3 "Oval", Do_tool 3) ]) ]
      | _ -> [])
   @ [ ("Page", [ ("Next      C-x ]", Do_page 1);
                  ("Previous  C-x [", Do_page (-1));

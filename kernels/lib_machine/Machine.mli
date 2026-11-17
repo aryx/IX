@@ -336,6 +336,10 @@ external ram_all : unit -> int = "ram_all"
  * through a cache that the processor does not write through, and the
  * device sees what the page held before. *)
 external bus_alias16 : unit -> int = "bus_alias16"
+(* two pages in a row for a device that reads and writes memory by
+ * itself, their physical address: reached by Phys, and never through
+ * the cache, so that what the device wrote is what is read *)
+external dma_pages : unit -> int = "dma_pages"
 (* the file system's image, linked in the kernel (a disk in memory):
  * its physical address and its size *)
 external fs_base : unit -> int = "fs_base"

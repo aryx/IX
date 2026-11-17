@@ -282,6 +282,40 @@ about 9 s.
   build, under the one lock, that they wait for. Each core waited 10.6
   s of 29 for the lock, half of it behind a fault.
 
+Then the fault's stages timed, with counters in an array (a timer read
+is 0.27 microseconds; the table of names used before cost more than
+what it timed, and made the zeroed pages look dear: a page allocated
+is 4.5 microseconds, and the 26 said above was the measure's own). Of
+the faults' 6.1 s, 3.6 s read 9,600 pages from a program's file, and
+most of that is the first read of a text from the card: 1.6 ms a
+page. The driver timed (Devsd's calls of Emmc.bio), make self-quick,
+one core, 26 s:
+
+    card reads    5.3 s   3,781 reads, 30,000 sectors (15 MB)
+    card writes   1.8 s   1,228 writes, 9,800 sectors (5 MB)
+
+7 s of the 26, the kernel's lock held, 1.4 ms for 4 KB either way. A
+sector is 128 words taken one at a time from the controller's data
+register (Machine.io_read_fifo), each a register's access that QEMU
+emulates. 9pi's emmc.c moves a transfer's bytes by the DMA controller
+instead, one request for all its sectors.
+
+That, written in Emmc.bio (60 lines, and Machine.dma_pages: two pages
+never cached; the audio driver already uses the controller, and ix's
+own emulator has it): 23 s and 23 s against 25 s and 26 s (kernels
+286f2785 and 9f9a2825), the 89 files Linux's. The driver's time goes
+from 7.05 s to 5.25 s only: a transfer of 4 KB is still 0.9 ms, all of
+it inside the write that starts the controller, which QEMU serves at
+once: its own reading of the card's 8 sectors. So about 100
+microseconds a sector is the emulator's, whatever the driver does, 4 s
+of this build. Not tried on a board, where the words one by one are
+known to work; a move that fails falls back to them.
+
+For the cores, what this says: the 5 s of a card's transfers are spent
+in C, the kernel's lock held, and could give it back as a copy of
+pixels does (runtime.c's imag_out); the file system would then need a
+lock of its own, since another process could enter it meanwhile.
+
 A measure that was noise, said so: the same kernel gave 26 s and 40 s
 (and another 54 s then 27 s) while the host was busy. The host's load
 is now printed beside each time.

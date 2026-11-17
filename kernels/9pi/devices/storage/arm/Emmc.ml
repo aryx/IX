@@ -259,12 +259,84 @@ let online () =
 (* the card's address of a block: its byte offset, but an SDHC's (Ccs) *)
 let address c b = if Char.code c.ocr.[3] land 0x40 <> 0 then b else b * c.secsize
 
-let bio c write buf bno nb =
+(* opti: a transfer's bytes moved by the DMA controller, as 9pi does
+ * (dma.c, emmc.c's emmcio): the controller takes the words from the
+ * data register as the card gives them and puts them in memory, or the
+ * other way, 4 KB a request (a piece of Kfs's cache), where the loop
+ * below takes each word by a read of the register: 1,024 of them for
+ * 4 KB, each one emulated under QEMU, 1.4 ms. make self-quick on
+ * mini-9pi spent 7 of its 26 s there, the kernel's lock held
+ * (plan_9pi_self_speed.md).
+ * The channel is 9pi's (4: only 2 to 5 work with the card), the
+ * peripheral 11. Its block, 6 words, and the bytes are in two pages
+ * that are never cached (Machine.dma_pages). A move that fails says
+ * so once, and the words are taken one by one from then on. *)
+let dma_chan = 4
+let dma_cs = 0x7000 + (dma_chan * 0x100)
+let dma_conblk = dma_cs + 0x04 and dma_debug = dma_cs + 0x20 and dma_enable = 0x7ff0
+let dma_max = 4096
+let use_dma = ref true
+let dma_page = ref 0
+
+(* the channel enabled and reset, at the first transfer *)
+let dma_ready () =
+  if !use_dma && !dma_page = 0 then begin
+    dma_page := Machine.dma_pages ();
+    Machine.io_set32 dma_enable (Machine.io_get16 dma_enable true) (Machine.io_get16 dma_enable false lor (1 lsl dma_chan));
+    Machine.io_set32 dma_cs 0x8000 0;
+    if not (poll (fun () -> Machine.io_get16 dma_cs true land 0x8000 = 0)) then use_dma := false
+  end;
+  !use_dma
+
+(* [n] bytes between the card and the second page; false when the
+ * controller did not end them (Cs: active 1, end 2, error 0x100) *)
+let dma_move write n =
+  let cb = !dma_page in
+  let word k hi lo = Machine.Phys.set16 (cb + (4 * k)) lo; Machine.Phys.set16 (cb + (4 * k) + 2) hi in
+  let alias = Machine.bus_alias16 () in
+  let mem k = word k (alias lor ((cb + 4096) lsr 16)) ((cb + 4096) land 0xffff) in
+  (* (the data register as the controller names it: the peripherals
+   * are at 0x7E000000 there) *)
+  let port k = word k 0x7e30 data in
+  (* TI: the peripheral, and from the card SRC_DREQ and DEST_INC, to it
+   * DEST_DREQ and SRC_INC *)
+  word 0 11 (if write then (1 lsl 6) lor (1 lsl 8) else (1 lsl 10) lor (1 lsl 4));
+  if write then begin mem 1; port 2 end else begin port 1; mem 2 end;
+  word 3 0 n; word 4 0 0; word 5 0 0;
+  Machine.io_set32 dma_cs 0 0;
+  Machine.io_set32 dma_conblk (alias lor (cb lsr 16)) (cb land 0xffff);
+  Machine.io_set32 dma_cs 0 6;
+  Machine.io_set32 dma_cs 0 1;
+  let cs () = Machine.io_get16 dma_cs false land 0x103 in
+  ignore (poll (fun () -> cs () <> 1));
+  if cs () = 2 then begin Machine.io_set32 dma_cs 0 6; true end
+  else begin
+    Devcons.print (Printf.sprintf "emmc: dma: cs %x, the words one by one from now on\n" (Machine.io_get16 dma_cs false));
+    Machine.io_set32 dma_cs 0x8000 0;
+    Machine.io_set32 dma_debug 0 7;
+    use_dma := false;
+    false
+  end
+
+let rec bio c write buf bno nb =
   let len = c.secsize in
   wr blksizecnt ((nb lsl 16) lor len);
   let r = Buffer.create (if write then 0 else nb * len) in
+  let by_dma = dma_ready () in
+  let again = ref false in
   (try
     ignore (cmd (if write then 25 else 18) (address c bno));
+    if by_dma then begin
+      let at = ref 0 in
+      while !at < nb * len do
+        let n = min dma_max ((nb * len) - !at) in
+        if write then Machine.Phys.write (!dma_page + 4096) (String.sub buf !at n);
+        if not (dma_move write n) then raise (Error eio);
+        if not write then Buffer.add_string r (Machine.Phys.read (!dma_page + 4096) n);
+        at := !at + n
+      done
+    end
+    else
     for k = 0 to nb - 1 do
       (* A block is asked of the controller when it says, once, that it
        * has one (or room for one): the Interrupt register's bit 5 (4
@@ -287,9 +359,15 @@ let bio c write buf bno nb =
     if not (poll (fun () -> lo interrupt land (datadone lor err) <> 0)) then raise (Error eio);
     if lo interrupt land err <> 0 then begin clear_interrupt 0xffff; raise (Error eio) end;
     clear_interrupt 0xffff
-  with e -> (try ignore (cmd 12 0) with Error _ -> ()); raise e);
-  ignore (cmd 12 0);
-  Buffer.contents r
+  with e ->
+    (try ignore (cmd 12 0) with Error _ -> ());
+    (* (the DMA controller gave up in this transfer: all of it again) *)
+    if by_dma && not !use_dma then again := true else raise e);
+  if !again then bio c write buf bno nb
+  else begin
+    ignore (cmd 12 0);
+    Buffer.contents r
+  end
 
 (* %8.8ux of a register's bytes, the highest first *)
 let hex b =

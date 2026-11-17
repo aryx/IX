@@ -136,6 +136,20 @@ value ram_top(value unit) { (void)unit; return Val_long(board_ram_top()); }
  * by itself names it (board.h's BUS_ALIAS: the word is past an OCaml
  * int on arm) */
 value bus_alias16(value unit) { (void)unit; return Val_long((BUS_ALIAS >> 16) & 0xffff); }
+/* Two pages that follow each other for a device that reads and writes
+ * memory by itself, their physical address (mini-9pi's SD driver: the
+ * DMA controller's block, and the bytes it moves). Never cached, as
+ * usb.c's: what the device wrote is read from the memory, and not from
+ * a line the cache kept of what the page held before. */
+static unsigned char dma_[3 * 4096];
+static int dma_said;
+value dma_pages(value unit)
+{
+  uintptr p = ((uintptr)dma_ + 4095) & ~(uintptr)4095;
+  (void)unit;
+  if (!dma_said) { dma_said = 1; uncached_add(p - KERNBASE, 2 * 4096); }
+  return Val_long(p - KERNBASE);
+}
 value ram_all(value unit) { (void)unit; return Val_long(board_ram_all()); }
 value fs_base(value unit) { (void)unit; return Val_long((uintptr)fs_image - KERNBASE); }
 value fs_size(value unit) { (void)unit; return Val_long(fs_image_size); }

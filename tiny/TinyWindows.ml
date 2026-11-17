@@ -282,7 +282,7 @@ let forward w s =
            w.page.ids <-
              List.filter (fun (theirs, _) -> theirs <> first) w.page.ids);
         (* what it changed of the window: a draw's rectangle, a line's two
-         * ends, a text's cells, a row of pixels *)
+         * ends, an ellipse's box, a text's cells, a row of pixels *)
         let at k = D.int16 p (i + 1 + (2 * k)) in
         let changed =
           if first <> 0 then nothing
@@ -290,6 +290,8 @@ let forward w s =
           else if letter = 'l' then
             min (at 2) (at 4), min (at 3) (at 5),
             max (at 2) (at 4) + 1, max (at 3) (at 5) + 1
+          else if letter = 'e' || letter = 'E' then
+            at 2 - at 4, at 3 - at 5, at 2 + at 4 + 1, at 3 + at 5 + 1
           else if letter = 's' then at 2, at 3, at 2 + (8 * at 4), at 3 + 16
           else if letter = 't' && at 5 land 16 <> 0 then
             at 2, at 3, at 2 + (4 * at 4), at 3 + 4

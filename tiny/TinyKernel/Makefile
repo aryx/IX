@@ -427,9 +427,15 @@ $(O)/check/25.out: $(O)/boot.img
 #   and by debug (stopped in its wait, then let go; it runs four
 #   seconds, because debug takes three to start).
 # The loops' output goes in files, because on the console it would fall
-# among the prompts at times that move too.
+# among the prompts at times that move too. The first loop begins with
+# a sleep of five seconds, so that trace, which takes one or two to
+# start, attaches in the middle of it, and always sees the loop's
+# calls from its first stat of sleep on (the wait under way when it
+# attached is not reported). Attached at a moment of the
+# loop's, it would see a spawn, a wait or neither, by how far the loop
+# had gone, which moves with the size of the programs on the disk.
 $(O)/check/26.out: $(O)/boot.img
-	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc' >[2] t\ngrep '^.12. ' t; grep '^.13. ' t; grep '^.14. ' t\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } > l &\ntrace \$$apid\n{ for(i in 1 2 3 4) { sleep 1; echo \$$i } } > m &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\ncat l m\nexit\n" | timeout 300 $(MACHINE) $(D) $(O)/boot.img > $@
+	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc' >[2] t\ngrep '^.12. ' t; grep '^.13. ' t; grep '^.14. ' t\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ sleep 5; for(i in 1 2) { sleep 1; echo \$$i } } > l &\ntrace \$$apid\n{ for(i in 1 2 3 4) { sleep 1; echo \$$i } } > m &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\ncat l m\nexit\n" | timeout 300 $(MACHINE) $(D) $(O)/boot.img > $@
 # ps reads /dev/ps, kill ends a process in the background, and date is
 # given seconds (the date of now differs at each run)
 $(O)/check/27.out: $(O)/boot.img

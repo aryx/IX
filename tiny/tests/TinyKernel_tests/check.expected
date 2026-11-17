@@ -432,17 +432,18 @@ u_write:	addi	sp, sp, -32
 6	ml_run+*
 7	main+*
 8	_start
-% % spawn("/bin/sleep", 0x*) = 24
-wait(0x*) = 24
-stat("/bin/echo", 0x*) = 0
-spawn("/bin/echo", 0x*) = 25
+% % stat("/bin/sleep", 0x*) = 0
+spawn("/bin/sleep", 0x*) = 25
 wait(0x*) = 25
-stat("/bin/sleep", 0x*) = 0
-spawn("/bin/sleep", 0x*) = 26
-wait(0x*) = 26
 stat("/bin/echo", 0x*) = 0
-spawn("/bin/echo", 0x*) = 27
+spawn("/bin/echo", 0x*) = 26
+wait(0x*) = 26
+stat("/bin/sleep", 0x*) = 0
+spawn("/bin/sleep", 0x*) = 27
 wait(0x*) = 27
+stat("/bin/echo", 0x*) = 0
+spawn("/bin/echo", 0x*) = 28
+wait(0x*) = 28
 close(1) = 0
 dup(5) = 1
 close(5) = 0

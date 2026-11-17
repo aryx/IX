@@ -96,9 +96,16 @@ let create ~title =
              match Sdl.get_current_display_mode 0 with
              | Ok mode -> max 1 (mode.Sdl.dm_h * 3 / 4 / h)
              | Error _ -> 1 in
+           (* The window has the screen's own pixels (allow_highdpi), so
+            * the renderer makes each of the machine's pixels a square
+            * of them. Without it, on a screen of two pixels a point (a
+            * Mac's), the system stretched the window's picture itself,
+            * smoothing it, and not the same way while the picture
+            * changed as once it was still: a text looked a little
+            * bolder half a second after it was drawn. *)
            let win =
              ok (Sdl.create_window title ~w:(times * w) ~h:(times * h)
-                   Sdl.Window.(windowed + resizable)) in
+                   Sdl.Window.(windowed + resizable + allow_highdpi)) in
            window := Some (win, ok (Sdl.create_renderer win))
        | Some (win, _) -> Sdl.set_window_size win ~w ~h);
       let _, r = Option.get !window in

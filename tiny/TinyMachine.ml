@@ -203,6 +203,9 @@ let window_open
 
 (* every [polled] instructions *)
 let polled = 0x10000
+(* the instructions of one sleep of core 0's, with a window and the
+ * other cores on their domains: 0.8 ms at 20 million a second *)
+let dozed = 0x4000
 let window_poll w (m : TinyMachineCPU.machine)
     (ms : TinyMachineDevices.mouse) k =
   let now = w.now () in
@@ -660,10 +663,10 @@ let run
         (try ignore (Unix.write_substring w "i" 0 1)
          with Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) -> ())
     | _ -> wake k in
-  let doze () =
+  let doze seconds =
     match wakeup with
     | Some (r, _) ->
-        (match Unix.select [ r ] [] [] 0.001 with
+        (match Unix.select [ r ] [] [] seconds with
          | _ :: _, _, _ ->
              (* (the wakes read, as many as came; none left: nothing) *)
              let b = Bytes.create 64 in
@@ -738,7 +741,15 @@ let run
       TinyMachineDevices.ticks mc env (1024 - (t land 1023));
       if parallel then begin
         (match Atomic.get failed with Some e -> raise e | None -> ());
-        if TinyMachineDevices.asleep mc then doze ()
+        (* With a window the machine's time is held to the host's, so
+         * the sleep is as long as the instructions it stands for: a
+         * millisecond for each 1,024 made the idle machine's clock 20
+         * times slower than the host's (sleep 3 took 78 s, and what a
+         * program drew a tick later showed a second later). *)
+        if TinyMachineDevices.asleep mc then
+          if window = None then doze 0.001
+          else if c.(TinyMachineDevices.time) land (dozed - 1) = 0 then
+            doze (float_of_int dozed /. float_of_int !TinyMachineDevices.rate)
       end
       else
         List.iter (fun (h, env) ->

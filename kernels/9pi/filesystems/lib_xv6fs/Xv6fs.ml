@@ -12,6 +12,7 @@ type t = {
   inodestart : int;             (* the first block of the inodes; of the bitmap *)
   bmapstart : int;
   mutable hint : int;           (* where to look for a free block *)
+  mutable ihint : int;          (* and for a free inode: none is free below *)
 }
 
 type kind = Dir | File | Device
@@ -57,7 +58,7 @@ let make read_at write_at =
     | None, Some s -> 1024, s
     | None, None -> failwith "not an xv6 file system" in
   { pread = read_at; pwrite = write_at; bsize = bsize; blocks = le32 sb 4; ninodes = le32 sb 12;
-    inodestart = le32 sb 24; bmapstart = le32 sb 28; hint = 0 }
+    inodestart = le32 sb 24; bmapstart = le32 sb 28; hint = 0; ihint = 1 }
 
 (*****************************************************************************)
 (* Blocks *)
@@ -147,20 +148,29 @@ let write (t : t) i offset data =
 (* a file's blocks given back, its size 0 *)
 let truncate (t : t) i =
   let n = t.bsize / 4 and d = dinode t i in
-  let free b = if b <> 0 then mark t b false in
+  (* opti: the search for a free block goes back to the lowest one
+   * freed, no further: none is free below the hint otherwise.
+   * old: t.hint <- 0 at the end, and the next block looked for from
+   * the device's first, a read of the bitmap for each one taken *)
+  let free b = if b <> 0 then begin mark t b false; if b < t.hint then t.hint <- b end in
   (* a block of numbers: what each names (by [each]), then itself *)
   let numbers at each = let b = get32 t at in if b <> 0 then begin for k = 0 to n - 1 do each ((b * t.bsize) + (4 * k)) done; free b; set32 t at 0 end in
   for k = 0 to ndirect - 1 do let at = d + 20 + (4 * k) in free (get32 t at); set32 t at 0 done;
   numbers (d + 20 + (4 * ndirect)) (fun at -> free (get32 t at));
   (* ix's extension: the second block of numbers, its blocks of numbers, what they name *)
   numbers (d + double_at) (fun at -> numbers at (fun at -> free (get32 t at)));
-  set32 t (d + 16) 0;
-  t.hint <- 0
+  set32 t (d + 16) 0
 
-(* a free inode taken, of a type *)
+(* a free inode taken, of a type: the lowest.
+ * opti: looked for from where the last one was found, or from one
+ * freed since (remove): none is free below. A file made on a card of
+ * 5,000 files was 12 ms, a read for each of their inodes (make
+ * self-quick on mini-9pi, plan_9pi_self_speed.md).
+ * old: let rec look i = ... look (i + 1) in let i = look 1 *)
 let ialloc (t : t) k =
   let rec look i = if i >= t.ninodes then failwith "no more inodes" else if get16 t (dinode t i) = 0 then i else look (i + 1) in
-  let i = look 1 in
+  let i = look (max 1 t.ihint) in
+  t.ihint <- i + 1;
   pwrite t (dinode t i) (b16 (match k with Dir -> 1 | File -> 2 | Device -> 3) ^ String.make 254 '\000');
   i
 
@@ -180,11 +190,30 @@ let slots (t : t) dir =
     o, le16 s o, String.sub name 0 (len 0))
 
 let entries t dir = List.filter_map (fun (_, i, name) -> if i = 0 || name = "." || name = ".." then None else Some (name, i)) (slots t dir)
-let lookup t dir name = match List.filter (fun (_, i, n) -> i <> 0 && n = name) (slots t dir) with (_, i, _) :: _ -> Some i | [] -> None
+(* opti: a name looked for, and a free entry, in the directory's bytes
+ * as they are: every open walks a path's directories, and a file made
+ * looks twice in its own. slots made a list of all the entries, two
+ * strings each, for one of them.
+ * old: lookup: match List.filter (fun (_, i, n) -> i <> 0 && n = name) (slots t dir) with (_, i, _) :: _ -> Some i | [] -> None
+ *      link: match List.filter (fun (_, i, _) -> i = 0) (slots t dir) with (o, _, _) :: _ -> o | [] -> size t dir *)
+let bytes_of (t : t) dir =
+  if kind t dir <> Dir then failwith "not a directory";
+  read t dir 0 (size t dir)
+
+let lookup t dir name =
+  let s = bytes_of t dir and n = String.length name in
+  let rec same o j = if j = n then n = dirsiz || s.[o + 2 + n] = '\000' else s.[o + 2 + j] = name.[j] && same o (j + 1) in
+  let rec go o =
+    if o + dirent > String.length s || n > dirsiz then None
+    else if le16 s o <> 0 && same o 0 then Some (le16 s o)
+    else go (o + dirent) in
+  go 0
 
 (* a name for an inode, in a directory's first free entry, or at its end *)
 let link (t : t) dir name i =
-  let at = match List.filter (fun (_, i, _) -> i = 0) (slots t dir) with (o, _, _) :: _ -> o | [] -> size t dir in
+  let s = bytes_of t dir in
+  let rec free o = if o + dirent > String.length s then size t dir else if le16 s o = 0 then o else free (o + dirent) in
+  let at = free 0 in
   write t dir at (b16 i ^ name ^ String.make (dirsiz - String.length name) '\000');
   set16 t (dinode t i + 6) (nlink t i + 1)
 
@@ -216,7 +245,8 @@ let remove (t : t) dir name =
       if left <= 0 || (is_dir && left <= 1) then begin
         if is_dir then set16 t (dinode t dir + 6) (nlink t dir - 1);
         truncate t i;
-        set16 t (dinode t i) 0
+        set16 t (dinode t i) 0;
+        if i < t.ihint then t.ihint <- i
       end
       else set16 t (dinode t i + 6) left
 

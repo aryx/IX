@@ -335,6 +335,65 @@ A measure that was noise, said so: the same kernel gave 26 s and 40 s
 (and another 54 s then 27 s) while the host was busy. The host's load
 is now printed beside each time.
 
+## 2026-11-17, evening: the four cores, and mk's profile
+
+Four cores gave 1.15 times one on make self-quick (20 s against 23 s),
+and the author: "far too little", "there must be low hanging fruit
+here", then "maybe mini-mk itself can help with his profile mode
+(tiny-build had such a flag)".
+
+mk -u, each way: on one core the card runs one recipe at a time (NPROC
+is the cores'), 26 s inside recipes and 7 s outside; on four, 14 s
+inside and 5.5 s outside. The 5 s outside are lib_core's .depend, one
+mini-ml -depend over its 110 units before any recipe (mk -n there: 5.7
+s the first time, 0.5 s the second), to compile 3 of them: a quarter
+of make self-quick, and why it shows the cores so little.
+
+mini-mk -p, new (Build.profile, as tiny-build's -t): the time before
+the first recipe, the recipes' number and sum, how many ran at once,
+and the critical path. All of lib_core on the card (mk lib_core.dir):
+46 s on one core, 31 s on four, 1.5 times, and on four:
+
+    mk: 31.3 s: 5.0 s before the first recipe, then 127 recipes of 89.7 s in all in 26.3 s, 3.4 at once
+    mk: the critical path, 14.3 s of them:
+         1.5  Pervasives.5   0.5  Seq.5   1.3  List.5   1.1  String.5   0.7  Bytes.5   0.8  Buffer.5
+         2.3  Unix.5   1.1  Sys_plan9.5   0.6  Exit.5   0.4  Arg_.5   3.9  lib_core.a
+
+So the mkfile is wide already, 3.4 at once, and its two serial steps
+(.depend, the archive) are once in a whole build, where the other
+directories run beside them. What is lost: the same recipes add to 41
+s on one core and to 89.7 s on four. Each takes twice the time when
+four run, which is the kernel's lock: half of a compile is the
+kernel's, and that half is one at a time. (Four shells that only
+compute lose little: 0.26 s at once, 0.19 s for one.)
+
+Tried for the cores in the kernel, and not kept: the lock given back
+during a card's transfer (above: slower); the pages of zeros after
+the one a fault asks, 7 more of its segment (20 s, 20 s and 21 s
+against 20 s, 20 s and 20 s on four cores; 24 s and 23 s against 26 s
+and 24 s on one).
+
+Kept, to shorten the kernel's half, lib_xv6fs's Xv6fs.ml: a file made
+looked for a free inode from the first one, a read for each of the
+card's 5,000 (the 12 ms of a create by cc), and now from where the
+last was found; a name looked for in a directory made a list of all
+its entries, two strings each, twice for a file made, and now reads
+the directory's bytes; a file emptied sent the search for a free block
+back to the device's first. make self-quick on one core: 22 s and 22 s
+against 24 s and 24 s (kernels 06dde492 and 286f2785).
+
+On four cores: 19 s, 19 s and 21 s against 20 s, 21 s and 20 s (kernels
+f7ffc52c and a83d9bb6): a second at most, within the runs' spread.
+
+Also: make run and make run-window at the top, mini-9pi by hand on the
+card make self builds on (kernels/9pi's run-self); and SMP=1 now makes
+runtime.o again when it is given or no longer is (kernel.mk), where it
+kept the kernel there was, on one core, twice taken for four today.
+
+Next: the kernel's half of a compile, measured call by call (an open,
+a read, an exec), the largest first; whether make self-mix runs on
+four cores, as t-ix's self does; and the whole make self-mix once.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

@@ -297,6 +297,14 @@ self-tix self-quick-tix: all
 self-mix self-quick-mix: all
 	$(MAKE) -C kernels/9pi $(@:-mix=)
 
+# m-ix by hand: mini-9pi on the card that make self builds on (the Pi 2
+# under QEMU; ix's sources in /src, its tools), rc at the console in
+# the terminal (Ctrl-A x quits), or the screen in a window, for rio.
+# cd /src; mk self-quick is what make self-quick-mix runs. SMP=1 for
+# the four cores. (t-ix's: make -C tiny run, run-window.)
+run run-window: all
+	$(MAKE) -C kernels/9pi $(patsubst run%,run-self%,$@)
+
 ###############################################################################
 # All the tests
 ###############################################################################

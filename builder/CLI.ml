@@ -18,7 +18,8 @@ mkfile (-f: another), each recipe run by $MKSHELL (mini-rc by default). A mkfile
   mini-mk -a          everything out of date (-t: the targets touched instead)
 -k: keep going after a failure; -s: the targets one after the other; -w file:
 as if just modified; -u: how long 0, 1, 2... jobs ran at once ($NPROC, 1 by
-default); -d[egp]: dump the jobs, the graph, the rules; -H: out of date by
+default); -p: the profile, the time before the first recipe, the recipes' sum
+and the critical path; -d[egp]: dump the jobs, the graph, the rules; -H: out of date by
 content, not time (in .mkhash, not mk's); var=value: over the mkfile's var.
 |}
 
@@ -84,7 +85,8 @@ let run (caps : < caps; .. >) (argv : string array) : int =
   let file = ref None and whatif = ref [] in
   let dump_mkfile = ref false and dump_graph = ref false in
   let dry = ref false and touch_ = ref false and always = ref false in
-  let keep = ref false and explain = ref false and seq = ref false and uflag = ref false in
+  let keep = ref false and explain = ref false and seq = ref false and uflag = ref false and pflag = ref false in
+  let start = CapUnix.gettimeofday caps () in
   let hash = ref false in
   let mkflags = ref [] in
   (* main.c: only the first letter of an option counts *)
@@ -102,6 +104,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
          | 'n', rest -> dry := true; options rest
          | 'H', rest -> hash := true; options rest
          | 'u', rest -> uflag := true; options rest
+         | 'p', rest -> pflag := true; options rest
          | 't', rest -> touch_ := true; options rest
          | 'a', rest -> always := true; options rest
          | 'k', rest -> keep := true; options rest
@@ -256,6 +259,7 @@ let run (caps : < caps; .. >) (argv : string array) : int =
        raise Build.Failed);
     save_hashes ();
     if !uflag then print caps (Build.usage b);
+    if !pflag then print caps (Build.profile b ~start);
     (* under -k, failed recipes do not change the exit status (9base) *)
     flush_out caps;
     0

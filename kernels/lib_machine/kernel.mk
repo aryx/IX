@@ -237,6 +237,13 @@ $(B)/rt_$(TARGET).o: | $(B)
 
 $(B)/c/%.o: $(LIB)/%.c $(BD)/board.h | $(B)/c
 	$(KCC) $(CFLAGS) -c $< -o $@
+# (runtime.o is made again when SMP is given or no longer is: make sees
+# the files' times, not a flag's change, and a kernel asked with SMP=1
+# after one without was the same kernel, on one core)
+$(B)/c/runtime.o: $(B)/c/smp
+$(B)/c/smp: FORCE | $(B)/c
+	@echo "smp=$(SMP)" | cmp -s - $@ || echo "smp=$(SMP)" > $@
+FORCE:
 
 # libc.o has the collector's parameters, if CAMLRUNPARAM is given
 # (libc.c's getenv). Its stamp is rewritten when they change, so that

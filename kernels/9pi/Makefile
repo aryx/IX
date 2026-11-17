@@ -930,6 +930,19 @@ self self-quick: card-self
 .PHONY: self self-quick self-run
 self-run:
 	tests/self.sh $(SELFQ) $(BUILD)/card-self.img $(BUILD)/self -- $(QEMU) $(QEMU_BOOT_IX)
+# mini-9pi by hand on that card (the top Makefile's make run and make
+# run-window): the Pi 2 under QEMU, rc at the console, ix's sources in
+# /src and its tools, so that cd /src; mk self-quick is the build make
+# self-quick runs. In the terminal (Ctrl-A x quits), or with the
+# screen in a window and a USB keyboard and mouse, for rio. The card is
+# a snapshot: what is written is gone at the end. SMP=1 for the four
+# cores.
+run-self run-self-window: card-self
+	$(MAKE) --no-print-directory BOARD=pi2 WINDOW=$(if $(filter %-window,$@),1) run-self-card
+.PHONY: run-self run-self-window run-self-card
+run-self-card:
+	$(QEMU) $(if $(WINDOW),$(subst -nographic,,$(QEMU_BOOT_IX)) -serial mon:stdio $(USB),$(QEMU_BOOT_IX)) \
+	  -drive file=$(BUILD)/card-self.img,if=sd,format=raw,snapshot=on
 # What make card says last (but not when card is another target's
 # prerequisite): where the image is and how to put it on a card. The
 # reader must find the device, because a wrong one means a disk erased.

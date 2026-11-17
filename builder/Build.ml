@@ -25,6 +25,15 @@ type t = {
   mutable errors : int;
   mutable busy : float array;             (* -u: time with n jobs running *)
   mutable tick : float;
+  (* -p: when each running job started (by its pid), the seconds the
+   * job of each target took, when the first one started, and the
+   * targets asked *)
+  starts : (int, float) Hashtbl.t;
+  spent : (string, float) Hashtbl.t;
+  mutable first : float;
+  mutable jobs : int;
+  mutable total : float;
+  mutable roots : Graph.node list;
 }
 
 exception Failed
@@ -39,7 +48,8 @@ let create ~hashes mk g io flags =
   { mk; g; io; flags; times;
     ood = Outofdate.create ~hashes ~time:(time_of g times) ~prog:io.prog ();
     status = Hashtbl.create 101; queue = Queue.create (); slots = [| None |];
-    running = 0; errors = 0; busy = [| 0.; 0. |]; tick = 0. }
+    running = 0; errors = 0; busy = [| 0.; 0. |]; tick = 0.;
+    starts = Hashtbl.create 17; spent = Hashtbl.create 101; first = 0.; jobs = 0; total = 0.; roots = [] }
 
 let time t name = time_of t.g t.times name
 let status t (n : Graph.node) = Hashtbl.find_opt t.status n.name ||| Notmade
@@ -90,7 +100,10 @@ let sched t =
           set_status t n Made)
       else begin
         account t;
-        t.slots.(slot) <- Some (t.io.run j ~slot ~env, j);
+        let pid = t.io.run j ~slot ~env in
+        t.slots.(slot) <- Some (pid, j);
+        Hashtbl.replace t.starts pid t.tick;
+        if t.first = 0. then t.first <- t.tick;
         t.running <- t.running + 1
       end
 
@@ -115,6 +128,12 @@ let rec waitup t : bool =
           account t;
           t.slots.(slot) <- None;
           t.running <- t.running - 1;
+          (match Hashtbl.find_opt t.starts pid with
+           | Some at ->
+               t.jobs <- t.jobs + 1;
+               t.total <- t.total +. (t.tick -. at);
+               j.nodes |> List.iter (fun (n : Graph.node) -> Hashtbl.replace t.spent n.name (t.tick -. at))
+           | None -> ());
           (match ended with
           | Succeeded -> ()
           | Exit_status why ->
@@ -233,6 +252,7 @@ let make t ~nproc ~nrep target =
     t.busy <- Array.init (nproc + 1) (fun i -> if i < Array.length t.busy then t.busy.(i) else 0.)
   end;
   let root = Graph.node t.g ~nrep target in
+  t.roots <- root :: t.roots;
   (* mk.c's clrmade(): everything under the target is to be made again;
    * and graph.c's attribute(), which runs for every target, puts a
    * virtual node's time back to 0 *)
@@ -268,3 +288,45 @@ let errors t = t.errors
 let usage t =
   account t;
   String.concat "" (Array.to_list (Array.mapi (fun i s -> Printf.sprintf "%d: %.0f\n" i s) t.busy))
+
+(* -p. The critical path is the chain of recipes, each waiting for the
+ * one before it (a prerequisite's), whose times add up to the most: no
+ * $NPROC makes the build shorter than that chain plus what mk did
+ * before its first recipe, and the recipes' sum over the time they
+ * ran in says how many ran at once. A target's end is its own
+ * recipe's time after the latest end among its prerequisites. *)
+let profile t ~start =
+  account t;
+  let ends : (string, float * Graph.node option) Hashtbl.t = Hashtbl.create 101 in
+  let rec end_of (n : Graph.node) =
+    match Hashtbl.find_opt ends n.name with
+    | Some e -> e
+    | None ->
+        (* (a cycle's node, met again: nothing more) *)
+        Hashtbl.replace ends n.name (0., None);
+        let before = List.fold_left (fun (best, by) (a : Graph.arc) ->
+          match a.prereq with
+          | Some p -> let e, _ = end_of p in if e > best then e, Some p else best, by
+          | None -> best, by) (0., None) n.arcs in
+        let e = (Hashtbl.find_opt t.spent n.name ||| 0.) +. fst before, snd before in
+        Hashtbl.replace ends n.name e;
+        e in
+  let root = List.fold_left (fun best n -> match best with
+    | Some b when fst (end_of b) >= fst (end_of n) -> best
+    | _ -> Some n) None t.roots in
+  (* (a target met again, an archive and its member: the chain ends) *)
+  let rec chain (n : Graph.node) acc =
+    if List.mem_assoc n.name acc then acc
+    else
+      let acc = match Hashtbl.find_opt t.spent n.name with Some s -> (n.name, s) :: acc | None -> acc in
+      match snd (end_of n) with Some p -> chain p acc | None -> acc in
+  let path = match root with Some r -> chain r [] | None -> [] in
+  let all = t.tick -. start in
+  let before = if t.first = 0. then all else t.first -. start in
+  let ran = if t.first = 0. then 0. else t.tick -. t.first in
+  let b = Buffer.create 256 in
+  Printf.bprintf b "mk: %.1f s: %.1f s before the first recipe, then %d recipes of %.1f s in all in %.1f s, %.1f at once\n"
+    all before t.jobs t.total ran (if ran > 0. then t.total /. ran else 0.);
+  Printf.bprintf b "mk: the critical path, %.1f s of them:\n" (List.fold_left (fun acc (_, s) -> acc +. s) 0. path);
+  List.iter (fun (name, s) -> Printf.bprintf b "%8.1f  %s\n" s name) path;
+  Buffer.contents b

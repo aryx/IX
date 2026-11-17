@@ -119,3 +119,14 @@ val errors : t -> int
 
 (* -u: seconds spent with 0, 1, 2 ... jobs running *)
 val usage : t -> string
+
+(* -p: the run's profile, [start] the time mk started at. A line of
+ * sums: the whole time, the time before the first recipe (the mkfiles
+ * read, what they include run), how many recipes, their times added,
+ * the time they ran in and so how many at once. Then the critical
+ * path: the chain of recipes, each after its prerequisite's, that took
+ * longest, each with its seconds. No $NPROC makes the build shorter
+ * than that chain and the time before; a recipe on it cut in two that
+ * do not wait for each other, or a prerequisite it need not have, is
+ * what lets more cores work. *)
+val profile : t -> start:float -> string

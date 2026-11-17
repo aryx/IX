@@ -105,7 +105,8 @@ let grid_lines (g : string array array) : string list =
   List.rev (trim (List.rev rows))
 
 (* A drawing as characters, one for 8 by 8 pixels: a box's sides of -
- * and |, its corners +, its label in its middle; a text where it is;
+ * and |, its corners +, its label in its middle; an oval the same with
+ * ( and ) for sides and . and ' for corners; a text where it is;
  * then an arrow across then up or down, in the places left (a box's
  * side is not drawn over), its head > < v ^ before the box it goes
  * to *)
@@ -128,6 +129,14 @@ let drawing_lines (b : obj) : string list =
         for r = r0 to r1 do put c0 r "|"; put c1 r "|" done;
         List.iter (fun (c, r) -> put c r "+")
           [ (c0, r0); (c1, r0); (c0, r1); (c1, r1) ];
+        label ((c0 + c1 + 1 - String.length text) / 2) ((r0 + r1) / 2) text
+    | "oval", [ x; y; w; h ] ->
+        (* a box with round corners, a curve being too fine for 8 by 8 *)
+        let c0 = x / 8 and r0 = y / 8 and c1 = (x + w) / 8
+        and r1 = (y + h) / 8 in
+        for c = c0 + 1 to c1 - 1 do put c r0 "-"; put c r1 "-" done;
+        for r = r0 + 1 to r1 - 1 do put c0 r "("; put c1 r ")" done;
+        put c0 r0 "."; put c1 r0 "."; put c0 r1 "'"; put c1 r1 "'";
         label ((c0 + c1 + 1 - String.length text) / 2) ((r0 + r1) / 2) text
     | "text", [ x; y ] -> label (x / 8) ((y + 8) / 8) text
     | _ -> ());
@@ -244,8 +253,8 @@ let sheet_html (data : string) : string =
         ^ ">" ^ esc s ^ "</td>")) ^ "</tr>\n"))
   ^ "</table>\n"
 
-(* a drawing: SVG, its boxes, arrows (a line across then up or down, a
- * head of three points) and texts *)
+(* a drawing: SVG, its boxes, ovals, arrows (a line across then up or
+ * down, a head of three points) and texts *)
 let drawing_html (b : obj) : string =
   let num k = string_of_int k in
   let svg_text x y anchor s =
@@ -257,6 +266,13 @@ let drawing_html (b : obj) : string =
       | "box", [ x; y; w; h ] ->
           "<rect x=\"" ^ num x ^ "\" y=\"" ^ num y ^ "\" width=\"" ^ num w
           ^ "\" height=\"" ^ num h ^ "\" fill=\"none\" stroke=\"black\"/>"
+          ^ (if text = "" then ""
+             else svg_text (x + (w / 2)) (y + (h / 2)) "middle" text)
+          ^ "\n"
+      | "oval", [ x; y; w; h ] ->
+          "<ellipse cx=\"" ^ num (x + (w / 2)) ^ "\" cy=\"" ^ num (y + (h / 2))
+          ^ "\" rx=\"" ^ num (w / 2) ^ "\" ry=\"" ^ num (h / 2)
+          ^ "\" fill=\"none\" stroke=\"black\"/>"
           ^ (if text = "" then ""
              else svg_text (x + (w / 2)) (y + (h / 2)) "middle" text)
           ^ "\n"
@@ -445,13 +461,36 @@ let sheet_pdf h (b : obj) : string =
          text_pdf h 0 (if num then x + 60 - (8 * String.length s) else x + 4)
            y s)))))
 
-(* a drawing: its boxes stroked, its arrows a line across then up or
- * down and a head filled, its texts *)
+(* The ellipse in the box at (x, y), w by hh, stroked. PDF has no
+ * ellipse, so it is four Bezier curves, one for each quarter, from the
+ * right end round the top; each control point is 0.552 of the half
+ * axis from its end, which keeps the curve within 0.03% of the radius
+ * of the true ellipse (the numbers are whole points, so it can be a
+ * point off). *)
+let oval_pdf h colour x y w hh =
+  let rx = w / 2 and ry = hh / 2 in
+  let cx = x + rx and cy = h - y - ry in
+  let kx = rx * 552 / 1000 and ky = ry * 552 / 1000 in
+  let p a b = string_of_int a ^ " " ^ string_of_int b ^ " " in
+  colour ^ " RG " ^ p (cx + rx) cy ^ "m "
+  ^ p (cx + rx) (cy + ky) ^ p (cx + kx) (cy + ry) ^ p cx (cy + ry) ^ "c "
+  ^ p (cx - kx) (cy + ry) ^ p (cx - rx) (cy + ky) ^ p (cx - rx) cy ^ "c "
+  ^ p (cx - rx) (cy - ky) ^ p (cx - kx) (cy - ry) ^ p cx (cy - ry) ^ "c "
+  ^ p (cx + kx) (cy - ry) ^ p (cx + rx) (cy - ky) ^ p (cx + rx) cy ^ "c S\n"
+
+(* a drawing: its boxes and ovals stroked, its arrows a line across
+ * then up or down and a head filled, its texts *)
 let drawing_pdf h (b : obj) : string =
   glue (List.map (fun (kind, nums, label) ->
     match kind, nums with
     | "box", [ x; y; w; hh ] ->
         frame_pdf h "0 0 0" (b.x + x) (b.y + y) w hh
+        ^ (if label = "" then ""
+           else
+             text_pdf h 0 (b.x + x + (w / 2) - (4 * String.length label))
+               (b.y + y + (hh / 2) - 8) label)
+    | "oval", [ x; y; w; hh ] ->
+        oval_pdf h "0 0 0" (b.x + x) (b.y + y) w hh
         ^ (if label = "" then ""
            else
              text_pdf h 0 (b.x + x + (w / 2) - (4 * String.length label))

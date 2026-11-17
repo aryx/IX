@@ -30,6 +30,7 @@ let page = String.concat "\n" [
   "arrow 72 20 136 56";
   "box 104 56 64 24 mem";
   "text 8 64 a note";
+  "oval 144 4 48 40 io";
   "```";
   "}";
   "";

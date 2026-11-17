@@ -7,9 +7,11 @@ ellipse) document, so we can have ellipses in the playground, in
 tiny-office drawing, etc. it's an interesting cross-cutting exercise
 and whole system extension".
 
-**Status: steps 1 to 7 done** (2026-11-17): the kernel's `e` and `E`,
+**Status: steps 1 to 8 done** (2026-11-17): the kernel's `e` and `E`,
 TinyLibDraw, tiny-windows, the C runtime, the playground's `Ellipse`
-and `Disc`, TinyLibGUI's redrawing, and the office's oval.
+and `Disc`, TinyLibGUI's redrawing, the office's oval, and troff's
+three printouts of it. Left: the orrery (step 9) and the
+documentation (step 10).
 
 ## Why this is worth doing
 
@@ -249,6 +251,10 @@ TinyTroff prints a drawing in three ways, and each needs the oval:
   `a * 552 / 1000`.
 
 TinyTroff_tests gets a page with an oval in each of the three outputs.
+
+(Done: as text an oval is a box with round corners, `.` and `'` at
+its corners and `(` and `)` for its sides, since a curve is too fine
+for cells of 8 by 8; the PDF was looked at, rendered.)
 
 ### 9. A demo: an orrery (optional, about 80 lines)
 

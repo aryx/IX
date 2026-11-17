@@ -21,10 +21,10 @@
  *                                                for large words
  *     sheet     its values in columns, numbers   a <table> of its
  *               aligned right                    values
- *     drawing   one character per 8x8 pixels:    SVG: rectangles, lines
- *               + - | for a box with its label   with their heads, texts
- *               inside, > < v ^ for an arrow's
- *               head
+ *     drawing   one character per 8x8 pixels:    SVG: rectangles,
+ *               + - | for a box with its label   ellipses, lines with
+ *               inside, . ' ( ) for an oval's,   their heads, texts
+ *               > < v ^ for an arrow's head
  *     paint     its rows, a space for white      SVG: one rectangle per
  *                                                run of a colour, 4x4
  *                                                per pixel

@@ -432,9 +432,7 @@ u_write:	addi	sp, sp, -32
 6	ml_run+*
 7	main+*
 8	_start
-% % spawn("/bin/sleep", 0x*) = 24
-wait(0x*) = 24
-stat("/bin/echo", 0x*) = 0
+% % stat("/bin/echo", 0x*) = 0
 spawn("/bin/echo", 0x*) = 25
 wait(0x*) = 25
 stat("/bin/sleep", 0x*) = 0

@@ -16,12 +16,12 @@ Food    300
         800
 Odd   #DIV0
 
-
- +-------+
- |  cpu  |-------+
- |       |       |
- +-------+       |
-                 |
+                  .-----.
+ +-------+        (     )
+ |  cpu  |-------+( io  )
+ |       |       |(     )
+ +-------+       |(     )
+                 |'-----'
                  v
              +-------+
              |  mem  |
@@ -66,6 +66,7 @@ Food  ########### 300
 <polyline points="72,20 136,20 136,56" fill="none" stroke="black"/><polygon points="136,56 140,50 132,50"/>
 <rect x="104" y="56" width="64" height="24" fill="none" stroke="black"/><text x="136" y="68" text-anchor="middle" dominant-baseline="middle">mem</text>
 <text x="8" y="72" text-anchor="start" dominant-baseline="middle">a note</text>
+<ellipse cx="168" cy="24" rx="24" ry="20" fill="none" stroke="black"/><text x="168" y="24" text-anchor="middle" dominant-baseline="middle">io</text>
 </svg>
 </div>
 <div class=box style="left:10px;top:250px;width:200px;height:120px">
@@ -92,7 +93,7 @@ Food  ########### 300
 5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >> endobj
 6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding /WinAnsiEncoding >> endobj
 7 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 400 370] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 8 0 R >> endobj
-8 0 obj << /Length 2048 >>
+8 0 obj << /Length 2220 >>
 stream
 0 0 0 rg BT /F0 26.67 Tf 14 304 Td (A ) Tj ET
 0 0 0 rg BT /F1 26.67 Tf 46 304 Td (report) Tj ET
@@ -133,6 +134,8 @@ stream
 0 0 0 RG 304 140 64 24 re S
 0 0 0 rg BT /F0 13.33 Tf 324 148 Td (mem) Tj ET
 0 0 0 rg BT /F0 13.33 Tf 208 144 Td (a note) Tj ET
+0 0 0 RG 392 196 m 392 207 381 216 368 216 c 355 216 344 207 344 196 c 344 185 355 176 368 176 c 381 176 392 185 392 196 c S
+0 0 0 rg BT /F0 13.33 Tf 360 192 Td (io) Tj ET
 0 0 1 rg 20 20 57 48 re f
 0 0 0 rg BT /F0 13.33 Tf 20 72 Td (500) Tj ET
 0 0 0 rg BT /F0 13.33 Tf 20 6 Td (Rent) Tj ET
@@ -158,7 +161,7 @@ xref
 0000000676 00000 n 
 trailer << /Size 9 /Root 1 0 R >>
 startxref
-2775
+2947
 %%EOF
 == a document of two pages as text
 One

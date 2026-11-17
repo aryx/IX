@@ -71,6 +71,9 @@
  *     f id                            free an image
  *     d dst src mask x0 y0 x1 y1 px py      draw (mask -1 means none)
  *     l dst src x0 y0 x1 y1           a line, both ends included
+ *     e dst src cx cy a b             an ellipse's outline, a pixel thick, of
+ *                                     centre (cx, cy) and half axes a and b
+ *     E dst src cx cy a b             a filled ellipse
  *     s dst src x y n, n bytes        a text, its top left corner at (x, y)
  *     t dst src x y n style, n bytes  a text in a style: bold 1, italic 2,
  *                                     underlined 4, large 8 (16 by 32);
@@ -79,8 +82,9 @@
  *     p dst x y n, n bytes            a row of pixels, its left end at (x, y)
  *
  * They are a few of Plan 9's own draw messages (principia's
- * kernel/devices/screen/drawmesg.c has 27); f, d and s keep their
- * letters. What we dropped is listed below.
+ * kernel/devices/screen/drawmesg.c has 27); f, d, s, e and E keep
+ * their letters, and e and E drop Plan 9's thickness, source point and
+ * angles. What we dropped is listed below.
  *
  * dropped:
  * - Pixels of other depths and channels. Here a pixel is always one
@@ -91,7 +95,7 @@
  * - A clipping rectangle other than the image's own, and a separate
  *   point for the mask (the mask uses the source's, as in libdraw's
  *   draw).
- * - Ellipses, arcs, polygons and thick lines.
+ * - Arcs, polygons and thick lines.
  * - Fonts and their cache. There is one font, the machine's 8 by 16
  *   font, with its bold face and its large 16 by 32 face; italic is
  *   made by slanting them. Or the font is font1.bin alone, and bold and
@@ -123,7 +127,7 @@
  *
  * exercises:
  * - copy a row a word at a time where possible (kdraw.s's row_copy);
- * - ellipses and filled polygons, for the playground's shapes;
+ * - filled polygons, for the playground's shapes;
  * - masks with any level from 0 to 255, and sources other than a
  *   single colour mixed through them (here there are four levels, and
  *   only for a colour through the font);

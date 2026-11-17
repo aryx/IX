@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The test of KGraphics.ml: KGraphics_tests/Picture.ml, a picture
-# drawn by messages (rectangles, texts, lines, images off the screen,
+# drawn by messages (rectangles, texts, lines, ellipses, images off the screen,
 # a pattern, masks, an image drawn on itself, an image freed) and the
 # answers to bad ones; with font1.bin, then with grey.font (its text's
 # edges mixed: picture-grey.*). The same two files run twice, for the

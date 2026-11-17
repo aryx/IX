@@ -117,6 +117,62 @@ let line (dst : image) xa ya xb yb (src : image) =
   in
   from xa ya (dx - dy)
 
+(* The largest r with r * r <= n, by Newton's method from a guess r
+ * that is at least as large. Each step's r goes down until it stops. *)
+let rec root n r =
+  let s = (r + (n / r)) / 2 in
+  if s >= r then r else root n s
+
+(* An ellipse's half width at row y from its centre, for its half axes
+ * a and b, or -1 past its top and bottom. A pixel is in when its centre
+ * is in the ellipse of half axes a + 1/2 and b + 1/2, which makes a
+ * circle of radius 3 seven pixels wide on its three middle rows, as
+ * m-IX's Memshape.ml does with floats. With the half axes doubled, the
+ * numbers are integers: x <= A sqrt (B^2 - 4 y^2) / 2B, for A = 2a + 1
+ * and B = 2b + 1. Each product stays under 2^30, tiny-ml's largest
+ * integer, while a and b are at most 16383. *)
+let half_width a b y =
+  if y < -b || y > b then -1
+  else
+    let aa = (2 * a) + 1 and bb = (2 * b) + 1 in
+    let m = (bb * bb) - (4 * y * y) in
+    aa * root m bb / (2 * bb)
+
+(* row y's pixels from x0 to x1, both drawn *)
+let span (dst : image) y x0 x1 (src : image) =
+  draw dst (rect x0 y (x1 + 1) (y + 1)) src None x0 y
+
+(* [ellipse_rows dst cy a b row] calls [row y w w_out] for each row of
+ * the ellipse that is inside dst, where w is the row's half width and
+ * w_out is the half width of the next row away from the centre. The
+ * rows outside dst are skipped before the loop, so a huge ellipse
+ * mostly off the screen costs only its visible rows. *)
+let ellipse_rows (dst : image) cy a b row =
+  if a < 0 || b < 0 || a > 16383 || b > 16383 then
+    raise (Graphics "an ellipse of no size, or too large");
+  for y = max (-b) (dst.r.y0 - cy) to min b (dst.r.y1 - 1 - cy) do
+    row (cy + y) (half_width a b y)
+      (half_width a b (if y < 0 then y - 1 else y + 1))
+  done
+
+(* A filled ellipse is one draw for each row. *)
+let fill_ellipse (dst : image) cx cy a b (src : image) =
+  ellipse_rows dst cy a b (fun y w _ -> span dst y (cx - w) (cx + w) src)
+
+(* An outline is the part of each row that the next row away from the
+ * centre does not cover, on each side: one pixel on the rows where
+ * the curve is steep, many near the top and the bottom where it is
+ * flat, so that the outline has no gap. The top and the bottom rows
+ * are drawn whole. *)
+let ellipse (dst : image) cx cy a b (src : image) =
+  ellipse_rows dst cy a b (fun y w w_out ->
+    let inner = min w (w_out + 1) in
+    if inner = 0 then span dst y (cx - w) (cx + w) src
+    else begin
+      span dst y (cx - w) (cx - inner) src;
+      span dst y (cx + inner) (cx + w) src
+    end)
+
 (*****************************************************************************)
 (* The images' memory *)
 (*****************************************************************************)
@@ -455,6 +511,11 @@ let message (c : conn) s i arg =
         (find c (arg 1)) mask (arg 7) (arg 8)
   | 'l' ->
       line (find c (arg 0)) (arg 2) (arg 3) (arg 4) (arg 5) (find c (arg 1))
+  | 'e' ->
+      ellipse (find c (arg 0)) (arg 2) (arg 3) (arg 4) (arg 5) (find c (arg 1))
+  | 'E' ->
+      fill_ellipse (find c (arg 0)) (arg 2) (arg 3) (arg 4) (arg 5)
+        (find c (arg 1))
   | 's' ->
       text (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font
         (String.sub s (i + 11) (len 4))
@@ -482,7 +543,7 @@ let messages (c : conn) s =
       in
       let size =
         match s.[i] with
-        | 'a' -> 15 | 'f' | 'c' -> 3 | 'd' -> 19 | 'l' -> 13
+        | 'a' -> 15 | 'f' | 'c' -> 3 | 'd' -> 19 | 'l' | 'e' | 'E' -> 13
         | 's' -> 11 + max 0 (arg 4) | 't' -> 13 + max 0 (arg 4)
         | 'p' -> 9 + max 0 (arg 3)
         | _ -> raise (Graphics "an unknown message")

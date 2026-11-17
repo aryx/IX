@@ -89,6 +89,22 @@ let picture bits size =
           D.msg 'p' [ 0; 984; 130 + y; 256 ] ^ ramp)
   done;
   send (D.msg 'p' [ 0; 0; 768; 256 ] ^ ramp ^ D.msg 'p' [ 0; 0; -1; 256 ] ^ ramp);
+  (* ellipses: circles of radius 0 to 10, outlines then filled; wide
+   * and tall ones; cut by each side of the screen; a huge one whose
+   * top only is on the screen *)
+  let ellipse_ dst src cx cy a b = D.msg 'e' [ dst; src; cx; cy; a; b ] in
+  let fill_ellipse_ dst src cx cy a b = D.msg 'E' [ dst; src; cx; cy; a; b ] in
+  for r = 0 to 10 do
+    send (ellipse_ 0 black (40 + (30 * r)) 510 r r ^
+          fill_ellipse_ 0 blue (40 + (30 * r)) 540 r r)
+  done;
+  send (ellipse_ 0 black 450 520 100 30 ^ fill_ellipse_ 0 red 450 520 60 12 ^
+        ellipse_ 0 white 620 560 20 70 ^ fill_ellipse_ 0 green 100 620 80 1 ^
+        ellipse_ 0 black 100 650 0 20);
+  send (fill_ellipse_ 0 yellow (-20) 620 60 30 ^
+        fill_ellipse_ 0 red 1030 420 40 40 ^
+        ellipse_ 0 black 700 0 50 30 ^ ellipse_ 0 white 300 760 80 40);
+  send (ellipse_ 0 black 512 16000 16383 15300);
   (* an image freed, its memory another's *)
   send (D.msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^
         text_ 14 white 6 50 "again" ^ draw_ 0 14 (-1) 570 350 630 470 0 0);
@@ -117,6 +133,9 @@ let picture bits size =
   bad (D.msg 's' [ 0; white; 0; 0; 9 ] ^ "short");
   bad (D.msg 'p' [ 0; 0; 0; 9 ] ^ "short");
   bad (D.msg 'p' [ 9; 0; 0; 1 ] ^ "x");
+  bad (D.msg 'e' [ 0; white; 10; 10; -1; 5 ]);
+  bad (D.msg 'E' [ 0; white; 10; 10; 5; 16384 ]);
+  bad (D.msg 'E' [ 0; white; 10; 10; 5 ]);
   bad (fill 0 green 10 470 20 480);
   (* the connection's end: the memory one block again, but the font *)
   disconnect c;

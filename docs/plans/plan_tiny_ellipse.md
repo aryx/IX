@@ -7,7 +7,7 @@ ellipse) document, so we can have ellipses in the playground, in
 tiny-office drawing, etc. it's an interesting cross-cutting exercise
 and whole system extension".
 
-**Status: not started** (2026-11-13).
+**Status: step 1 done** (2026-11-17): the kernel's `e` and `E`.
 
 ## Why this is worth doing
 
@@ -96,11 +96,12 @@ truncates, though, and makes small circles look thin (a circle of
 radius 3 gets a half width of 2 at the row next to its middle). The
 pilot should round like Memshape.ml's `ring`, which tests against half
 axes of `a + 0.5` and `b + 0.5`. Done with doubled integers, that
-means `A = 2a + 1` and `B = 2b + 1`, and then `B * B` must stay below
-2^30. So the kernel should refuse half axes above 4,096 with
-`Graphics`, as it already refuses images larger than 2,048 pixels.
-The pilot decides the exact formula by drawing circles of radius 0 to
-10 and looking at them, then fixing the result in the test.
+means `A = 2a + 1` and `B = 2b + 1`, and then `A * B` and `B * B`
+must stay below 2^30. So the kernel refuses half axes above 16,383
+with `Graphics`, as it already refuses images larger than 2,048
+pixels. (Done in step 1: `x <= A * isqrt (B^2 - 4 y^2) / 2B`, the
+circles of radius 0 to 10 looked at and fixed in the test; a circle of
+radius 1 is a square of 3 by 3, as with m-IX's floats.)
 
 `isqrt` is a few lines of Newton's method. It must be written in the
 subset that mini-ml also compiles: no optional arguments, no Stdlib

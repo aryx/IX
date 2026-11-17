@@ -14,6 +14,7 @@
 (copy_files# ../emacs.ml)
 (copy_files# ../calc.ml)
 (copy_files# ../tetris.ml)
+(copy_files# ../orrery.ml)
 (copy_files# ../www.ml)
 (copy_files# ../troff.ml)
 (copy_files# ../play.ml)
@@ -66,3 +67,10 @@
  (package ix)
  (modules tetris)
  (libraries tiny_app_tetris tiny_lib_playground tiny_lib_system_sdl))
+
+(executable
+ (name orrery)
+ (public_name tiny-orrery)
+ (package ix)
+ (modules orrery)
+ (libraries tiny_app_orrery tiny_lib_playground tiny_lib_system_sdl))

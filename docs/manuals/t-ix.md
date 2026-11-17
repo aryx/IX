@@ -64,7 +64,7 @@ by hand, use these tools:
 
 tiny-kernel's graphical programs also run on the host, in a window of
 their own, with no machine: `tiny-office file`, `tiny-www OCaml`,
-`tiny-emacs file`, `tiny-calc`, `tiny-tetris`; and `tiny-troff [-h |
+`tiny-emacs file`, `tiny-calc`, `tiny-tetris`, `tiny-orrery`; and `tiny-troff [-h |
 -p] file` prints a document (§7.10).
 
 ## 2. How t-ix is put together
@@ -872,6 +872,8 @@ low byte first:
 | `f id` | freed |
 | `d dst src mask x0 y0 x1 y1 px py` | draw: `dst`'s rectangle is `src`'s pixels from (px, py) on, where `mask`'s are not 0 (-1: no mask) |
 | `l dst src x0 y0 x1 y1` | a line, both ends drawn |
+| `e dst src cx cy a b` | an ellipse's outline, a pixel thick, of centre (cx, cy) and half axes a and b (at most 16383); a circle has a = b |
+| `E dst src cx cy a b` | the same ellipse, filled |
 | `s dst src x y n`, then `n` bytes | a text, its top left corner at (x, y); a character is 8 by 16 |
 | `t dst src x y n style`, then `n` bytes | a text in a style: bold 1, italic 2, underlined 4, large 8 (16 by 32); or 16, fat pixels, a byte a colour, a square of 4 by 4 (tiny-office's words and paints, www's) |
 | `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (www's) |
@@ -992,6 +994,7 @@ tune, and the next one starts at its beginning.
 | shape | what |
 |---|---|
 | `Rect (colour, width, height)` | a rectangle; a colour is a byte of the table |
+| `Ellipse (colour, width, height)`, `Disc (colour, width, height)` | the outline, or the inside, of the ellipse in a box of that size, placed as a rectangle is; a box with an even side leaves its last column or row out |
 | `Words (colour, text)` | a text, in the one font, 8 by 16; its colour's high bits a style (§7.7) |
 | `Group shapes` | shapes together, the first under the next |
 | `Move (right, down, shape)` | a shape moved; y goes down from the top left corner |
@@ -1009,7 +1012,11 @@ the arrows move the piece (up turns it, down moves it a row), the
 space drops it, `m` turns the music off and on, and `q` quits; after
 a game over, the space starts another. It has sounds: a piece that
 lands, rows that go (four at once, a level), the game over, and
-Korobeiniki, m-ix's theme, a tenth faster each level.
+Korobeiniki, m-ix's theme, a tenth faster each level. `orrery` is
+`tiny/TinyAppOrrery.ml`: the Solar System seen from above, from
+2000-01-01 on, each planet on a circle around the Sun at its own
+period; up and down make the time go faster or slower, the space
+pauses it, `r` goes back to 2000, and `q` quits.
 
 ### 7.6 A program with buttons: TinyLibGUI.ml
 
@@ -1186,7 +1193,7 @@ and a window's (`tiny/TinyLibSystem/sdl/`). In the window's:
 The programs' one-line files in `tiny/user/` are compiled there
 unchanged:
 
-    tiny-office file      tiny-emacs file      tiny-calc      tiny-tetris
+    tiny-office file      tiny-emacs file      tiny-calc      tiny-tetris      tiny-orrery
     tiny-www OCaml        tiny-troff [-h | -p] file          tiny-play file.wav
 
 `TINY_SCREEN=f` writes the window's screen to `f` (a PPM) when the
@@ -1210,11 +1217,12 @@ in `dir` when it cannot fetch them. `make loc` does not count `tiny/user/sdl/`.
 | TinyPlay.ml, WAV files made into the speaker's samples (the example, 8 bits in two channels, a chunk skipped, rates above and below, in blocks and at once), and files it does not play | `tiny/tests/TinyPlay_test.sh` |
 | TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
 | TinyAppTetris.ml, its rules and its sounds by scripts of keys, and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |
+| TinyAppOrrery.ml, its dates, the planets' places, its keys, and its picture, on the host | `tiny/tests/TinyAppOrrery_test.sh` |
 | TinyLibGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyLibGUI_test.sh` |
 | TinyOffice.ml, a document worked at by keys and the mouse (each part, the menus, the styles, the pages, the file), on the host and on tiny-cpu | `tiny/tests/TinyOffice_test.sh` |
 | TinyTroff.ml, a document as text, HTML and PDF, on the host and on tiny-cpu | `tiny/tests/TinyTroff_test.sh` |
 | TinyBrowser/, pages read into lines, however they are cut, on the host and on tiny-cpu | `tiny/tests/TinyBrowser_test.sh` |
-| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, emacs, the office (a page, a sheet and its chart, a drawing, a paint), www (the OCaml article, its links and pictures), each with a recorded mouse and keys; tetris's sounds and play's, a WAV's sum each; troff's text, HTML and PDF | `make -C tiny/TinyKernel check` (a few minutes) |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, orrery, calc and temp in a window, emacs, the office (a page, a sheet and its chart, a drawing, a paint), www (the OCaml article, its links and pictures), each with a recorded mouse and keys; tetris's sounds and play's, a WAV's sum each; troff's text, HTML and PDF | `make -C tiny/TinyKernel check` (a few minutes) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

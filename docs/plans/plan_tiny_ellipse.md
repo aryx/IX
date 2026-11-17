@@ -7,10 +7,12 @@ ellipse) document, so we can have ellipses in the playground, in
 tiny-office drawing, etc. it's an interesting cross-cutting exercise
 and whole system extension".
 
-**Status: steps 1 to 9 done** (2026-11-17): the kernel's `e` and `E`,
-TinyLibDraw, tiny-windows, the C runtime, the playground's `Ellipse`
-and `Disc`, TinyLibGUI's redrawing, the office's oval, troff's three
-printouts of it, and the orrery. Left: the documentation (step 10).
+**Status: done** (2026-11-17): the kernel's `e` and `E`, TinyLibDraw,
+tiny-windows, the C runtime, the playground's `Ellipse` and `Disc`,
+TinyLibGUI's redrawing, the office's oval, troff's three printouts of
+it, the orrery (on tiny-kernel and on the host, tiny-orrery), and the
+documentation. Arcs, polygons and thick lines are the next exercises
+(below).
 
 ## Why this is worth doing
 

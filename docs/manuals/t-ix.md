@@ -994,6 +994,7 @@ tune, and the next one starts at its beginning.
 | shape | what |
 |---|---|
 | `Rect (colour, width, height)` | a rectangle; a colour is a byte of the table |
+| `Line (colour, dx, dy)` | a line a pixel thick, from where it is placed to that place moved by (dx, dy), both ends drawn |
 | `Ellipse (colour, width, height)`, `Disc (colour, width, height)` | the outline, or the inside, of the ellipse in a box of that size, placed as a rectangle is; a box with an even side leaves its last column or row out |
 | `Words (colour, text)` | a text, in the one font, 8 by 16; its colour's high bits a style (§7.7) |
 | `Group shapes` | shapes together, the first under the next |

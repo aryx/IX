@@ -29,7 +29,8 @@ let () =
   |> ignore;
   (* the game's shapes, then ellipses and discs: a circle's box of 21,
    * one of 20 (its last column and row left out), a wide and a tall
-   * one, and boxes of no width or height (nothing) *)
+   * one, and boxes of no width or height (nothing); then lines: down
+   * and right, up and left, straight down, and a point *)
   let shapes =
     TinyLibPlayground.
       [ Move (10, 180, Disc (0xf0, 21, 21));
@@ -37,7 +38,11 @@ let () =
         Move (40, 180, Disc (0x36, 20, 20));
         Move (70, 180, Ellipse (0, 101, 41));
         Move (190, 150, Disc (0xfc, 31, 81));
-        Move (240, 180, Group [ Ellipse (0, 0, 10); Disc (0, 10, 0) ]) ] in
+        Move (240, 180, Group [ Ellipse (0, 0, 10); Disc (0, 10, 0) ]);
+        Move (10, 10, Line (0xf0, 60, 30));
+        Move (300, 60, Line (0x36, -50, -40));
+        Move (240, 20, Line (0, 0, 30));
+        Move (280, 100, Line (0, 0, 0)) ] in
   TinyLibPlayground.show g [] (g.view m @ shapes);
   (* twice the same random numbers from a seed *)
   let rec numbers n s =

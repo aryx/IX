@@ -453,7 +453,7 @@ let window_size caps =
       | _ -> answer () in
   answer ()
 
-(* a shape's leaves, each a rectangle, an ellipse or words at its place in the
+(* a shape's leaves, each a rectangle, a line, an ellipse or words at its place in the
  * window, in their order, on acc *)
 let rec leaves x y s acc =
   match s with
@@ -469,6 +469,9 @@ type area = int * int * int * int
 let area_of (x, y, leaf) : area =
   match leaf with
   | P.Rect (_, w, h) -> x, y, x + w, y + h
+  | P.Line (_, dx, dy) ->
+      (* both ends are drawn, so the far one is in the area too *)
+      x + min dx 0, y + min dy 0, x + max dx 0 + 1, y + max dy 0 + 1
   | P.Ellipse (_, w, h) -> x, y, x + w, y + h
   | P.Disc (_, w, h) -> x, y, x + w, y + h
   | P.Words (c, s) ->
@@ -557,9 +560,9 @@ let paint (erased : area list) (l, (mark : drawn)) =
          * next): all of it, where it changed or was uncovered *)
         if mark <> Untouched || List.exists (meets (area_of l)) erased then
           P.draw 0 x y leaf
-    | P.Ellipse _ | P.Disc _ ->
-        (* all of it too, when an erasing uncovered some of it: a curve
-         * cannot be cut to a rectangle as a [Rect] is *)
+    | P.Line _ | P.Ellipse _ | P.Disc _ ->
+        (* all of it too, when an erasing uncovered some of it: a slanted
+         * line or a curve cannot be cut to a rectangle as a [Rect] is *)
         if List.exists (meets (area_of l)) erased then P.draw 0 x y leaf
     | P.Words (c, s) ->
         (* its characters that changed, and those an erasing uncovered

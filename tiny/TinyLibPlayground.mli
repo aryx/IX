@@ -166,10 +166,15 @@ val key_of_byte : char -> key
  * [Ellipse] and [Disc] are the outline and the inside of the ellipse in
  * a box of that width and height, placed as a [Rect] is; a circle's box
  * is square. When the width or the height is even, the box has no
- * middle pixel, and its last column or row is left out. *)
+ * middle pixel, and its last column or row is left out.
+ *
+ * [Line (c, dx, dy)] is a line a pixel thick from where it is placed to
+ * that place moved by dx and dy, both ends drawn; either may be
+ * negative, and a line of 0 and 0 is a point. *)
 type colour = int
 type shape =
   | Rect of colour * int * int
+  | Line of colour * int * int
   | Ellipse of colour * int * int
   | Disc of colour * int * int
   | Words of colour * string

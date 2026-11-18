@@ -671,8 +671,17 @@ major(value need)
 		top = size;
 	if(!young_words)
 		ml_limit = from + size;
-	if(hp + need > from + size)
-		fatal("Fatal error: out of memory\n");
+	if(hp + need > from + size){
+		/* (with what was alive, what was asked and the most a half holds,
+		 * in MB: whether the program keeps too much or asks one block too
+		 * large; mini-ld linking mini-netscape on the card said the words
+		 * alone, 2026-11-18) */
+		char msg[128];
+
+		snprint(msg, sizeof msg, "Fatal error: out of memory (%d MB alive, %d MB asked, a half is at most %d MB)\n",
+			(int)(live / (1048576 / W)), (int)(need / (1048576 / W)), (int)(MAXHEAP / (1048576 / W)));
+		fatal(msg);
+	}
 }
 
 /* OPTIMIZATION (old_reads): what Marshal reads made in the half

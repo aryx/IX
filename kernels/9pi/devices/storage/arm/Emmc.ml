@@ -337,25 +337,25 @@ let rec bio c write buf bno nb =
       done
     end
     else
-    for k = 0 to nb - 1 do
-      (* A block is asked of the controller when it says, once, that it
-       * has one (or room for one): the Interrupt register's bit 5 (4
-       * to write), which stays until it is written back, so the next
-       * block's is another. Not Status's bit 11, a state: it is still
-       * there a moment after a block's last word is taken, and a
-       * processor with its caches on is back before it falls; the
-       * block read then is not the card's (the author's Pi1,
-       * 2026-10-08: the programs read from the card jumped to anywhere,
-       * with the caches on only. Principia's emmc.c has no such loop:
-       * the bytes are moved by DMA).
-       * old: poll (fun () -> lo status land (if write then bufwrite else bufread) <> 0) *)
-      let ready = if write then 1 lsl 4 else 1 lsl 5 in
-      if not (poll (fun () -> lo interrupt land (ready lor err) <> 0)) then raise (Error eio);
-      if lo interrupt land err <> 0 then begin clear_interrupt 0xffff; raise (Error eio) end;
-      set interrupt 0 ready;
-      if write then Machine.io_write_fifo (base + data) (String.sub buf (k * len) len)
-      else Buffer.add_string r (Machine.io_read_fifo (base + data) len)
-    done;
+      for k = 0 to nb - 1 do
+        (* A block is asked of the controller when it says, once, that it
+         * has one (or room for one): the Interrupt register's bit 5 (4
+         * to write), which stays until it is written back, so the next
+         * block's is another. Not Status's bit 11, a state: it is still
+         * there a moment after a block's last word is taken, and a
+         * processor with its caches on is back before it falls; the
+         * block read then is not the card's (the author's Pi1,
+         * 2026-10-08: the programs read from the card jumped to anywhere,
+         * with the caches on only. Principia's emmc.c has no such loop:
+         * the bytes are moved by DMA).
+         * old: poll (fun () -> lo status land (if write then bufwrite else bufread) <> 0) *)
+        let ready = if write then 1 lsl 4 else 1 lsl 5 in
+        if not (poll (fun () -> lo interrupt land (ready lor err) <> 0)) then raise (Error eio);
+        if lo interrupt land err <> 0 then begin clear_interrupt 0xffff; raise (Error eio) end;
+        set interrupt 0 ready;
+        if write then Machine.io_write_fifo (base + data) (String.sub buf (k * len) len)
+        else Buffer.add_string r (Machine.io_read_fifo (base + data) len)
+      done;
     if not (poll (fun () -> lo interrupt land (datadone lor err) <> 0)) then raise (Error eio);
     if lo interrupt land err <> 0 then begin clear_interrupt 0xffff; raise (Error eio) end;
     clear_interrupt 0xffff

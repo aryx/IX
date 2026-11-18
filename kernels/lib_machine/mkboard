@@ -13,7 +13,11 @@
 #   PI2      1 for the Pi 2 (mini-mk O=5 PI2=1), which uses the Pi 1's
 #            files with what differs (docs/plans/plan_pi2.md); empty
 #            otherwise
+#   SMP      1 for the other cores to run processes under an emulator
+#            too (mini-mk O=5 PI2=1 SMP=1: runtime.c's CORES_TEST,
+#            kernel.mk's SMP=1); on a board they always do
 PI2=
+SMP=
 ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 P=`{if(~ $O 5) echo pi1/}
 LOAD=`{if(~ $O 5) echo 0x8000; if not if(~ $O 7) echo 0x80000}

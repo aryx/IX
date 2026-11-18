@@ -41,7 +41,8 @@ RT=$TOP/languages/ml/runtime
 # (For the Pi 2, the C gets board.h's PI2, and the assembly is l2.s.)
 BFLAGS=`{if(~ $O^$"PI2 51) echo -DPI2}
 LS=`{if(~ $O^$"PI2 5) echo l1.s; if not if(~ $O^$"PI2 51) echo l2.s; if not echo l.s}
-KINC=$CINC -I$RT -I$BD $BFLAGS
+SFLAGS=`{if(~ $"SMP 1) echo -DCORES_TEST}
+KINC=$CINC -I$RT -I$BD $BFLAGS $SFLAGS
 # The image's name (the one each board's firmware loads), its text's
 # address, its entry (the Pi 4's vectors are its first bytes), and the
 # size in bytes of a word of its data.

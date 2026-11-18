@@ -36,10 +36,9 @@ assembler/Asm.ml:209: dead field: s_arch stored in Asm.stored, nothing live read
 assembler/Asm.ml:209: dead field: s_file stored in Asm.stored, nothing live reads it
 assembler/Asm.ml:209: dead field: s_items stored in Asm.stored, nothing live reads it
 assembler/Asm.ml:218: dead: Asm.with_history, in init but no call goes through the pointer
-assembler/Asm.ml:226: dead: Asm.to_bytes, nothing names it
-assembler/Asm.ml:227: dead: Asm.of_bytes, nothing names it
 assembler/Asm.ml:237: dead: Asm.marshalled, in init but no call goes through the pointer
 assembler/Asm.ml:243: dead: Asm.load, nothing names it
+assembler/Asm.ml:248: dead: Asm.of_saved, in init but no call goes through the pointer
 assembler/CLI.ml:34: dead field: static stored in CLI:fun at line 34, nothing live reads it
 assembler/CLI.ml:34: dead field: sym stored in CLI:fun at line 34, nothing live reads it
 assembler/Parser_asm.ml:133: dead field: by stored in Parser_asm.index, nothing live reads it

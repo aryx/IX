@@ -195,27 +195,34 @@ let load caps t ~decode ~needs files =
   let libs = ref [] in
   List.iter (fun f ->
     if Fpath.has_ext ".a" f then begin
-      libs := !libs @ [ read_members caps f ]
+      (* ar's index lists the objects last first *)
+      libs := !libs @ [ Array.of_list (List.rev (read_members caps f)) ]
     end
     else add_object t (next ()) (Asm.load caps f)) files;
   (* 5l's loadlib: take the members that define an undefined name, until
    * no library adds one *)
-  let loaded = Hashtbl.create 64 in
+  (* opti: a member taken leaves its library, its bytes let go once
+   * read: a link's libraries are all in memory until the last is
+   * searched (mini-netscape's are 40 MB), beside the program made of
+   * them, and mini-ld on the card, where a half is 192 MB at most,
+   * ended there: "out of memory (195 MB alive)", the one directory the
+   * whole build on the card did not make (2026-11-18). A member with
+   * no bytes is one taken.
+   * old: let loaded = Hashtbl.create 64, a member's place put in it
+   * once taken, and its bytes kept in the library's list *)
   let rec again () =
     let added = ref false in
-    List.iteri (fun li lib ->
-      (* ar's index lists the objects last first *)
-      List.iteri (fun mi (bytes, names) ->
-        if not (Hashtbl.mem loaded (li, mi))
-           && List.exists (wanted t) names
+    List.iter (fun lib ->
+      Array.iteri (fun mi (bytes, names) ->
+        if bytes <> "" && List.exists (wanted t) names
         then begin
-          Hashtbl.replace loaded (li, mi) ();
+          lib.(mi) <- ("", names);
           let o = member bytes in
           Logs.info (fun m -> m "from a library: %a, for %s" Fpath.pp o.file
             (String.concat " " (List.filter (wanted t) names)));
           add_object t (next ()) o;
           added := true
-        end) (List.rev lib)) !libs;
+        end) lib) !libs;
     if !added then again ()
   in
   again ();

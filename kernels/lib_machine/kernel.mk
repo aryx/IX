@@ -299,11 +299,13 @@ ifeq ($(COMPILER),ix)
 # and mini-mk decides what must be made again.
 IXTOP = $(abspath $(LIB)/../..)
 IXO = $(if $(filter pi4,$(BOARD)),7,5)
-IXDIR = kernels/$(notdir $(CURDIR))-$(notdir $(B))
+# (SMP=1's kernel in a directory of its own: mk makes an object again
+# when its source changed, not a flag)
+IXDIR = kernels/$(notdir $(CURDIR))-$(notdir $(B))$(if $(SMP),-smp)
 IXIMAGE = $(IXTOP)/_mk/$(IXO)/$(IXDIR)/$(if $(filter pi4,$(BOARD)),kernel8.img,kernel.img)
 $(IMAGE): $(B)/fs.img FORCE
 	cd $(IXTOP)/lib_core && PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) > /dev/null
-	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img) $(if $(filter pi2,$(BOARD)),PI2=1)
+	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img) $(if $(filter pi2,$(BOARD)),PI2=1) $(if $(SMP),SMP=1)
 	cmp -s $(IXIMAGE) $@ || cp $(IXIMAGE) $@
 else
 ifneq ($(ARM32),)

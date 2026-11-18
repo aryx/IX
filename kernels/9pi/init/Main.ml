@@ -66,9 +66,15 @@ let devices () =
 let guard where f =
   try f ()
   with e ->
+    (* (what, printed before where is asked: ocaml-light's native
+     * runtime answers a null pointer for no backtrace, where None is
+     * expected, and the Pi 2's kernel then faulted in Printexc with
+     * nothing said of the exception: "kernel fault: in the kernel, data
+     * abort, far 00000000" and four cores spinning, 2026-11-18) *)
+    let what = "an exception in " ^ where ^ ": " ^ Printexc.to_string e in
+    Machine.print (what ^ "\n");
     let at = Printexc.get_backtrace () in
-    ignore (Machine.panic ("an exception in " ^ where ^ ": " ^ Printexc.to_string e
-                           ^ (if at = "" then "" else "\nraised at:" ^ at)))
+    ignore (Machine.panic (what ^ (if at = "" then "" else "\nraised at:" ^ at)))
 
 (* a system call (its notes delivered on its way back: Syscall) *)
 let trap () = guard "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))

@@ -40,12 +40,23 @@ LC=$ROOT/lib_core
 (cd $ROOT/lib_executable && MINI=mini- PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 > /dev/null 2>&1 \
    && cd $ROOT/debuggers/acid && MINI=mini- PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 > /dev/null 2>&1) \
   || { echo "FAIL mini-mk O=5 OS=plan9 in lib_executable and debuggers/acid"; exit 1; }
-W=$(mktemp -d)
+# (its physical path, which is what a process's directory is given as:
+# macOS's mktemp says /var/folders, a link to /private/var/folders)
+W=$(cd $(mktemp -d) && pwd -P)
+# (a process's directory: Linux's /proc, and lsof where there is none,
+# as on macOS)
+cwd_of() {
+  if [ -d /proc/$1 ]; then readlink /proc/$1/cwd
+  else lsof -a -p $1 -d cwd -Fn 2> /dev/null | sed -n 's/^n//p'
+  fi
+}
 # (the targets a session leaves stopped: the mini-5i processes running
-# ./target in $W, by their command's name, not a pattern our shell has)
+# ./target in $W, by their command's first word, which our shell's and
+# timeout's are not; ps's comm would not do, macOS cutting it to 16
+# characters of the path)
 cleanup() {
-  for p in $(ps -eo pid=,comm=,args= | awk '$2 == "Main.exe" && / \.\/target$/ {print $1}'); do
-    case "$(readlink /proc/$p/cwd)" in $W/*) kill -9 $p;; esac
+  for p in $(ps -eo pid=,args= | awk '$2 ~ /\/machine\/Main\.exe$/ && / \.\/target$/ {print $1}'); do
+    case "$(cwd_of $p)" in $W/*) kill -9 $p;; esac
   done
 }
 trap 'cleanup; rm -rf $W' EXIT

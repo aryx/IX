@@ -64,7 +64,9 @@
  * text; the Draw menu, or Tab, changes the tool. What is typed becomes
  * the label of the last shape. The select tool picks a shape made
  * before: a click makes it the last shape, shown in blue, and a drag
- * moves it; C-d removes the last shape.
+ * moves it, with the arrows' ends that were on it; a drag of a box's
+ * or an oval's bottom right corner resizes it, and a drag of an
+ * arrow's end moves that end. C-d removes the last shape.
  *
  * {b The menus} are TinyLibGUI's pull-down menus across the top, as in
  * every office program since the Lisa and the Macintosh:

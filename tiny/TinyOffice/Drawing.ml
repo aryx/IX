@@ -125,23 +125,23 @@ let figure_shapes (ox : int) (oy : int) (colour : int)
  * shape puts it last (and so over the others), and there is no
  * selection to keep. *)
 
-(* the box a shape is picked in (x, y, width, height): an arrow's is 4
- * pixels around it, a text's its characters *)
+(* a shape's box (x, y, width, height); a text's is its characters *)
 let extent ((kind, nums, label) : string * int list * string) =
   match kind, nums with
   | "arrow", [ x0; y0; x1; y1 ] ->
-      min x0 x1 - 4, min y0 y1 - 4, abs (x1 - x0) + 8, abs (y1 - y0) + 8
+      min x0 x1, min y0 y1, abs (x1 - x0), abs (y1 - y0)
   | "text", [ x; y ] -> x, y, 8 * String.length label, 16
   | _, [ x; y; w; h ] -> x, y, w, h
   | _ -> 0, 0, 0, 0
 
-(* whether (px, py) is on a shape: in its box and, for an arrow, about
- * 4 pixels from its line at most (the place's distance to the line,
- * times the arrow's length, against 4 times its length taken as its
- * width and height added, which needs no square root) *)
+(* whether (px, py) is on a shape: in its box or 4 pixels around it
+ * and, for an arrow, about 4 pixels from its line at most (the
+ * place's distance to the line, times the arrow's length, against 4
+ * times its length taken as its width and height added, which needs
+ * no square root) *)
 let on_shape (fig : string * int list * string) (px : int) (py : int) =
   let (x, y, w, h) = extent fig in
-  px >= x && px < x + w && py >= y && py < y + h
+  px >= x - 4 && px < x + w + 4 && py >= y - 4 && py < y + h + 4
   && (match fig with
       | "arrow", [ x0; y0; x1; y1 ], _ ->
           abs (((px - x0) * (y1 - y0)) - ((py - y0) * (x1 - x0)))
@@ -165,27 +165,73 @@ let picked (figs : (string * int list * string) list) (px : int) (py : int)
     end) figs;
   match !best with Some (k, _) -> Some k | None -> None
 
-(* a shape moved (an arrow's two ends both move) *)
-let moved ((kind, nums, label) : string * int list * string) (dx : int)
-    (dy : int) : string * int list * string =
+(* What a shape is held by, from where the stroke began: all of it; a
+ * box's or an oval's bottom right corner, which resizes it; an
+ * arrow's first end or its second, which moves that end alone. *)
+type grip = Whole | Corner | Tail | Head
+
+let near (x : int) (y : int) (px : int) (py : int) =
+  abs (px - x) <= 6 && abs (py - y) <= 6
+
+let grip_of ((kind, nums, _) : string * int list * string) (px : int)
+    (py : int) : grip =
   match kind, nums with
   | "arrow", [ x0; y0; x1; y1 ] ->
+      if near x1 y1 px py then Head
+      else if near x0 y0 px py then Tail
+      else Whole
+  | _, [ x; y; w; h ] -> if near (x + w) (y + h) px py then Corner else Whole
+  | _ -> Whole
+
+(* a shape held by a grip, dragged by (dx, dy); a box or an oval stays
+ * 8 by 8 at least *)
+let dragged ((kind, nums, label) : string * int list * string) (g : grip)
+    (dx : int) (dy : int) : string * int list * string =
+  match g, nums with
+  | Head, [ x0; y0; x1; y1 ] -> kind, [ x0; y0; x1 + dx; y1 + dy ], label
+  | Tail, [ x0; y0; x1; y1 ] -> kind, [ x0 + dx; y0 + dy; x1; y1 ], label
+  | Corner, [ x; y; w; h ] ->
+      kind, [ x; y; max 8 (w + dx); max 8 (h + dy) ], label
+  | _, [ x0; y0; x1; y1 ] when kind = "arrow" ->
       kind, [ x0 + dx; y0 + dy; x1 + dx; y1 + dy ], label
   | _, x :: y :: rest -> kind, (x + dx) :: (y + dy) :: rest, label
   | _ -> kind, nums, label
 
+(* An arrow follows a shape that moves: each of its ends that was on
+ * the shape (in its box, or 4 pixels around) moves with it. Nothing
+ * says in the file which box an arrow goes to; where its ends are
+ * says it. *)
+let following (fig : string * int list * string) (dx : int) (dy : int)
+    (other : string * int list * string) : string * int list * string =
+  match other with
+  | "arrow", [ x0; y0; x1; y1 ], label ->
+      let tail = on_shape fig x0 y0 and head = on_shape fig x1 y1 in
+      "arrow",
+      [ (if tail then x0 + dx else x0); (if tail then y0 + dy else y0);
+        (if head then x1 + dx else x1); (if head then y1 + dy else y1) ],
+      label
+  | _ -> other
+
 (* the select tool's stroke: the shape picked where it began is now
- * the last, moved by the stroke (a click moves it by nothing) *)
+ * the last, dragged by the stroke (a click drags it by nothing); when
+ * a box, an oval or a text moves, the arrows on it follow *)
 let select_stroke (o : office) ((x0, y0, x1, y1) : int * int * int * int) =
   let b = selected_box o in
   let figs = figures b.data in
   match picked figs x0 y0 with
   | Some k ->
+      let fig = List.nth figs k in
+      let g = grip_of fig x0 y0 and (kind, _, _) = fig in
+      let follow other =
+        if g = Whole && kind <> "arrow" then
+          following fig (x1 - x0) (y1 - y0) other
+        else other in
       let others =
-        List.mapi (fun i fig -> if i = k then "" else figure_line fig) figs in
+        List.mapi (fun i other ->
+          if i = k then "" else figure_line (follow other)) figs in
       let data =
         String.concat "" others
-        ^ figure_line (moved (List.nth figs k) (x1 - x0) (y1 - y0)) in
+        ^ figure_line (dragged fig g (x1 - x0) (y1 - y0)) in
       if data <> b.data then change o data
   | None -> ()
 
@@ -241,16 +287,25 @@ let drawing_view (b : obj) (tool : int)
     (stroke : (int * int * int * int) option) : P.shape list =
   let figs = figures b.data in
   let last = List.length figs - 1 in
+  (* the selected box's or oval's corner, a square to resize it by, as
+   * a page's box has *)
+  let corner fig =
+    match fig with
+    | ("box" | "oval"), [ x; y; w; h ], _ ->
+        [ P.Move (b.x + x + w - 3, b.y + y + h - 3, P.Rect (blue, 5, 5)) ]
+    | _ -> [] in
   List.concat
     (List.mapi (fun k fig ->
-       figure_shapes b.x b.y
-         (if tool = select && k = last then blue else black) fig) figs)
+       if tool = select && k = last then
+         figure_shapes b.x b.y blue fig @ corner fig
+       else figure_shapes b.x b.y black fig) figs)
   @ (match stroke with
      | Some (x0, y0, x1, y1) when tool = select ->
        (match picked figs x0 y0 with
         | Some k ->
+          let fig = List.nth figs k in
           figure_shapes b.x b.y blue
-            (moved (List.nth figs k) (x1 - x0) (y1 - y0))
+            (dragged fig (grip_of fig x0 y0) (x1 - x0) (y1 - y0))
         | None -> [])
      | Some (x0, y0, x1, y1) ->
        figure_shapes b.x b.y blue (stroked tool x0 y0 x1 y1)

@@ -173,14 +173,18 @@ let () =
   click o 1 280 60;
   show "Tab three times: an oval, dragged up and left, io; a click is none" o;
   file "the page" o;
-  (* the select tool: a shape picked is the last one; a drag moves it;
-   * C-d removes it; a click on no shape changes nothing; of a box and
+  (* the select tool: a shape picked is the last one; a drag moves it,
+   * and an arrow's end on it; a drag of a box's corner resizes it, of
+   * an arrow's end moves that end; C-d removes it; a click on no shape changes nothing; of a box and
    * a larger one over it, the smaller is picked *)
   keys o "\t";
   click o 1 60 75;
   show "Tab: select; a click on cpu: the last shape, in blue" o;
   drag o 1 60 75 80 85;
-  file "cpu dragged 20 right, 10 down" o;
+  file "cpu dragged 20 right, 10 down; the arrow's end on it follows" o;
+  drag o 1 130 100 150 110;
+  drag o 1 190 130 200 140;
+  file "cpu's corner dragged: 20 wider, 10 taller; the arrow's head, 10, 10" o;
   click o 1 150 102;
   keys o "\004";
   click o 1 250 80;

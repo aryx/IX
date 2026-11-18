@@ -769,6 +769,7 @@ oval 230 80 60 40 io
     ellipse 0 240 120 60 40
     words 0 262 132 |io|
     words 3 58 67 |cpu|
+    rect 3 107 87 5 5
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |drawing: select (Tab: another); click, drag to mo|
@@ -780,14 +781,25 @@ oval 230 80 60 40 io
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
-== cpu dragged 20 right, 10 down: the file
+== cpu dragged 20 right, 10 down; the arrow's end on it follows: the file
 \box[10 40 300 160]{
 ```drawing
-arrow 100 35 180 90
+arrow 120 45 180 90
 box 140 90 80 30 mem
 text 30 150 a note
 oval 230 80 60 40 io
 box 40 30 80 30 cpu
+```
+}
+--
+== cpu's corner dragged: 20 wider, 10 taller; the arrow's head, 10, 10: the file
+\box[10 40 300 160]{
+```drawing
+box 140 90 80 30 mem
+text 30 150 a note
+oval 230 80 60 40 io
+box 40 30 100 40 cpu
+arrow 120 45 190 100
 ```
 }
 --
@@ -797,7 +809,7 @@ box 40 30 80 30 cpu
 box 140 90 80 30 mem
 text 30 150 a note
 oval 230 80 60 40 io
-box 40 30 80 30 cpu
+box 40 30 100 40 cpu
 ```
 }
 --
@@ -808,7 +820,7 @@ box 140 90 80 30 mem
 text 30 150 a note
 oval 230 80 60 40 io
 box 10 10 220 120 all
-box 40 30 80 30 cpu
+box 40 30 100 40 cpu
 ```
 }
 --
@@ -824,7 +836,7 @@ box 40 30 80 30 cpu
     ellipse 0 240 120 60 40
     words 0 262 132 |io|
     words 0 118 102 |all|
-    words 0 78 77 |cpu|
+    words 0 88 82 |cpu|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |diagram (modified)    the menus above; a click ed|

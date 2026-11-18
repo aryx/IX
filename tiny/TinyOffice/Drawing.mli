@@ -19,7 +19,12 @@
  *
  * A fifth tool, select, picks a shape made before: a click on it makes
  * it the drawing's last shape (shown in blue, and drawn over the
- * others), and a drag moves it too. So the selected shape is simply
+ * others), and a drag moves it too. A box or an oval dragged by its
+ * bottom right corner (a small square when it is selected) is resized
+ * instead, and an arrow dragged by one end has that end moved. When a
+ * box, an oval or a text moves, each arrow's end that was on it moves
+ * with it: the file does not say which box an arrow goes to, the
+ * place of its ends does. So the selected shape is simply
  * the last one, which a label is typed in and which Backspace (once
  * its label is empty) or C-d removes; nothing else is kept about a
  * selection.
@@ -48,9 +53,10 @@ val arrow_head : int -> int -> int -> int -> (int * int) list
 (* [draw_stroke office tool (x0, y0, x1, y1)] adds the shape made by a
  * stroke to the selected drawing. A box, an oval or an arrow that is
  * too small counts as a click, not a shape. With the select tool, the
- * shape under (x0, y0) becomes the last one, moved by the stroke; of
- * several shapes there, an arrow is picked first, then the shape with
- * the smallest box. *)
+ * shape under (x0, y0) becomes the last one, moved by the stroke (or
+ * resized, or one of an arrow's ends moved, when the stroke began at
+ * most 6 pixels from a corner or an end); of several shapes there, an
+ * arrow is picked first, then the shape with the smallest box. *)
 val draw_stroke :
   Model.office -> int -> int * int * int * int -> unit
 

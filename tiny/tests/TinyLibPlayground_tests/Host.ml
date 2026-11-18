@@ -56,7 +56,14 @@ let () =
         Move (130, 80, Polygon (255, [ 0, 0; 30, 0; 0, 30 ]));
         Move (130, 80, Polygon (0x36, [ 30, 0; 30, 30; 0, 30 ]));
         Move (90, 130, Group [ Polygon (0, []); Polygon (0, [ 5, 5 ]);
-                                Polygon (0, [ 0, 0; 20, 0 ]) ]) ] in
+                                Polygon (0, [ 0, 0; 20, 0 ]) ]);
+        (* Elm's triangle, pentagon, hexagon and octagon, a disc of
+         * the same radius under the last one *)
+        Move (20, 140, regular 3 0xf0 14);
+        Move (56, 140, regular 5 0x36 14);
+        Move (92, 140, regular 6 0xfc 14);
+        Move (128, 140, Disc (0, 29, 29));
+        Move (128, 140, regular 8 0xf0 14) ] in
   TinyLibPlayground.show g [] (g.view m @ shapes);
   (* twice the same random numbers from a seed *)
   let rec numbers n s =

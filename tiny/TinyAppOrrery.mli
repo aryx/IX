@@ -28,8 +28,8 @@
  *
  * dropped:
  * - the floats: tiny-ml has none. An angle is in 4096ths of a turn, and
- *   its sine comes from a table of a quarter turn in 64 steps, with a
- *   line between two steps;
+ *   its sine is the playground's, from a table of a quarter turn in 64
+ *   steps, with a line between two steps;
  * - Kepler's first and second laws: an orbit is a circle around the
  *   Sun, and a planet goes round it at a constant speed. So a planet
  *   can be off its true place by up to twice its eccentricity, in
@@ -55,11 +55,6 @@ type planet = {
   period : int; start : int;
 }
 val planets : planet list
-
-(* [sin a] and [cos a] for an angle a in 4096ths of a turn, times 1024
- * (any a, taken modulo a turn). *)
-val sin : int -> int
-val cos : int -> int
 
 (* [place p d] is where planet p is on the screen d days after
  * 2000-01-01. *)

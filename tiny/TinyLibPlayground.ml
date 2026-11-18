@@ -94,6 +94,46 @@ type 'm game = {
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
+(*****************************************************************************)
+(* Angles, with integers *)
+(*****************************************************************************)
+
+(* sin x for a quarter turn in 64 steps, times 1024 *)
+let quarter = Array.of_list [
+  0; 25; 50; 75; 100; 125; 150; 175; 200; 224; 249; 273; 297; 321; 345;
+  369; 392; 415; 438; 460; 483; 505; 526; 548; 569; 590; 610; 630; 650;
+  669; 688; 706; 724; 742; 759; 775; 792; 807; 822; 837; 851; 865; 878;
+  891; 903; 915; 926; 936; 946; 955; 964; 972; 980; 987; 993; 999; 1004;
+  1009; 1013; 1016; 1019; 1021; 1023; 1024; 1024 ]
+
+(* The sine of an angle in 4096ths of a turn, times 1024: the table's
+ * two nearest steps, and the line between them. Within a quarter, r
+ * goes from 0 to 1024 included (the second and fourth quarters count
+ * down from 1024), so a step that falls on the table is read alone:
+ * the last one, 64, has no next one. *)
+let sin a =
+  let a = a land 4095 in
+  let within r =
+    let i = r / 16 and f = r mod 16 in
+    if f = 0 then quarter.(i)
+    else quarter.(i) + ((quarter.(i + 1) - quarter.(i)) * f / 16) in
+  let r = a mod 1024 in
+  match a / 1024 with
+  | 0 -> within r
+  | 1 -> within (1024 - r)
+  | 2 -> - (within r)
+  | _ -> - (within (1024 - r))
+
+let cos a = sin (a + 1024)
+
+(* Elm's ngon: the first corner at the top, the others every n-th of a
+ * turn clockwise (y goes down), around (r, r) so that the polygon's box
+ * is at its place, as a disc's *)
+let regular n c r =
+  Polygon (c, List.init n (fun i ->
+    let a = 4096 * i / n in
+    r + (r * sin a / 1024), r - (r * cos a / 1024)))
+
 (* Random numbers for a game's model, which keeps the state: the state
  * after s, a number from 1 to m - 1 (use it modulo what is wanted).
  * Lehmer's generator, 16807 s modulo m, by Schrage's division so that

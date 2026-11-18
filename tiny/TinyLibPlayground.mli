@@ -72,9 +72,9 @@
  * - floating-point coordinates under a transformation (move, scale,
  *   rotate, fade); here a shape is in pixels, at integer positions,
  *   with y going down from the top left corner of the window;
- * - images, and the polygons with a name (triangle to octagon: a
- *   polygon's points are given). Circles and ellipses are kept, with
- *   their box as their place instead of their centre;
+ * - images, and the names of triangle to octagon (they are [regular]
+ *   3 to 8). Circles and ellipses are kept, with their box as their
+ *   place instead of their centre;
  * - text in several sizes (the machine has a single 8x16 font);
  * - ABC's notation and instruments (a tune is notes in Hz on the
  *   kernel's waves);
@@ -111,8 +111,6 @@
  *   descriptor 4;
  * - redraw only what changed, for every shape and not just the
  *   background, by comparing the shapes of two models;
- * - the polygons with a name: [regular n c r], the n corners on a
- *   circle of radius r, with a table of sines as TinyAppOrrery's;
  * - a second game: a Snake, or a Pong;
  * - record and replay: a game is pure and init takes a seed, so the
  *   seed and the keys of each frame reproduce a whole game (demos, bug
@@ -177,7 +175,7 @@ val key_of_byte : char -> key
  * Where the edges cross each other, a place is inside when it is
  * inside an odd number of times (a star of five points drawn in one
  * stroke has a hole in its middle). Elm's triangle, pentagon, hexagon
- * and octagon are polygons whose points a program computes. *)
+ * and octagon are [regular]'s, below. *)
 type colour = int
 type shape =
   | Rect of colour * int * int
@@ -227,6 +225,19 @@ type 'm game = {
 (* The loop of a game. It draws only when the shapes differ, and ends on
  * q or at the end of the keys with Exit.OK, so a game never sees a q. *)
 val run : < Cap.open_out; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
+
+(* [sin a] and [cos a] for an angle a in 4096ths of a turn, times 1024
+ * (any a, taken modulo a turn): tiny-ml has no floats. They come from
+ * a table of a quarter turn in 64 steps, with a line between two
+ * steps. *)
+val sin : int -> int
+val cos : int -> int
+
+(* [regular n colour r] is the polygon of n equal sides whose corners
+ * are on a circle of radius r, the first one at the top. Its box, 2 r
+ * wide and high, is at the place of the shape, as a disc's. Elm's
+ * triangle, pentagon, hexagon and octagon are regular 3, 5, 6 and 8. *)
+val regular : int -> colour -> int -> shape
 
 (* [random seed] is the number after [seed], from 1 to 2^30 - 36
  * (Lehmer's generator). *)

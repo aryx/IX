@@ -9,6 +9,8 @@
 open TinyAppOrrery
 
 module P = TinyLibPlayground
+let sin = P.sin
+let cos = P.cos
 
 let () =
   (* the dates: the first day, a leap day (2000 is a leap year, being

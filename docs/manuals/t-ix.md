@@ -995,7 +995,7 @@ tune, and the next one starts at its beginning.
 | shape | what |
 |---|---|
 | `Rect (colour, width, height)` | a rectangle; a colour is a byte of the table |
-| `Polygon (colour, points)` | the inside of the polygon whose corners are the points, each counted from where it is placed, the last joined to the first; a point is a pixel's top left corner, so a rectangle's four corners are that rectangle; where edges cross, the even-odd rule |
+| `Polygon (colour, points)` | the inside of the polygon whose corners are the points, each counted from where it is placed, the last joined to the first; a point is a pixel's top left corner, so a rectangle's four corners are that rectangle; where edges cross, the even-odd rule; `regular n colour r` is the one of n equal sides on a circle of radius r, its first corner at the top (Elm's triangle, pentagon, hexagon and octagon), from the library's `sin` and `cos`, integers, an angle in 4096ths of a turn and the result times 1024 |
 | `Ellipse (colour, width, height)`, `Disc (colour, width, height)` | the outline, or the inside, of the ellipse in a box of that size, placed as a rectangle is; a box with an even side leaves its last column or row out |
 | `Words (colour, text)` | a text, in the one font, 8 by 16; its colour's high bits a style (§7.7) |
 | `Group shapes` | shapes together, the first under the next |

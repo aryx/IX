@@ -59,8 +59,10 @@ type doc = {
   mutable anchor : int; mutable typing : int; mutable selecting : bool }
 
 (* The edit going on in the selected box.
- * - [Cell (c, r, typed)]: a sheet's cell, and what is being typed in it
- *   (None when the cell is chosen but nothing is typed yet).
+ * - [Cell (c, r, typed, mark)]: a sheet's cell, what is being typed in
+ *   it (None when the cell is chosen but nothing is typed yet), and
+ *   the other corner of the range of cells (the cell itself: no
+ *   range).
  * - [Sketch (tool, stroke)]: a drawing's tool (its place in
  *   Drawing.tools), and the stroke the left button is making, from where it
  *   went down to where it is now, in the box's coordinates.
@@ -68,7 +70,8 @@ type doc = {
  *   pixel_letters), its brush (0 thin, 1 thick), and the pixel where
  *   the left button last was, while it is down.
  * - [Naming typed]: the selected sheet's new name, being typed. *)
-type edit = Nothing | Writing of doc | Cell of int * int * string option
+type edit = Nothing | Writing of doc
+  | Cell of int * int * string option * (int * int)
   | Sketch of int * (int * int * int * int) option
   | Painting of int * int * (int * int) option | Naming of string
 

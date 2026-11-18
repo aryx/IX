@@ -110,7 +110,10 @@
  *     in a text            characters are typed; Backspace, C-d delete;
  *                          the arrows, C-a, C-e move; C-g unselects
  *     in a sheet           a character starts a new entry for the cell;
- *                          Enter or an arrow stores it; C-g forgets it
+ *                          Enter or an arrow stores it; C-g forgets it;
+ *                          a drag of the left button chooses a range
+ *                          of cells, which Backspace empties, C-w cuts
+ *                          and C-y pastes over (Edit's Cut, Copy, Paste)
  *     in a drawing         Tab changes the tool; the left button draws;
  *                          a character goes to the last label; with
  *                          the select tool, the left button picks a

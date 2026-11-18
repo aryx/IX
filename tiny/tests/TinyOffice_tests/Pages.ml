@@ -142,6 +142,18 @@ let () =
   show "a click in c2: chosen, its formula in the bar" o;
   keys o "\127";
   show "Backspace: c2 emptied" o;
+  (* a range: dragged from a1 to b2, cut; pasted at a5; dragged the
+   * other way, from b6 up to a5, and emptied *)
+  drag o 1 67 65 131 81;
+  show "a drag from a1 to b2: the range in the frame" o;
+  keys o "\023";
+  file "C-w: the four cells cut" o;
+  click o 1 67 129;
+  keys o "\025";
+  file "a click in a5, C-y: pasted in a5 to b6" o;
+  drag o 1 131 145 67 129;
+  keys o "\127";
+  file "a drag from b6 up to a5, Backspace: emptied" o;
   keys o "\007";
   show "C-g: no cell chosen" o
 

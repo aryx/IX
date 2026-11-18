@@ -64,13 +64,34 @@ val put_cell : Model.office -> int -> int -> string -> unit
  * nothing typed in it yet *)
 val choose : Model.office -> int -> int -> int -> unit
 
-(* [cell_key office c r typed key] handles a key in a cell. A character
- * starts a new entry, Enter stores it and moves down, an arrow stores
- * it and moves that way, and C-g forgets it. *)
-val cell_key :
-  Model.office -> int -> int -> string option -> TinyLibPlayground.key
-  -> unit
+(* A range of cells goes from the chosen cell to the mark, the cell
+ * where the left button went down; they are any two opposite corners,
+ * and the same cell when no range was dragged. [extend office mark x y]
+ * makes the cell under (x, y) the chosen one, the left button held.
+ *
+ * [copy_range data c r mark] puts what is typed in the range's cells
+ * in the clipboard, which is the text's, a row a line, a tab between
+ * two cells; so a text's lines can be pasted in cells.
+ * [clear_range] empties the cells, in one change. [paste_range] puts
+ * the clipboard's text in the cells from the range's top left corner
+ * on; a formula is pasted as it was typed, the cells it names
+ * unchanged (a spreadsheet moves them with the formula). *)
+val extend : Model.office -> int * int -> int -> int -> unit
+val copy_range : string -> int -> int -> int * int -> unit
+val clear_range : Model.office -> int -> int -> int * int -> unit
+val paste_range : Model.office -> int -> int -> int * int -> unit
 
-(* [sheet_view box chosen] draws the chosen cell in a blue frame. *)
+(* [cell_key office c r typed mark key] handles a key in a cell. A
+ * character starts a new entry, Enter stores it and moves down, an
+ * arrow stores it and moves that way, and C-g forgets it. With nothing
+ * typed, Backspace empties the range's cells, C-w cuts them and C-y
+ * pastes. A key that moves or types ends the range. *)
+val cell_key :
+  Model.office -> int -> int -> string option -> int * int
+  -> TinyLibPlayground.key -> unit
+
+(* [sheet_view box chosen] draws a blue frame around the range, from
+ * the chosen cell to the mark. *)
 val sheet_view :
-  Model.obj -> (int * int) option -> TinyLibPlayground.shape list
+  Model.obj -> ((int * int) * (int * int)) option
+  -> TinyLibPlayground.shape list

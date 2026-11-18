@@ -67,7 +67,7 @@ TinyOffice/Drawing.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Draw
 TinyOffice/File.o: TinyOffice/Model.tmi TinyOffice/Sheet.tmi TinyOffice/Text.tmi TinyOffice/File.mli
 TinyOffice/Model.o: TinyLibGUI.tmi TinyOffice/Model.mli
 TinyOffice/Paint.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Paint.mli
-TinyOffice/Sheet.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Sheet.mli
+TinyOffice/Sheet.o: TinyOffice/Model.tmi TinyOffice/Text.tmi TinyLibPlayground.tmi TinyOffice/Sheet.mli
 TinyOffice/Text.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Text.mli
 TinyBrowser.o: TinyBrowser/Html.tmi TinyBrowser/Http.tmi TinyBrowser/Lines.tmi TinyBrowser/Screen.tmi TinyBrowser/Strings.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/Url.tmi TinyBrowser.mli
 TinyBrowser/Charset.o: TinyBrowser/Strings.tmi TinyBrowser/Charset.mli

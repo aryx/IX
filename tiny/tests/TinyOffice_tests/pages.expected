@@ -577,7 +577,7 @@ top
     words 0 168 1 |Sheet|
     words 0 224 1 |Page|
   shape 4
-== C-g: no cell chosen
+== a drag from a1 to b2: the range in the frame
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -601,6 +601,76 @@ top
     words 0 135 73 |300|
     words 0 135 89 |308|
     words 0 135 105 |616|
+    words 160 165 57 |#CYCLE|
+    words 160 165 89 |#DIV0|
+    words 160 165 105 |#SYNTAX|
+    rect 3 34 56 129 2
+    rect 3 34 87 129 2
+    rect 3 34 56 2 33
+    rect 3 161 56 2 33
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |b2: 300|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
+  shape 4
+== C-w: the four cells cut: the file
+\box[10 40 282 114 sheet1]{
+| a     | b             | c     |
+|-------|---------------|-------|
+|       |               | =c1+1 |
+|       |               |       |
+| Total | =b1+b2        | =1/0  |
+|       | =sum(b1:b2)*2 | =2+   |
+}
+--
+== a click in a5, C-y: pasted in a5 to b6: the file
+\box[10 40 282 114 sheet1]{
+| a     | b             | c     |
+|-------|---------------|-------|
+|       |               | =c1+1 |
+|       |               |       |
+| Total | =b1+b2        | =1/0  |
+|       | =sum(b1:b2)*2 | =2+   |
+| Rent  | 8             |       |
+| Food  | 300           |       |
+}
+--
+== a drag from b6 up to a5, Backspace: emptied: the file
+\box[10 40 282 114 sheet1]{
+| a     | b             | c     |
+|-------|---------------|-------|
+|       |               | =c1+1 |
+|       |               |       |
+| Total | =b1+b2        | =1/0  |
+|       | =sum(b1:b2)*2 | =2+   |
+}
+--
+== C-g: no cell chosen
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 89 |Total|
+    words 0 151 89 |0|
+    words 0 151 105 |0|
     words 160 165 57 |#CYCLE|
     words 160 165 89 |#DIV0|
     words 160 165 105 |#SYNTAX|

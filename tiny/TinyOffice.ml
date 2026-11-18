@@ -41,7 +41,7 @@ let commit (o : office) =
   if o.sel <> None then
     match o.editing with
     | Writing d -> change o (Text.encode d.txt d.sty)
-    | Cell (c, r, Some t) -> Sheet.put_cell o c r t
+    | Cell (c, r, Some t, _) -> Sheet.put_cell o c r t
     | _ -> ()
 
 let finish (o : office) = commit o; o.editing <- Nothing
@@ -76,7 +76,7 @@ let add (o : office) (kind : kind) (w : int) (h : int) =
   o.sel <- Some i;
   match kind with
   | Box_text -> Text.edit o i x y false
-  | Box_sheet -> o.editing <- Cell (0, 0, None)
+  | Box_sheet -> o.editing <- Cell (0, 0, None, (0, 0))
   | Box_paint -> o.editing <- Painting (1, 0, None)
   | _ -> o.editing <- Sketch (0, None)
 
@@ -127,14 +127,22 @@ let command (o : office) (c : command) : request =
   | Do_cut ->
       (match o.editing with
        | Writing d -> Text.copy d; Text.put_text d "" ""
+       | Cell (c, r, None, mark) ->
+           Sheet.copy_range (selected_box o).data c r mark;
+           Sheet.clear_range o c r mark
        | _ -> ());
       Continue
   | Do_copy ->
-      (match o.editing with Writing d -> Text.copy d | _ -> ());
+      (match o.editing with
+       | Writing d -> Text.copy d
+       | Cell (c, r, None, mark) ->
+           Sheet.copy_range (selected_box o).data c r mark
+       | _ -> ());
       Continue
   | Do_paste ->
       (match o.editing with
        | Writing d -> let (t, st) = !Text.clipboard in Text.put_text d t st
+       | Cell (c, r, None, mark) -> Sheet.paste_range o c r mark
        | _ -> ());
       Continue
   | Do_style bit ->
@@ -142,12 +150,12 @@ let command (o : office) (c : command) : request =
       Continue
   | Do_name ->
       (match o.editing with
-       | Cell (_, _, _) -> commit o; o.editing <- Naming ""
+       | Cell (_, _, _, _) -> commit o; o.editing <- Naming ""
        | _ -> ());
       Continue
   | Do_chart ->
       (match o.editing with
-       | Cell (c, _, _) -> commit o; Chart.make_chart o c
+       | Cell (c, _, _, _) -> commit o; Chart.make_chart o c
        | _ -> ());
       Continue
   | Do_page d ->
@@ -210,7 +218,7 @@ let office_menus (o : office) : (string * (string * command) list) list =
                         (mark 4 "Underline  C-u", Do_style 4);
                         (mark 8 "Large      C-l", Do_style 8);
                         ("  Plain", Do_style 0) ]) ]
-     | Cell (_, _, _) ->
+     | Cell (_, _, _, _) ->
          [ ("Sheet", [ ("Name...", Do_name);
                        ("Chart of this column", Do_chart) ]) ]
      | Painting (ink, brush, _) ->
@@ -241,8 +249,8 @@ let key (o : office) (k : P.key) : request =
   match o.editing with
   | Writing d when not o.prefix && not own ->
       o.message <- ""; Text.write_key o d k; Continue
-  | Cell (c, r, typed) when not o.prefix && k <> P.Ctrl 'x' ->
-      o.message <- ""; Sheet.cell_key o c r typed k; Continue
+  | Cell (c, r, typed, mark) when not o.prefix && k <> P.Ctrl 'x' ->
+      o.message <- ""; Sheet.cell_key o c r typed mark k; Continue
   | Sketch (tool, _) when not o.prefix && k <> P.Ctrl 'x' ->
       o.message <- ""; Drawing.sketch_key o tool k; Continue
   | Painting (_, brush, _) when not o.prefix && not own ->
@@ -324,6 +332,12 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
       let resizing = G.inside x y (corner (selected_box o)) in
       finish o;
       grab o (selected o) x y resizing
+  | Cell (_, _, None, mark)
+    when was land 1 <> 0 && i <> None && i = o.sel && o.drag = None ->
+      (* the left button held on the sheet being edited, or let go
+       * there: the range goes from the cell where it went down to the
+       * one under the mouse *)
+      Sheet.extend o mark x y
   | Painting (ink, brush, _) when on_it ->
       (* in the paint being edited: a stroke begins, kept for undo *)
       let (c, r) = Paint.pixel_at (selected_box o) x y in
@@ -451,7 +465,7 @@ let status (o : office) : P.shape list =
         "text, typing "
         ^ (if names = [] then "plain" else String.concat " " names)
         ^ "; the Format menu, or C-b, Tab, C-u, C-l"
-    | Cell (c, r, typed) when o.sel <> None ->
+    | Cell (c, r, typed, _) when o.sel <> None ->
         (* the formula bar: the cell, what is being typed in it, or what
          * was *)
         Sheet.name c r ^ ": "
@@ -491,8 +505,8 @@ let view (o : office) : P.shape list =
        let content = match o.editing with
          | Writing d when o.sel = Some !i ->
              Text.text_view b d.txt d.sty (Some d)
-         | Cell (c, r, _) when o.sel = Some !i ->
-             Sheet.sheet_view b (Some (c, r))
+         | Cell (c, r, _, mark) when o.sel = Some !i ->
+             Sheet.sheet_view b (Some ((c, r), mark))
          | Sketch (tool, stroke) when o.sel = Some !i ->
              Drawing.drawing_view b tool stroke
          | _ ->

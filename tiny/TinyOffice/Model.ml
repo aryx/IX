@@ -54,13 +54,15 @@ type doc = {
 
 (* what the selected box is edited by: nothing; a text box's text; a
  * sheet's cell, its column and row, and what is being
- * typed in it (None: the cell chosen, nothing typed yet); a drawing's
+ * typed in it (None: the cell chosen, nothing typed yet), and the
+ * other corner of the range of cells (the cell: no range); a drawing's
  * tool (its place in Drawing.tools), and the stroke the left button
  * is making, from where it went down to where it is, in the box; a
  * paint's colour (its place in pixel_letters), its brush (0 thin, 1
  * thick), and the pixel where the left button last was, when it is
  * down; the selected sheet's new name, being typed *)
-type edit = Nothing | Writing of doc | Cell of int * int * string option
+type edit = Nothing | Writing of doc
+  | Cell of int * int * string option * (int * int)
   | Sketch of int * (int * int * int * int) option
   | Painting of int * int * (int * int) option | Naming of string
 

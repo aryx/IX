@@ -179,17 +179,76 @@ let sheet_rows (b : obj) = max 1 ((b.h - 18) / 16)
 (* what is typed in cell (c, r) of the selected sheet put in it *)
 let put_cell (o : office) (c : int) (r : int) (t : string) =
   change o (set_cell (selected_box o).data (name c r) t);
-  o.editing <- Cell (c, r, None)
+  o.editing <- Cell (c, r, None, (c, r))
+
+(* the cell of box b under (x, y), if any *)
+let cell_at (b : obj) (x : int) (y : int) : (int * int) option =
+  let c = (x - sheet_left b) / cell_w and r = (y - sheet_top b) / 16 in
+  if x >= sheet_left b && y >= sheet_top b && c < sheet_cols b
+     && r < sheet_rows b then Some (c, r)
+  else None
 
 (* the cell of box i under (x, y): chosen, nothing typed yet *)
 let choose (o : office) (i : int) (x : int) (y : int) =
-  let b = List.nth o.page i in
-  let c = (x - sheet_left b) / cell_w and r = (y - sheet_top b) / 16 in
   o.sel <- Some i;
   o.editing <-
-    (if x >= sheet_left b && y >= sheet_top b && c < sheet_cols b
-        && r < sheet_rows b then Cell (c, r, None)
-     else Nothing)
+    (match cell_at (List.nth o.page i) x y with
+     | Some (c, r) -> Cell (c, r, None, (c, r))
+     | None -> Nothing)
+
+(*****************************************************************************)
+(* A range of cells *)
+(*****************************************************************************)
+
+(* The chosen cell and the mark are a range's two corners, any two
+ * opposite ones; with the mark on the chosen cell, the range is that
+ * cell. The mark is the cell where the left button went down. *)
+
+(* the left button held on the selected sheet, the mouse now at (x, y):
+ * the cell under it is the chosen one, the mark stays *)
+let extend (o : office) (mark : int * int) (x : int) (y : int) =
+  match cell_at (selected_box o) x y with
+  | Some (c, r) -> o.editing <- Cell (c, r, None, mark)
+  | None -> ()
+
+(* a range's cells, a list of names for each of its rows *)
+let range_names (c : int) (r : int) ((mc, mr) : int * int)
+    : string list list =
+  List.init (abs (r - mr) + 1) (fun j ->
+    List.init (abs (c - mc) + 1) (fun i -> name (min c mc + i) (min r mr + j)))
+
+(* What is typed in a range's cells, as text: a row a line, a tab
+ * between two cells. It is put in the text's clipboard, so that a
+ * text's lines are pasted in cells. *)
+let copy_range (data : string) (c : int) (r : int) (mark : int * int) =
+  let text =
+    String.concat "\n"
+      (List.map (fun row ->
+         String.concat "\t" (List.map (typed_in data) row))
+         (range_names c r mark)) in
+  Text.clipboard := (text, String.make (String.length text) '\000')
+
+(* the range's cells emptied, in one change *)
+let clear_range (o : office) (c : int) (r : int) (mark : int * int) =
+  let b = selected_box o in
+  let data =
+    List.fold_left (fun data n -> set_cell data n "") b.data
+      (List.concat (range_names c r mark)) in
+  if data <> b.data then change o data
+
+(* The clipboard's text put in the cells from the range's top left
+ * corner on, a line a row and a tab the next cell; a formula is put
+ * as it was typed, the cells it names unchanged. *)
+let paste_range (o : office) (c : int) (r : int) ((mc, mr) : int * int) =
+  let b = selected_box o and (text, _) = !Text.clipboard in
+  let data = ref b.data in
+  List.iteri (fun j line ->
+    List.iteri (fun i t ->
+      if min c mc + i < 26 && min r mr + j < 99 then
+        data := set_cell !data (name (min c mc + i) (min r mr + j)) t)
+      (String.split_on_char '\t' line))
+    (String.split_on_char '\n' text);
+  if text <> "" && !data <> b.data then change o !data
 
 (* A key at a cell, as in a spreadsheet: a character starts what is
  * typed there, which replaces what was; Enter puts it in the cell and
@@ -197,11 +256,11 @@ let choose (o : office) (i : int) (x : int) (y : int) =
  * Enter on a cell where nothing is typed brings back what was typed
  * there, to change it; Backspace there empties the cell. *)
 let cell_key (o : office) (c : int) (r : int) (typed : string option)
-    (k : P.key) =
+    (mark : int * int) (k : P.key) =
   let b = selected_box o in
   let move dc dr =
-    o.editing <-
-      Cell (max 0 (min 25 (c + dc)), max 0 (min 98 (r + dr)), None) in
+    let c = max 0 (min 25 (c + dc)) and r = max 0 (min 98 (r + dr)) in
+    o.editing <- Cell (c, r, None, (c, r)) in
   let arrow () =
     match k with
     | P.Up -> move 0 (-1)
@@ -210,22 +269,25 @@ let cell_key (o : office) (c : int) (r : int) (typed : string option)
     | _ -> move 1 0 in
   match typed, k with
   | None, P.Char ch when ch >= ' ' && ch < '\127' ->
-      o.editing <- Cell (c, r, Some (String.make 1 ch))
+      o.editing <- Cell (c, r, Some (String.make 1 ch), (c, r))
   | None, P.Enter ->
-      o.editing <- Cell (c, r, Some (typed_in b.data (name c r)))
+      o.editing <- Cell (c, r, Some (typed_in b.data (name c r)), (c, r))
   | None, (P.Up | P.Down | P.Left | P.Right) -> arrow ()
-  | None, P.Backspace -> change o (set_cell b.data (name c r) "")
+  | None, P.Backspace -> clear_range o c r mark
+  | None, P.Ctrl 'w' -> copy_range b.data c r mark; clear_range o c r mark
+  | None, P.Ctrl 'y' -> paste_range o c r mark
   | None, P.Ctrl 'g' -> o.editing <- Nothing
-  | None, _ -> o.message <- "a cell: type, Enter, the arrows; C-g"
+  | None, _ ->
+      o.message <- "a cell: type, Enter, the arrows; C-w, C-y; C-g"
   | Some t, P.Char ch when ch >= ' ' && ch < '\127' ->
-      o.editing <- Cell (c, r, Some (t ^ String.make 1 ch))
+      o.editing <- Cell (c, r, Some (t ^ String.make 1 ch), (c, r))
   | Some t, P.Backspace ->
       o.editing <-
         Cell (c, r, Some (if t = "" then ""
-                          else String.sub t 0 (String.length t - 1)))
+                          else String.sub t 0 (String.length t - 1)), (c, r))
   | Some t, P.Enter -> put_cell o c r t; move 0 1
   | Some t, (P.Up | P.Down | P.Left | P.Right) -> put_cell o c r t; arrow ()
-  | Some _, P.Ctrl 'g' -> o.editing <- Cell (c, r, None)
+  | Some _, P.Ctrl 'g' -> o.editing <- Cell (c, r, None, (c, r))
   | Some _, _ -> ()
 
 
@@ -236,9 +298,10 @@ let cell_key (o : office) (c : int) (r : int) (typed : string option)
 (* A sheet: the columns' letters and the rows' numbers in grey, the
  * grid's lines, each cell's value, a number at the cell's right, text
  * at its left (cut at the cell's edge), an error as #WHY; the chosen
- * cell in a blue frame. The values are computed again at each view: a
+ * cell, or the range to the mark, in a blue frame. The values are computed again at each view: a
  * sheet is small, and it has no other place for them. *)
-let sheet_view (b : obj) (chosen : (int * int) option) : P.shape list =
+let sheet_view (b : obj) (chosen : ((int * int) * (int * int)) option)
+    : P.shape list =
   let value = values b.data
   and ncols = min 26 (sheet_cols b)
   and nrows = min 99 (sheet_rows b) in
@@ -277,11 +340,14 @@ let sheet_view (b : obj) (chosen : (int * int) option) : P.shape list =
       List.concat_map (fun r -> shown c r) (List.init nrows (fun r -> r)))
       (List.init ncols (fun c -> c)) in
   let frame = match chosen with
-    | Some (c, r) when c < ncols && r < nrows ->
-        let x = x0 + (c * cell_w) - 1 and y = y0 + (16 * r) - 1 in
-        [ P.Move (x, y, P.Rect (blue, cell_w + 1, 2));
-          P.Move (x, y + 15, P.Rect (blue, cell_w + 1, 2));
-          P.Move (x, y, P.Rect (blue, 2, 17));
-          P.Move (x + cell_w - 1, y, P.Rect (blue, 2, 17)) ]
+    | Some ((c, r), (mc, mr)) when max c mc < ncols && max r mr < nrows ->
+        (* around the range, from the chosen cell to the mark *)
+        let x = x0 + (min c mc * cell_w) - 1 and y = y0 + (16 * min r mr) - 1
+        and w = (abs (c - mc) + 1) * cell_w
+        and h = (abs (r - mr) + 1) * 16 in
+        [ P.Move (x, y, P.Rect (blue, w + 1, 2));
+          P.Move (x, y + h - 1, P.Rect (blue, w + 1, 2));
+          P.Move (x, y, P.Rect (blue, 2, h + 1));
+          P.Move (x + w - 1, y, P.Rect (blue, 2, h + 1)) ]
     | _ -> [] in
   lines @ heads @ cells_shown @ frame

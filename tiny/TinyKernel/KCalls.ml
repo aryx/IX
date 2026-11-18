@@ -559,15 +559,19 @@ let sys_trace p =
           result p k in
         (* on another core: called back (a traced process stays on core
          * 0), the descriptor given when it is back, its frame then its
-         * registers *)
-        match q.core with
-        | Some k when k > 0 ->
-          KMachine.poke KMachine.ipi_dev k;
-          block p (fun () ->
-            match q.core with
-            | Some k when k > 0 -> false
-            | _ -> given (); true)
-        | _ -> given ()
+         * registers. The match is in parentheses, or the last case below
+         * would be its own, and a process gone (a child of trace -f's
+         * that already exited) would raise Match_failure in the kernel
+         * instead of Bad: tiny-ml does not check that a match is
+         * exhaustive, and OCaml does not compile this file. *)
+        (match q.core with
+         | Some k when k > 0 ->
+           KMachine.poke KMachine.ipi_dev k;
+           block p (fun () ->
+             match q.core with
+             | Some k when k > 0 -> false
+             | _ -> given (); true)
+         | _ -> given ())
     | _ -> raise Bad
 
 (* seek(fd, n, whence): a file's offset at n from its start (0), from

@@ -955,6 +955,7 @@ and system calls):
 | the right button | the menu: New, Resize, Move, Delete, Exit; let go on an item |
 | then the left button | New: a rectangle swept, a shell in it; Resize: a window pointed at, then its new rectangle swept; Move: a window dragged; Delete: a window pointed at |
 | the left button on a window | it comes to the front, and has the keys |
+| a button on a window's border | the left one drags its nearest corner, to resize it; the right one drags the window |
 
 A window is text until a program draws in it: what is printed is
 shown and scrolled, a line typed is edited and given to the program

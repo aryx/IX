@@ -53,6 +53,10 @@
  * For Resize you point at the window, then sweep its new rectangle,
  * as in rio.
  *
+ * A window's border is a handle, as in rio too, without the menu: the
+ * right button on it drags the window; the left button on it drags the
+ * nearest corner, and the opposite corner stays where it is.
+ *
  * A window that is resized gets a new image with the old one drawn in
  * it. A text window keeps its last lines when it shrinks. A program
  * that draws learns the new size from its mouse: every mouse message
@@ -97,7 +101,7 @@
  *   is lost);
  * - selection, snarf and paste;
  * - Hide;
- * - cursor shapes, and using the border as a handle;
+ * - a cursor shape over a border, to say it is a handle;
  * - window names, and the files a window serves.
  * rio is a file server, but here the descriptors are simply handed
  * over, because TinyKernel.ml has no name space.
@@ -124,7 +128,7 @@
  *
  * exercises:
  * - keep the text and add a scroll bar; add selection, snarf and paste;
- * - use the border as a handle: drag a side to move, a corner to resize;
+ * - a border dragged by its middle moves that side only, as in rio;
  * - let New start a program other than the shell (given as an argument);
  * - remote windows: a window's draw messages are already a byte
  *   stream, so they could be sent over an IL connection and drawn by

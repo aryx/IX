@@ -419,14 +419,15 @@ type item =
  * under the mouse, if any); an item chosen, the left button awaited; a
  * window pointed at to resize, the left button awaited again (rio's
  * Resize: point, then sweep); a rectangle swept, a new window's or
- * that window's (its first corner, the last one drawn); a window
- * dragged (the mouse in it, its last place drawn) *)
+ * that window's (from the mouse to the corner that follows it; its
+ * first corner, the last one drawn); a window dragged (the mouse in it,
+ * its last place drawn) *)
 type doing =
   | Idle
   | Menu of int * int * item option
   | Chosen of item
   | Pointed of window
-  | Sweep of window option * int * int * int * int
+  | Sweep of window option * (int * int) * int * int * int * int
   | Drag of window * int * int * int * int
   (* the menu's Exit chosen, the windows deleted: the loop's end *)
   | Ended
@@ -487,6 +488,16 @@ let mouse caps x y b =
       match over x y !windows with
       | Some w when current w && w.page.picture && inside (inner w) x y ->
           tell w x y b
+      (* a window's border is a handle, as rio's: the right button
+       * moves the window, the left one its nearest corner, the opposite
+       * one staying where it is *)
+      | Some w when right && not (inside (inner w) x y) ->
+          doing := Drag (w, x - w.x, y - w.y, w.x, w.y)
+      | Some w when left && not (inside (inner w) x y) ->
+          let x0, y0, x1, y1 = outer w in
+          let cx, ax = if 2 * x < x0 + x1 then x0, x1 else x1, x0
+          and cy, ay = if 2 * y < y0 + y1 then y0, y1 else y1, y0 in
+          doing := Sweep (Some w, (cx - x, cy - y), ax, ay, cx, cy)
       | _ when right -> doing := Menu (x, y, None); menu x y None
       | Some w when left && not (current w) ->
           windows := w :: List.filter (fun v -> v != w) !windows;
@@ -510,7 +521,7 @@ let mouse caps x y b =
       if right then doing := Idle
       else if left then begin
         match item, over x y !windows with
-        | Item_new, _ -> doing := Sweep (None, x, y, x, y)
+        | Item_new, _ -> doing := Sweep (None, (0, 0), x, y, x, y)
         | Item_resize, Some w -> doing := Pointed w
         | Item_move, Some w -> doing := Drag (w, x - w.x, y - w.y, w.x, w.y)
         | Item_delete, Some w -> doing := Idle; delete caps w
@@ -518,11 +529,13 @@ let mouse caps x y b =
       end
   | Pointed w ->
       if right then doing := Idle
-      else if left then doing := Sweep (Some w, x, y, x, y)
-  | Sweep (of_w, sx, sy, lx, ly) ->
+      else if left then doing := Sweep (Some w, (0, 0), x, y, x, y)
+  | Sweep (of_w, grip, sx, sy, lx, ly) ->
+      let x = x + fst grip and y = y + snd grip in
       erase (corners sx sy lx ly);
       if b land 1 <> 0 then
-        (doing := Sweep (of_w, sx, sy, x, y); outline (corners sx sy x y))
+        (doing := Sweep (of_w, grip, sx, sy, x, y);
+         outline (corners sx sy x y))
       else begin
         doing := Idle;
         let x0, y0, x1, y1 = corners sx sy x y in
@@ -540,7 +553,7 @@ let mouse caps x y b =
   | Drag (w, gx, gy, lx, ly) ->
       let size = w.w + (2 * border), w.h + (2 * border) in
       erase (lx, ly, lx + fst size, ly + snd size);
-      if b land 1 <> 0 then
+      if b <> 0 then
         (doing := Drag (w, gx, gy, x - gx, y - gy);
          outline (x - gx, y - gy, x - gx + fst size, y - gy + snd size))
       else

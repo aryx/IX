@@ -74162,3 +74162,35 @@ Claude kept the newest one, `ix-lite.hKVSna` from 08:56 that morning, in case it
 The directories were leftover `make test` working dirs, about 750 MB each, and no process had them open.
 Claude noted that `tests/lite.sh:59` already prunes those older than a day, and offered to keep only the last two or three.
 Claude left the 1,911 small `tmp.*` directories alone, since they total only about 60 MB.
+
+------------------------------------------------------------------------
+
+## 2026-11-18 08:14
+
+**Yoann:**
+
+> excellent. Anything else? Can I close this session?
+
+**Claude (summary):**
+
+Claude said the `debuggers/tests/acid_proc.sh` fix was still uncommitted and would keep leaking emulators from `~/ix` until committed.
+Claude offered to commit it now on the user's word, noting the change stays in the working tree if the session closes.
+Claude also said nothing else from the session was pending, and that the remaining disk cleanup was Yoann's call.
+Claude listed the disk levers: Dropbox at 139 GB, roms directories at 117 GB, and Chrome's `code_sign_clone` at 5.6 GB.
+Claude also listed `ocaml-elm-playground/_build` (`dune clean`, 5.2 GB) and Docker build cache (`docker builder prune`, 3 GB).
+
+------------------------------------------------------------------------
+
+## 2026-11-18 09:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only `debuggers/tests/acid_proc.sh` on `main`, with 15 insertions and 4 deletions.
+Claude left the other sessions' modified files out of the commit so they stayed untouched.
+Claude did not push the commit to any remote.
+Claude noted that `~/ix` and `~/github/ix` are the same checkout, so nothing needed pulling.
+Claude suggested closing this session since the commit was the last step.

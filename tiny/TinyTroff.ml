@@ -107,9 +107,10 @@ let grid_lines (g : string array array) : string list =
 (* A drawing as characters, one for 8 by 8 pixels: a box's sides of -
  * and |, its corners +, its label in its middle; an oval the same with
  * ( and ) for sides and . and ' for corners; a text where it is;
- * then an arrow, a cell for each step along its longer side, of - or
- * | or, when it is slanted, \ or /, in the places left (a box's side
- * is not drawn over), its head > < v ^ before the box it goes to *)
+ * then an arrow across then up or down, in the places left (a box's
+ * side is not drawn over), its head > < v ^ before the box it goes
+ * to: a slanted line, as the office draws it, is too rough in cells
+ * of 8 by 8 *)
 let drawing_lines (b : obj) : string list =
   let cols = (b.w + 7) / 8 and rows = (b.h + 7) / 8 in
   let g = Array.make rows (Array.make 0 " ") in
@@ -144,20 +145,15 @@ let drawing_lines (b : obj) : string list =
     match kind, nums with
     | "arrow", [ x0; y0; x1; y1 ] ->
         let c0 = x0 / 8 and r0 = y0 / 8 and c1 = x1 / 8 and r1 = y1 / 8 in
-        let dc = c1 - c0 and dr = r1 - r0 in
-        let n = max 1 (max (abs dc) (abs dr)) in
-        let at k = c0 + (k * dc / n), r0 + (k * dr / n) in
-        let stroke =
-          if abs dc >= 2 * abs dr then "-"
-          else if abs dr >= 2 * abs dc then "|"
-          else if (dc > 0) = (dr > 0) then "\\"
-          else "/" in
-        for k = 0 to n do let c, r = at k in put_free c r stroke done;
-        let hc, hr = if free c1 r1 || g.(r1).(c1) = stroke then c1, r1
-          else at (n - 1) in
+        let dc = if r1 <> r0 then 0 else if c1 >= c0 then 1 else -1
+        and dr = if r1 > r0 then 1 else if r1 < r0 then -1 else 0 in
+        let hc, hr = if free c1 r1 then c1, r1 else c1 - dc, r1 - dr in
+        for c = min c0 c1 to max c0 c1 do put_free c r0 "-" done;
+        for r = min r0 r1 to max r0 r1 do put_free c1 r "|" done;
+        if r1 <> r0 then put c1 r0 "+";
         put hc hr
-          (if abs dc >= abs dr then (if dc >= 0 then ">" else "<")
-           else if dr > 0 then "v" else "^")
+          (if dr > 0 then "v" else if dr < 0 then "^"
+           else if dc > 0 then ">" else "<")
     | _ -> ());
   grid_lines g
 

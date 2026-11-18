@@ -74116,3 +74116,49 @@ Claude pointed out that the open `tiny/docs/` files and the staged `prompt-histo
 Claude listed four open items: the flaky `said()` wait in `apps/files/tests/frames.sh`, comments inside `.ml` bodies, the `.md` docs, and acid's float `%g`.
 Claude noted that the `said()` wait of one second is too short when `make test` runs 160 jobs.
 Claude recommended starting with the one-line `said()` timeout fix, since it is the quickest of the four.
+
+------------------------------------------------------------------------
+
+## 2026-11-18 07:54
+
+**Yoann:**
+
+> we're turning low again on disk space. what could I do? Also an issue is that macOS swaps and use disk space for process and the terminals take 15GB of memory??? why? why claude code in the terminal use so much RAM?
+
+**Claude (summary):**
+
+Claude said the disk was 95% full with 25 GB free, and swap was only 2 GB.
+Claude concluded swap was not what was eating the disk space.
+Claude planned to check stale temp directories and Docker's disk image next.
+
+------------------------------------------------------------------------
+
+## 2026-11-18 08:02
+
+**Yoann:**
+
+> let's fix the ix memory leak
+
+**Claude (summary):**
+
+Claude reported that the ix memory leak fix works, with the test run leaving no emulator behind.
+Claude noted that 33 emulators had leaked before the fix and 33 after the run, so the leftovers still needed clearing.
+Claude said 11 of the leaked emulators came from its own first attempt at the fix.
+Claude was planning to clean up the 33 already-leaked emulators still running on the machine.
+Yoann's follow-up points to the stray files in $TMPDIR that Claude had mentioned, which still need deleting.
+
+------------------------------------------------------------------------
+
+## 2026-11-18 08:09
+
+**Yoann:**
+
+> ok you mentioned there was also a few in $TMPDIR stuff to delete
+
+**Claude (summary):**
+
+Claude deleted the 13 older `ix-lite.*` directories in `$TMPDIR`, freeing about 9.5 GB, leaving 40 GB free.
+Claude kept the newest one, `ix-lite.hKVSna` from 08:56 that morning, in case its logs were needed.
+The directories were leftover `make test` working dirs, about 750 MB each, and no process had them open.
+Claude noted that `tests/lite.sh:59` already prunes those older than a day, and offered to keep only the last two or three.
+Claude left the 1,911 small `tmp.*` directories alone, since they total only about 60 MB.

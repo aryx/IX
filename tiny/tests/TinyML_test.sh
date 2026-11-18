@@ -145,6 +145,24 @@ if [ "$($TML -c -o $W/dep/S1.o $W/dep/S1.ml 2>&1; echo "exit $?")" = "$W/dep/S1.
 exit 1" ] && [ "$($TML -c -o $W/dep/S2.o $W/dep/S2.ml 2>&1; echo "exit $?")" = "$W/dep/S2.ml: unterminated string
 exit 1" ]
 then echo "ok lexer: an unterminated string"; else echo "FAIL lexer: an unterminated string"; failures=$((failures + 1)); fi
+# a match that misses a case, a case never used, a let whose pattern can
+# fail: errors, each with its definition's line (the accepted matches are
+# ../../languages/ml/tests/tiny/exhaustive.ml). The last is a match not
+# in parentheses that takes the case after it.
+miss() {
+  printf "type t = A | B of int\n$1\n" > $W/dep/M.ml
+  [ "$($TML -c -o $W/dep/M.o $W/dep/M.ml 2>&1)" = "$W/dep/M.ml: line 2: $2" ]
+}
+if miss 'let f v = match v with A -> 0' "a match that misses a case" \
+   && miss 'let f l = match l with [] -> 0 | [ x ] -> x' "a match that misses a case" \
+   && miss 'let f b v = match v with A -> 0 | B n when b -> n' "a match that misses a case" \
+   && miss 'let f n = match n with 0 -> 1 | 1 -> 2' "a match that misses a case" \
+   && miss 'let f p = match p with (true, _) -> 1 | (_, true) -> 2' "a match that misses a case" \
+   && miss 'let f v = match v with A -> 0 | B _ -> 1 | _ -> 2' "a case that is never used" \
+   && miss 'let f p = match p with (true, _) -> 1 | _ -> 2 | (false, true) -> 3' "a case that is never used" \
+   && miss 'let f v = let (B n) = v in n' "a let whose pattern misses a case" \
+   && miss 'let f l = match l with [ q ] -> match q with A -> 1 | B _ -> 2 | _ -> 0' "a case that is never used"
+then echo "ok types: matches that miss a case, cases never used"; else echo "FAIL types: matches that miss a case, cases never used"; failures=$((failures + 1)); fi
 # a number or an escape tiny-ml cannot read: an error with its line (old:
 # int_of_string's Failure said as the error; \999 an uncaught
 # Invalid_argument, and '\999' a char of code 999)

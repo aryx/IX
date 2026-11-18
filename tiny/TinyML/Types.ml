@@ -196,6 +196,121 @@ let unit_done () =
   List.iter (fun f -> f ()) !unit_names; unit_names := [];
   Tree.scope_done ()
 
+(*****************************************************************************)
+(* Matches that miss a case, and cases that are never used *)
+(*****************************************************************************)
+
+(* A pattern as the check sees it, once typed: a variable is _, an
+ * alias and an annotation are their pattern, a tuple is a constructor
+ * "*" and a record one "{}" of all its fields (_ for those not named).
+ * A constructor's name is the qualified one, so that Some and
+ * Stdlib.Some are one. *)
+type cpat = Any | Con of string * cpat list | Lit of Tree.const | Alt of cpat * cpat
+
+let rec norm p =
+  match p with
+  | Tree.PAny -> Any
+  | Tree.PVar _ -> Any
+  | Tree.PAlias (p, _) -> norm p
+  | Tree.PAnnot (p, _) -> norm p
+  | Tree.PConst c -> Lit c
+  | Tree.PCon (c, ps) -> Con (Tree.resolve_con c, List.map norm ps)
+  | Tree.PTuple ps -> Con ("*", List.map norm ps)
+  | Tree.PRecord (fs, idxs, n) ->
+      let fields = Array.make !n Any in
+      List.iter2 (fun (_, p) i -> fields.(i) <- norm p) fs !idxs;
+      Con ("{}", Array.to_list fields)
+  | Tree.POr (a, b) -> Alt (norm a, norm b)
+
+let anys n = List.init n (fun _ -> Any)
+
+(* a constructor's arguments, as many as it has: C _ stands for all of
+ * them *)
+let args_of c ps =
+  if c = "*" || c = "{}" then ps
+  else
+    let a = (Tree.find_con c).arity in
+    if List.length ps = a then ps else anys a
+
+(* the rows with their or-patterns at the head made two rows *)
+let rec expand rows =
+  List.concat_map (fun r ->
+    match r with
+    | Alt (a, b) :: rest -> expand [ a :: rest; b :: rest ]
+    | _ -> [ r ]) rows
+
+(* the rows that a value made by constructor c (a arguments) can match,
+ * its arguments first; the rows a literal k can match; the rows that a
+ * value of none of the column's constructors can match *)
+let specialize c a rows =
+  List.concat_map (fun r ->
+    match r with
+    | Con (c', ps) :: rest -> if c' = c then [ args_of c ps @ rest ] else []
+    | Any :: rest -> [ anys a @ rest ]
+    | _ -> []) (expand rows)
+let specialize_lit k rows =
+  List.concat_map (fun r ->
+    match r with
+    | Lit k' :: rest -> if k' = k then [ rest ] else []
+    | Any :: rest -> [ rest ]
+    | _ -> []) (expand rows)
+let default rows =
+  List.concat_map (fun r ->
+    match r with Any :: rest -> [ rest ] | _ -> []) (expand rows)
+
+(* the constructors at the head of the rows, each once with its arity;
+ * whether they are all of their type's (a tuple's and a record's one
+ * always is; an exception's never, nor literals) *)
+let heads rows =
+  List.fold_left (fun acc r ->
+    match r with
+    | Con (c, ps) :: _ when not (List.mem_assoc c acc) ->
+        acc @ [ c, List.length (args_of c ps) ]
+    | _ -> acc) [] (expand rows)
+let complete hs =
+  match hs with
+  | [] -> false
+  | (c, _) :: _ ->
+      c = "*" || c = "{}"
+      || (let ci = Tree.find_con c in
+          (match ci.kind with Tree.KExn _ -> false | _ -> true)
+          && List.length hs = ci.nconst + ci.nblock)
+
+(* Whether a row v of patterns matches a value that none of the rows
+ * matches (Maranget's usefulness, as OCaml's warnings 8 and 11 are
+ * found): a match misses a case when a row of _ is useful after its
+ * cases, and a case is never used when it is not useful after those
+ * before it. *)
+let rec useful rows v =
+  match v with
+  | [] -> rows = []
+  | Alt (a, b) :: rest -> useful rows (a :: rest) || useful rows (b :: rest)
+  | Con (c, ps) :: rest ->
+      let args = args_of c ps in
+      useful (specialize c (List.length args) rows) (args @ rest)
+  | Lit k :: rest -> useful (specialize_lit k rows) rest
+  | Any :: rest ->
+      let hs = heads rows in
+      if complete hs then
+        List.exists (fun (c, a) -> useful (specialize c a rows) (anys a @ rest)) hs
+      else useful (default rows) rest
+
+(* A match's cases, once typed, are an error if one is never used or if
+ * a value matches none of them. A case with a guard may not match, so
+ * it covers nothing for those after it. A try's cases are not checked:
+ * the exceptions they do not name go on up. *)
+let check_cases cases =
+  let rows =
+    List.fold_left (fun rows (p, g, _) ->
+      let r = [ norm p ] in
+      if not (useful rows r) then Lexer.error "a case that is never used";
+      if g = None then rows @ [ r ] else rows) [] cases in
+  if useful rows [ Any ] then Lexer.error "a match that misses a case"
+
+let check_let p =
+  if useful [ [ norm p ] ] [ Any ] then
+    Lexer.error "a let whose pattern misses a case"
+
 let rec infer env e : Tree.ty =
   match e with
   | Tree.Const c -> const_type c
@@ -219,7 +334,10 @@ let rec infer env e : Tree.ty =
         (infer (List.rev (List.combine xs ts) @ env) b)
   | Tree.Let (Tree.Nonrecursive, bs, b) -> infer (let_types env bs) b
   | Tree.Let (Tree.Recursive, bs, b) -> infer (rec_types env bs) b
-  | Tree.Match (e, cases) -> cases_type env (infer env e) cases
+  | Tree.Match (e, cases) ->
+      let t = cases_type env (infer env e) cases in
+      check_cases cases;
+      t
   | Tree.Try (e, cases) ->
       let t = infer env e in unify t (cases_type env (Tree.tcon "exn") cases); t
   | Tree.If (c, a, b) ->
@@ -310,7 +428,7 @@ and let_types env bs =
     | Tree.PVar x ->
         if nonexpansive e then generalize t else unify (Tree.newvar ()) t;
         [ x, t ]
-    | p -> let pt, b = pat_type t p in unify pt t; b) bs
+    | p -> let pt, b = pat_type t p in unify pt t; check_let p; b) bs
   @ env
 
 and rec_types env bs =

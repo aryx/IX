@@ -169,6 +169,17 @@
  *   polymorphic compare; and a record label becomes its field's index.
  *   Everything else has one representation: a word, which is either an
  *   integer 2n+1 or a pointer to a block (a header, then fields).
+ * - {b A match that misses a case is an error, and so is a case that is
+ *   never used} (OCaml's warnings 8 and 11, which dune makes errors). It
+ *   is the check ML's patterns are worth most for: a constructor added
+ *   to a type finds each match to change. After the types, a match's
+ *   cases are checked by Maranget's usefulness ("Warnings for pattern
+ *   matching", 2007), the algorithm of OCaml's warnings: a match misses
+ *   a case when a row of _ is useful after its cases, and a case is
+ *   never used when it is not useful after those before it. A let
+ *   whose pattern can fail is an error too. The message says the line
+ *   of the toplevel definition, not an example of a value no case
+ *   matches, as OCaml's does.
  * - {b A record is a tuple, and a label has a type scheme like a
  *   constructor's}. The scheme is %l(record, field), and it is
  *   instantiated at each use. When
@@ -287,8 +298,8 @@
  *   arguments (the arguments are passed in registers and could stay
  *   there);
  * - a switch on constructor tags instead of one test per clause;
- * - exhaustiveness warnings (Maranget, "Warnings for pattern
- *   matching", 2007);
+ * - the example of a value that no case matches, in the message of a
+ *   match that misses one (the constructors of a type, listed);
  * - a -debug flag that prints the typed tree, with [@@deriving show]
  *   and Logs.debug, as tiny-ld and tiny-shell do.
  *

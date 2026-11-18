@@ -17,9 +17,8 @@ open Model
  *     text 20 70 a note
  *     oval 170 50 60 30 io
  *
- * a box and its label; an arrow, across then up or down (a block
- * diagram's connector: the playground's shapes have no slanted line);
- * words; an oval, the ellipse in its box, and its label. pic's idea
+ * a box and its label; an arrow, from its first point to its second,
+ * where its head is (two of the playground's polygons); words; an oval, the ellipse in its box, and its label. pic's idea
  * (Brian Kernighan, 1982: a picture as lines of text), drawn with the
  * mouse. *)
 
@@ -62,8 +61,36 @@ let centred (colour : int) (x : int) (y : int) (w : int) (h : int)
   P.Move (x + ((w - (8 * String.length label)) / 2), y + ((h - 16) / 2),
           P.Words (colour, label))
 
-(* a shape drawn, the box's corner at (ox, oy); an arrow's head is
- * rectangles narrowing to its end, along its last stretch *)
+(* the whole part of n's square root, by Newton's steps down from r,
+ * which is at least it *)
+let rec root n r =
+  let s = (r + (n / r)) / 2 in
+  if s >= r then r else root n s
+
+(* An arrow's line, a pixel thick: the polygon between the line and
+ * the same line a pixel lower when it goes more across than down (a
+ * pixel in each column, as Bresenham's line), a pixel to the right
+ * otherwise. *)
+let arrow_line (x0 : int) (y0 : int) (x1 : int) (y1 : int) : (int * int) list =
+  if abs (x1 - x0) >= abs (y1 - y0) then
+    [ x0, y0; x1, y1; x1, y1 + 1; x0, y0 + 1 ]
+  else [ x0, y0; x1, y1; x1 + 1, y1; x0 + 1, y0 ]
+
+(* its head: the tip at the arrow's end, the two other corners 8
+ * pixels back along it and 4 on each side *)
+let arrow_head (x0 : int) (y0 : int) (x1 : int) (y1 : int) : (int * int) list =
+  let dx = x1 - x0 and dy = y1 - y0 in
+  let far = abs dx + abs dy in
+  let len = if far = 0 then 1 else root ((dx * dx) + (dy * dy)) far in
+  (* k d / len, to the nearest *)
+  let along k d =
+    let n = 2 * k * abs d in
+    (if d < 0 then -1 else 1) * ((n + len) / (2 * len)) in
+  let bx = x1 - along 8 dx and by = y1 - along 8 dy
+  and sx = along 4 dy and sy = along 4 dx in
+  [ x1, y1; bx - sx, by + sy; bx + sx, by - sy ]
+
+(* a shape drawn, the box's corner at (ox, oy) *)
 let figure_shapes (ox : int) (oy : int) (colour : int)
     ((kind, nums, label) : string * int list * string) : P.shape list =
   match kind, nums with
@@ -78,16 +105,8 @@ let figure_shapes (ox : int) (oy : int) (colour : int)
       let x = ox + x and y = oy + y in
       [ P.Move (x, y, P.Ellipse (colour, w, h)); centred colour x y w h label ]
   | "arrow", [ x0; y0; x1; y1 ] ->
-      let x0 = ox + x0 and y0 = oy + y0 and x1 = ox + x1 and y1 = oy + y1 in
-      let head = List.init 4 (fun k ->
-        if y1 > y0 then P.Move (x1 - k, y1 - k, P.Rect (colour, (2 * k) + 1, 1))
-        else if y1 < y0 then
-          P.Move (x1 - k, y1 + k, P.Rect (colour, (2 * k) + 1, 1))
-        else if x1 >= x0 then
-          P.Move (x1 - k, y0 - k, P.Rect (colour, 1, (2 * k) + 1))
-        else P.Move (x1 + k, y0 - k, P.Rect (colour, 1, (2 * k) + 1))) in
-      [ P.Move (min x0 x1, y0, P.Rect (colour, abs (x1 - x0) + 1, 1));
-        P.Move (x1, min y0 y1, P.Rect (colour, 1, abs (y1 - y0) + 1)) ] @ head
+      [ P.Move (ox, oy, P.Polygon (colour, arrow_line x0 y0 x1 y1));
+        P.Move (ox, oy, P.Polygon (colour, arrow_head x0 y0 x1 y1)) ]
   | "text", [ x; y ] -> [ P.Move (ox + x, oy + y, P.Words (colour, label)) ]
   | _ -> []
 

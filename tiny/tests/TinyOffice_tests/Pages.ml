@@ -159,7 +159,7 @@ let () =
   keys o "\t\t\t";
   drag o 1 150 130 230 160;
   keys o "mem";
-  show "Tab: an arrow, across then down; Tab three times: a box again, mem" o;
+  show "Tab: an arrow, right and down; Tab three times: a box again, mem" o;
   keys o "\t\t";
   click o 1 40 190;
   keys o "a notes\127";

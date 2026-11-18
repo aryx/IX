@@ -18,11 +18,11 @@ Odd   #DIV0
 
                   .-----.
  +-------+        (     )
- |  cpu  |-------+( io  )
- |       |       |(     )
- +-------+       |(     )
-                 |'-----'
-                 v
+ |  cpu  |\       ( io  )
+ |       | \\     (     )
+ +-------+   \    (     )
+              \\  '-----'
+                >
              +-------+
              |  mem  |
  a note      |       |
@@ -63,7 +63,7 @@ Food  ########### 300
 <div class=box style="left:200px;top:150px;width:200px;height:90px">
 <svg width="200" height="90">
 <rect x="8" y="8" width="64" height="24" fill="none" stroke="black"/><text x="40" y="20" text-anchor="middle" dominant-baseline="middle">cpu</text>
-<polyline points="72,20 136,20 136,56" fill="none" stroke="black"/><polygon points="136,56 140,50 132,50"/>
+<line x1="72" y1="20" x2="136" y2="56" stroke="black"/><polygon points="136,56 127,56 131,48"/>
 <rect x="104" y="56" width="64" height="24" fill="none" stroke="black"/><text x="136" y="68" text-anchor="middle" dominant-baseline="middle">mem</text>
 <text x="8" y="72" text-anchor="start" dominant-baseline="middle">a note</text>
 <ellipse cx="168" cy="24" rx="24" ry="20" fill="none" stroke="black"/><text x="168" y="24" text-anchor="middle" dominant-baseline="middle">io</text>
@@ -93,7 +93,7 @@ Food  ########### 300
 5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >> endobj
 6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding /WinAnsiEncoding >> endobj
 7 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 400 370] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 8 0 R >> endobj
-8 0 obj << /Length 2220 >>
+8 0 obj << /Length 2189 >>
 stream
 0 0 0 rg BT /F0 26.67 Tf 14 304 Td (A ) Tj ET
 0 0 0 rg BT /F1 26.67 Tf 46 304 Td (report) Tj ET
@@ -128,9 +128,8 @@ stream
 0 0 0 rg BT /F0 13.33 Tf 78 160 Td (#DIV0) Tj ET
 0 0 0 RG 208 188 64 24 re S
 0 0 0 rg BT /F0 13.33 Tf 228 196 Td (cpu) Tj ET
-0 0 0 RG 272 200 m 336 200 l S
-0 0 0 RG 336 200 m 336 164 l S
-0 0 0 rg 336 164 m 340 170 l 332 170 l f
+0 0 0 RG 272 200 m 336 164 l S
+0 0 0 rg 336 164 m 327 164 l 331 172 l f
 0 0 0 RG 304 140 64 24 re S
 0 0 0 rg BT /F0 13.33 Tf 324 148 Td (mem) Tj ET
 0 0 0 rg BT /F0 13.33 Tf 208 144 Td (a note) Tj ET
@@ -161,7 +160,7 @@ xref
 0000000676 00000 n 
 trailer << /Size 9 /Root 1 0 R >>
 startxref
-2947
+2916
 %%EOF
 == a document of two pages as text
 One

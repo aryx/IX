@@ -5,15 +5,15 @@
  * drawing's box:
  *
  *     box 10 10 80 30 cpu              +--------+
- *     arrow 90 25 160 60               |  cpu   |----+
- *     text 20 70 a note                +--------+    |
- *     oval 130 70 60 30 io                           v
+ *     arrow 90 25 160 60               |  cpu   |\
+ *     text 20 70 a note                +--------+ \
+ *     oval 130 70 60 30 io                         \
  *                                       a note    ( io )
  *
  * There are four kinds of shapes: a box with its label; an arrow,
- * which goes across then up or down, like a connector in a block
- * diagram (the playground has no slanted line, which would need a new
- * kind of shape); words; and an oval with its label, the ellipse in
+ * a straight line from its first point to its second, where its head
+ * is (the line and the head are each one of the playground's
+ * polygons); words; and an oval with its label, the ellipse in
  * its box. The left button drags out a box, an arrow or an oval, or
  * places a text. What is typed becomes the label of the last shape.
  *
@@ -29,6 +29,12 @@ val tools : string list
 (* The shapes in a drawing's data. Each shape is given as its kind, its
  * numbers and its label. *)
 val figures : string -> (string * int list * string) list
+
+(* [arrow_head x0 y0 x1 y1] is the three corners of the head of the
+ * arrow from (x0, y0) to (x1, y1): its tip at (x1, y1), and the two
+ * others 8 pixels back along the arrow, 4 on each side of it.
+ * tiny-troff prints the same head. *)
+val arrow_head : int -> int -> int -> int -> (int * int) list
 
 (* [draw_stroke office tool (x0, y0, x1, y1)] adds the shape made by a
  * stroke to the selected drawing. A box, an oval or an arrow that is

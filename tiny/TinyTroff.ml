@@ -107,9 +107,9 @@ let grid_lines (g : string array array) : string list =
 (* A drawing as characters, one for 8 by 8 pixels: a box's sides of -
  * and |, its corners +, its label in its middle; an oval the same with
  * ( and ) for sides and . and ' for corners; a text where it is;
- * then an arrow across then up or down, in the places left (a box's
- * side is not drawn over), its head > < v ^ before the box it goes
- * to *)
+ * then an arrow, a cell for each step along its longer side, of - or
+ * | or, when it is slanted, \ or /, in the places left (a box's side
+ * is not drawn over), its head > < v ^ before the box it goes to *)
 let drawing_lines (b : obj) : string list =
   let cols = (b.w + 7) / 8 and rows = (b.h + 7) / 8 in
   let g = Array.make rows (Array.make 0 " ") in
@@ -144,15 +144,20 @@ let drawing_lines (b : obj) : string list =
     match kind, nums with
     | "arrow", [ x0; y0; x1; y1 ] ->
         let c0 = x0 / 8 and r0 = y0 / 8 and c1 = x1 / 8 and r1 = y1 / 8 in
-        let dc = if r1 <> r0 then 0 else if c1 >= c0 then 1 else -1
-        and dr = if r1 > r0 then 1 else if r1 < r0 then -1 else 0 in
-        let hc, hr = if free c1 r1 then c1, r1 else c1 - dc, r1 - dr in
-        for c = min c0 c1 to max c0 c1 do put_free c r0 "-" done;
-        for r = min r0 r1 to max r0 r1 do put_free c1 r "|" done;
-        if r1 <> r0 then put c1 r0 "+";
+        let dc = c1 - c0 and dr = r1 - r0 in
+        let n = max 1 (max (abs dc) (abs dr)) in
+        let at k = c0 + (k * dc / n), r0 + (k * dr / n) in
+        let stroke =
+          if abs dc >= 2 * abs dr then "-"
+          else if abs dr >= 2 * abs dc then "|"
+          else if (dc > 0) = (dr > 0) then "\\"
+          else "/" in
+        for k = 0 to n do let c, r = at k in put_free c r stroke done;
+        let hc, hr = if free c1 r1 || g.(r1).(c1) = stroke then c1, r1
+          else at (n - 1) in
         put hc hr
-          (if dr > 0 then "v" else if dr < 0 then "^"
-           else if dc > 0 then ">" else "<")
+          (if abs dc >= abs dr then (if dc >= 0 then ">" else "<")
+           else if dr > 0 then "v" else "^")
     | _ -> ());
   grid_lines g
 
@@ -253,8 +258,8 @@ let sheet_html (data : string) : string =
         ^ ">" ^ esc s ^ "</td>")) ^ "</tr>\n"))
   ^ "</table>\n"
 
-(* a drawing: SVG, its boxes, ovals, arrows (a line across then up or
- * down, a head of three points) and texts *)
+(* a drawing: SVG, its boxes, ovals, arrows (a line, and the
+ * office's head of three points) and texts *)
 let drawing_html (b : obj) : string =
   let num k = string_of_int k in
   let svg_text x y anchor s =
@@ -277,15 +282,11 @@ let drawing_html (b : obj) : string =
              else svg_text (x + (w / 2)) (y + (h / 2)) "middle" text)
           ^ "\n"
       | "arrow", [ x0; y0; x1; y1 ] ->
-          let dx, dy =
-            if y1 > y0 then 0, -1 else if y1 < y0 then 0, 1
-            else if x1 >= x0 then -1, 0 else 1, 0 in
-          let p x y = num x ^ "," ^ num y in
-          "<polyline points=\"" ^ p x0 y0 ^ " " ^ p x1 y0 ^ " " ^ p x1 y1
-          ^ "\" fill=\"none\" stroke=\"black\"/>"
-          ^ "<polygon points=\"" ^ p x1 y1
-          ^ " " ^ p (x1 + (6 * dx) - (4 * dy)) (y1 + (6 * dy) - (4 * dx))
-          ^ " " ^ p (x1 + (6 * dx) + (4 * dy)) (y1 + (6 * dy) + (4 * dx))
+          "<line x1=\"" ^ num x0 ^ "\" y1=\"" ^ num y0 ^ "\" x2=\"" ^ num x1
+          ^ "\" y2=\"" ^ num y1 ^ "\" stroke=\"black\"/>"
+          ^ "<polygon points=\""
+          ^ String.concat " " (List.map (fun (x, y) -> num x ^ "," ^ num y)
+                                 (Drawing.arrow_head x0 y0 x1 y1))
           ^ "\"/>\n"
       | "text", [ x; y ] -> svg_text x (y + 8) "start" text ^ "\n"
       | _ -> "") (Drawing.figures b.data))
@@ -478,8 +479,8 @@ let oval_pdf h colour x y w hh =
   ^ p (cx - rx) (cy - ky) ^ p (cx - kx) (cy - ry) ^ p cx (cy - ry) ^ "c "
   ^ p (cx + kx) (cy - ry) ^ p (cx + rx) (cy - ky) ^ p (cx + rx) cy ^ "c S\n"
 
-(* a drawing: its boxes and ovals stroked, its arrows a line across
- * then up or down and a head filled, its texts *)
+(* a drawing: its boxes and ovals stroked, its arrows a line and a
+ * head filled, its texts *)
 let drawing_pdf h (b : obj) : string =
   glue (List.map (fun (kind, nums, label) ->
     match kind, nums with
@@ -496,15 +497,12 @@ let drawing_pdf h (b : obj) : string =
              text_pdf h 0 (b.x + x + (w / 2) - (4 * String.length label))
                (b.y + y + (hh / 2) - 8) label)
     | "arrow", [ x0; y0; x1; y1 ] ->
-        let dx, dy =
-          if y1 > y0 then 0, -1 else if y1 < y0 then 0, 1
-          else if x1 >= x0 then -1, 0 else 1, 0 in
-        let p x y = string_of_int (b.x + x) ^ " " ^ string_of_int (h - b.y - y) in
-        line_pdf h "0 0 0" (b.x + x0) (b.y + y0) (b.x + x1) (b.y + y0)
-        ^ line_pdf h "0 0 0" (b.x + x1) (b.y + y0) (b.x + x1) (b.y + y1)
-        ^ "0 0 0 rg " ^ p x1 y1
-        ^ " m " ^ p (x1 + (6 * dx) - (4 * dy)) (y1 + (6 * dy) - (4 * dx))
-        ^ " l " ^ p (x1 + (6 * dx) + (4 * dy)) (y1 + (6 * dy) + (4 * dx))
+        let p (x, y) =
+          string_of_int (b.x + x) ^ " " ^ string_of_int (h - b.y - y) in
+        line_pdf h "0 0 0" (b.x + x0) (b.y + y0) (b.x + x1) (b.y + y1)
+        ^ "0 0 0 rg " ^ p (x1, y1) ^ " m "
+        ^ String.concat " l "
+            (List.map p (List.tl (Drawing.arrow_head x0 y0 x1 y1)))
         ^ " l f\n"
     | "text", [ x; y ] -> text_pdf h 0 (b.x + x) (b.y + y) label
     | _ -> "") (Drawing.figures b.data))

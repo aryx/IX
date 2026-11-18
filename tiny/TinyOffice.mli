@@ -59,8 +59,7 @@
  * {b A drawing's data has one line per shape}, at its place in the box:
  * "box 20 20 80 30 cpu", "arrow 100 35 180 90", "text 30 150 a note",
  * "oval 200 20 60 30 io" (the idea comes from pic). An arrow goes
- * across, then up or down, like a connector in a block diagram: the
- * playground has no slanted line, which would need a new kind of shape.
+ * straight from its first point to its second, where its head is.
  * The left button drags out a box, an arrow or an oval, or places a
  * text; the Draw menu, or Tab, changes the tool. What is typed becomes
  * the label of the last shape.

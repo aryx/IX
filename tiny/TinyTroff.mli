@@ -24,7 +24,8 @@
  *     drawing   one character per 8x8 pixels:    SVG: rectangles,
  *               + - | for a box with its label   ellipses, lines with
  *               inside, . ' ( ) for an oval's,   their heads, texts
- *               > < v ^ for an arrow's head
+ *               - | \ / for an arrow's line,
+ *               > < v ^ for its head
  *     paint     its rows, a space for white      SVG: one rectangle per
  *                                                run of a colour, 4x4
  *                                                per pixel

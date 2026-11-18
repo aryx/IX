@@ -651,7 +651,7 @@ top
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
-== Tab: an arrow, across then down; Tab three times: a box again, mem
+== Tab: an arrow, right and down; Tab three times: a box again, mem
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -659,6 +659,8 @@ top
     words 255 14 24 |drawing|
     rect 3 302 192 8 8
     words 0 58 67 |cpu|
+    polygon 0 110,75 190,130 190,131 110,76
+    polygon 0 190,130 181,128 185,122
     words 0 178 137 |mem|
   shape 2
     rect 204 0 202 400 18
@@ -679,6 +681,8 @@ top
     words 255 14 24 |drawing|
     rect 3 302 192 8 8
     words 0 58 67 |cpu|
+    polygon 0 110,75 190,130 190,131 110,76
+    polygon 0 190,130 181,128 185,122
     words 0 178 137 |mem|
     words 0 40 190 |a note|
   shape 2
@@ -700,6 +704,8 @@ top
     words 255 14 24 |drawing|
     rect 3 302 192 8 8
     words 0 58 67 |cpu|
+    polygon 0 110,75 190,130 190,131 110,76
+    polygon 0 190,130 181,128 185,122
     words 0 178 137 |mem|
     words 0 40 190 |a note|
   shape 2
@@ -721,6 +727,8 @@ top
     words 255 14 24 |drawing|
     rect 3 302 192 8 8
     words 0 58 67 |cpu|
+    polygon 0 110,75 190,130 190,131 110,76
+    polygon 0 190,130 181,128 185,122
     words 0 178 137 |mem|
     words 0 40 190 |a note|
     ellipse 0 240 120 60 40
@@ -755,6 +763,8 @@ oval 230 80 60 40 io
     words 255 14 24 |drawing|
     rect 3 302 192 8 8
     words 0 58 67 |cpu|
+    polygon 0 110,75 190,130 190,131 110,76
+    polygon 0 190,130 181,128 185,122
     words 0 178 137 |mem|
     words 0 40 190 |a note|
     ellipse 0 240 120 60 40

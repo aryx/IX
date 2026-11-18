@@ -154,11 +154,11 @@ sheet, a drawing, a paint.
 
 
  +-------+
- |editor |-------+
- |       |       |
- +-------+       |
-                 |
-                 v
+ |editor |\
+ |       | \\
+ +-------+   \
+              \\
+                >
              +-------+
              | troff |
              |       |
@@ -172,9 +172,9 @@ sheet, a drawing, a paint.
 Rent   500
 Food   300
 Total  800
-%      38     148    2112 r.html
-     63     639    2431 r.pdf
-    101     787    4543 total
+%      38     148    2100 r.html
+     62     628    2400 r.pdf
+    100     776    4500 total
 usage: troff [-h | -p] file
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes, 1 core
 tiny-kernel: / on a disk of 65536 KB, 1 snapshots in /dump

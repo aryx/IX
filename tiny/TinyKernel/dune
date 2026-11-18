@@ -34,3 +34,16 @@
  (wrapped false)
  (modules KFS)
  (libraries tiny_host_memory))
+
+; The kernel's other units, which OCaml only checks: no program here
+; links them (their externals are kentry.s's and kdraw.s's), but OCaml
+; types them, and its warnings (a match that misses a case, a case that
+; can never be reached) are errors, which tiny-ml does not check. KRaw is
+; host/'s.
+(library
+ (name tiny_kernel_checked)
+ (wrapped false)
+ (modules KMemory KMachine KFiles KProcs KDevices KIO KCalls KScheduler
+   TinyKernel)
+ (libraries tiny_host_memory tiny_kernel_network tiny_kernel_graphics
+   tiny_kernel_audio tiny_kernel_fs))

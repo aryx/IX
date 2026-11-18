@@ -97,7 +97,7 @@ val user_out : proc -> int -> int -> int
 
 (* [user_iter p va n f] calls f a off k for each piece of the buffer:
  * kernel address a, offset off in the buffer, length k. *)
-val user_iter : proc -> int -> int -> (int -> int -> int -> 'a) -> unit
+val user_iter : proc -> int -> int -> (int -> int -> int -> unit) -> unit
 
 val user_write : proc -> int -> string -> unit
 val ustr : proc -> int -> string

@@ -148,7 +148,8 @@ val load_objects : 'm t -> decode:(string -> 'm option) -> Asm.obj list -> unit
  * reads none. *)
 type def_kind = T | D
 type member = string * string * (def_kind * string) list
-val member_of : Asm.obj -> member
+(* (the object and its file's bytes, which the member keeps) *)
+val member_of : string -> Asm.obj -> member
 val member_file : member -> string
 (* each member's bytes and the names indexed for it (a text name that
  * a later member defines again is not indexed for that member, as in

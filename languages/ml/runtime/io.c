@@ -62,10 +62,32 @@ caml_output_char(value ch, value b)
 value
 caml_output(value ch, value s, value ofs, value len)
 {
-	value i;
+	/* opti: the string's bytes moved to the channel's buffer by pieces,
+	 * as many as it has room for, where each went by putc_chan, 39
+	 * instructions a byte: a file written whole (mini-ar's library, 5
+	 * MB; mini-ml's object) was 12% of mini-ar u's instructions on the
+	 * card (mini-5i -prof, plan_9pi_self_speed.md). The same writes of
+	 * 4096 bytes.
+	 * old: for(i = 0; i < Long_val(len); i++)
+	 *	putc_chan((Chan*)ch, Bytes(s)[Long_val(ofs) + i]); */
+	Chan *c;
+	uchar *p;
+	long n, k;
 
-	for(i = 0; i < Long_val(len); i++)
-		putc_chan((Chan*)ch, Bytes(s)[Long_val(ofs) + i]);
+	c = (Chan*)ch;
+	p = (uchar*)Bytes(s) + Long_val(ofs);
+	n = Long_val(len);
+	while(n > 0){
+		if(c->len == 4096)
+			flush_chan(c);
+		k = 4096 - c->len;
+		if(k > n)
+			k = n;
+		memmove(c->buf + c->len, p, k);
+		c->len += k;
+		p += k;
+		n -= k;
+	}
 	return Val_unit;
 }
 

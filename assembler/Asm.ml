@@ -225,10 +225,6 @@ let with_history (b : string) pos (st : stored) : obj =
   let acid = if next < String.length b then (Marshal.from_string b next : string list) else [] in
   { arch = st.s_arch; file = st.s_file; items = st.s_items; history; acid }
 
-(* a library's member (Link): the object without the version *)
-let to_bytes o = Marshal.to_string (stored o) [ Marshal.No_sharing ] ^ history_bytes o
-let of_bytes b : obj = with_history b 0 (Marshal.from_string b 0)
-
 (* the files through the capabilities
  * old: Marshal.to_string (version, o) [] *)
 let save caps file (o : obj) =
@@ -243,11 +239,18 @@ let marshalled (b : string) : bool =
       | n -> n <= String.length b
       | exception Failure _ -> false)
 
-let load caps file : obj =
-  let b = FS.read caps file in
-  if not (marshalled b) then failwith (Fpath.to_string file ^ ": not an object");
+(* an object from its file's bytes ([name]: the file's, for the errors).
+ * A library's member is those bytes too (Link), so that mini-ar puts
+ * an object in a library as it is.
+ * old: a member the object without the version (to_bytes, of_bytes):
+ * mini-ar u wrote each object as a value again to take the version
+ * out, 40% of its instructions on lib_core.a, 3.9 s on mini-9pi *)
+let of_saved name (b : string) : obj =
+  if not (marshalled b) then failwith (name ^ ": not an object");
   let v, (st : stored) = Marshal.from_string b 0 in
-  if v <> version then failwith (Fpath.to_string file ^ ": an object of another version");
+  if v <> version then failwith (name ^ ": an object of another version");
   with_history b 0 st
+
+let load caps file : obj = of_saved (Fpath.to_string file) (FS.read caps file)
 
 (* (an item as text, the linker's messages and listing: Show_asm) *)

@@ -453,6 +453,48 @@ cores no longer read the clock (the first try lost a second and a
 half, with them reading it), and a program's data pages kept as its
 text is.
 
+### The same day: two more for the kernel, not kept; then a directory's serial steps
+
+The author, on 28.8 s to 25.5 s: "it's still not a big win", and on
+t-ix's 50 minutes to 5: its plan's steps were the emulator made faster
+twice, the compilers' code (registers, allocation inline), a name's
+lookup in its kernel, then the cores for 2 times; one core alone was
+4.3 times. make self-quick on mini-9pi was 52 s and is 21 s.
+
+Not kept: the card's transfers out of the kernel's lock, tried again
+with the waiters no longer reading the clock (25.8 s, 25.7 s and 26.2
+s against 25.5 s, 25.3 s and 25.5 s on four cores; 43.9 s against 41.2
+s on one); a program's data pages kept beside its text and copied (the
+faults' time by kind, lib_core: 2.9 s for 16,000 pages read from a
+file, 1.0 s for 192,000 pages of zeros, 0.85 s for 45,000 copied after
+a fork; kept, 24.8 s and 25.4 s against 25.2 s and 25.8 s, 41.4 s
+against 42.4 s on one core: a second, for 30 lines).
+
+The programs, by mini-5i -prof: mini-ml compiling Unix.ml is a billion
+instructions, its first function 4% (the collector's copy, hashing,
+the lexer, the write barrier, comparison, Printf, division 2.2%,
+memmove 2.1%): nothing to take in one place.
+
+Kept, a directory's two serial steps, a third of lib_core on four
+cores:
+
+- .depend by as many mini-ml as cores (mini-ml -depend -part K/N: the
+  lines of the K-th part of the units; depend.rc runs the N side by
+  side and puts the parts one after the other: the same file). By
+  hand on the card, 1.58 s against 3.31 s. A first version gained
+  nothing: for(k in ...) { ... } & is the loop beside, not its turns.
+- the archive: mini-ar u was 1.6 billion instructions for lib_core.a's
+  5 MB (mini-5i -prof), each object read as a value and written as a
+  value again to take its version out, then the file written a byte
+  at a time by the runtime. A member is now its object's file's bytes
+  (Link's library version 5: the libraries of a tree built before are
+  refused, to remove), and caml_output moves a string to the channel's
+  buffer by pieces.
+
+lib_core: 23.1 s and 23.0 s against 25.3 s and 25.1 s on four cores
+(3.1 s before the first recipe where it was 4.9 s), 38.9 s against
+40.2 s on one. 1.7 times.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

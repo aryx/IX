@@ -347,7 +347,14 @@ let readdir (_caps : < Cap.readdir; .. >) (d : string) : string list =
   (* nosemgrep: use-caps *)
   match Sys.readdir d with a -> Array.to_list a | exception Sys_error _ -> []
 
-let depend (caps : < caps; .. >) obj dirs units =
+(* (-part K/N: the lines of the K-th of N parts of the units only, the
+ * parts in the units' order, so that N runs side by side, a core
+ * each, print together what one run prints: depend.rc's, on a machine
+ * of several cores. lib_core's 110 units were 5 s of one process
+ * before mk's first recipe, on mini-9pi) *)
+let depend (caps : < caps; .. >) obj dirs units (k, n) =
+  let count = List.length units in
+  let mine = List.filteri (fun i _ -> i >= (k - 1) * count / n && i < k * count / n) units in
   let find ext u =
     List.find_map (fun d ->
       let f = Fpath.(d / (u ^ ext)) in
@@ -381,13 +388,13 @@ let depend (caps : < caps; .. >) obj dirs units =
             | _ -> ())
         | None -> ())
       (List.sort_uniq compare names))
-    units
+    mine
 
 let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and ssa = ref false and ssa_stack = ref false in
-  let show_types = ref false and unsafe = ref false and pp = ref false and depends = ref "" in
+  let show_types = ref false and unsafe = ref false and pp = ref false and depends = ref "" and part = ref "1/1" in
   let dotnet = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
   let options = [
@@ -402,6 +409,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-i", Arg.Set show_types, " the values' types, printed";
     "-M", Arg.Set deps, " the units the file names, printed";
     "-depend", Arg.Set_string depends, " obj: the Units given, mk's order of their objects, printed (mkfiles/depend.rc)";
+    "-part", Arg.Set_string part, " K/N: with -depend, the K-th of N parts of the Units only (1 the first)";
     "-start", Arg.Set start, " the start object of the units named";
     "-unsafe-types", Arg.Set unsafe, " no type checking";
     (* mlpp: *)
@@ -462,7 +470,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     List.map (Filename.concat d) (List.sort_uniq compare dirs @ [ "commons" ])
   in
   match List.rev !files, List.map path (List.rev !incs @ List.concat_map lib (List.rev !libs)) with
-  | units, dirs when !depends <> "" -> depend caps !depends dirs units; 0
+  | units, dirs when !depends <> "" ->
+      let k, n = match String.split_on_char '/' !part with
+        | [ k; n ] -> (try int_of_string k, max 1 (int_of_string n) with _ -> 1, 1)
+        | _ -> 1, 1 in
+      depend caps !depends dirs units (k, n); 0
   | units, _ when !start ->
       let file = path "start.s" in
       (* (its functions ssa's with -ssa, as a unit's) *)

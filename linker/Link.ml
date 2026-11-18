@@ -156,12 +156,12 @@ type member = string * string * (def_kind * string) list
 type members = (string * string list) list
 
 (* 2: its objects Asm's version 4; 3: a member its bytes; 4: and its
- * source and names *)
-let lib_version = 4
+ * source and names; 5: its bytes the object's file's, version and all *)
+let lib_version = 5
 
 (* (No_sharing: as Asm.save) *)
-let member_of (o : Asm.obj) : member =
-  (Fpath.to_string o.file, Asm.to_bytes o, defined_names o)
+let member_of (bytes : string) (o : Asm.obj) : member =
+  (Fpath.to_string o.file, bytes, defined_names o)
 let member_file ((file, _, _) : member) = file
 
 (* the index, as ar: a text name defined again by a later object is
@@ -182,7 +182,7 @@ let write_library caps out (l : member list) = FS.write caps out (Marshal.to_str
 
 let read_members caps f = index (read_library caps f)
 
-let member (bytes : string) : Asm.obj = Asm.of_bytes bytes
+let member (bytes : string) : Asm.obj = Asm.of_saved "a library's member" bytes
 
 (* a name some object asked for, and none defined yet *)
 let wanted t n =

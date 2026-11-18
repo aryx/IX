@@ -63,7 +63,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             Console.print caps (name m ^ (if verbose then ": " ^ String.concat " " names else "") ^ "\n")) l (Link.index l)
         end else begin
           let old = if Sys.file_exists (Fpath.to_string lib) then Link.read_library caps lib else [] in
-          let added = List.map (fun f -> Link.member_of (Asm.load caps (path f))) files in
+          let added = List.map (fun f -> let b = FS.read caps (path f) in Link.member_of b (Asm.of_saved f b)) files in
           let replaced m = List.exists (fun n -> name n = name m) added in
           if verbose then
             List.iter (fun n ->

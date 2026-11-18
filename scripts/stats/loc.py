@@ -346,6 +346,11 @@ GROUPS = [
 MLIS = "tiny/*.mli"  # tiny/'s row of the programs' interfaces, the last
 
 
+def is_tests(d):
+    """a directory of tests, by its name"""
+    return d == "tests" or d.endswith("_tests") or d == "teststub"
+
+
 def classify(path, verbose):
     """(group, subgroup) of a file: tests wherever they are, else by
     its top directory. The subgroup is the top directory (a program, a
@@ -356,8 +361,11 @@ def classify(path, verbose):
     # languages/ and generators/ hold a program per directory (languages/c/)
     top = 2 if parts[0] in ("languages", "generators") and len(parts) > 2 else 1
     prog = "/".join(parts[:top]) + "/"
-    # tests/, and tiny/'s TinyC_tests/
-    tests = [i for i, d in enumerate(parts[:-1]) if d == "tests" or d.endswith("_tests")]
+    # tests/, and tiny/'s TinyC_tests/; and teststub/, the system calls
+    # the tiny programs' tests run on, tiny/TinyLibSystem/'s (the author,
+    # 2026-11-18: "let's skip teststub/ too; we do not count tests or
+    # test infra code usually")
+    tests = [i for i, d in enumerate(parts[:-1]) if is_tests(d)]
     if tests:
         if verbose:
             return "tests", "/".join(parts[:tests[0] + 1]) + "/"
@@ -581,7 +589,7 @@ def other_systems():
 def apart(path):
     """the entry of APART the file is in (not a test), or None"""
     dirs = path.split("/")[:-1]
-    if any(d == "tests" or d.endswith("_tests") for d in dirs):
+    if any(is_tests(d) for d in dirs):
         return None
     # (SYSTEMS first: APART's last entry, sdl/ and tty/, is for what no
     # other one has)

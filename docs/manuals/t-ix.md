@@ -952,8 +952,8 @@ and system calls):
 
 | the mouse | what |
 |---|---|
-| the right button | the menu: New, Move, Delete, Exit; let go on an item |
-| then the left button | New: a rectangle swept, a shell in it; Move: a window dragged; Delete: a window pointed at |
+| the right button | the menu: New, Resize, Move, Delete, Exit; let go on an item |
+| then the left button | New: a rectangle swept, a shell in it; Resize: a window pointed at, then its new rectangle swept; Move: a window dragged; Delete: a window pointed at |
 | the left button on a window | it comes to the front, and has the keys |
 
 A window is text until a program draws in it: what is printed is
@@ -966,6 +966,13 @@ pipes and a box as its five descriptors. tiny-windows reads what the
 program draws, changes its images' numbers and sends the messages on;
 the kernel keeps every pixel. `windows` typed in a window runs there,
 with windows of its own.
+
+A window that is resized keeps what it showed: a text's last lines
+when it gets smaller, a picture's top left corner. `emacs`, `office`
+and `debug` then lay their window out again at the new size, and `www`
+asks for its page again, to break its lines at the new width. The
+other programs that draw (`paint`, `tetris`, `calc`) keep the size
+they started with.
 
 ### 7.5 A game: TinyLibPlayground.ml
 

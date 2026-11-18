@@ -48,8 +48,19 @@
  *
  * The mouse: clicking the left button on a window brings it to the
  * front, where it receives the keys. The right button opens the menu
- * (New, Move, Delete, Exit), and then the left button says where: you
- * sweep a rectangle, drag a window, or point at a window.
+ * (New, Resize, Move, Delete, Exit), and then the left button says
+ * where: you sweep a rectangle, drag a window, or point at a window.
+ * For Resize you point at the window, then sweep its new rectangle,
+ * as in rio.
+ *
+ * A window that is resized gets a new image with the old one drawn in
+ * it. A text window keeps its last lines when it shrinks. A program
+ * that draws learns the new size from its mouse: every mouse message
+ * of a window ends with the window's width and height, because the box
+ * keeps only the last message, and one is sent at the resize. emacs,
+ * the office and the debugger lay their window out again; the browser
+ * asks for its page again. A program that does not look (paint,
+ * tetris) keeps the size it started with.
  *
  * twin:
  * The full-size version in ix is mini-rio (windows/rio/). It is the
@@ -85,7 +96,7 @@
  * - scroll bars and the kept text of a window (what scrolls off the top
  *   is lost);
  * - selection, snarf and paste;
- * - Resize and Hide;
+ * - Hide;
  * - cursor shapes, and using the border as a handle;
  * - window names, and the files a window serves.
  * rio is a file server, but here the descriptors are simply handed
@@ -112,9 +123,8 @@
  * built on TinyLibPlayground) also run without it.
  *
  * exercises:
- * - Resize: make a new image, draw the old one in it, free the old one;
  * - keep the text and add a scroll bar; add selection, snarf and paste;
- * - tell a program the size of its window (a message read on its 4);
+ * - use the border as a handle: drag a side to move, a corner to resize;
  * - let New start a program other than the shell (given as an argument);
  * - remote windows: a window's draw messages are already a byte
  *   stream, so they could be sent over an IL connection and drawn by

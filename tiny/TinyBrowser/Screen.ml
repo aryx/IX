@@ -67,8 +67,8 @@ type screen = {
   mutable sc_page : Html.page;
   sc_nav : nav;
   sc_tools : tools;
-  sc_cols : int;
-  sc_rows : int;
+  mutable sc_cols : int;
+  mutable sc_rows : int;
   mutable sc_y : int;
   mutable sc_drawn : int;
   sc_doc : doc;

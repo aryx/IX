@@ -265,9 +265,11 @@ val focused : mouse -> box -> bool
 (* A program that draws its whole window, like emacs or the office.
  * [first] gets the window size in pixels. The first shape of [picture]
  * covers the whole window. The buttons of [moved] are 1 left, 2 middle,
- * 4 right. A None from [typed] or [moved] ends the program. *)
+ * 4 right. A None from [typed] or [moved] ends the program. [sized]
+ * gets the new size when tiny-windows resizes the window. *)
 type 'm canvas = {
-  first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list;
+  first : int -> int -> 'm; sized : int -> int -> 'm -> 'm;
+  picture : 'm -> TinyLibPlayground.shape list;
   typed : TinyLibPlayground.key -> 'm -> 'm option;
   moved : int -> int -> int -> 'm -> 'm option;
 }

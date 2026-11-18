@@ -117,11 +117,15 @@ val d_cursor : cursor -> string
 type message_shape = { ds_length : int; ds_images : int }
 val d_shape : string -> int -> message_shape
 
-(* The 12-byte message read from the kernel's descriptor 4; it is None
- * when the message is not all there. The buttons are 1 for left, 2 for
- * middle and 4 for right. -1 marks the answer of tiny-windows to an
- * ENQ, with the window's size in x and y. *)
-type mouse_event = { mo_x : int; mo_y : int; mo_buttons : int }
+(* The message read from descriptor 4, asked for with 16 bytes: the
+ * kernel's is 12, and tiny-windows's 16, with the window's size in
+ * pixels in [mo_size]. It is None when the message is not all there.
+ * The buttons are 1 for left, 2 for middle and 4 for right. -1 marks
+ * the answer of tiny-windows to an ENQ, with the window's size in x
+ * and y. *)
+type mouse_event = {
+  mo_x : int; mo_y : int; mo_buttons : int; mo_size : (int * int) option
+}
 val mouse_event : string -> mouse_event option
 
 (* Numbers are two bytes, the low one first. [msg c ns] is the letter c

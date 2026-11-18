@@ -79,11 +79,19 @@ let d_cursor c = msg 'c' [ (match c with Cursor_arrow -> 0 | Cursor_hand -> 1) ]
 
 (* The mouse as the kernel's descriptor 4 says it, 12 bytes: where it
  * is and its buttons, three numbers of two bytes, each followed by two
- * bytes of nothing; None when it is not all there *)
-type mouse_event = { mo_x : int; mo_y : int; mo_buttons : int }
+ * bytes of nothing; None when it is not all there. A window's mouse is
+ * 16 bytes, tiny-windows's: the window's width and height after them,
+ * in each message (a box keeps the last one only), so a window given
+ * another size is known at its next mouse *)
+type mouse_event = {
+  mo_x : int; mo_y : int; mo_buttons : int; mo_size : (int * int) option
+}
 let mouse_event (s : string) : mouse_event option =
-  if String.length s <> 12 then None
-  else Some { mo_x = int16 s 0; mo_y = int16 s 4; mo_buttons = int16 s 8 }
+  let n = String.length s in
+  if n <> 12 && n <> 16 then None
+  else
+    Some { mo_x = int16 s 0; mo_y = int16 s 4; mo_buttons = int16 s 8;
+           mo_size = if n = 16 then Some (int16 s 12, int16 s 14) else None }
 
 (* The message at i of s: its length, and how many of its first numbers
  * are images. The length is beyond s's end when the message is not all

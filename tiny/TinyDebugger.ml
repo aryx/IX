@@ -578,7 +578,7 @@ let moved p x y b m =
   | _ -> Some { m with held = b }
 
 let window caps p =
-  let first w h =
+  let sized w h m =
     let bar, boxes =
       GUI.place 0 0 w 28
         (GUI.Row [
@@ -586,10 +586,14 @@ let window caps p =
            GUI.Button ("continue", "c");
            GUI.Button ("quit", "q") ])
     in
-    shown p { log = []; cmd = ""; panes = []; held = 0; w = w; h = h;
-              bar = bar; boxes = boxes } in
+    { m with w = w; h = h; bar = bar; boxes = boxes } in
+  let first w h =
+    shown p
+      (sized w h { log = []; cmd = ""; panes = []; held = 0; w = 0; h = 0;
+                   bar = []; boxes = [] }) in
   GUI.run_canvas caps
-    { first = first; picture = picture; typed = typed p; moved = moved p }
+    { first = first; sized = sized; picture = picture; typed = typed p;
+      moved = moved p }
 
 (*****************************************************************************)
 (* The main *)

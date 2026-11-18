@@ -75,8 +75,8 @@ type editor = {
   mutable prefix : P.key option;
     (* C-x or Escape typed, waiting for its key *)
   x : extra;
-  cols : int;
-  rows : int;
+  mutable cols : int;
+  mutable rows : int;
     (* the screen: the last two lines are not the text's *)
 }
 
@@ -755,6 +755,8 @@ let main caps argv =
     in
     let (c : (editor * int * int) G.canvas) = {
       first = (fun w h -> (create (w / 8) (h / 16) path text0, w, h));
+      sized =
+        (fun w h (e, _, _) -> e.cols <- w / 8; e.rows <- h / 16; (e, w, h));
       picture = (fun (e, w, h) -> P.Rect (255, w, h) :: shapes e (h / 16));
       typed =
         (fun k m ->

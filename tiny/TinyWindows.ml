@@ -76,7 +76,8 @@ type page = {
  * screen; its shell's pid. (Three records: tiny-ml makes one of
  * nine fields at most, an expression being 11 registers deep.) *)
 type window = {
-  image : int; w : int; h : int; mutable x : int; mutable y : int; pid : int;
+  mutable image : int; mutable w : int; mutable h : int;
+  mutable x : int; mutable y : int; pid : int;
   ends : ends; page : page
 }
 
@@ -325,11 +326,16 @@ let forward w s =
  * word, which the kernel then copies a word at a time *)
 let snap x = x - ((x + border) land 3)
 
+(* the inside of a rectangle swept: whole characters, 8 by 16 *)
+let cells (x0, y0, x1, y1) =
+  (x1 - x0 - (2 * border)) / 8 * 8, (y1 - y0 - (2 * border)) / 16 * 16
+
 (* a window of that rectangle of the screen, a shell in it: three pipes
  * and a box, the shell given an end of each as its 0, its 1 and 2, its
  * 3 and its 4. Its inside is whole characters, 8 by 16. No window
  * when the kernel has no pipe or no process left *)
-let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) (x0, y0, x1, y1) =
+let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) r =
+  let x0, y0, _, _ = r in
   let made make = try Some (make caps) with Failure _ -> None in
   let k = made TSys.pipe and p = made TSys.pipe and d = made TSys.pipe
   and m = made TSys.box in
@@ -360,8 +366,7 @@ let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) (x0, y0, x1, y1) =
           let page =
             { pending = ""; ids = []; picture = false; col = 0; row = 0;
               line = ""; cursor = 0 } in
-          let wide = (x1 - x0 - (2 * border)) / 8 * 8
-          and high = (y1 - y0 - (2 * border)) / 16 * 16 in
+          let wide, high = cells r in
           let w =
             { image = fresh (); w = wide; h = high; x = snap x0; y = y0;
               pid = pid; ends = ends; page = page } in
@@ -382,6 +387,22 @@ let delete (caps : < Cap.kill; Cap.wait; .. >) w =
   windows := List.filter (fun v -> v != w) !windows;
   refresh everything
 
+(* a window given another rectangle of the screen: a new image, the old
+ * one drawn in it and freed. A text that no longer fits keeps its last
+ * lines; a picture keeps its top left, and its program draws the rest *)
+let resize w r =
+  let x0, y0, _, _ = r and wide, high = cells r and old = w.image in
+  let up =
+    if w.page.picture then 0 else max 0 (((w.page.row + 1) * 16) - high) in
+  w.image <- fresh ();
+  send (D.d_image w.image (0, 0, wide, high) 255);
+  send (D.d_draw w.image old (-1) (0, 0, wide, high) (0, up));
+  send (D.d_free old);
+  release old;
+  w.w <- wide; w.h <- high; w.x <- snap x0; w.y <- y0;
+  w.page.row <- w.page.row - (up / 16);
+  refresh everything
+
 (*****************************************************************************)
 (* The mouse *)
 (*****************************************************************************)
@@ -389,19 +410,23 @@ let delete (caps : < Cap.kill; Cap.wait; .. >) w =
 (* the menu's items, from the top *)
 type item =
   | Item_new
+  | Item_resize
   | Item_move
   | Item_delete
   | Item_exit
 
 (* what the mouse is doing: nothing; in the menu (its corner, the item
  * under the mouse, if any); an item chosen, the left button awaited; a
- * rectangle swept (its first corner, the last one drawn); a window
+ * window pointed at to resize, the left button awaited again (rio's
+ * Resize: point, then sweep); a rectangle swept, a new window's or
+ * that window's (its first corner, the last one drawn); a window
  * dragged (the mouse in it, its last place drawn) *)
 type doing =
   | Idle
   | Menu of int * int * item option
   | Chosen of item
-  | Sweep of int * int * int * int
+  | Pointed of window
+  | Sweep of window option * int * int * int * int
   | Drag of window * int * int * int * int
   (* the menu's Exit chosen, the windows deleted: the loop's end *)
   | Ended
@@ -410,9 +435,9 @@ let doing = ref Idle
 let buttons = ref 0
 
 let items =
-  [ Item_new, "New"; Item_move, "Move"; Item_delete, "Delete";
-    Item_exit, "Exit" ]
-let menu_box mx my = mx - 1, my - 1, mx + 65, my + 65
+  [ Item_new, "New"; Item_resize, "Resize"; Item_move, "Move";
+    Item_delete, "Delete"; Item_exit, "Exit" ]
+let menu_box mx my = mx - 1, my - 1, mx + 65, my + 81
 
 (* the menu at (mx, my), the item chosen lit *)
 let menu mx my (chosen : item option) =
@@ -437,6 +462,15 @@ let rec over x y l =
   | w :: rest -> if inside (outer w) x y then Some w else over x y rest
 let word v = D.i16 v ^ D.i16 (v asr 16)
 
+(* a window's mouse, the screen's at (x, y) with the buttons b: where it
+ * is in the window, and after it the window's size, which each one
+ * says: its box keeps the last one only, and a program that reads any
+ * knows the size it has now *)
+let tell w x y b =
+  put w.ends.mouse
+    (word (x - w.x - border) ^ word (y - w.y - border) ^ word b
+     ^ D.i16 w.w ^ D.i16 w.h)
+
 let finish caps = List.iter (delete caps) !windows; flush (); doing := Ended
 
 (* the mouse at (x, y), its buttons b (1 left, 4 right) *)
@@ -452,8 +486,7 @@ let mouse caps x y b =
   | Idle -> (
       match over x y !windows with
       | Some w when current w && w.page.picture && inside (inner w) x y ->
-          put w.ends.mouse
-            (word (x - w.x - border) ^ word (y - w.y - border) ^ word b)
+          tell w x y b
       | _ when right -> doing := Menu (x, y, None); menu x y None
       | Some w when left && not (current w) ->
           windows := w :: List.filter (fun v -> v != w) !windows;
@@ -461,7 +494,7 @@ let mouse caps x y b =
       | _ -> ())
   | Menu (mx, my, was) ->
       let item =
-        if inside (mx, my, mx + 64, my + 64) x y then
+        if inside (mx, my, mx + 64, my + 80) x y then
           Option.map fst (List.nth_opt items ((y - my) / 16))
         else None in
       if b land 4 <> 0 then
@@ -477,19 +510,32 @@ let mouse caps x y b =
       if right then doing := Idle
       else if left then begin
         match item, over x y !windows with
-        | Item_new, _ -> doing := Sweep (x, y, x, y)
+        | Item_new, _ -> doing := Sweep (None, x, y, x, y)
+        | Item_resize, Some w -> doing := Pointed w
         | Item_move, Some w -> doing := Drag (w, x - w.x, y - w.y, w.x, w.y)
         | Item_delete, Some w -> doing := Idle; delete caps w
         | _ -> doing := Idle
       end
-  | Sweep (sx, sy, lx, ly) ->
+  | Pointed w ->
+      if right then doing := Idle
+      else if left then doing := Sweep (Some w, x, y, x, y)
+  | Sweep (of_w, sx, sy, lx, ly) ->
       erase (corners sx sy lx ly);
       if b land 1 <> 0 then
-        (doing := Sweep (sx, sy, x, y); outline (corners sx sy x y))
+        (doing := Sweep (of_w, sx, sy, x, y); outline (corners sx sy x y))
       else begin
         doing := Idle;
         let x0, y0, x1, y1 = corners sx sy x y in
-        if x1 - x0 >= 64 && y1 - y0 >= 48 then create caps (x0, y0, x1, y1)
+        if x1 - x0 >= 64 && y1 - y0 >= 48 then
+          match of_w with
+          | None -> create caps (x0, y0, x1, y1)
+          | Some w ->
+              (* (its shell may have ended meanwhile; a picture's program
+               * is told at once, by a mouse with no button) *)
+              if List.memq w !windows then begin
+                resize w (x0, y0, x1, y1);
+                if w.page.picture then tell w x y 0
+              end
       end
   | Drag (w, gx, gy, lx, ly) ->
       let size = w.w + (2 * border), w.h + (2 * border) in

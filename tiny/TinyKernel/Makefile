@@ -35,6 +35,12 @@
 #                     - windows.events (windows, tiny-windows: three
 #                       windows, ls, paint in one, a move, a delete, one
 #                       brought to the front);
+#                     - resize.events (a shell's window made smaller,
+#                       which keeps its last lines, then larger),
+#                       resizeemacs.events (emacs in a window made
+#                       smaller: its mode line at the new bottom) and
+#                       resizewww.events (www in a window made larger:
+#                       its page asked for again, at the new width);
 #                     - nested.events (tiny-windows in a window of
 #                       tiny-windows, with two windows in it);
 #                     - play.events (square, a game on
@@ -310,7 +316,7 @@ run-window: $(O)/boot.img $(O)/run.img $(O)/runsrc.img
 
 # The recorded sessions, each checked against its screen's sum. The
 # browser's sessions read ../tests/www's pages.
-SCREENS = paint windows nested play tetris orrery calc temp debug emacs emacsmx emacscolors office officesheet officedraw officepaint \
+SCREENS = paint windows resize resizeemacs resizewww nested play tetris orrery calc temp debug emacs emacsmx emacscolors office officesheet officedraw officepaint \
 	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory wwwsearch
 # What changes with the programs' code and the kernel's timing is masked
 # in check.out before it is compared:

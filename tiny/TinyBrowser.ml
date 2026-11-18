@@ -444,7 +444,18 @@ let browse caps typed =
         Screen.send sc;
         loop keys
       | _ when keys && ready = TSys.fd_mouse ->
-        (match D.mouse_event (TSys.read TSys.fd_mouse 12) with
+        (match D.mouse_event (TSys.read TSys.fd_mouse 16) with
+         (* the window given another size: the page is asked for again,
+          * its lines to be broken at the new width *)
+         | Some { mo_size = Some (w, h); _ }
+           when w / 8 <> sc.sc_cols || h / 16 <> sc.sc_rows ->
+             sc.sc_cols <- w / 8;
+             sc.sc_rows <- h / 16;
+             Screen.put sc
+               (D.d_image Screen.c_strip (0, 0, sc.sc_cols * 8, 16) 255);
+             load caps sc sc.sc_nav.nv_address;
+             Screen.send sc;
+             loop keys
          | Some e when e.mo_buttons >= 0
                        && not (on_mouse caps sc e.mo_x e.mo_y e.mo_buttons) ->
              quit sc

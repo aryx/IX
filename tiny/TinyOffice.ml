@@ -548,6 +548,8 @@ let main caps argv =
       | Quit -> None in
     G.run_canvas caps {
       first = (fun w h -> create w h path text0);
+      sized =
+        (fun w h o -> { o with where = { o.where with width = w; height = h } });
       picture = view;
       typed = (fun k o -> answer o (key o k));
       moved = (fun x y b o -> answer o (mouse o x y b)) };

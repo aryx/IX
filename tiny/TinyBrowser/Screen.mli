@@ -86,8 +86,8 @@ type screen = {
   mutable sc_page : Html.page;
   sc_nav : nav;
   sc_tools : tools;
-  sc_cols : int;
-  sc_rows : int;
+  mutable sc_cols : int;
+  mutable sc_rows : int;
   mutable sc_y : int;               (* the page's pixel at the top of the
                                      * area *)
   mutable sc_drawn : int;           (* the lines before this one that are in

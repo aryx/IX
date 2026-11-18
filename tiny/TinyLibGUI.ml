@@ -429,9 +429,11 @@ let menu_view width menus st =
 (* Below the widgets: a program that makes its picture itself (emacs,
  * the office). Its first model, given its window's size; its picture,
  * as shapes; a key, and the next model, or None to end; the mouse at
- * (x, y) with its buttons, and the next model, or None *)
+ * (x, y) with its buttons, and the next model, or None; the model for
+ * its window given another size *)
 type 'm canvas = {
   first : int -> int -> 'm;
+  sized : int -> int -> 'm -> 'm;
   picture : 'm -> P.shape list;
   typed : P.key -> 'm -> 'm option;
   moved : int -> int -> int -> 'm -> 'm option;
@@ -659,16 +661,16 @@ let repaint shown now =
  * console is raw meanwhile (rawcons): its ^C is a key, not the kill of
  * every process (emacs's C-x C-c). At the end the window is white. *)
 let run_canvas caps (c : 'm canvas) =
-  let w, h = window_size caps in
+  let size = window_size caps in
   TSys.raw_console caps true;
   let fds = keys_and_mouse in
-  let rec loop model shown =
+  let rec loop size model shown =
     let now = with_leaves shown (c.picture model) in
     repaint_leaves shown now;
     if TSys.ready fds None = Some TSys.fd_stdin then begin
       let s = TSys.read TSys.fd_stdin 16 in
       let rec typed i model =
-        if i >= String.length s then loop model now
+        if i >= String.length s then loop size model now
         else
           match c.typed (P.key_of_byte s.[i]) model with
           | Some m -> typed (i + 1) m
@@ -676,16 +678,22 @@ let run_canvas caps (c : 'm canvas) =
       if s <> "" then typed 0 model
     end
     else begin
-      (* (an ENQ's answer, the buttons -1, is not the program's) *)
-      match D.mouse_event (TSys.read TSys.fd_mouse 12) with
-      | Some e when e.mo_buttons >= 0 ->
-          (match c.moved e.mo_x e.mo_y e.mo_buttons model with
-           | Some m -> loop m now
-           | None -> ())
-      | Some _ -> loop model now
+      match D.mouse_event (TSys.read TSys.fd_mouse 16) with
+      | Some e ->
+          (* the window given another size, which its mouse says *)
+          let size', model =
+            match e.mo_size with
+            | Some s when s <> size -> s, c.sized (fst s) (snd s) model
+            | _ -> size, model in
+          (* (an ENQ's answer, the buttons -1, is not the program's) *)
+          if e.mo_buttons < 0 then loop size' model now
+          else
+            (match c.moved e.mo_x e.mo_y e.mo_buttons model with
+             | Some m -> loop size' m now
+             | None -> ())
       | None -> ()
     end in
-  loop (c.first w h) [];
-  P.draw 0 0 0 (P.Rect (255, w, h));
+  loop size (c.first (fst size) (snd size)) [];
+  P.draw 0 0 0 (P.Rect (255, D.screen_w, D.screen_h));
   P.flush ();
   TSys.raw_console caps false

@@ -221,6 +221,14 @@ val word_bytes : word -> string
 val to_object : line list -> string
 val of_object : string -> line list
 
+(* [plain bytes] is a marshalled value's bytes made the same whichever
+ * Marshal wrote them: OCaml 5's sets two bits in a large block's
+ * header that OCaml 4's and tiny-ml's leave clear, and they are
+ * cleared. to_object's bytes are plain; tiny-ml uses it for a unit's
+ * interface. So what the host's tools write and what the same tools
+ * write on tiny-machine are the same bytes, with OCaml 4 and 5. *)
+val plain : string -> string
+
 (* An archive is a library: named objects in order, all of which tiny-ld
  * links. Error is raised when a member is not an object, a name has a
  * blank, or the bytes are not an archive. *)

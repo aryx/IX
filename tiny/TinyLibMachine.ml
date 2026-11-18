@@ -383,8 +383,55 @@ let starts s m = String.length s >= String.length m
  * 3: an object is lines, the assembly's type; an older object is
  * refused, not misread) *)
 let magic = "tiny-object 3\n"
+
+(* A marshalled value's bytes, the same whichever Marshal wrote them.
+ * OCaml 5's sets two bits, a block's colour for its collector, in the
+ * header of a block of 8 fields or more, or of a tag of 16 or more;
+ * OCaml 4's and tiny-ml's leave them clear, and a reader ignores them.
+ * But a file's bytes must not say which OCaml compiled the tool that
+ * wrote it: the library the host makes is compared with the one
+ * tiny-ml makes on the machine. So the two bits are cleared, in each
+ * such header, found by reading the value's codes (Marshal's 20 bytes
+ * of header first; no float, no closure). [coloured] asks the Marshal
+ * at hand, with an array of 8: tiny-ml's and OCaml 4's have nothing to
+ * clear, and their bytes are not read. *)
+let coloured () =
+  let probe = Marshal.to_string (Array.make 8 0) [ Marshal.No_sharing ] in
+  Char.code probe.[23] land 3 <> 0
+
+let plain (s : string) : string =
+  if not (coloured ()) then s
+  else begin
+    let b = Bytes.of_string s in
+    let byte k = Char.code s.[k] in
+    let i = ref 20 and values = ref 1 in
+    while !values > 0 do
+      let c = byte !i in
+      incr i;
+      decr values;
+      if c >= 0x80 then values := !values + ((c lsr 4) land 7)
+      else if c >= 0x40 then ()
+      else if c >= 0x20 then i := !i + c - 0x20
+      else if c <= 0x03 then i := !i + (1 lsl c)
+      else if c <= 0x06 then i := !i + (1 lsl (c - 4))
+      else if c = 0x08 then begin
+        Bytes.set b (!i + 2) (Char.chr (byte (!i + 2) land 0xfc));
+        values :=
+          !values + (byte !i lsl 14) + (byte (!i + 1) lsl 6)
+          + (byte (!i + 2) lsr 2);
+        i := !i + 4
+      end
+      else if c = 0x09 then i := !i + 1 + byte !i
+      else if c = 0x0A then
+        i := !i + 4 + (byte !i lsl 24) + (byte (!i + 1) lsl 16)
+             + (byte (!i + 2) lsl 8) + byte (!i + 3)
+      else error "a marshalled value with a float or a closure"
+    done;
+    Bytes.to_string b
+  end
+
 let to_object (lines : line list) =
-  magic ^ Marshal.to_string lines [ Marshal.No_sharing ]
+  magic ^ plain (Marshal.to_string lines [ Marshal.No_sharing ])
 let of_object (s : string) : line list =
   if not (starts s magic) then
     error "not an object of this tiny-as's (tiny-object 3): rebuild it";

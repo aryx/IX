@@ -209,7 +209,8 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
           Some (Types.qualify !Tree.unit_name x, bd, texpr_of_ty t)
       | _ -> None
     end) exports in
-  Marshal.to_string
+  (* (M.plain: the bytes are not to say which OCaml wrote them) *)
+  M.plain (Marshal.to_string
     { iunit = !Tree.unit_name, nglobals, !Machine.arities; icons = icons;
       ilabels = ilabels;
       iabbrevs =
@@ -222,7 +223,7 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
     (* (No_sharing: which of two equal names is the same string depends
      * on a table's order, OCaml's or TinyLibCore's; shared, the host's
      * and tiny-kernel's interfaces differed in 3 of the system's 40) *)
-    [ Marshal.No_sharing ]
+    [ Marshal.No_sharing ])
 
 (* an interface's text read *)
 let decode_interface (text : string) : interface =

@@ -156,23 +156,40 @@ let () =
   show "a box dragged from 30 60 to 110 90, cpu typed: its label" o;
   keys o "\t";
   drag o 1 110 75 190 130;
-  keys o "\t\t\t";
+  keys o "\t\t\t\t";
   drag o 1 150 130 230 160;
   keys o "mem";
-  show "Tab: an arrow, right and down; Tab three times: a box again, mem" o;
+  show "Tab: an arrow, right and down; Tab four times: a box again, mem" o;
   keys o "\t\t";
   click o 1 40 190;
   keys o "a notes\127";
   show "Tab twice: text; a click, a notes typed, Backspace" o;
-  keys o "\t\t";
+  keys o "\t\t\t";
   click o 1 250 80;
-  show "Tab twice: a box; a click is no box (too small)" o;
+  show "Tab three times: a box; a click is no box (too small)" o;
   keys o "\t\t\t";
   drag o 1 300 120 240 160;
   keys o "io";
   click o 1 280 60;
   show "Tab three times: an oval, dragged up and left, io; a click is none" o;
   file "the page" o;
+  (* the select tool: a shape picked is the last one; a drag moves it;
+   * C-d removes it; a click on no shape changes nothing; of a box and
+   * a larger one over it, the smaller is picked *)
+  keys o "\t";
+  click o 1 60 75;
+  show "Tab: select; a click on cpu: the last shape, in blue" o;
+  drag o 1 60 75 80 85;
+  file "cpu dragged 20 right, 10 down" o;
+  click o 1 150 102;
+  keys o "\004";
+  click o 1 250 80;
+  file "a click on the arrow, C-d: removed; a click on no shape" o;
+  keys o "\t";
+  drag o 1 20 50 240 170;
+  keys o "all\t\t\t\t";
+  click o 1 100 85;
+  file "a box all around cpu and mem; select, a click in cpu: cpu last" o;
   keys o "\007";
   show "C-g: the drawing left" o
 

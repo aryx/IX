@@ -17,14 +17,23 @@
  * its box. The left button drags out a box, an arrow or an oval, or
  * places a text. What is typed becomes the label of the last shape.
  *
+ * A fifth tool, select, picks a shape made before: a click on it makes
+ * it the drawing's last shape (shown in blue, and drawn over the
+ * others), and a drag moves it too. So the selected shape is simply
+ * the last one, which a label is typed in and which Backspace (once
+ * its label is empty) or C-d removes; nothing else is kept about a
+ * selection.
+ *
  * cs-history:
  * pic (Brian Kernighan, 1982, a troff preprocessor) describes a
  * picture as lines of text, such as "box" and "arrow". Here the shapes
  * are drawn with the mouse, as in MacDraw, but stored as in pic.
  *)
 
-(* The tools' names, indexed by the tool's number in a Sketch edit. *)
+(* The tools' names, indexed by the tool's number in a Sketch edit;
+ * [select] is the number of the tool that picks a shape. *)
 val tools : string list
+val select : int
 
 (* The shapes in a drawing's data. Each shape is given as its kind, its
  * numbers and its label. *)
@@ -38,18 +47,22 @@ val arrow_head : int -> int -> int -> int -> (int * int) list
 
 (* [draw_stroke office tool (x0, y0, x1, y1)] adds the shape made by a
  * stroke to the selected drawing. A box, an oval or an arrow that is
- * too small counts as a click, not a shape. *)
+ * too small counts as a click, not a shape. With the select tool, the
+ * shape under (x0, y0) becomes the last one, moved by the stroke; of
+ * several shapes there, an arrow is picked first, then the shape with
+ * the smallest box. *)
 val draw_stroke :
   Model.office -> int -> int * int * int * int -> unit
 
 (* [sketch_key office tool key] handles a key in a drawing. Tab changes
  * the tool. A character is added to the last shape's label, and
  * Backspace removes one (a shape whose label becomes empty is removed).
- * C-g stops editing the drawing. *)
+ * C-d removes the last shape. C-g stops editing the drawing. *)
 val sketch_key : Model.office -> int -> TinyLibPlayground.key -> unit
 
 (* [drawing_view box tool stroke] draws the shapes, and draws the
- * stroke being made in blue. *)
+ * stroke being made in blue. With the select tool, the last shape is
+ * blue, and the stroke is the picked shape where it would be moved. *)
 val drawing_view :
   Model.obj -> int -> (int * int * int * int) option ->
   TinyLibPlayground.shape list

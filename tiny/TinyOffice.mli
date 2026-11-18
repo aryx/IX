@@ -62,7 +62,9 @@
  * straight from its first point to its second, where its head is.
  * The left button drags out a box, an arrow or an oval, or places a
  * text; the Draw menu, or Tab, changes the tool. What is typed becomes
- * the label of the last shape.
+ * the label of the last shape. The select tool picks a shape made
+ * before: a click makes it the last shape, shown in blue, and a drag
+ * moves it; C-d removes the last shape.
  *
  * {b The menus} are TinyLibGUI's pull-down menus across the top, as in
  * every office program since the Lisa and the Macintosh:
@@ -108,8 +110,10 @@
  *     in a sheet           a character starts a new entry for the cell;
  *                          Enter or an arrow stores it; C-g forgets it
  *     in a drawing         Tab changes the tool; the left button draws;
- *                          a character goes to the last label; C-g
- *                          stops editing
+ *                          a character goes to the last label; with
+ *                          the select tool, the left button picks a
+ *                          shape and moves it; C-d removes the last
+ *                          shape; C-g stops editing
  *     Backspace, Delete    remove the selected box
  *     C-_ (C-/)            undo: the page as it was before the last change
  *     C-x ], C-x [         the next page, the one before (Emacs's)

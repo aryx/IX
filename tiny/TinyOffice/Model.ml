@@ -55,7 +55,7 @@ type doc = {
 (* what the selected box is edited by: nothing; a text box's text; a
  * sheet's cell, its column and row, and what is being
  * typed in it (None: the cell chosen, nothing typed yet); a drawing's
- * tool (0 a box, 1 an arrow, 2 a text), and the stroke the left button
+ * tool (its place in Drawing.tools), and the stroke the left button
  * is making, from where it went down to where it is, in the box; a
  * paint's colour (its place in pixel_letters), its brush (0 thin, 1
  * thick), and the pixel where the left button last was, when it is

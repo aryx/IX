@@ -651,7 +651,7 @@ top
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
-== Tab: an arrow, right and down; Tab three times: a box again, mem
+== Tab: an arrow, right and down; Tab four times: a box again, mem
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -696,7 +696,7 @@ top
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
-== Tab twice: a box; a click is no box (too small)
+== Tab three times: a box; a click is no box (too small)
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -755,6 +755,63 @@ oval 230 80 60 40 io
 ```
 }
 --
+== Tab: select; a click on cpu: the last shape, in blue
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    polygon 0 110,75 190,130 190,131 110,76
+    polygon 0 190,130 181,128 185,122
+    words 0 178 137 |mem|
+    words 0 40 190 |a note|
+    ellipse 0 240 120 60 40
+    words 0 262 132 |io|
+    words 3 58 67 |cpu|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |drawing: select (Tab: another); click, drag to mo|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+    words 0 216 1 |Page|
+  shape 4
+== cpu dragged 20 right, 10 down: the file
+\box[10 40 300 160]{
+```drawing
+arrow 100 35 180 90
+box 140 90 80 30 mem
+text 30 150 a note
+oval 230 80 60 40 io
+box 40 30 80 30 cpu
+```
+}
+--
+== a click on the arrow, C-d: removed; a click on no shape: the file
+\box[10 40 300 160]{
+```drawing
+box 140 90 80 30 mem
+text 30 150 a note
+oval 230 80 60 40 io
+box 40 30 80 30 cpu
+```
+}
+--
+== a box all around cpu and mem; select, a click in cpu: cpu last: the file
+\box[10 40 300 160]{
+```drawing
+box 140 90 80 30 mem
+text 30 150 a note
+oval 230 80 60 40 io
+box 10 10 220 120 all
+box 40 30 80 30 cpu
+```
+}
+--
 == C-g: the drawing left
   shape 0
     rect 255 0 0 400 220
@@ -762,13 +819,12 @@ oval 230 80 60 40 io
     rect 3 10 24 64 16
     words 255 14 24 |drawing|
     rect 3 302 192 8 8
-    words 0 58 67 |cpu|
-    polygon 0 110,75 190,130 190,131 110,76
-    polygon 0 190,130 181,128 185,122
     words 0 178 137 |mem|
     words 0 40 190 |a note|
     ellipse 0 240 120 60 40
     words 0 262 132 |io|
+    words 0 118 102 |all|
+    words 0 78 77 |cpu|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |diagram (modified)    the menus above; a click ed|

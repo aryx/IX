@@ -18,11 +18,17 @@ open Model
  *     oval 170 50 60 30 io
  *
  * a box and its label; an arrow, from its first point to its second,
- * where its head is (two of the playground's polygons); words; an oval, the ellipse in its box, and its label. pic's idea
+ * where its head is (two of the playground's polygons); words; an
+ * oval, the ellipse in its box, and its label. pic's idea
  * (Brian Kernighan, 1982: a picture as lines of text), drawn with the
  * mouse. *)
 
-let tools = [ "box"; "arrow"; "text"; "oval" ]
+let kinds = [ "box"; "arrow"; "text"; "oval" ]
+
+(* a tool makes a shape of its kind; the last one picks a shape made
+ * before *)
+let tools = kinds @ [ "select" ]
+let select = List.length kinds
 
 (* a drawing's shapes: their kind, their numbers, their label *)
 let figures (data : string) : (string * int list * string) list =
@@ -30,7 +36,7 @@ let figures (data : string) : (string * int list * string) list =
   |> String.split_on_char '\n'
   |> List.concat_map (fun l ->
     match String.split_on_char ' ' l with
-    | kind :: rest when List.mem kind tools ->
+    | kind :: rest when List.mem kind kinds ->
         let rec take k l =
           if k = 0 then [], l
           else (let v, r =
@@ -110,6 +116,79 @@ let figure_shapes (ox : int) (oy : int) (colour : int)
   | "text", [ x; y ] -> [ P.Move (ox + x, oy + y, P.Words (colour, label)) ]
   | _ -> []
 
+(*****************************************************************************)
+(* A shape picked *)
+(*****************************************************************************)
+
+(* The selected shape is the drawing's last one: it is the one a label
+ * is typed in and the one Backspace and C-d remove, so picking a
+ * shape puts it last (and so over the others), and there is no
+ * selection to keep. *)
+
+(* the box a shape is picked in (x, y, width, height): an arrow's is 4
+ * pixels around it, a text's its characters *)
+let extent ((kind, nums, label) : string * int list * string) =
+  match kind, nums with
+  | "arrow", [ x0; y0; x1; y1 ] ->
+      min x0 x1 - 4, min y0 y1 - 4, abs (x1 - x0) + 8, abs (y1 - y0) + 8
+  | "text", [ x; y ] -> x, y, 8 * String.length label, 16
+  | _, [ x; y; w; h ] -> x, y, w, h
+  | _ -> 0, 0, 0, 0
+
+(* whether (px, py) is on a shape: in its box and, for an arrow, about
+ * 4 pixels from its line at most (the place's distance to the line,
+ * times the arrow's length, against 4 times its length taken as its
+ * width and height added, which needs no square root) *)
+let on_shape (fig : string * int list * string) (px : int) (py : int) =
+  let (x, y, w, h) = extent fig in
+  px >= x && px < x + w && py >= y && py < y + h
+  && (match fig with
+      | "arrow", [ x0; y0; x1; y1 ], _ ->
+          abs (((px - x0) * (y1 - y0)) - ((py - y0) * (x1 - x0)))
+          <= 4 * (abs (x1 - x0) + abs (y1 - y0))
+      | _ -> true)
+
+(* The shape picked at a place: of those there, an arrow first, then
+ * the one with the smallest box (a box inside a larger one can still
+ * be picked when the larger one is over it), the later of two as
+ * small. *)
+let picked (figs : (string * int list * string) list) (px : int) (py : int)
+    : int option =
+  let best = ref None in
+  List.iteri (fun k fig ->
+    if on_shape fig px py then begin
+      let (_, _, w, h) = extent fig in
+      let size = (match fig with "arrow", _, _ -> 0 | _ -> w * h) in
+      (match !best with
+       | Some (_, smallest) when smallest < size -> ()
+       | _ -> best := Some (k, size))
+    end) figs;
+  match !best with Some (k, _) -> Some k | None -> None
+
+(* a shape moved (an arrow's two ends both move) *)
+let moved ((kind, nums, label) : string * int list * string) (dx : int)
+    (dy : int) : string * int list * string =
+  match kind, nums with
+  | "arrow", [ x0; y0; x1; y1 ] ->
+      kind, [ x0 + dx; y0 + dy; x1 + dx; y1 + dy ], label
+  | _, x :: y :: rest -> kind, (x + dx) :: (y + dy) :: rest, label
+  | _ -> kind, nums, label
+
+(* the select tool's stroke: the shape picked where it began is now
+ * the last, moved by the stroke (a click moves it by nothing) *)
+let select_stroke (o : office) ((x0, y0, x1, y1) : int * int * int * int) =
+  let b = selected_box o in
+  let figs = figures b.data in
+  match picked figs x0 y0 with
+  | Some k ->
+      let others =
+        List.mapi (fun i fig -> if i = k then "" else figure_line fig) figs in
+      let data =
+        String.concat "" others
+        ^ figure_line (moved (List.nth figs k) (x1 - x0) (y1 - y0)) in
+      if data <> b.data then change o data
+  | None -> ()
+
 (* what a stroke of a tool makes, from (x0, y0) to (x1, y1) *)
 let stroked (tool : int) (x0 : int) (y0 : int) (x1 : int) (y1 : int)
     : string * int list * string =
@@ -124,14 +203,15 @@ let stroked (tool : int) (x0 : int) (y0 : int) (x1 : int) (y1 : int)
 let draw_stroke (o : office) (tool : int)
     ((x0, y0, x1, y1) : int * int * int * int) =
   let b = selected_box o in
-  if tool = 2
+  if tool = select then select_stroke o (x0, y0, x1, y1)
+  else if tool = 2
      || ((tool = 0 || tool = 3) && abs (x1 - x0) >= 8 && abs (y1 - y0) >= 8)
      || (tool = 1 && abs (x1 - x0) + abs (y1 - y0) >= 8) then
     change o (b.data ^ figure_line (stroked tool x0 y0 x1 y1))
 
 (* A key in a drawing: Tab another tool; a character the last shape's
  * label longer; Backspace shorter, and an empty label's shape removed;
- * C-g the drawing left *)
+ * C-d the last shape removed; C-g the drawing left *)
 let sketch_key (o : office) (tool : int) (k : P.key) =
   let b = selected_box o in
   let figs = figures b.data in
@@ -149,15 +229,29 @@ let sketch_key (o : office) (tool : int) (k : P.key) =
       relabel (fun kind nums label ->
         if label = "" then []
         else [ kind, nums, String.sub label 0 (String.length label - 1) ])
+  | P.Ctrl 'd' -> relabel (fun _ _ _ -> [])
   | P.Ctrl 'g' -> o.editing <- Nothing
-  | _ -> o.message <- "a drawing: Tab, the mouse, a label typed; C-g"
+  | _ -> o.message <- "a drawing: Tab, the mouse, a label typed; C-d, C-g"
 
 
-(* A drawing: its shapes, and the stroke being made, in blue *)
+(* A drawing: its shapes, and the stroke being made, in blue; with the
+ * select tool, the last shape in blue, and the stroke the shape picked
+ * where it would be moved *)
 let drawing_view (b : obj) (tool : int)
     (stroke : (int * int * int * int) option) : P.shape list =
-  List.concat_map (figure_shapes b.x b.y black) (figures b.data)
+  let figs = figures b.data in
+  let last = List.length figs - 1 in
+  List.concat
+    (List.mapi (fun k fig ->
+       figure_shapes b.x b.y
+         (if tool = select && k = last then blue else black) fig) figs)
   @ (match stroke with
+     | Some (x0, y0, x1, y1) when tool = select ->
+       (match picked figs x0 y0 with
+        | Some k ->
+          figure_shapes b.x b.y blue
+            (moved (List.nth figs k) (x1 - x0) (y1 - y0))
+        | None -> [])
      | Some (x0, y0, x1, y1) ->
        figure_shapes b.x b.y blue (stroked tool x0 y0 x1 y1)
      | None -> [])

@@ -61,8 +61,8 @@ type doc = {
 (* The edit going on in the selected box.
  * - [Cell (c, r, typed)]: a sheet's cell, and what is being typed in it
  *   (None when the cell is chosen but nothing is typed yet).
- * - [Sketch (tool, stroke)]: a drawing's tool (0 a box, 1 an arrow,
- *   2 a text), and the stroke the left button is making, from where it
+ * - [Sketch (tool, stroke)]: a drawing's tool (its place in
+ *   Drawing.tools), and the stroke the left button is making, from where it
  *   went down to where it is now, in the box's coordinates.
  * - [Painting (ink, brush, last)]: a paint's colour (its index in
  *   pixel_letters), its brush (0 thin, 1 thick), and the pixel where

@@ -226,7 +226,9 @@ let office_menus (o : office) : (string * (string * command) list) list =
      | Sketch (tool, _) ->
          let mark k s = (if k = tool then "* " else "  ") ^ s in
          [ ("Draw", [ (mark 0 "Box", Do_tool 0); (mark 1 "Arrow", Do_tool 1);
-                      (mark 2 "Text", Do_tool 2); (mark 3 "Oval", Do_tool 3) ]) ]
+                      (mark 2 "Text", Do_tool 2); (mark 3 "Oval", Do_tool 3);
+                      (mark Drawing.select "Select",
+                       Do_tool Drawing.select) ]) ]
      | _ -> [])
   @ [ ("Page", [ ("Next      C-x ]", Do_page 1);
                  ("Previous  C-x [", Do_page (-1));
@@ -464,7 +466,9 @@ let status (o : office) : P.shape list =
         ^ "; the left button paints; the Paint menu, or a digit"
     | Sketch (tool, _) ->
         "drawing: " ^ List.nth Drawing.tools tool
-        ^ " (Tab: another); the left button draws; type a label"
+        ^ (if tool = Drawing.select then
+             " (Tab: another); click, drag to move; C-d deletes"
+           else " (Tab: another); the left button draws; type a label")
     | _ -> "" in
   let m = if said <> "" then said
     else if o.prefix then "C-x-"

@@ -26,7 +26,9 @@
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
 # two programs in editors/ (drscheme, turbopascal) and
 # examples/, tiny/TinyKernel/steps/ (t-ix's own exception: tiny/tiny-os/
-# before 2026-10-13), and the sdl/ and
+# before 2026-10-13; and from 2026-11-18 tiny/examples/, tiny-machine's
+# web page, TinyMachineWeb, and tiny/TinyLibSystem/unix/, the tiny
+# programs' host on Linux), and the sdl/ and
 # tty/ directories, a program's hosts on Linux; apps/, games/ and tiny/'s
 # apps and games (2026-10-29: the user's programs, not the system).
 #
@@ -409,7 +411,8 @@ LINES = [("hosts", ["sdl/", "tty/", "web/"]),
          ("variants", ["compat/", "opti/", "ssa/", "dotnet/", "runtime/gnu.h",
                        "lib_graphics/c/"]),
          ("tiny/", ["tiny/TinyKernel/steps/", "tiny-kernel's sh.c, mltests.c",
-                    "tiny/TinyEditorLine.ml"]),
+                    "tiny/TinyEditorLine.ml", "tiny/TinyMachineWeb.ml",
+                    "tiny/TinyLibSystem/unix/", "tiny/examples/"]),
          ("apps, games", ["apps/", "games/", "tiny/'s apps and games"]),
          ("kernels/", None), ("languages/", None)]
 # an entry in a group its name does not start with, and how it is said
@@ -522,6 +525,17 @@ APART = [
     # more what people expect from an editor")
     ("tiny/TinyEditorLine.ml", "tiny-editor, the line editor (tiny-kernel's ed and sam): the screen editor, emacs, is t-ix's editor",
      lambda dirs, path: path == "tiny/TinyEditorLine.ml"),
+    # (the author, 2026-11-18, t-ix at 35,409 lines for a budget of
+    # 30,000, of what m-ix has apart and t-ix counted: "ok let's do 3,
+    # not counting the web, unix/ examples variants". Each has its own
+    # row, as tiny/'s others, rather than m-ix's web/ and examples/:
+    # tiny/'s make loc lists them)
+    ("tiny/TinyMachineWeb.ml", "tiny-machine in a web page, its host there: as m-ix's web/",
+     lambda dirs, path: path.startswith("tiny/TinyMachine/TinyMachineWeb.")),
+    ("tiny/TinyLibSystem/unix/", "the tiny programs' system calls on Linux, their host there: as sdl/ and tty/; t-ix's are tinykernel/'s",
+     lambda dirs, path: path.startswith("tiny/TinyLibSystem/unix/")),
+    ("tiny/examples/", "the small programs to try on tiny-kernel, in assembly, C and ML: as m-ix's examples/",
+     lambda dirs, path: path.startswith("tiny/examples/")),
     # (the author, 2026-10-09: "let's not could the sdl/ and tty/ folders
     # in make loc; they are optional as what matters is what is running
     # under mini-9pi"; last, so a program that is apart keeps its own in

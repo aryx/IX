@@ -98,7 +98,7 @@
  *   library keeps the widgets' mouse;
  * - {b the canvas} ([run_canvas]): the program draws its whole window
  *   as shapes (emacs, the office, the debugger), and the library draws
- *   only what changed, comparing the shapes' leaves (rectangles, lines,
+ *   only what changed, comparing the shapes' leaves (rectangles, polygons,
  *   ellipses and words at their places), as [redraw] compares the
  *   widgets' shapes.
  *
@@ -273,10 +273,10 @@ type 'm canvas = {
 }
 
 (* [run_canvas c] runs until None or the end of the keys, then paints the
- * window white. Each change redraws only the leaves (rectangles, lines,
+ * window white. Each change redraws only the leaves (rectangles, polygons,
  * ellipses and words) that differ from the old ones at the same place,
  * after repainting what lies under them; a word is redrawn from its
- * first differing character, and a line or an ellipse uncovered in
+ * first differing character, and a polygon or an ellipse uncovered in
  * part is redrawn whole. The console is raw meanwhile, so ^C is a key. *)
 val run_canvas : < Cap.clock; Cap.keyboard; .. > -> 'm canvas -> unit
 

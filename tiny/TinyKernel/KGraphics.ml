@@ -173,6 +173,65 @@ let ellipse (dst : image) cx cy a b (src : image) =
       span dst y (cx + inner) (cx + w) src
     end)
 
+(* The first pixel of row y whose centre is right of the edge from
+ * (xa, ya) down to (xb, yb), or on it, for ya <= y < yb. A point's
+ * numbers are a pixel's top left corner, so the row's centres are at
+ * y + 1/2 and the edge is there at xa + (xb - xa) (2 (y - ya) + 1) /
+ * 2 (yb - ya); the pixel is that less a half, rounded up. *)
+let crossing (xa, ya) (xb, yb) y =
+  let n = ((xb - xa) * ((2 * (y - ya)) + 1)) - (yb - ya)
+  and d = 2 * (yb - ya) in
+  xa + (if n >= 0 then (n + d - 1) / d else - (- n / d))
+
+let rec insert (x : int) l =
+  match l with
+  | h :: t when h < x -> h :: insert x t
+  | _ -> x :: l
+
+(* A filled polygon is, on each row, the pixels between the first and
+ * the second of its edges that cross the row, between the third and
+ * the fourth, and so on (the even-odd rule: a place is inside when a
+ * ray from it crosses the edges an odd number of times). A pixel is in
+ * when its centre is inside, or on a left edge; so the polygon of a
+ * rectangle's four corners is that rectangle, and two polygons that
+ * share an edge neither overlap nor leave a gap. An edge counts for
+ * the rows from its upper end to just above its lower end, so a
+ * corner between two edges is crossed once, and a flat edge never.
+ * A side of the polygon's box is at most 16383, which keeps
+ * [crossing]'s product under 2^30, tiny-ml's largest integer. *)
+let fill_polygon (dst : image) (points : (int * int) list) (src : image) =
+  match points with
+  | [] -> ()
+  | (x, y) :: _ ->
+      let x0 = List.fold_left (fun m (px, _) -> min m px) x points
+      and x1 = List.fold_left (fun m (px, _) -> max m px) x points
+      and y0 = List.fold_left (fun m (_, py) -> min m py) y points
+      and y1 = List.fold_left (fun m (_, py) -> max m py) y points in
+      if x1 - x0 > 16383 || y1 - y0 > 16383 then
+        raise (Graphics "a polygon too large");
+      (* the last point's edge goes back to the first *)
+      let rec edges l =
+        match l with
+        | a :: b :: rest -> (a, b) :: edges (b :: rest)
+        | [ last ] -> [ last, (x, y) ]
+        | [] -> []
+      in
+      let edges = edges points in
+      let rec fill row l =
+        match l with
+        | a :: b :: rest -> if b > a then span dst row a (b - 1) src; fill row rest
+        | _ -> ()
+      in
+      for row = max y0 dst.r.y0 to min y1 dst.r.y1 - 1 do
+        fill row
+          (List.fold_left (fun acc ((xa, ya), (xb, yb)) ->
+             if ya <= row && row < yb then
+               insert (crossing (xa, ya) (xb, yb) row) acc
+             else if yb <= row && row < ya then
+               insert (crossing (xb, yb) (xa, ya) row) acc
+             else acc) [] edges)
+      done
+
 (*****************************************************************************)
 (* The images' memory *)
 (*****************************************************************************)
@@ -516,6 +575,11 @@ let message (c : conn) s i arg =
   | 'E' ->
       fill_ellipse (find c (arg 0)) (arg 2) (arg 3) (arg 4) (arg 5)
         (find c (arg 1))
+  | 'P' ->
+      let rec points k =
+        if k >= len 2 then []
+        else (arg (3 + (2 * k)), arg (4 + (2 * k))) :: points (k + 1) in
+      fill_polygon (find c (arg 0)) (points 0) (find c (arg 1))
   | 's' ->
       text (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font
         (String.sub s (i + 11) (len 4))
@@ -546,6 +610,7 @@ let messages (c : conn) s =
         | 'a' -> 15 | 'f' | 'c' -> 3 | 'd' -> 19 | 'l' | 'e' | 'E' -> 13
         | 's' -> 11 + max 0 (arg 4) | 't' -> 13 + max 0 (arg 4)
         | 'p' -> 9 + max 0 (arg 3)
+        | 'P' -> 7 + (4 * max 0 (arg 2))
         | _ -> raise (Graphics "an unknown message")
       in
       if i + size > n then raise (Graphics "a message cut short");

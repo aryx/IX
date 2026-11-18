@@ -105,6 +105,21 @@ let picture bits size =
         fill_ellipse_ 0 red 1030 420 40 40 ^
         ellipse_ 0 black 700 0 50 30 ^ ellipse_ 0 white 300 760 80 40);
   send (ellipse_ 0 black 512 16000 16383 15300);
+  (* polygons: a triangle; a star in one stroke, its middle a hole; a
+   * rectangle's corners over that rectangle in red (no red left); one
+   * cut by the screen's right side and one by its bottom; two as
+   * large as a polygon may be, a slanted band four pixels wide and a
+   * tall one, of which the screen has a small part *)
+  send (D.d_fill_polygon 0 red [ 700, 500; 760, 600; 660, 580 ] ^
+        D.d_fill_polygon 0 blue
+          [ 830, 500; 866, 610; 772, 542; 888, 542; 794, 610 ]);
+  send (fill 0 red 700 630 760 660 ^
+        D.d_fill_polygon 0 white [ 700, 630; 760, 630; 760, 660; 700, 660 ]);
+  send (D.d_fill_polygon 0 green [ 980, 600; 1100, 640; 980, 680 ] ^
+        D.d_fill_polygon 0 yellow [ 850, 700; 900, 800; 800, 800 ]);
+  send (D.d_fill_polygon 0 black
+          [ -8000, -7440; -7996, -7440; 8380, 8936; 8376, 8936 ] ^
+        D.d_fill_polygon 0 white [ 970, 480; 990, 480; 990, 16000; 970, -300 ]);
   (* an image freed, its memory another's *)
   send (D.msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^
         text_ 14 white 6 50 "again" ^ draw_ 0 14 (-1) 570 350 630 470 0 0);
@@ -136,6 +151,10 @@ let picture bits size =
   bad (D.msg 'e' [ 0; white; 10; 10; -1; 5 ]);
   bad (D.msg 'E' [ 0; white; 10; 10; 5; 16384 ]);
   bad (D.msg 'E' [ 0; white; 10; 10; 5 ]);
+  bad (D.d_fill_polygon 0 white [ 0, 0; 16384, 10; 0, 10 ]);
+  bad (D.msg 'P' [ 0; white; -1 ]);
+  bad (D.msg 'P' [ 0; white; 3; 0; 0; 10; 0 ]);
+  bad (D.d_fill_polygon 0 9 [ 0, 0; 10, 0; 0, 10 ]);
   bad (fill 0 green 10 470 20 480);
   (* the connection's end: the memory one block again, but the font *)
   disconnect c;

@@ -874,6 +874,7 @@ low byte first:
 | `l dst src x0 y0 x1 y1` | a line, both ends drawn |
 | `e dst src cx cy a b` | an ellipse's outline, a pixel thick, of centre (cx, cy) and half axes a and b (at most 16383); a circle has a = b |
 | `E dst src cx cy a b` | the same ellipse, filled |
+| `P dst src n`, then `n` points `x y` | a filled polygon, its corners the points, the last joined to the first: the pixels whose centre is inside (the even-odd rule), a point being a pixel's top left corner; its box's sides at most 16383 |
 | `s dst src x y n`, then `n` bytes | a text, its top left corner at (x, y); a character is 8 by 16 |
 | `t dst src x y n style`, then `n` bytes | a text in a style: bold 1, italic 2, underlined 4, large 8 (16 by 32); or 16, fat pixels, a byte a colour, a square of 4 by 4 (tiny-office's words and paints, www's) |
 | `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (www's) |
@@ -994,7 +995,7 @@ tune, and the next one starts at its beginning.
 | shape | what |
 |---|---|
 | `Rect (colour, width, height)` | a rectangle; a colour is a byte of the table |
-| `Line (colour, dx, dy)` | a line a pixel thick, from where it is placed to that place moved by (dx, dy), both ends drawn |
+| `Polygon (colour, points)` | the inside of the polygon whose corners are the points, each counted from where it is placed, the last joined to the first; a point is a pixel's top left corner, so a rectangle's four corners are that rectangle; where edges cross, the even-odd rule |
 | `Ellipse (colour, width, height)`, `Disc (colour, width, height)` | the outline, or the inside, of the ellipse in a box of that size, placed as a rectangle is; a box with an even side leaves its last column or row out |
 | `Words (colour, text)` | a text, in the one font, 8 by 16; its colour's high bits a style (§7.7) |
 | `Group shapes` | shapes together, the first under the next |

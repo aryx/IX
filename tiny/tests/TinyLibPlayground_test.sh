@@ -4,7 +4,7 @@
 #
 # The test of TinyLibPlayground.ml on the host, built by OCaml, with no
 # machine: ../TinyAppSquare.ml, a game of a page, its model
-# after some keys and frames, shown with ellipses and discs around it;
+# after some keys and frames, shown with ellipses, discs and polygons around it;
 # the messages TinyLibPlayground.ml
 # made are drawn by KGraphics.ml. The lines it prints (where the
 # square is; random numbers from a seed) against square.expected, the

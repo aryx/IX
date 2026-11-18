@@ -12,8 +12,8 @@ open TinyOffice
 
 module P = TinyLibPlayground
 
-(* a shape's leaves at their places: "rect colour x y w h", "line
- * colour x y dx dy", "ellipse colour x y w h", "disc colour x y w h",
+(* a shape's leaves at their places: "rect colour x y w h", "polygon
+ * colour x,y x,y...", "ellipse colour x y w h", "disc colour x y w h",
  * "words colour x y |text|" *)
 let box kind c x y w h =
   kind ^ " " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
@@ -27,7 +27,12 @@ let rec leaves x y s acc =
     ("rect " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
      ^ " " ^ string_of_int w ^ " " ^ string_of_int h, w > 1 && h > 1)
     :: acc
-  | P.Line (c, dx, dy) -> (box "line" c x y dx dy, true) :: acc
+  | P.Polygon (c, points) ->
+    ("polygon " ^ string_of_int c
+     ^ String.concat "" (List.map (fun (px, py) ->
+         " " ^ string_of_int (x + px) ^ "," ^ string_of_int (y + py)) points),
+     true)
+    :: acc
   | P.Ellipse (c, w, h) -> (box "ellipse" c x y w h, true) :: acc
   | P.Disc (c, w, h) -> (box "disc" c x y w h, true) :: acc
   | P.Words (c, t) ->

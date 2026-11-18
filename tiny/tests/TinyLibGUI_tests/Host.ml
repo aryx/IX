@@ -115,19 +115,20 @@ let () =
     (List.map (fun (box, s) -> box, TinyLibPlayground.Move (0, 200, s)) over);
   (* a canvas's picture changed twice, on a white ground: a disc moved
    * (its old box erased) over a square, then the square moved from
-   * under it (the disc uncovered there, drawn again), and a line that
-   * goes left and down moved (its box, left of where it starts,
-   * erased); so one whole disc, one square and one line *)
+   * under it (the disc uncovered there, drawn again), and a triangle
+   * that goes left and down moved (its box, left of where it starts,
+   * erased); so one whole disc, one square and one triangle *)
   let ground = TinyLibPlayground.(Move (380, 400, Rect (255, 240, 70))) in
   let disc x = TinyLibPlayground.(Move (x, 420, Disc (0xf0, 31, 31))) in
   let square x = TinyLibPlayground.(Move (x, 430, Rect (0, 10, 10))) in
-  let line x = TinyLibPlayground.(Move (x, 405, Line (0x36, -40, 50))) in
+  let triangle x =
+    TinyLibPlayground.(Move (x, 405, Polygon (0x36, [ 0, 0; -40, 40; -20, 50 ]))) in
   let d = disc 460 in
-  let one = [ ground; square 470; disc 400; line 440 ]
-  and two = [ ground; square 470; d; line 440 ] in
+  let one = [ ground; square 470; disc 400; triangle 440 ]
+  and two = [ ground; square 470; d; triangle 440 ] in
   TinyLibGUI.repaint [] one;
   TinyLibGUI.repaint one two;
-  TinyLibGUI.repaint two [ ground; square 560; d; line 610 ];
+  TinyLibGUI.repaint two [ ground; square 560; d; triangle 610 ];
   KGraphics.arena 0xf4b000 0xb4000;
   let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in

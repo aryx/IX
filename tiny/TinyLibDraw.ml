@@ -62,6 +62,9 @@ let d_ellipse (dst : image) (src : image) ((cx, cy) : point) a b =
   msg 'e' [ dst; src; cx; cy; a; b ]
 let d_fill_ellipse (dst : image) (src : image) ((cx, cy) : point) a b =
   msg 'E' [ dst; src; cx; cy; a; b ]
+let d_fill_polygon (dst : image) (src : image) (points : point list) =
+  List.fold_left (fun s (x, y) -> s ^ i16 x ^ i16 y)
+    (msg 'P' [ dst; src; List.length points ]) points
 let d_text (dst : image) (src : image) ((x, y) : point) s =
   msg 's' [ dst; src; x; y; String.length s ] ^ s
 let d_styled (dst : image) (src : image) ((x, y) : point) (style : style) s =
@@ -105,6 +108,10 @@ let shape s i =
       if i + 9 > String.length s then 9, 1
       else if int16 s (i + 7) < 0 then -1, 0
       else 9 + int16 s (i + 7), 1
+  | 'P' ->
+      if i + 7 > String.length s then 7, 2
+      else if int16 s (i + 5) < 0 then -1, 0
+      else 7 + (4 * int16 s (i + 5)), 2
   | 'c' -> 3, 0
   | _ -> -1, 0
 

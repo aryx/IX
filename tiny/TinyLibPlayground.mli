@@ -72,8 +72,9 @@
  * - floating-point coordinates under a transformation (move, scale,
  *   rotate, fade); here a shape is in pixels, at integer positions,
  *   with y going down from the top left corner of the window;
- * - polygons and images (circles and ellipses are kept, with their box
- *   as their place instead of their centre);
+ * - images, and the polygons with a name (triangle to octagon: a
+ *   polygon's points are given). Circles and ellipses are kept, with
+ *   their box as their place instead of their centre;
  * - text in several sizes (the machine has a single 8x16 font);
  * - ABC's notation and instruments (a tune is notes in Hz on the
  *   kernel's waves);
@@ -110,8 +111,8 @@
  *   descriptor 4;
  * - redraw only what changed, for every shape and not just the
  *   background, by comparing the shapes of two models;
- * - polygons, once KGraphics.ml draws them (filled polygons are among
- *   its exercises, for this shape);
+ * - the polygons with a name: [regular n c r], the n corners on a
+ *   circle of radius r, with a table of sines as TinyAppOrrery's;
  * - a second game: a Snake, or a Pong;
  * - record and replay: a game is pure and init takes a seed, so the
  *   seed and the keys of each frame reproduce a whole game (demos, bug
@@ -168,13 +169,19 @@ val key_of_byte : char -> key
  * is square. When the width or the height is even, the box has no
  * middle pixel, and its last column or row is left out.
  *
- * [Line (c, dx, dy)] is a line a pixel thick from where it is placed to
- * that place moved by dx and dy, both ends drawn; either may be
- * negative, and a line of 0 and 0 is a point. *)
+ * [Polygon (c, points)] is the inside of the polygon whose corners are
+ * the points, in their order, each counted from where the polygon is
+ * placed; the last one is joined to the first. A point is a pixel's top
+ * left corner, so [(0, 0); (w, 0); (w, h); (0, h)] is [Rect (c, w, h)],
+ * and two polygons that share an edge neither overlap nor leave a gap.
+ * Where the edges cross each other, a place is inside when it is
+ * inside an odd number of times (a star of five points drawn in one
+ * stroke has a hole in its middle). Elm's triangle, pentagon, hexagon
+ * and octagon are polygons whose points a program computes. *)
 type colour = int
 type shape =
   | Rect of colour * int * int
-  | Line of colour * int * int
+  | Polygon of colour * (int * int) list
   | Ellipse of colour * int * int
   | Disc of colour * int * int
   | Words of colour * string

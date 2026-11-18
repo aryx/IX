@@ -353,7 +353,7 @@ static int waiting[NCORE];
  * kernel's lock, and every other core then waits for it, the first
  * one too at its clock's interrupt (its cursor no longer moves). A core
  * that has waited WATCHDOG_US says so once, in last words (machine.c):
- * which core holds the lock, for how long, and what each core was
+ * which core holds the lock, and what each core was
  * doing (Machine.doing); then it waits on, the words staying on the
  * screen. The times are the board's clock's, the 30 bits of timer_now
  * (17 minutes, and round). The kernel never holds the lock that long
@@ -361,7 +361,6 @@ static int waiting[NCORE];
  * second or two. */
 #define WATCHDOG_US 10000000
 static volatile int klock_holder;               /* -1: nobody; the first core from its start */
-static volatile unsigned klock_since;
 static volatile int watchdog_said;
 
 static unsigned now_us(void) { return Long_val(timer_now(Val_unit)); }
@@ -373,7 +372,7 @@ static void watchdog(int me)
   watchdog_said = 1;
   lastwords("watchdog: core "); lw_dec(me); lastwords(" waited 10 s for the kernel's lock, held by core ");
   if (h < 0) lastwords("none"); else lw_dec(h);
-  lastwords(" for "); lw_dec(since_us(klock_since) / 1000000); lastwords(" s\n");
+  lastwords("\n");
   for (c = 0; c < NCORE; c++) {
     lastwords("  core "); lw_dec(c);
     if (doing_[c].prog[0] == 0) lastwords(": nothing yet");
@@ -383,13 +382,25 @@ static void watchdog(int me)
 }
 
 /* old: klock_take the board's, its loop there */
+/* opti: the clock is read once in 4,096 failed tries, and not at all
+ * by a core that gets the lock sooner. It was read at each try, and
+ * once more by each taker (klock_since, for the watchdog's "for N s",
+ * gone): under QEMU a read of the clock is a device's access, which
+ * the emulator serves one core at a time, so the three cores that
+ * waited kept that turn from the one that worked (its own clock, its
+ * card), and from each other.
+ * old: unsigned t0 = now_us();
+ *      while (!klock_try()) if (!watchdog_said && since_us(t0) > WATCHDOG_US) watchdog(core());
+ *      klock_holder = core(); klock_since = now_us(); */
 void klock_take(void)
 {
-  unsigned t0 = now_us();
+  unsigned t0 = 0, tries = 0, timed = 0;
   while (!klock_try())
-    if (!watchdog_said && since_us(t0) > WATCHDOG_US) watchdog(core());
+    if ((++tries & 4095) == 0 && !watchdog_said) {
+      if (!timed) { t0 = now_us(); timed = 1; }
+      else if (since_us(t0) > WATCHDOG_US) watchdog(core());
+    }
   klock_holder = core();
-  klock_since = now_us();
 }
 
 void kernel_enter(void) { klock_take(); restore_view(&contexts[current]); }

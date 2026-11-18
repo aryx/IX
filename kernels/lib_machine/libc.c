@@ -215,16 +215,28 @@ long strtol(const char *s, char **endp, int base)
 #ifdef __arm__
 /* the ARM EABI's divisions (arm32 has no divide instruction on
  * the Pi1, and Ubuntu's libgcc is Thumb-2: plan_kernel.md) */
+/* opti: the denominator is first put under the numerator's highest
+ * bit (the largest shift k with d << k <= n, found by halves: 16, 8,
+ * 4, 2, 1), then k + 1 turns give the quotient's bits, as lib_core's
+ * libc/arch/arm/div.s does for the programs. The kernel divides at
+ * every hash, every place in a file and every piece of its cache, by
+ * small numbers mostly: a quotient of 8 bits is 9 turns. The 32 turns
+ * below were 8.4% of all the instructions of make self-quick on
+ * mini-9pi, a fifth of the kernel's (mini-qemu -prof,
+ * plan_9pi_self_speed.md).
+ * old: unsigned q = 0, r = 0; int i;
+ *      for (i = 31; i >= 0; i--) { r = (r << 1) | ((n >> i) & 1); if (r >= d) { r -= d; q |= 1u << i; } }
+ *      return ((unsigned long long)r << 32) | q; */
 static unsigned long long udivmod(unsigned n, unsigned d)
 {
-  unsigned q = 0, r = 0;
-  int i;
+  unsigned q = 0, bit = 1;
+  int s;
   if (d == 0) panic("division by zero");
-  for (i = 31; i >= 0; i--) {
-    r = (r << 1) | ((n >> i) & 1);
-    if (r >= d) { r -= d; q |= 1u << i; }
-  }
-  return ((unsigned long long)r << 32) | q;
+  for (s = 16; s > 0; s >>= 1)
+    if ((n >> s) >= d) { d <<= s; bit <<= s; }
+  for (; bit != 0; bit >>= 1, d >>= 1)
+    if (n >= d) { n -= d; q |= bit; }
+  return ((unsigned long long)n << 32) | q;
 }
 
 unsigned __aeabi_uidiv(unsigned n, unsigned d) { return (unsigned)udivmod(n, d); }

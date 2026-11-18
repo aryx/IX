@@ -394,6 +394,65 @@ Next: the kernel's half of a compile, measured call by call (an open,
 a read, an exec), the largest first; whether make self-mix runs on
 four cores, as t-ix's self does; and the whole make self-mix once.
 
+## 2026-11-18: where four cores stop, and three things found
+
+The author: "make self-mix use 4 cores, but before we need to
+significantly improve the ratio". The measure is now all of lib_core
+on the card (mk lib_core.dir, mk -p), the committed kernel at both
+ends of each series: 42.9 s on one core, 28.8 s on four, 1.5 times.
+
+Where they stop. On four cores each core waits about 10 s of 29 for
+the kernel's lock, and works the rest: the work adds to the one core's
+40 s, so nothing is lost but the wait. The kernel's part of the build
+is about 18 s on one core (card writes 3.9 s, opens 2.8 s, creates 1.7
+s, exec 1.3 s, faults 6.3 s), and it is one at a time: the four-wide
+part of the build, 20 s, cannot go under it. The cores' idle time is
+the two serial steps', .depend and the archive, not the scheduler's.
+
+A count put right: the reads' 4 s to 6 s said before were a process
+asleep on a pipe while the core was idle (the time of a call that
+sleeps was taken from the core's last entry). By device, the card's
+files read are 0.55 s for 25 MB.
+
+mini-qemu -prof, make self-quick on one core, by instructions: the
+programs 57.7%, the kernel 42.3%, and in it division in software 8.4%
+(libc.c's 32 turns), memmove 4.6%, phys_zero 3.0%, the collector
+2.8%. Under QEMU that is not the time: the division made short
+changed no measure there, a loop of registers being what a translator
+runs best.
+
+Kept (kernels 9pi and lib_machine; all three together, lib_core:
+four cores 25.3 s with 4096-byte blocks too, one core 40.1 s):
+
+- Kfs's failing wrote the waiting pieces to the card whenever a call
+  failed, and a name that is not there is a call that fails: 3,500
+  opens of that build, the compiler looking for a summary in each
+  directory and rc for a command along its path, 20 to 118 ms for one,
+  the lock held. Now only if the call itself wrote. 27.1 s against
+  28.9 s on four cores.
+- klock_take read the clock at each failed try, for the watchdog, and
+  once at each take: a device's access, which QEMU serves one core at a
+  time. Now once in 4,096 tries. 27 s against 29 s, alone.
+- libc.c's division: the denominator put under the numerator's highest
+  bit first, as lib_core's div.s; checked against the host's on 20
+  million cases. Nothing under QEMU, kept for the boards, whose time
+  is their instructions'.
+
+Tried and not kept: a table of the names looked for, in Kfs (27.0 s
+against 27.1 s once the flush was gone: the lookups were not the
+cost); blocks of 4096 bytes on the card, a page and a piece of the
+cache (26.4 s against 27.0 s, within the runs' spread, for another
+format); the pages of zeros ahead of a fault and /env's variables
+written only when changed, again on four cores (28 s and 30 s against
+29 s).
+
+So the ratio is 1.6 where it was 1.5, and what is left is the lock
+itself: a compile's kernel work cannot overlap another's. Next, the
+transfers of the card out of the lock again, now that the waiting
+cores no longer read the clock (the first try lost a second and a
+half, with them reading it), and a program's data pages kept as its
+text is.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

@@ -128,7 +128,10 @@ let cache_read (device : int -> int -> string) at n =
 
 (* old: the device written at once, the pieces forgotten:
  * let cache_written at n = if !cached then for k = at / piece to (at + n - 1) / piece do Hashtbl.remove pieces k done *)
+(* (how many times: failing's, below) *)
+let written = ref 0
 let cache_write (device : int -> int -> string) (write : int -> string -> unit) at s =
+  incr written;
   if not !cached then write at s
   else
     for k = at / piece to (at + String.length s - 1) / piece do
@@ -154,8 +157,19 @@ let cache_write (device : int -> int -> string) (write : int -> string -> unit) 
  * under QEMU (plan_self_hosting.md). A machine stopped loses the last
  * second's writes, as Plan 9's file servers' caches do.
  * old: flush () at the end of each call *)
+(* opti: a call that fails writes the pieces only if it changed one
+ * itself (written counts cache_write's calls). A name that is not
+ * there is a call that fails, and it wrote all that waited: a compiler
+ * looking for a unit's summary in each of its directories, rc for a
+ * command along its path, each sent up to a megabyte to the card
+ * before saying no, 20 to 118 ms for one open, the kernel's lock held
+ * (3,500 such opens in lib_core's build on mini-9pi,
+ * plan_9pi_self_speed.md).
+ * old: with Failure m -> flush (); raise (Error m) | e -> flush (); raise e *)
 let failing f =
-  let x = try f () with Failure m -> flush (); raise (Error m) | e -> flush (); raise e in
+  let before = !written in
+  let wrote () = if !written <> before then flush () in
+  let x = try f () with Failure m -> wrote (); raise (Error m) | e -> wrote (); raise e in
   if !ndirty >= 256 then flush ();
   x
 

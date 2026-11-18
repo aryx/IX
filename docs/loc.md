@@ -68,6 +68,16 @@ code was rewrapped to 80 columns (the author: "going up to 100 just to
 try to reduce the LOC to stay in budget is not ok"), which put t-ix at
 26,302: about 3,700 left.
 
+Since 2026-11-18 t-ix's budget is **35,000 lines** (the author: "let's
+stop here and settle for 35000 LOC for tiny"), t-ix at 34,052 once its
+web page, its host on Linux, its examples and its tests' system calls
+were put apart: about 950 left. A reading of all of `tiny/` that day
+found little said twice in its code: about 870 lines to gain without a
+change of behaviour (400 of them comments an `.ml` repeats from its
+`.mli`), then only by a change of structure or a feature less (the
+author: "diminishing return and possibly make the code less easy to
+understand").
+
 The tables of README.md and tiny/README.md give each program's lines,
 and since 2026-11-13 they count the same way as the numbers of this
 log: all the lines of a program's files, comments and blank lines

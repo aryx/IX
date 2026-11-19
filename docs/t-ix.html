@@ -175,7 +175,7 @@ shows them all.
   var assets = "https://aryx.github.io/assets/";
   var kernel = new URLSearchParams(location.search).get("kernel");
   var tiny_machine = kernel == "t6"
-    ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img" }
+    ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img", rate: "8" }
     : { image: assets + "ix/tiny-kernel/boot.img", disk: assets + "ix/tiny-kernel/disk.img",
         disk2: assets + "ix/tiny-kernel/src.img" };
 </script>

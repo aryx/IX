@@ -108,7 +108,7 @@ async def session(port, debug):
     else: raise Exception("the browser's debugging port does not answer")
     async with websockets.connect(tab["webSocketDebuggerUrl"], max_size=None) as ws:
         p = Page(ws)
-        await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("?image=boot.img&disk=disk.img&disk2=src.img" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img"))
+        await p.send("Page.navigate", url=url or f"http://127.0.0.1:{port}/" + ("?image=boot.img&disk=disk.img&disk2=src.img" if kernel == "tiny-kernel" else "?image=kernel.img&disk=fs.img&rate=8"))
         await p.wait("the shell's prompt", f"{CONSOLE}.includes('$ ')")
         print("ok the kernel boots: the shell's prompt on the console")
         # as a person does first: the mouse over the black screen, a click

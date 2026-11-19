@@ -37,7 +37,8 @@
  * The loop is the browser's. At each frame (requestAnimationFrame), it
  * runs as many instructions as the time since the last frame is worth
  * at the machine's speed (20 million instructions a second, as
- * TinyMachine's with a window), but no more than
+ * TinyMachine's with a window, or what the page says in millions:
+ * rate=8 in the address, rate: "8" in tiny_machine), but no more than
  * [budget] milliseconds of them. This way a browser too slow for that
  * speed still draws and listens: the machine is then slower, and the
  * status line says so, as a percentage of the full speed. Then the

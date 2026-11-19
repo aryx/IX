@@ -563,7 +563,6 @@ let grown disk =
 
 let run image disks www =
   let on_open (k : TinyMachineDevices.console) = k.opened <- true in
-  TinyMachineDevices.rate := page_rate;
   (* the wire's other end, which gives packets to the machine it is
    * called by: by a reference *)
   let machine = ref None in
@@ -661,6 +660,13 @@ let () =
         Js.Opt.to_option
           (Js.Opt.map (call search "get" [| str name |]) Js.to_string) in
   let image = Option.value (param "image") ~default:"boot.img" in
+  (* the speed the page asks for, in millions, as TinyMachine's -rate:
+   * t6's page asks for 8, since t6 never sleeps and a browser does not
+   * always give it 20 *)
+  TinyMachineDevices.rate :=
+    (match Option.bind (param "rate") int_of_string_opt with
+     | Some n when n > 0 -> n * 1_000_000
+     | _ -> page_rate);
   let missing name =
     status ("tiny-machine: " ^ name ^ " could not be fetched") in
   status ("loading " ^ image);

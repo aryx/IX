@@ -113,7 +113,7 @@ case $1 in
     say "kernel:  $(short $image)($(size $image) bytes; built from $(short $dir))"
     say "disk:    $(short $dir/_make/fs.img)($(( $(size $dir/_make/fs.img) / 1024 )) KB, $mode)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
-    [ -z "$web" ] || page "?image=kernel.img&disk=fs.img" $image $dir/_make/fs.img
+    [ -z "$web" ] || page "?image=kernel.img&disk=fs.img&rate=8" $image $dir/_make/fs.img
     if [ $listing = 1 ]; then exec $machine -l $image; fi
     say "command: $(short $machine)${rate:+$rate }-d $(short $disk)$(short $image)"
     exec $machine $rate -d $disk $image

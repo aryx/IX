@@ -13,8 +13,17 @@ if not echo 'DIRS=$BOTH $LINUX
 MORE='
 # each library after the ones its mkfile needs: NEEDS=lib_core lib_mime
 # in lib_x/mkfile gives lib_x.dir:V: lib_core.dir lib_mime.dir
+# (and each after lib_core, which a NEEDS does not name, every mkfile
+# reading its objects and its units' summaries: with several jobs
+# lib_mime, lib_crypto and lib_compression started beside it and
+# compiled before its Sys.inline and Option.inline were there:
+# Poly1305's Sys.int_size not folded, their .depend without those
+# lines, where the card's build, a directory at a time, had them: make
+# self's "25 files not Linux's", 2026-11-18.
+# old: if(! ~ $#n 0) echo $d^'.dir:V:' $n^.dir, alone)
 for(d in $LIBS){
 	n=`{sed -n 's/^NEEDS=//p' $d/mkfile}
+	if(! ~ $d lib_core) echo $d^'.dir:V: lib_core.dir'
 	if(! ~ $#n 0) echo $d^'.dir:V:' $n^.dir
 }
 # ARGS: what each directory's mk is given, the machine and the system,

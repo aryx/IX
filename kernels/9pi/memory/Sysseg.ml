@@ -41,8 +41,15 @@ let attached (p : proc) va =
 
 let syssegdetach (p : proc) va = Fault.detach p (attached p va); 0
 
+(* (any segment of the process but its text, as Plan 9's segfree: the
+ * data and the bss too, whose pages given back are zeros, or the
+ * file's, when touched again. mini-ml's runtime gives the half its
+ * collector has just emptied (gc.c's major).
+ * old: let s = attached p va, a segattach's segment only) *)
 let syssegfree (p : proc) va len =
-  let s = attached p va in
+  let s = match Fault.segment p va with
+    | Some s when s.kind <> Text -> s
+    | _ -> raise (Error ebadarg) in
   Fault.free_range p s (Mmu.pgroundup va) ((va + len) land lnot (pgsize - 1));
   0
 

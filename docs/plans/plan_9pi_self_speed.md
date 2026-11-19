@@ -495,6 +495,65 @@ lib_core: 23.1 s and 23.0 s against 25.3 s and 25.1 s on four cores
 (3.1 s before the first recipe where it was 4.9 s), 38.9 s against
 40.2 s on one. 1.7 times.
 
+## 2026-11-18, later: the whole build never ran, and the kernel by ix's own tools
+
+The whole `make self`, run on four cores for the first time, hung four
+hours. What it showed, in the order found:
+
+- The Pi 2's kernel, ocaml-light's, raised an exception nobody caught,
+  and its panic faulted before saying which: ocaml-light's native
+  runtime answers a null pointer for no backtrace. The panic now
+  prints the exception first: `Out of memory`. The kernel's malloc
+  never takes back, and ocaml-light's heap was at 52, 73, 78 and 90 MB
+  of its 96 after 20, 40, 60 and 80 s; on one core the same end,
+  later. GitHub's self (mix) had failed every day since 2026-10-30,
+  six hours on 2026-11-18.
+- The author: "let's build mini-9pi with mini-ml instead of
+  ocaml-light, so we have better control on what we can do". The
+  Pi 2's kernel by ix's tools (COMPILER=ix: mini-ml's two halves of
+  32 MB, no malloc that grows) built 84 of 85 directories in 48
+  minutes of mk on one core. But it had one core only: board.h's CORES
+  was gcc's, and l2.s parked the other three.
+- The 85th, mini-ld linking mini-netscape: 195 MB alive of a half's
+  192. A library's member is now let go once taken (40 MB of bytes
+  were kept beside the program made of them).
+- "25 files not Linux's": Linux's were wrong. The top mkfile of
+  2026-11-17 let lib_mime, lib_crypto and lib_compression start beside
+  lib_core, and compile before its summaries were there. Each library
+  now waits for lib_core (mkfiles/top.rc).
+
+The cores for the kernel by ix's tools: l2.s starts the other cores
+(each its stacks, the first core's table), has the kernel's lock
+(ldrex and strex as words: the assembler needs nothing) and each
+core's trap frame; l.s has four hooks, empty for the Pi 1. The C has
+no gcc-only construct left for the cores: the core's number and its
+timer's registers are the board's assembly for both builds. mini-ml's
+runtime runs one value stack at a time, the lock's holder's: a stack
+for each core's scheduler, and kernel_enter says which runs, where
+ocaml-light's view of the stack is restored.
+
+| self-quick, mk on the card | one core | four cores |
+|---|---|---|
+| ocaml-light's kernel | 21 s | about 20 s, then 15 s with the shared changes |
+| mini-ml's, before the cores | 26 s | one core |
+| mini-ml's, with them | 26 s | 18 s, twice |
+
+The whole build on four cores with it: 1,145 s of mk against 2,881 s
+on one, 2.5 times, 3.4 recipes at once, but seven directories killed:
+"virtual memory allocation failed". Four mini-ld at once: a program
+of mini-ml's holds the half in use, filled to its size before the
+next collection, and the one just emptied, about 310 MB for 120
+alive, and the Pi 2 has 847. Waiting for a page (Plan 9's newpage)
+alone made it worse: all waited for each other. So the runtime gives
+the emptied half back when it is 64 MB or more (segfree, which the
+kernel now takes for a program's own data, and mini-5i), and a fault
+with no page left waits a minute at most.
+
+Open at this commit: the whole build on four cores with the memory
+given back (running); the Pi 2's default compiler, still ocaml-light;
+make self-mix on four cores; the mini-ml kernel's 26 s on one core
+where ocaml-light's is 21.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

@@ -66,6 +66,27 @@ let map_seg pgdir s pg pa =
   | Text when kept s -> if not (Mmu.map_ro pgdir pg pa) then raise (Error enovmem)
   | _ -> map pgdir pg pa
 
+(* A page for a process's fault. When none is left the process waits
+ * for one, a tenth of a second at a time: another's exit gives its
+ * pages back. Plan 9's newpage sleeps the same way (on palloc.r,
+ * woken by a page's free; here the clock looks again, which needs no
+ * wakeup in Mmu). A minute at most: every process may be waiting, and
+ * the one whose time ends first is refused as before, its pages then
+ * the others'. A note ends the wait (Proc.tsleep raises it).
+ * Seen in the whole build of ix on the card with four cores
+ * (2026-11-18): four mini-ld at once, a copying collector's two
+ * halves each, filled the Pi 2's 847 MB, and seven directories failed
+ * with "virtual memory allocation failed"; one core never has two.
+ * old: match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem) *)
+let page_wait = 600
+let page () =
+  let rec go n =
+    match Mmu.kalloc () with
+    | Some pa -> pa
+    | None when n > 0 -> Proc.tsleep 100; go (n - 1)
+    | None -> raise (Error enovmem) in
+  go page_wait
+
 (* a page of s made: zeroed, or read from the image; recorded, mapped *)
 let make pgdir s pg =
   (* the image read first: a read may sleep, another sharer make it *)
@@ -73,9 +94,13 @@ let make pgdir s pg =
     | Some c when pg - s.base < s.flen -> Some (read_image c (s.fstart + pg - s.base) (min pgsize (s.flen - (pg - s.base))))
     | _ -> None in
   if not (Hashtbl.mem s.pages pg) then begin
-    let pa = match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem) in
-    (match data with Some d -> Machine.Phys.write pa d | None -> ());
-    Hashtbl.add s.pages pg pa
+    let pa = page () in
+    (* (made by a sharer while this one waited for a page: given back) *)
+    if Hashtbl.mem s.pages pg then Mmu.kfree pa
+    else begin
+      (match data with Some d -> Machine.Phys.write pa d | None -> ());
+      Hashtbl.add s.pages pg pa
+    end
   end;
   map_seg pgdir s pg (Hashtbl.find s.pages pg)
 

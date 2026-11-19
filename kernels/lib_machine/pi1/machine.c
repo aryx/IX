@@ -30,12 +30,7 @@ void exit(int status);
 #ifdef CORES
 /* (a core's own: runtime.c) */
 extern unsigned long *cur_tfs[];
-static inline int core(void)
-{
-  unsigned v;
-  __asm__ volatile("mrc p15, 0, %0, c0, c0, 5" : "=r"(v));
-  return v & 3;
-}
+int core(void);
 #define cur_tf (cur_tfs[core()])
 #else
 extern unsigned long *cur_tf;
@@ -187,8 +182,9 @@ value caches_on(value unit) { (void)unit; caches_enable(); caches_are_on = 1; re
  * register that sets the mailbox's bits); it goes on when core_go is
  * its number, comes to core_main on its own stacks with the MMU on,
  * and says so (core_up). One at a time, each waited for a tenth of a
- * second: an emulator with one core, or a start that keeps them
- * (l2.s, ix's assembler's: not yet), leaves the count at 1.
+ * second: an emulator with one core leaves the count at 1.
+ * (old: or a start that keeps them, l2.s, ix's assembler's, which
+ * starts them since 2026-11-18)
  * A core started waits in runtime.c's core_run until the kernel says
  * that processes may run on it (cores_run).
  * (core_go is not 0 at first: it must be in the image's data, not in
@@ -219,23 +215,27 @@ void core_run(void);
  * firmware sets 19.2 MHz, and QEMU says its own), or off (0). Set
  * again, a timer that fired no longer is (its interrupt masked, a wait
  * would end at once otherwise). */
+/* (the timer's registers by the board's assembly: CNTFRQ read,
+ * CNTV_TVAL written, CNTV_CTL written and read. old: gcc's assembly
+ * here) */
+unsigned timer_rate(void);
+void timer_set(unsigned count);
+void timer_control(unsigned ctl);
+unsigned timer_state(void);
 void core_timer(int ticks)
 {
-  unsigned hz, ctl = ticks ? 1 : 0;
+  unsigned hz;
   if (ticks) {
-    __asm__ volatile("mrc p15, 0, %0, c14, c0, 0" : "=r"(hz));     /* CNTFRQ */
+    hz = timer_rate();
     if (hz == 0) hz = 19200000;
-    hz = hz / 100 * ticks;
-    __asm__ volatile("mcr p15, 0, %0, c14, c3, 0" : : "r"(hz));    /* CNTV_TVAL */
+    timer_set(hz / 100 * ticks);
   }
-  __asm__ volatile("mcr p15, 0, %0, c14, c3, 1" : : "r"(ctl));     /* CNTV_CTL: enable */
+  timer_control(ticks ? 1 : 0);                                    /* enable */
 }
 
 int core_timer_fired(void)
 {
-  unsigned ctl;
-  __asm__ volatile("mrc p15, 0, %0, c14, c3, 1" : "=r"(ctl));
-  return (ctl & 5) == 5;                                           /* enabled, and its time has come */
+  return (timer_state() & 5) == 5;                                 /* enabled, and its time has come */
 }
 
 void core_mail(int c) { LOCAL(0x80 + 16 * c) = 1; }

@@ -655,12 +655,30 @@ static value overhead = 100;
  * (tried, and not kept: a half grown to just what is alive and its
  * overhead, where doubling leaves it up to twice that: mini-ld's link
  * of mini-rm 5% less memory, 16% longer, a collection coming sooner) */
+#ifdef plan9
+#define GIVEBACK (64 * 1048576 / sizeof(value))		/* words */
+extern int segfree(void*, ulong);
+#endif
 static void
 major(value need)
 {
 	value *hp;
 
 	collect();
+#ifdef plan9
+	/* The half just emptied given back to the system, when it is large
+	 * (64 MB and more): its pages are memory until then, and a program
+	 * holds its half in use, filled to its size before the next
+	 * collection, and this one, as large: about 310 MB for 120 alive.
+	 * Four mini-ld at once, the build of ix on the card with four cores,
+	 * were more than the Pi 2's 847 MB, and each waited for the others'
+	 * pages (2026-11-18). Its pages come back as zeros when the next
+	 * collection copies into it, a fault each: not for a small program,
+	 * whose halves are a few MB. (Plan 9's segfree; Linux: madvise,
+	 * not done, its machines have the memory.) */
+	if(size >= GIVEBACK)
+		segfree(other, size * W);
+#endif
 	hp = young_words ? old_hp : ml_hp;
 	live = hp - from;
 	while((uvlong)(hp - from + need) * (100 + overhead) / 100 > (uvlong)size && size < MAXHEAP)

@@ -12,6 +12,12 @@
 #define UNC_L1		$0x2800
 // (nothing before the start: the firmware starts the one core in SVC)
 #define BOARD_START
+// one core: nothing more to map, the trap frame the running process's,
+// and no lock to take in the kernel or give back (l2.s has each)
+#define BOARD_MAP
+#define CUR_TF		MOVW cur_tf+0(SB), R0
+#define ENTER
+#define LEAVE
 
 #include "l.s"
 

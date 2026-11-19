@@ -330,6 +330,32 @@ klock_give:
 	str	r0, [r1]
 	mcr	p15, 0, r0, c7, c10, 4
 	bx	lr
+@ This core's number (MPIDR's low bits), and its own timer's registers
+@ (ARMv7's generic timer, the virtual one: machine.c's core_timer), for
+@ the C, which has no word for them.
+@ old: gcc's assembly in runtime.c and machine.c, which mini-cc does
+@ not take
+	.global core
+core:
+	mrc	p15, 0, r0, c0, c0, 5
+	and	r0, r0, #3
+	bx	lr
+	.global timer_rate
+timer_rate:
+	mrc	p15, 0, r0, c14, c0, 0		@ CNTFRQ
+	bx	lr
+	.global timer_set
+timer_set:
+	mcr	p15, 0, r0, c14, c3, 0		@ CNTV_TVAL
+	bx	lr
+	.global timer_control
+timer_control:
+	mcr	p15, 0, r0, c14, c3, 1		@ CNTV_CTL
+	bx	lr
+	.global timer_state
+timer_state:
+	mrc	p15, 0, r0, c14, c3, 1
+	bx	lr
 	.endif
 
 vectors:

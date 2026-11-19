@@ -67,12 +67,9 @@ void exit(int status);
  * stack that does not run, as one switched from. */
 #ifdef CORES
 #define NCORE CORES
-static inline int core(void)
-{
-  unsigned v;
-  __asm__ volatile("mrc p15, 0, %0, c0, c0, 5" : "=r"(v));    /* MPIDR */
-  return v & 3;
-}
+/* (the board's assembly: MPIDR's low bits. old: a function here in
+ * gcc's assembly, which mini-cc does not have) */
+int core(void);
 uintptr *cur_tfs[NCORE];
 #define cur_tf (cur_tfs[core()])
 #else
@@ -143,6 +140,15 @@ value user_resume(value unit) { (void)unit; user_return(); return Val_unit; }
 static value vstacks[NPROC][VSTACK];
 void ml_stack(int, value *);
 void ml_stack_switch(int);
+/* (several cores: another core's scheduler has a value stack of its
+ * own, the stack of its slot's number, NPROC + the core's, which no
+ * process has: slot NPROC - 1's is NPROC. The runtime runs one stack
+ * at a time, the one of whoever holds the kernel's lock: kernel_enter
+ * says which, as ocaml-light's view is restored there) */
+#ifdef CORES
+static value core_vstacks[NCORE][VSTACK];
+#endif
+static int vstack_of(int slot) { return slot < NPROC ? slot + 1 : slot == NPROC ? 0 : slot; }
 #define save_view(c)
 #define restore_view(c)
 #else
@@ -246,7 +252,7 @@ value k_swtch(value to)
   int from = current, t = Int_val(to);
   if (t == NPROC) t += core();        /* this core's scheduler */
 #ifdef MINI_ML
-  ml_stack_switch(t < NPROC ? t + 1 : 0);
+  ml_stack_switch(vstack_of(t));
 #else
   static int hooked = 0;
   if (!hooked) { scan_roots_hook = scan_stacks; started[NPROC] = 1; hooked = 1; }
@@ -403,7 +409,11 @@ void klock_take(void)
   klock_holder = core();
 }
 
+#ifdef MINI_ML
+void kernel_enter(void) { klock_take(); ml_stack_switch(vstack_of(current)); }
+#else
 void kernel_enter(void) { klock_take(); restore_view(&contexts[current]); }
+#endif
 void kernel_leave(void) { save_view(&contexts[current]); klock_holder = -1; klock_give(); }
 
 /* a process is about to run: another core's own timer, for its slice
@@ -488,6 +498,10 @@ void core_run(void)
   klock_take();
   core_mail_clear();
   started[NPROC + c] = 1;
+#ifdef MINI_ML
+  ml_stack(NPROC + c, core_vstacks[c]);
+  ml_stack_switch(NPROC + c);
+#endif
   restore_view(&contexts[NPROC + c]);          /* no OCaml frames above */
   callback(*caml_named_value("scheduler"), Val_unit);
   exit(5);

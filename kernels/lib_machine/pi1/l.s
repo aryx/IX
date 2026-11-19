@@ -114,6 +114,7 @@ dev:
 	ADD	$1, R0
 	CMP	$16, R0
 	BLO	dev
+	BOARD_MAP
 	MOVW	SECTION, R1		// the first MB as itself too, while the MMU goes on here
 	MOVW	R1, (R4)
 	MOVW	$vectors+0(SB), R0	// the vectors, copied to their page
@@ -226,7 +227,7 @@ TEXT vectors+0(SB), $-4
 #define VMSR_R1_FPSCR	WORD $0xeee11a10
 #define VSTMIA_R1_D0_D7	WORD $0xec810b10
 #define VLDMIA_R1_D0_D7	WORD $0xec910b10
-#define SAVE_USER	MOVW.W R12, -4(R13); MOVW.W R11, -4(R13); MOVW.W R0, -4(R13); MOVW $setR12(SB), R12; MOVW cur_tf+0(SB), R0; MOVM.IB [R1-R10], (R0); ADD $52, R0, R1; MOVM.IA.S [R13-R14], (R1); NOP; MOVW.P 4(R13), R1; MOVW R1, 0(R0); MOVW.P 4(R13), R1; MOVW R1, 44(R0); MOVW.P 4(R13), R1; MOVW R1, 48(R0); MOVW R14, 60(R0); MOVW SPSR, R1; MOVW R1, 64(R0); VMRS_FPSCR_R1; MOVW R1, 68(R0); ADD $72, R0, R1; VSTMIA_R1_D0_D7
+#define SAVE_USER	MOVW.W R12, -4(R13); MOVW.W R11, -4(R13); MOVW.W R0, -4(R13); MOVW $setR12(SB), R12; CUR_TF; MOVM.IB [R1-R10], (R0); ADD $52, R0, R1; MOVM.IA.S [R13-R14], (R1); NOP; MOVW.P 4(R13), R1; MOVW R1, 0(R0); MOVW.P 4(R13), R1; MOVW R1, 44(R0); MOVW.P 4(R13), R1; MOVW R1, 48(R0); MOVW R14, 60(R0); MOVW SPSR, R1; MOVW R1, 64(R0); VMRS_FPSCR_R1; MOVW R1, 68(R0); ADD $72, R0, R1; VSTMIA_R1_D0_D7
 // the mode the exception came from, compared with the user's (R0 put back; the flags stay)
 #define FROM_USER	MOVW.W R0, -4(R13); MOVW SPSR, R0; AND $0x1f, R0; CMP $0x10, R0; MOVW.P 4(R13), R0
 
@@ -234,12 +235,14 @@ TEXT vectors+0(SB), $-4
 // kernel left it when it entered user mode
 TEXT svc_entry+0(SB), $-4
 	SAVE_USER
+	ENTER
 	BL	trap+0(SB)
 	B	user_return+0(SB)
 
 // to user mode, from the trap frame
 TEXT user_return+0(SB), $-4
-	MOVW	cur_tf+0(SB), R0
+	LEAVE
+	CUR_TF
 	MOVW	68(R0), R1
 	VMSR_R1_FPSCR
 	ADD	$72, R0, R1
@@ -259,6 +262,7 @@ TEXT irq_entry+0(SB), $-4
 	SUB	$4, R14
 	SAVE_USER
 	TO_SVC
+	ENTER
 	BL	irq+0(SB)
 	B	user_return+0(SB)
 
@@ -270,6 +274,7 @@ TEXT data_entry+0(SB), $-4
 	BNE	kernel_data
 	SAVE_USER
 	TO_SVC
+	ENTER
 	MOVW	$3, R0
 	BL	user_abort+0(SB)
 	B	user_return+0(SB)
@@ -301,6 +306,7 @@ TEXT prefetch_entry+0(SB), $-4
 	BNE	kernel_prefetch
 	SAVE_USER
 	TO_SVC
+	ENTER
 	MOVW	$2, R0
 	BL	user_abort+0(SB)
 	B	user_return+0(SB)
@@ -312,6 +318,7 @@ TEXT undefined_entry+0(SB), $-4
 	BNE	kernel_undefined
 	SAVE_USER
 	TO_SVC
+	ENTER
 	MOVW	$1, R0
 	BL	user_abort+0(SB)
 	B	user_return+0(SB)

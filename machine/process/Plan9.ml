@@ -687,10 +687,24 @@ let sys_segdetach p (va : int) : int =
 
 (* the pages wholly inside [va, va + len) zeros again (principia frees
  * them, a page of zeros at the next touch) *)
+(* (the program's own data too, as mini-9pi's since mini-ml's runtime
+ * gives back the half its collector emptied: the range itself, a MB
+ * of zeros at a time.
+ * old: let a, n = segment_at va, a segment attached only; one string
+ * of the range's size) *)
 let sys_segfree p (va : int) (len : int) : int =
-  let a, n = segment_at va in
-  let lo = round va and hi = min (a + n) ((va + len) / page * page) in
-  if hi > lo then Memory.write_string p.mem lo (String.make (hi - lo) '\000');
+  let last = match List.find_opt (fun (a, n) -> va >= a && va < a + n) !attached with
+    | Some (a, n) -> a + n
+    | None -> va + len in
+  let lo = round va and hi = min last ((va + len) / page * page) in
+  let zeros = String.make 1048576 '\000' in
+  let rec go at =
+    if at < hi then begin
+      let n = min 1048576 (hi - at) in
+      Memory.write_string p.mem at (if n = 1048576 then zeros else String.make n '\000');
+      go (at + n)
+    end in
+  go lo;
   0
 
 let sys_segflush () : int =

@@ -39,7 +39,7 @@ cp "$card" "$build/card.img"
 # 0.24 s a command on the card (mkconfig's TIMES); each directory's
 # mk is timed either way, MK=time mk for the top mkfile alone, and
 # kept in BUILD/times.txt)
-t=; [ -n "${SELF_TIMES:-}" ] && t='TIMES=time'
+t=; [ -n "${SELF_TIMES:-}" ] && t="'TIMES=time'"
 o=; [ -n "${MLOPT:-}" ] && o="'MLOPT=$MLOPT'"
 cat > "$build/session.cmds" <<EOF
 cd /src

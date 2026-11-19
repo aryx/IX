@@ -35,7 +35,7 @@ S=$TOP/languages/scheme
 SO=$B/lib_playground/scheme
 M=$TOP/apps/office/formula
 MO=$B/lib_playground/formula
-X=$TOP/examples/gui4
+X=$TOP/lib_gui/examples/gui4
 XO=$B/lib_playground/gui4
 Q=$TOP/apps/office
 QO=$B/lib_playground/office
@@ -54,7 +54,7 @@ INCLUDES=-I . -I $K -I $R -I $DR -I $S -I $M -I $X $OFFICEI $LIBI $STDI
 # mkfile says WITH=scheme. scheme, the language, languages/scheme's
 # units but its command; formula, a sheet's formulas
 # (apps/office/formula); undo, apps/office's Undo alone; gui4, the tasks
-# written four ways (examples/gui4); office, what mini-office stands on
+# written four ways (lib_gui/examples/gui4); office, what mini-office stands on
 # (apps/office's folders: a text with looks and its page, a picture as
 # bits, one as objects, a document's bytes, their shapes, the parts);
 # sheet, a sheet and how it is drawn, alone, for Gui7Cells; rebirth,

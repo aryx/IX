@@ -27,7 +27,7 @@
 ;   parts/     Component (what a part of a document has to be able to
 ;              do) and the five parts: a text, a sheet, a picture, a
 ;              drawing, a chart
-; The first four and formula/ draw nothing. examples/ is linked with
+; The first four and formula/ draw nothing. lib_gui/examples/ is linked with
 ; this library for Gui7Cells' sheet and Gui7Circles' undo (apps/kits
 ; had them, and is gone).
 ; (a file's text is the playground's: what it leaves unused stays, no

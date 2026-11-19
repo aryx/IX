@@ -1,0 +1,9 @@
+hello: the squares of 1 to 10 add up to 385
+sorted: 1 2 3 4 5 7 8 9
+the first over 5: 7
+2000000 cells made, the last list from 20001 to 20100
+procsml N: child N forked
+procsml N: read: hello, through a pipe
+procsml N: child N ended
+game: frame 60 1c675ef4aa39eeb8788219237b7d86e609ba8b57457a8c89d5926e4e2e902b93
+counter: frame 60 8e1ec2574535e233b0cd2826576fcf35dc4aeb3e7b42002c272407725d22f31a

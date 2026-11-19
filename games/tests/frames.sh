@@ -26,7 +26,7 @@
 # RECORD=2 writes that second sum, for the lines whose frame differs
 # (run on mini-mk's build).
 # FRAMES=file: another list than the games' (editors/drscheme/tests/frames.sh,
-# examples/tests/frames.sh, apps/office/tests/frames.sh: the same test of
+# lib_gui/examples/tests/frames.sh, apps/office/tests/frames.sh: the same test of
 # their programs).
 # The sessions run side by side, J at a time (16; J=1 one after the
 # other), their lines printed after in the list's order.

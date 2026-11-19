@@ -4,7 +4,7 @@ Elm's Playground in OCaml (`picture`, `animation`, `game`, and Elm's
 architecture under them), from the author's playground
 (`~/playground`, [ocaml-elm-playground](https://github.com/aryx/ocaml-elm-playground)):
 its `playground/`, and the `libs/core` and `libs/random` it stands on.
-What ix's games (`games/`), examples (`examples/`) and mini-drscheme
+What ix's games (`games/`), examples (`lib_gui/examples/`) and mini-drscheme
 (`editors/drscheme/`) are written with. The plans:
 [`plan_playground.md`](../docs/plans/done/plan_playground.md),
 [`plan_gui.md`](../docs/plans/done/plan_gui.md).
@@ -146,4 +146,4 @@ PC:
   `Clock`, `Julian`, `Recur`).
 - Its tests (`playground/tests`, `libs/core/tests`,
   `libs/random/tests`): ix's are the frames of `games/tests` and
-  `examples/tests`.
+  `lib_gui/examples/tests`.

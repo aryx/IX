@@ -1,4 +1,4 @@
-// examples/: what the code map says of it
+// lib_gui/examples/: what the code map says of it
 // a GUI program on the playground: Model-View-Update down to its
 // Cap.main, and its layout (places: the panel arranged in the window)
 local gui(file, heart='def:places', role='the panel laid out: a box a slot', say='where the widgets are', model='type:model', init='def:initial') = {
@@ -28,11 +28,11 @@ local bigbang(file, handlers) = {
   bones: [{ at: at(h[0]), role: h[1] } for h in handlers] + [
     { at: at('def:app'), role: 'big_bang: the first world and the handlers' },
     { at: at('code:"Cap.main"'), role: 'the program: the app run, with the capabilities' },
-    { at: '../lib_playground/ways/Bigbang.ml:def:big_bang', role: 'the way: handlers made an app' },
+    { at: '../../lib_playground/ways/Bigbang.ml:def:big_bang', role: 'the way: handlers made an app' },
   ],
   joints: [{ from: at('def:app'), to: at(h[0]), say: h[2] } for h in handlers] + [
     { from: at('code:"Cap.main"'), to: at('def:app'), say: 'runs' },
-    { from: at('def:app'), to: '../lib_playground/ways/Bigbang.ml:def:big_bang', say: 'built by' },
+    { from: at('def:app'), to: '../../lib_playground/ways/Bigbang.ml:def:big_bang', say: 'built by' },
   ],
 };
 {

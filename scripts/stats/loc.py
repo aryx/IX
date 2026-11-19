@@ -509,8 +509,8 @@ APART = [
      lambda dirs, path: path.startswith("games/")),
     ("tiny/'s apps and games", "TinyOffice, TinyPlay, TinyAppCalculator, TinyAppTemperature, TinyAppTetris, TinyAppOrrery: apps/'s twins",
      lambda dirs, path: path.startswith(("tiny/TinyOffice", "tiny/TinyPlay.", "tiny/TinyApp"))),
-    ("examples/", "the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
-     lambda dirs, path: path.startswith("examples/")),
+    ("examples/, lib_gui/examples/", "the small programs to try on mini-9pi, in C and ML; the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
+     lambda dirs, path: path.startswith(("examples/", "lib_gui/examples/"))),
     # (the author, 2026-10-09, of t-ix's 17,880 lines, 5,302 of them
     # this C: "and let's not count tiny-os/ really", "as we now have a
     # better TinyKernel with graphics, and windowing system, and so on",

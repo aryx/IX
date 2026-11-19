@@ -1,4 +1,4 @@
-; examples/gui4: the author's playground's examples/gui4
+; lib_gui/examples/gui4: the author's playground's examples/gui4
 ; (docs/plans/plan_gui.md): five of the 7GUIs' tasks, each written four
 ; ways over lib_gui (Immediate, Retained, Mvc, Mvu), without the
 ; playground: GuiFourWays shows them side by side, and Gui7Flight's

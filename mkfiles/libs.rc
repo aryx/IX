@@ -25,7 +25,7 @@ case libs
 	i=()
 	if(! ~ $#LIBDIRS 0){
 		a=$B/$LIBDIRS^/lib.a
-		s=`{$WALK $TOP/$LIBDIRS | awk '/\.mli?$|\/mkfile$/ && !/\/tests\//'}
+		s=`{$WALK $TOP/$LIBDIRS | awk '/\.mli?$|\/mkfile$/ && !/\/tests\/|\/examples\//'}
 		i=`{dirs $LIBDIRS}
 	}
 	echo 'LIBA='^$"a^'

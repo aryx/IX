@@ -279,7 +279,7 @@ job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
 job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
-job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
+job "gui4: unit tests" _build/default/lib_gui/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
 job "lib_graphics/videos, mini-play's window: Y4M, FLI, AVI, GIF, the sound's clock" sh_ '_build/default/lib_graphics/videos/tests/Test.exe && apps/media/tests/film.sh'
@@ -302,7 +302,7 @@ job "games: recorded frames" games/tests/frames.sh
 job "games: recorded sounds" games/tests/audio.sh
 job "mini-music: recorded frames and sounds" sh_ 'apps/music/tests/frames.sh && apps/music/tests/audio.sh'
 job "mini-drscheme: recorded frames" editors/drscheme/tests/frames.sh
-job "examples: recorded frames" examples/tests/frames.sh
+job "lib_gui's examples: recorded frames" lib_gui/examples/tests/frames.sh
 job "mini-office: recorded frames" apps/office/tests/frames.sh
 job "mini-lynx: a recorded session" browsers/lynx/tests/session.sh
 job "mini-netscape: recorded frames, the profile, the helpers" sh_ 'browsers/netscape/tests/frames.sh && browsers/netscape/tests/profile.sh && browsers/netscape/tests/helpers.sh'
@@ -416,7 +416,7 @@ compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
   browsers/javascript "browsers/engine browsers/webapi" \
   "browsers/netscape browsers/css browsers/html"
 compiles_parts \
-  "games lib_playground lib_graphics lib_gui examples apps" \
+  "games lib_playground lib_graphics lib_gui apps" \
   games/fps "games/racing apps" "lib_graphics lib_playground"
 family "m-ix builds part of itself" system
 
@@ -470,10 +470,11 @@ ix() {
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
   for d in languages/c languages/ml languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
-  (mk games && mk editors/drscheme && mk examples && mk apps/office && mk apps/music/rebirth) & pids+=($!)
+  (mk games && mk editors/drscheme && mk lib_gui/examples && mk apps/office && mk apps/music/rebirth) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
+  mk examples & pids+=($!)
   mk apps/media/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
   mk typesetting/man & pids+=($!)
@@ -598,8 +599,9 @@ if [ -n "$runs7" ]; then
   job $a "games built by ix: recorded sounds" nofail games/tests/audio.sh $K/games
   job $a "mini-music built by ix: frames, sounds" sh_ "! { apps/music/tests/frames.sh $K/apps; apps/music/tests/audio.sh $K/apps; } | grep '^FAIL'"
   job $a "mini-drscheme built by ix: recorded frames" nofail editors/drscheme/tests/frames.sh $K/editors
-  job $a "examples built by ix: recorded frames" nofail examples/tests/frames.sh $K/examples
+  job $a "lib_gui's examples built by ix: recorded frames" nofail lib_gui/examples/tests/frames.sh $K/lib_gui/examples
   job $a "mini-office built by ix: recorded frames" nofail apps/office/tests/frames.sh $K/apps
+  job $a "examples built by ix: what they print, two frames" nofail examples/tests/run.sh $K/examples
   job $a "mini-play built by ix" by_ix_play
   job $a "lib_crypto built by ix: the vectors" by_ix_vectors
   job $a "mini-curl, mini-httpd, mini-lynx built by ix" by_ix_net

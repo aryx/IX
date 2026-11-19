@@ -34,9 +34,9 @@ BOTH=linker linker/tools languages/c builder shell editors/ed generators/lex gen
  utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc \
  utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv \
  kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows/rio windows/rio/tests windows/desktop \
- apps/misc apps/files apps/maps profilers/misc games editors/drscheme apps/office
+ apps/misc apps/files apps/maps profilers/misc games editors/drscheme apps/office examples
 LINUX=database languages/datalog languages/forth languages/dotnet/csc editors/turbopascal/tty \
- editors/emacs/tty machine version_control kernels/tools debuggers/where debuggers/acid examples tiny \
+ editors/emacs/tty machine version_control kernels/tools debuggers/where debuggers/acid lib_gui/examples tiny \
  kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 PLAN9=kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads \
  kernels/9pi/tests/self lib_core/commons/tests kernels/9pi/buses/user/usbd apps/media/play \
@@ -66,7 +66,7 @@ assembler.dir:V: libs
 ${DIRS:%=%.dir}:V: libs assembler.dir
 linker/tools.dir:V: linker.dir
 utilities/calc/bc.dir:V: utilities/calc/dc.dir
-editors/drscheme.dir examples.dir apps/office.dir:V: games.dir
+editors/drscheme.dir lib_gui/examples.dir apps/office.dir:V: games.dir
 languages/smalltalk/hosts/draw.dir:V: languages/smalltalk.dir
 games-software:V: games.dir
 	cd games && $MK $ARGS 'PLATFORM=software'

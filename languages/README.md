@@ -23,7 +23,7 @@ read, and run by a machine of its own, in OCaml.
 | `forth/` | Forth, for its machine: a dictionary in the memory, two stacks, indirect threaded code; `IF` and `DO` written in Forth; `SEE` | mini-forth | its [README](forth/README.md) |
 | `datalog/` | Datalog: Prolog's text without compound terms, its rules run bottom up to their fixpoint (the strata, semi-naive); for program analyses | mini-datalog | [plan_prolog.md](../docs/plans/done/plan_prolog.md), [plan_datalog.md](../docs/plans/plan_datalog.md) |
 | `dotnet/` | .NET's assemblies, as Microsoft's C# compiler writes them: read, listed as ildasm (`-S`), run: classes, generics kept at run time, structs, delegates, exceptions in two passes; System's classes ix's own, over lib_core | mini-dotnet | [plan_dotnet.md](../docs/plans/done/plan_dotnet.md) |
-| `formula/` | a spreadsheet's formulas (`=A1+SUM(B1:B3)`), read and evaluated: the 7GUIs' Cells (`examples/`) | a library | [plan_gui.md](../docs/plans/done/plan_gui.md) |
+| `formula/` | a spreadsheet's formulas (`=A1+SUM(B1:B3)`), read and evaluated: the 7GUIs' Cells (`lib_gui/examples/`) | a library | [plan_gui.md](../docs/plans/done/plan_gui.md) |
 
 And the compilers to .NET, whose assemblies mini-dotnet and Microsoft's
 `dotnet` both run (`languages/dotnet/`'s Writer writes them):

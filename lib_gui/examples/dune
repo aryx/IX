@@ -1,4 +1,4 @@
-; examples: the author's playground's examples (docs/plans/plan_gui.md),
+; lib_gui/examples: the author's playground's examples (docs/plans/plan_gui.md),
 ; small programs that each show one thing; here the 7GUIs (Counter,
 ; Temperature, Flight, Timer, Crud, Circles, Cells: 7guis's seven tasks,
 ; a toolkit's benchmark), the same tasks four ways (GuiFourWays), the

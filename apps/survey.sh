@@ -100,6 +100,6 @@ copy apps/office/formula languages/formula
 copy apps/office/document appkits/document | grep -v "ix's own"
 copy apps/office/sheet appkits/sheet appkits/sheet_view | grep -v "ix's own"
 copy apps/office/sheet appkits/sheet_view appkits/sheet | grep -v "ix's own"
-copy examples examples
-copy examples/gui4 examples/gui4
-copy examples/gui4/tests examples/gui4/tests
+copy lib_gui/examples examples
+copy lib_gui/examples/gui4 examples/gui4
+copy lib_gui/examples/gui4/tests examples/gui4/tests

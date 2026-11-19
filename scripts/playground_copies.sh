@@ -64,7 +64,7 @@ languages/pascal languages/pascal
 languages/smalltalk languages/smalltalk
 games games gamekits/shmup
 games/racing/virtua games/racing gamekits/racing/3d gamekits/heightmap
-examples examples
+lib_gui/examples examples
 editors/drscheme apps/devtools
 editors/turbopascal appkits/editor apps/devtools/tty
 lib_code libs/code/highlight

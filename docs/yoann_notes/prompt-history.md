@@ -74202,3 +74202,50 @@ Claude suggested closing this session since the commit was the last step.
 **Yoann:**
 
 > we recently did lots of nice optimizations for t-ix and went down from 50min self-tix build to 6min with 4 cores. What is the impact of this work for the t-ix.html page and the js version of the tiny-machine? Can we rebuild and push a new version of the web version of t-ix?
+
+------------------------------------------------------------------------
+
+## 2026-11-19 08:20
+
+**Yoann:**
+
+> can we also run 'build -j 4' fromt the t-ix.html emulated version of the tiny-machine?
+
+**Claude (summary):**
+
+Claude pushed the new assets and ix's main, so the live t-ix.html loads ?v=12 and passes its test.
+Claude took up the build -j 4 question and started two full self-build runs on the emulated tiny-machine.
+Claude confirmed both self-build runs had just finished and began reading the four-core run's output first.
+Claude said it would summarize the -j 4 results once that four-core run had been fully checked.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 08:18
+
+**Yoann:**
+
+> for tiny/ we have a tiny/examples/ that shows a few toy programs and a buildfile that works both from the host (with a TINY=...) and from the tiny-kernel. It would be a good to have something similar for m-ix. Right now the toplevel examples/ is dedicated to GUI example but we can move that and make a fresh examples/ that follows more what we did with tiny/examples/ but with a examples/mkfile this time and examples using the m-ix APIs not t-ix
+
+**Claude (summary):**
+
+Claude wrote a fresh examples/ directory with an examples/mkfile, using the m-ix APIs.
+Claude built the examples for Linux and Plan 9, and the Plan 9 top-level build passed.
+Claude verified all eight examples on the real kernel under the emulator, including fetchml over TCP.
+Claude added a test for the examples with recorded output and two frames, wired into tests/lite.sh.
+Claude removed the temporary test kernel image, then started on the manual section for the examples.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 10:17
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-11-19 10:16
+
+**Yoann:**
+
+> let's do it!

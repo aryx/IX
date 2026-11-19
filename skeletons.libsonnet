@@ -73,7 +73,7 @@
       [file + ':def:main', 'the command line: -h, flags, files', 'the capabilities'],
     ] + core),
 
-  // a lib_playground program (games/, examples/, apps/ on Playground):
+  // a lib_playground program (games/, lib_gui/examples/, apps/ on Playground):
   // Model-View-Update down to its `let () = Cap.main` (no def:main), and
   // its heart reached from [from] (view or update); written as a local
   // in five configs by the 2026-11-04 pass, lifted here

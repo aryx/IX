@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Small programs to read, build and run on mini-9pi, where they are in
-# /src/examples, and on Linux. Each file's header says more about it:
+# /examples, and on Linux. Each file's header says more about it:
 #
 #     C          ML            what
 #     hello.c    Helloml.ml    a print (hello with square_arm.s, in assembly)
@@ -13,30 +13,44 @@
 #                Counter.ml    a counter, on the widgets (lib_gui)
 #
 # mk makes all of them; mk game makes one by its name; mk clean removes
-# them. A program is made in _mk, not beside its source (D, below, as
-# every directory of ix's). procs and shapesml are mini-9pi's only
-# (their headers say why). What they link besides their own objects
-# must be built before, by the mkfiles of the libraries:
-# - lib_core has C's library (libc.a), the standard library of ML
-#   (lib_core.a), and what ends an ML program: std_exit, the runtime
-#   and the C library under it. The first four programs need it alone
-#   (cd ../lib_core; mk);
-# - each other library is an archive, lib.a, in a directory of its
-#   name. The top mkfile makes them all in their order (cd ..; mk libs).
+# them. procs and shapesml are mini-9pi's only (their headers say why).
+# What they link besides their own objects is already built in /lib:
+# - /lib/c has C's library (libc.a) and its headers (cc -I /lib/c/include
+#   finds u.h, the machine's types, and libc.h);
+# - /lib/ml has ML's libraries, each in a directory of its name: its
+#   archive (lib.a), and its units' interfaces and summaries, for
+#   ml -I. lib_core's is the standard library (lib_core.a), with what
+#   ends a program: std_exit and the runtime.
+# They are built in /src and copied there by its mk install
+# (mkfiles/install.rc).
 #
-#     cd /src/examples; mk hello           on mini-9pi's card
-#     ../_mk/5-plan9/examples/hello
-#     mini-mk MINI=mini-                   on the host, for Linux on arm64
-#     mini-5i ../_mk/7/examples/hello      (mini-5i runs it where the host is not one)
-#     mini-mk MINI=mini- O=5 OS=plan9      on the host, mini-9pi's programs
+#     cd /examples; mk hello; hello        on mini-9pi's card
 #
-# The tools are named as on the card (cc, asm, ld, ml); MINI=mini- names
-# the host's (mkfiles/mkconfig, which also says O, the machine, and OS,
-# the system).
-TOP=..
-<$TOP/mkfiles/mkconfig
-D=$B/examples
+# On the host it works the same way, with the tools mini-cc..., and with
+# /lib as the top mkfile installs it, in _mk: its mk examples says the
+# five names below, for Linux on arm64 (mini-5i runs the programs where
+# the host is not one) and for mini-9pi:
+#     mini-mk MINI=mini- examples
+#     mini-mk MINI=mini- O=5 OS=plan9 examples
+#     mini-5i _mk/7/examples/hello
+
+# the machine (5: arm, 7: arm64) and the system (plan9 or linux) the
+# programs are for; where the libraries are; where the programs go.
+# (MINI, the tools' prefix, is given no value here: nothing on the
+# card, and on the host mini-, said to mk or in the environment)
+O=5
+OS=plan9
+LIB=/lib
+D=.
 MADE=`{mkdir -p $D}
+
+CC=${MINI}cc -m $O
+AS=${MINI}asm -m $O
+ML=${MINI}ml -m $O -O3
+AR=${MINI}ar
+# (the executable's format: Plan 9's a.out, or Linux's ELF)
+LDH=`{if(~ $OS plan9) echo -H2; if not echo -H7}
+LD=${MINI}ld -m $O $LDH -nofollow
 
 P9=`{~ $OS plan9 && echo procs shapesml}
 all:V: hello helloml procsml fetchml game counter $P9
@@ -50,71 +64,73 @@ shapesml:V: $D/shapesml
 game:V: $D/game
 counter:V: $D/counter
 
-# A C program: each file compiled with the C library's headers (u.h,
-# the machine's types; libc.h), then linked with libc.a, whose first
-# instructions (rt0) call main.
-LC=$TOP/lib_core/libc
+# A C program: each file compiled with the C library's headers, then
+# linked with libc.a, whose first instructions (rt0) call main.
 ARCH=`{if(~ $O 5) echo arm; if not echo arm64}
-CINC=-I$LC/include -I$LC/include/utf -I$LC -I$LC/include/arch/$ARCH -D$ARCH -D$OS
+CINC=-I$LIB/c/include -I$LIB/c/include/utf -D$ARCH -D$OS
+LIBC=$LIB/c/libc.a
 
 $D/hello.$O: hello.c
 	$CC $CINC -o $target hello.c
 $D/square.$O: square_$ARCH.s
 	$AS -o $target square_$ARCH.s
-$D/hello: $D/hello.$O $D/square.$O $L/libc.a
-	$LD $LDH -nofollow -o $target $prereq
+$D/hello: $D/hello.$O $D/square.$O $LIBC
+	$LD -o $target $prereq
 
 $D/procs.$O: procs.c
 	$CC $CINC -o $target procs.c
-$D/procs: $D/procs.$O $L/libc.a
-	$LD $LDH -nofollow -o $target $prereq
+$D/procs: $D/procs.$O $LIBC
+	$LD -o $target $prereq
 
 # An ML program on the standard library alone: its unit compiled with
-# the library's interfaces (STDI); its start, which ml makes from the
-# names of the units it may link (their initializations in order: STD,
-# the standard library's, COMMONS, ix's own); then the link: the start,
+# the library's interfaces (-I); its start, which ml makes from the
+# names of the units it may link, their initializations in order (ar t
+# lists an archive's units by their sources); then the link: the start,
 # the library (from which ld takes the units the program uses), the
 # unit, and the end.
+CORE=$LIB/ml/lib_core
+STD=$CORE/lib_core.a
+END=$CORE/std_exit.$O $CORE/runtime.$O $LIBC
+UNITS=sed 's,.*/,,; s,\.ml$,,'
+
 $D/Helloml.$O: Helloml.ml
-	$ML $STDI -o $target Helloml.ml
-$D/Helloml.start: mkfile $MLEXE
-	$ML -start $STD $COMMONS Helloml Std_exit -o $target
-$D/helloml: $D/Helloml.start $D/Helloml.$O $STDOBJS $STDEND
-	$LD $LDH -nofollow -o $target $D/Helloml.start $STDOBJS $D/Helloml.$O $STDEND
+	$ML -I $CORE -o $target Helloml.ml
+$D/Helloml.start: mkfile $STD
+	$ML -start `{$AR t $STD | $UNITS} Helloml Std_exit -o $target
+$D/helloml: $D/Helloml.start $D/Helloml.$O $STD $END
+	$LD -o $target $D/Helloml.start $STD $D/Helloml.$O $END
 
 $D/Procsml.$O: Procsml.ml
-	$ML $STDI -o $target Procsml.ml
-$D/Procsml.start: mkfile $MLEXE
-	$ML -start $STD $COMMONS Procsml Std_exit -o $target
-$D/procsml: $D/Procsml.start $D/Procsml.$O $STDOBJS $STDEND
-	$LD $LDH -nofollow -o $target $D/Procsml.start $STDOBJS $D/Procsml.$O $STDEND
+	$ML -I $CORE -o $target Procsml.ml
+$D/Procsml.start: mkfile $STD
+	$ML -start `{$AR t $STD | $UNITS} Procsml Std_exit -o $target
+$D/procsml: $D/Procsml.start $D/Procsml.$O $STD $END
+	$LD -o $target $D/Procsml.start $STD $D/Procsml.$O $END
 
 # An ML program on other libraries is built the same way, with their
-# interfaces (LIBI), their units' names in the start (units.rc lists an
-# archive's) and their archives in the link (LIBA): mkfiles/mklibs
-# gives the three from LIBDIRS, each library after the ones it names.
-# PLATFORM is what runs a playground program: the draw device on
-# mini-9pi, and on Linux ppm, no window, a frame written to a file.
+# interfaces, their units' names in the start and their archives in the
+# link, each library after the ones it names. PLATFORM is what runs a
+# playground program: the draw device on mini-9pi, and on Linux ppm, no
+# window, a frame written to a file.
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
-LIBDIRS=lib_crypto lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
+LIBS=lib_crypto lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
-<$TOP/mkfiles/mklibs
-LIBS=$LIBA $STDOBJS $STDEND
+LIBA=${LIBS:%=$LIB/ml/%/lib.a}
+LIBI=${LIBS:%=-I $LIB/ml/%}
 
-$D/%.$O: %.ml
-	$ML -I . $LIBI $STDI -o $target $stem.ml
-$D/Fetchml.$O $D/Shapesml.$O $D/Game.$O $D/Counter.$O: $LIBSRC
-$D/%.start: mkfile $MLEXE
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $stem Std_exit -o $target
+$D/%.$O: %.ml $LIBA
+	$ML $LIBI -I $CORE -o $target $stem.ml
+$D/%.start: mkfile $STD $LIBA
+	$ML -start `{for(a in $STD $LIBA) $AR t $a | $UNITS} $stem Std_exit -o $target
 
-$D/fetchml: $D/Fetchml.start $D/Fetchml.$O $LIBS
-	$LD $LDH -nofollow -o $target $D/Fetchml.start $STDOBJS $LIBA $D/Fetchml.$O $STDEND
-$D/shapesml: $D/Shapesml.start $D/Shapesml.$O $LIBS
-	$LD $LDH -nofollow -o $target $D/Shapesml.start $STDOBJS $LIBA $D/Shapesml.$O $STDEND
-$D/game: $D/Game.start $D/Game.$O $LIBS
-	$LD $LDH -nofollow -o $target $D/Game.start $STDOBJS $LIBA $D/Game.$O $STDEND
-$D/counter: $D/Counter.start $D/Counter.$O $LIBS
-	$LD $LDH -nofollow -o $target $D/Counter.start $STDOBJS $LIBA $D/Counter.$O $STDEND
+$D/fetchml: $D/Fetchml.start $D/Fetchml.$O $STD $LIBA $END
+	$LD -o $target $D/Fetchml.start $STD $LIBA $D/Fetchml.$O $END
+$D/shapesml: $D/Shapesml.start $D/Shapesml.$O $STD $LIBA $END
+	$LD -o $target $D/Shapesml.start $STD $LIBA $D/Shapesml.$O $END
+$D/game: $D/Game.start $D/Game.$O $STD $LIBA $END
+	$LD -o $target $D/Game.start $STD $LIBA $D/Game.$O $END
+$D/counter: $D/Counter.start $D/Counter.$O $STD $LIBA $END
+	$LD -o $target $D/Counter.start $STD $LIBA $D/Counter.$O $END
 
 clean:V:
-	rm -rf $D
+	rm -f $D/*.$O $D/*.start $D/hello $D/procs $D/helloml $D/procsml $D/fetchml $D/shapesml $D/game $D/counter

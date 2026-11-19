@@ -1,0 +1,54 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# The top mkfile's install: what a program links, copied from where it
+# is built to $LIBDIR (as tiny/Buildfile's build install fills /lib),
+# so that a program is built with nothing of ix's sources:
+# examples/mkfile, in /examples on mini-9pi's card.
+#   $LIBDIR/c          libc.a and the headers (cc -I $LIBDIR/c/include:
+#                      u.h, the machine's, beside libc.h)
+#   $LIBDIR/ml/<dir>   a library of ML's, under its directory's name:
+#                      its archive, each unit's interface (its .mli, or
+#                      its .ml when it has none: ml -I reads either) and
+#                      summary (.inline); lib_core's has std_exit and
+#                      the runtime too, what ends a program
+# An archive lists its units' sources (ar t), from the library's
+# directory. mk's variables are the environment (TOP, B, L, O, AR,
+# LIBDIR).
+# usage: $RC mkfiles/install.rc c | <a library's directory>
+d=$1
+if(~ $d c){
+	arch=arm64
+	if(~ $O 5) arch=arm
+	h=$TOP/lib_core/libc/include
+	c=$LIBDIR/c/include
+	mkdir -p $c
+	cp $h/libc.h $h/arch/$arch/u.h $c
+	# (the directories under include with headers, as libc.h names
+	# them: os, os/plan9...; arch's is u.h, above)
+	for(s in `{$WALK $h | sed -n 's,/[^/]*\.h$,,p' | awk '!seen[$0]++' | sed 's,^'^$h^'/*,,' | grep -v '^arch'}){
+		mkdir -p $c/$s
+		cp $h/$s/*.h $c/$s
+	}
+	cp $L/libc.a $LIBDIR/c
+	exit
+}
+a=lib.a
+more=()
+if(~ $d lib_core){ a=lib_core.a; more=($L/std_exit.$O $L/runtime.$O) }
+t=$LIBDIR/ml/$d
+mkdir -p $t
+f=()
+for(u in `{$AR t $B/$d/$a | sed 's/\.ml$//'}){
+	s=$u
+	if(! ~ $u /*) s=$TOP/$d/$u
+	# (the unit's files: X.ml, X.mli, a grammar's X.mly)
+	x=($s.ml*)
+	if(~ $s.mli $x) f=($f $s.mli)
+	if not f=($f $s.ml)
+}
+i=($B/$d/*.inline)
+if(~ $i *'*'*) i=()
+# (the archive last: it is what mk compares with the built one)
+cp $f $i $more $t
+cp $B/$d/$a $t

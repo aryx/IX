@@ -1069,6 +1069,11 @@ endef
 #              and Save), with two pictures for its Insert > Image...
 #              (a PNG and a JPEG: docs/plans/done/plan_office.md,
 #              stage 7)
+#              Then what a program built on the card links: /lib/c,
+#              the C library and its headers, and /lib/ml, the
+#              libraries of ML's (CARD_INSTALLED, below).
+#   examples   eight small programs and their mkfile, built with /lib's
+#              (cd /examples; mk; ix's examples/)
 #   src        sources: for now five small programs, OCaml's hello.ml,
 #              hellodraw.ml and hellorio.ml (three programs of the
 #              card), C's hello.c and the assembler's hello.s, as texts
@@ -1102,7 +1107,9 @@ CARD_examples = hellorio=$(IX9)/windows/rio/tests/hellorio hellokbd=$(IX9)/lib_g
 CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
 # the assembler and the linker, to build ix on the card
 # (docs/plans/plan_self_hosting.md, stage 1)
-CARD_toolchain = asm=$(IX9)/assembler/mini-asm ld=$(IX9)/linker/mini-ld
+# (and the compilers, mk and ar, to build /examples there)
+CARD_toolchain = asm=$(IX9)/assembler/mini-asm ld=$(IX9)/linker/mini-ld ml=$(IX9)/languages/ml/mini-ml cc=$(IX9)/languages/c/mini-cc \
+  mk=$(IX9)/builder/mini-mk ar=$(IX9)/linker/tools/mini-ar
 # the browsers and the network's programs (plan_browser.md, stage 10)
 CARD_net = netscape=$(IX9)/browsers/netscape/netscape maps=$(IX9)/apps/maps/mini-maps lynx=$(IX9)/browsers/lynx/mini-lynx curl=$(IX9)/networking/mini-curl timesync=$(IX9)/networking/mini-timesync
 CARD_PROGS = system apps devtools toolchain games net utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/archive utilities/misc typesetting examples
@@ -1122,7 +1129,8 @@ CARD_FS_MB = 223
 CARD_FS = $(BUILD)/card-fs.img
 # How many files and directories it can have at most. xv6's 200 were
 # full when the manual reached 93 pages (2026-10-14).
-CARD_FS_INODES = 1024
+# (old: 1024, before /lib/c and /lib/ml, about 900 files)
+CARD_FS_INODES = 4096
 # (Principia's book is on the card if the clone is there, and not
 # otherwise.)
 BOOKS ?= $(HOME)/github/principia-softwarica
@@ -1153,6 +1161,14 @@ CARD_LIB = lib/desktop/apps=../../windows/desktop/apps.table lib/desktop/desk=..
   lib/quake/e0m1.bsp=../../games/fps/quake/data/e0m1.bsp lib/quake/palette.lmp=../../games/fps/quake/data/palette.lmp \
   lib/quake/colormap.lmp=../../games/fps/quake/data/colormap.lmp $(CARD_QUAKE) \
   usr/pad/lib/documents/shapes.png=../../lib_graphics/pdf/tests/data/shapes-1.png usr/pad/lib/documents/aldrin.jpg=../../apps/office/pictures/aldrin.jpg
+# /lib/c and /lib/ml: what a program built on the card links, the C
+# library with its headers and each library of ML's with its units'
+# interfaces, as the top mkfile's install made them (mini-mk O=5
+# OS=plan9, ix's: mkfiles/install.rc), and /examples, the small programs
+# its mkfile builds with them (cd /examples; mk). (Their files are read
+# as this Makefile is, so the card's own make is run after ix's.)
+CARD_INSTALLED := $(foreach f,$(shell cd $(IX9)/lib 2>/dev/null && find c ml -type f | sort),lib/$(f)=$(IX9)/lib/$(f)) \
+  $(foreach f,$(wildcard ../../examples/mkfile ../../examples/*.c ../../examples/*.s ../../examples/*.ml),examples/$(notdir $(f))=$(f))
 # A first /src: small programs in the languages ix is written in, to
 # open with emacs for now. Later, ix's sources will be on the card, and
 # ix built from them there (docs/plans/plan_self_hosting.md).
@@ -1164,8 +1180,7 @@ CARD_FS = $(BUILD)/card-self-fs.img
 CARD_MB = 1024
 CARD_FS_MB = 991
 CARD_FS_INODES = 16384
-CARD_toolchain += ml=$(IX9)/languages/ml/mini-ml cc=$(IX9)/languages/c/mini-cc mk=$(IX9)/builder/mini-mk ar=$(IX9)/linker/tools/mini-ar \
-  lex=$(IX9)/generators/lex/mini-lex yacc=$(IX9)/generators/yacc/mini-yacc
+CARD_toolchain += lex=$(IX9)/generators/lex/mini-lex yacc=$(IX9)/generators/yacc/mini-yacc
 # (The files are not prerequisites, because some are names that match
 # this Makefile's patterns, such as expected-%. card-self makes its file
 # system again each time instead.)
@@ -1202,7 +1217,7 @@ $(CARD_NS): Makefile
 	@mkdir -p $(BUILD)
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
 $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) -i $(CARD_FS_INODES) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) $(CARD_IX) mnt/fat/ mnt/wsys/ tmp/
+	$(MKFS) -m $(CARD_FS_MB) -i $(CARD_FS_INODES) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_INSTALLED) $(CARD_SRC) $(CARD_IX) mnt/fat/ mnt/wsys/ tmp/
 # version.txt says which card this is, in a line that boot.rc prints
 # last on a board (but not under an emulator, because of the recorded
 # screens). It has mini-9pi's version (the first in changes.txt), the
@@ -1289,6 +1304,13 @@ check-scheme: card ; $(call langcheck,scheme,--also "> " --also "  ")
 check-pascal: card ; $(call langcheck,pascal,--also "? ")
 check-prolog: card ; $(call langcheck,prolog,--also "?- " --also " ? ")
 check-dotnet: card ; $(call langcheck,dotnet)
+# /examples built on the card with /lib's, by its mkfile (ix's
+# examples/): two C programs and three of ML's, the last with the
+# libraries (the widgets); the four of the console run. Under QEMU
+# alone, 2 minutes: mini-qemu compiled four files in 15.
+check-examples: card
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/qemu-card-examples.txt --lines tests/session-card-examples.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
+	$(call unwarned,$(B)/qemu-card-examples.txt) | diff - tests/session-card-examples && echo "ok card: /examples built and run there (tests/session-card-examples), under QEMU"
 # mini-analyze's .NET road on the card (plan_dotnet_languages.md, stage
 # 8): mini-dotnet makes its C report of /lib/analyze/bugs.c under QEMU,
 # and each line of the native mini-analyze's report must be in it. It

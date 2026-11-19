@@ -74249,3 +74249,51 @@ Claude removed the temporary test kernel image, then started on the manual secti
 **Yoann:**
 
 > let's do it!
+
+------------------------------------------------------------------------
+
+## 2026-11-19 10:19
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude reported that tiny's test suite passed with 34 jobs and zero failures.
+Claude noted that the `build -j 4` run in Chrome was still going when it reported.
+Claude said it would run the kernel's `make check` once before making the commit Yoann asked for.
+Claude planned to commit the progress only after that kernel check finished.
+Claude had not yet committed anything, so the Chrome build and kernel check were still pending.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 10:18
+
+**Yoann:**
+
+> for the libs, maybe we should do mk install for the libs, like we did for t-ix so /examples can compile from under m-ix (like we were able too under t-ix)
+
+**Claude (summary):**
+
+Claude explained that a git lock was held by another session, so it retried the commit.
+Claude committed the work as `4ecefbfb`, leaving the `tiny/` and `t-ix.md` changes to the other session.
+Claude then turned to the libraries' install, planning to check how t-ix runs `mk install` for them.
+Claude also planned to look at what the mini-9pi card holds, to see what the libs need installed.
+Claude has not yet changed the library install step, so `/examples` still cannot compile from under m-ix.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 12:48
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude reported that the first in-Chrome `build -j 4` run died about nine minutes in, so it proved nothing about the page.
+Claude restarted the run with keepalive pings off, the Mac kept awake, and a per-minute console log for diagnosis.
+Claude expects the restarted run to take 35 to 45 minutes.
+Commit `8beb8a06` remains local and unpublished, with the live page still at `?v=12` and 8 million.
+Claude said it would publish assets and `?v=13` only if this run completes the build.

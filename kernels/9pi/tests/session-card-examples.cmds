@@ -1,0 +1,8 @@
+cd /examples
+NPROC=1 mk hello helloml
+./hello
+./helloml
+NPROC=1 mk procs procsml counter
+./procs | sed 's/[0-9][0-9]*/N/g'
+./procsml | sed 's/[0-9][0-9]*/N/g'
+ls

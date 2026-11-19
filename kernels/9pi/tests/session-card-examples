@@ -1,0 +1,91 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+NM memory: NM kernel data, NM user, NM swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% cd /examples
+% NPROC=1 mk hello helloml
+cc -m 5 -I/lib/c/include -I/lib/c/include/utf -Darm -Dplan9 -o ./hello.5 hello.c
+asm -m 5 -o ./square.5 square_arm.s
+ml -m 5 -O3 -start `{ar t /lib/ml/lib_core/lib_core.a | sed s,.*/,,; s,\.ml$,, Helloml Std_exit -o ./Helloml.start
+ml -m 5 -O3 -I /lib/ml/lib_core -o ./Helloml.5 Helloml.ml
+ld -m 5 -H2 -nofollow -o ./hello ./hello.5 ./square.5 /lib/c/libc.a
+ld -m 5 -H2 -nofollow -o ./helloml ./Helloml.start /lib/ml/lib_core/lib_core.a ./Helloml.5 /lib/ml/lib_core/std_exit.5 /lib/ml/lib_core/runtime.5 /lib/c/libc.a
+% ./hello
+hello: the squares of 1 to 10 add up to 385
+% ./helloml
+sorted: 1 2 3 4 5 7 8 9
+the first over 5: 7
+2000000 cells made, the last list from 20001 to 20100
+% NPROC=1 mk procs procsml counter
+cc -m 5 -I/lib/c/include -I/lib/c/include/utf -Darm -Dplan9 -o ./procs.5 procs.c
+ml -m 5 -O3 -start `{ar t /lib/ml/lib_core/lib_core.a | sed s,.*/,,; s,\.ml$,, Procsml Std_exit -o ./Procsml.start
+ml -m 5 -O3 -I /lib/ml/lib_core -o ./Procsml.5 Procsml.ml
+ml -m 5 -O3 -start `{for(a in /lib/ml/lib_core/lib_core.a /lib/ml/lib_crypto/lib.a /lib/ml/lib_compression/lib.a /lib/ml/lib_graphics/lib.a /lib/ml/lib_playground/lib.a /lib/ml/lib_playground/physics/lib.a /lib/ml/lib_playground/juice/lib.a /lib/ml/lib_gui/lib.a /lib/ml/lib_audio/lib.a /lib/ml/lib_networking/lib.a /lib/ml/lib_playground/netcode/lib.a /lib/ml/lib_playground/ai/lib.a /lib/ml/lib_playground/apis/lib.a /lib/ml/lib_playground/platforms/lib.a /lib/ml/lib_playground/platforms/draw/lib.a) ar t $a | sed s,.*/,,; s,\.ml$,, Counter Std_exit -o ./Counter.start
+ml -m 5 -O3 -I /lib/ml/lib_crypto -I /lib/ml/lib_compression -I /lib/ml/lib_graphics -I /lib/ml/lib_playground -I /lib/ml/lib_playground/physics -I /lib/ml/lib_playground/juice -I /lib/ml/lib_gui -I /lib/ml/lib_audio -I /lib/ml/lib_networking -I /lib/ml/lib_playground/netcode -I /lib/ml/lib_playground/ai -I /lib/ml/lib_playground/apis -I /lib/ml/lib_playground/platforms -I /lib/ml/lib_playground/platforms/draw -I /lib/ml/lib_core -o ./Counter.5 Counter.ml
+ld -m 5 -H2 -nofollow -o ./procs ./procs.5 /lib/c/libc.a
+ld -m 5 -H2 -nofollow -o ./procsml ./Procsml.start /lib/ml/lib_core/lib_core.a ./Procsml.5 /lib/ml/lib_core/std_exit.5 /lib/ml/lib_core/runtime.5 /lib/c/libc.a
+ld -m 5 -H2 -nofollow -o ./counter ./Counter.start /lib/ml/lib_core/lib_core.a /lib/ml/lib_crypto/lib.a /lib/ml/lib_compression/lib.a /lib/ml/lib_graphics/lib.a /lib/ml/lib_playground/lib.a /lib/ml/lib_playground/physics/lib.a /lib/ml/lib_playground/juice/lib.a /lib/ml/lib_gui/lib.a /lib/ml/lib_audio/lib.a /lib/ml/lib_networking/lib.a /lib/ml/lib_playground/netcode/lib.a /lib/ml/lib_playground/ai/lib.a /lib/ml/lib_playground/apis/lib.a /lib/ml/lib_playground/platforms/lib.a /lib/ml/lib_playground/platforms/draw/lib.a ./Counter.5 /lib/ml/lib_core/std_exit.5 /lib/ml/lib_core/runtime.5 /lib/c/libc.a
+% ./procs | sed 's/[0-9][0-9]*/N/g'
+procs N: child N forked
+procs N: read N bytes: hello, through a pipe
+procs N: child N ended
+% ./procsml | sed 's/[0-9][0-9]*/N/g'
+procsml N: child N forked
+procsml N: read: hello, through a pipe
+procsml N: child N ended
+% ls
+Counter.5
+Counter.inline
+Counter.ml
+Counter.start
+Fetchml.ml
+Game.ml
+Helloml.5
+Helloml.inline
+Helloml.ml
+Helloml.start
+Procsml.5
+Procsml.inline
+Procsml.ml
+Procsml.start
+Shapesml.ml
+counter
+hello
+hello.5
+hello.c
+helloml
+mkfile
+procs
+procs.5
+procs.c
+procsml
+square.5
+square_arm.s
+square_arm64.s
+% 

@@ -6,6 +6,7 @@
 #
 #     mk                    on mini-9pi's card, in /src: every directory
 #     mk libs               the libraries alone
+#     mk install            the libraries where examples/ links them
 #     mk self-quick         a part of lib_core and two programs, minutes
 #     mini-mk MINI=mini-    on the host, for the host (arm64, Linux)
 #     mini-mk MINI=mini- O=5 OS=plan9
@@ -24,17 +25,18 @@ TOP=.
 # Linux's ppm, and on Plan 9 its draw device and a software one.)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
 #`
-LIBS=lib_core lib_mime lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground \
+LIBS1=lib_mime lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground \
  lib_playground/physics lib_playground/juice lib_gui lib_audio lib_playground/netcode lib_playground/ai \
  lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
+LIBS=lib_core $LIBS1
 BOTH=linker linker/tools languages/c builder shell editors/ed generators/lex generators/yacc languages/ml \
  languages/scheme languages/pascal languages/prolog languages/dotnet languages/tiger typesetting/man \
  utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare \
  utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc \
  utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv \
  kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows/rio windows/rio/tests windows/desktop \
- apps/misc apps/files apps/maps profilers/misc games editors/drscheme apps/office examples
+ apps/misc apps/files apps/maps profilers/misc games editors/drscheme apps/office
 LINUX=database languages/datalog languages/forth languages/dotnet/csc editors/turbopascal/tty \
  editors/emacs/tty machine version_control kernels/tools debuggers/where debuggers/acid lib_gui/examples tiny \
  kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
@@ -53,7 +55,7 @@ all:V: libs programs
 
 libs:V: ${LIBS:%=%.dir}
 
-programs:V: assembler.dir ${DIRS:%=%.dir} $MORE
+programs:V: assembler.dir ${DIRS:%=%.dir} $MORE examples
 
 # A directory is built by its own mk.
 %.dir:V:
@@ -70,6 +72,34 @@ editors/drscheme.dir lib_gui/examples.dir apps/office.dir:V: games.dir
 languages/smalltalk/hosts/draw.dir:V: languages/smalltalk.dir
 games-software:V: games.dir
 	cd games && $MK $ARGS 'PLATFORM=software'
+
+# install copies what a program links, the C library with its headers
+# and each library of ML's with its units' interfaces, from where they
+# are built to LIBDIR (mkfiles/install.rc says what goes where), as
+# tiny/Buildfile's build install fills /lib: a program is then built
+# with no source of ix's but its own. examples/ is built this way, here
+# and in /examples on mini-9pi's card, whose /lib is this build's
+# (kernels/9pi/Makefile); mk install LIBDIR=/lib fills it on the card.
+# A library is copied when its archive is newer than the copy; a second
+# mk compares them, once the libraries are built (the first one read
+# their times before).
+LIBDIR=$B/lib
+install:V: libs
+	$MK $ARGS 'LIBDIR='^$LIBDIR installed
+installed:V: $LIBDIR/c/libc.a $LIBDIR/ml/lib_core/lib_core.a ${LIBS1:%=$LIBDIR/ml/%/lib.a}
+$LIBDIR/c/libc.a: $L/libc.a
+	$RC mkfiles/install.rc c
+$LIBDIR/ml/lib_core/lib_core.a: $L/lib_core.a $L/std_exit.$O $L/runtime.$O
+	$RC mkfiles/install.rc lib_core
+$LIBDIR/ml/%/lib.a: $B/%/lib.a
+	$RC mkfiles/install.rc $stem
+
+# (LIB and D, where its programs go, as examples/ names them: this
+# directory's ./_mk/7 is its ../_mk/7)
+EXLIB=${LIBDIR:./%=.././%}
+EXD=${B:./%=.././%}
+examples:V: install
+	cd examples && $MK $ARGS 'LIB='^$EXLIB 'D='^$EXD/examples
 
 # make self-quick's build (kernels/9pi/tests/self.sh): lib_core's C
 # library, its runtime and three units, then tests/self's two programs,

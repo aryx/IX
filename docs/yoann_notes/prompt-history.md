@@ -74194,3 +74194,11 @@ Claude left the other sessions' modified files out of the commit so they stayed 
 Claude did not push the commit to any remote.
 Claude noted that `~/ix` and `~/github/ix` are the same checkout, so nothing needed pulling.
 Claude suggested closing this session since the commit was the last step.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 08:20
+
+**Yoann:**
+
+> we recently did lots of nice optimizations for t-ix and went down from 50min self-tix build to 6min with 4 cores. What is the impact of this work for the t-ix.html page and the js version of the tiny-machine? Can we rebuild and push a new version of the web version of t-ix?

@@ -1,3 +1,5 @@
+# Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyBuildSystem.ml)
+#
 # ix built by ix. Each directory has its own mkfile, which makes its
 # library or its programs under _mk/; this one runs them, each after
 # what it needs (docs/plans/plan_mkfiles.md).
@@ -21,6 +23,7 @@ TOP=.
 # both systems, and each system's own. (PLATFORMS: the games' platforms,
 # Linux's ppm, and on Plan 9 its draw device and a software one.)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
+#`
 LIBS=lib_core lib_mime lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground \
  lib_playground/physics lib_playground/juice lib_gui lib_audio lib_playground/netcode lib_playground/ai \
  lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
@@ -39,6 +42,7 @@ PLAN9=kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kerne
  kernels/9pi/tests/self lib_core/commons/tests kernels/9pi/buses/user/usbd apps/media/play \
  apps/music/rebirth languages/smalltalk languages/smalltalk/hosts/draw apps/page \
  editors/turbopascal/hosts/draw editors/emacs/draw networking browsers/lynx browsers/netscape
+
 # (mkfiles/top.rc says DIRS, BOTH and the system's own; MORE, the games
 # built again on Plan 9 for its software platform; and the libraries'
 # order, a line for each from its mkfile's NEEDS, as
@@ -46,7 +50,9 @@ PLAN9=kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kerne
 # (mk makes the first target it reads: all, before those lines)
 all:V: libs programs
 <|. mkfiles/top.rc
+
 libs:V: ${LIBS:%=%.dir}
+
 programs:V: assembler.dir ${DIRS:%=%.dir} $MORE
 
 # A directory is built by its own mk.

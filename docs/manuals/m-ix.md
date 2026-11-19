@@ -311,6 +311,68 @@ are the scratch registers. mini-ml's back end has its own allocator:
 its values live on a value stack that the collector scans
 (languages/ml/ssa/Alloc.mli).
 
+### A program of your own: `/lib` and `/examples`
+
+The author, 2026-11-19: "for tiny/ we have a tiny/examples/ that shows
+a few toy programs [...] It would be a good to have something similar
+for m-ix", "maybe we should do mk install for the libs, like we did
+for t-ix so /examples can compile from under m-ix".
+
+`examples/` has eight small programs to read, with one mkfile that
+builds them. Each file's header says what it shows.
+
+| C | ML | what |
+|---|---|---|
+| `hello.c`, with `square_arm.s` | `Helloml.ml` | a print; in ML a tree, a closure, an exception and the collector |
+| `procs.c` | `Procsml.ml` | a pipe, fork, exec and wait |
+| | `Fetchml.ml` | a document fetched by HTTP (lib_networking) |
+| | `Shapesml.ml` | a picture on the draw device (lib_graphics) |
+| | `Game.ml` | a bouncing ball (lib_playground) |
+| | `Counter.ml` | two buttons and a number (lib_gui) |
+
+On mini-9pi's card they are in `/examples`, and the card has the
+compilers:
+
+    cd /examples
+    mk hello        (or mk, for all of them)
+    ./hello
+
+The programs are made beside their sources. `procs` and `shapesml`
+are built for mini-9pi only: the C library has no pipe on Linux, and
+Linux has no draw device.
+
+The mkfile names none of ix's sources. What a program links is in
+`/lib`, already built:
+- `/lib/c` has the C library (`libc.a`) and its headers, for
+  `cc -I /lib/c/include`.
+- `/lib/ml` has one directory for each ML library, named as its
+  directory in ix (`/lib/ml/lib_gui`, `/lib/ml/lib_playground/physics`).
+  It holds the archive (`lib.a`), and for each unit its interface (the
+  `.mli`, or the `.ml` when the unit has none) and its summary
+  (`.inline`), for `ml -I`. `/lib/ml/lib_core` is the standard library
+  (`lib_core.a`), with `std_exit` and the runtime, which end every ML
+  program.
+
+The top mkfile's `install` target fills that directory from a build
+(`mkfiles/install.rc` does the copying). It writes to `_mk/.../lib`
+unless you name another place, and the card's `/lib` is a copy of
+that. On the self-hosting card, `cd /src; mk install LIBDIR=/lib`
+replaces it with the card's own build. The browsers' libraries and
+troff's are installed too but are not on the card, since they are
+parts of their programs.
+
+On the host the same mkfile works with the mini- tools, and puts the
+programs in `_mk`:
+
+    mini-mk MINI=mini- install                the libraries, at the top, once
+    cd examples; mini-mk MINI=mini-           for Linux on arm64
+    mini-5i ../_mk/7/examples/hello           (mini-5i runs it elsewhere)
+    mini-mk MINI=mini- O=5 OS=plan9           mini-9pi's programs
+
+`mini-mk MINI=mini- examples` at the top does both steps.
+`make check-examples` in `kernels/9pi` builds five of them in
+`/examples` on the card under QEMU and runs four.
+
 ## 9. What does not hold yet
 
 These were found while writing this page (2026-10-22), and have not

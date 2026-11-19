@@ -1074,10 +1074,9 @@ endef
 #              libraries of ML's (CARD_INSTALLED, below).
 #   examples   eight small programs and their mkfile, built with /lib's
 #              (cd /examples; mk; ix's examples/)
-#   src        sources: for now five small programs, OCaml's hello.ml,
-#              hellodraw.ml and hellorio.ml (three programs of the
-#              card), C's hello.c and the assembler's hello.s, as texts
-#              to open (emacs /src/hello.ml)
+#   src        on the card to build ix on (card-self), ix's sources;
+#              the everyday card has none, its sources to read and
+#              build are /examples
 #   tmp
 CARD_apps = colors=$(IX9)/apps/misc/mini-colors files=$(IX9)/apps/files/files open=$(IX9)/apps/files/open stats=$(IX9)/profilers/misc/mini-stats office=$(IX9)/apps/office/office page=$(IX9)/apps/page/pageview play=$(IX9)/apps/media/play/mini-play rebirth=$(IX9)/apps/music/rebirth/rebirth
 CARD_system = rio=$(IX9)/windows/rio/mini-rio panel=$(IX9)/windows/desktop/panel startmenu=$(IX9)/windows/desktop/startmenu desk=$(IX9)/windows/desktop/desk settings=$(IX9)/windows/desktop/settings expose=$(IX9)/windows/desktop/expose ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
@@ -1167,13 +1166,14 @@ CARD_LIB = lib/desktop/apps=../../windows/desktop/apps.table lib/desktop/desk=..
 # OS=plan9, ix's: mkfiles/install.rc), and /examples, the small programs
 # its mkfile builds with them (cd /examples; mk). (Their files are read
 # as this Makefile is, so the card's own make is run after ix's.)
-CARD_INSTALLED := $(foreach f,$(shell cd $(IX9)/lib 2>/dev/null && find c ml -type f | sort),lib/$(f)=$(IX9)/lib/$(f)) \
+# Without the browsers' libraries and troff's, 26 MB of the 59, parts
+# of their programs that no example links: the card is then 142 MB of
+# its 223 (2026-11-19).
+CARD_INSTALLED := $(foreach f,$(shell cd $(IX9)/lib 2>/dev/null && find c ml -type f | grep -v '^ml/browsers/\|^ml/typesetting/' | sort),lib/$(f)=$(IX9)/lib/$(f)) \
   $(foreach f,$(wildcard ../../examples/mkfile ../../examples/*.c ../../examples/*.s ../../examples/*.ml),examples/$(notdir $(f))=$(f))
-# A first /src: small programs in the languages ix is written in, to
-# open with emacs for now. Later, ix's sources will be on the card, and
-# ix built from them there (docs/plans/plan_self_hosting.md).
-CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/rio/tests/Hellorio.ml \
-  src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
+# /src is the card to build ix on's (below): the everyday card has
+# /examples for sources.
+CARD_SRC =
 ifdef SELF
 CARD = $(BUILD)/card-self.img
 CARD_FS = $(BUILD)/card-self-fs.img
@@ -1186,12 +1186,10 @@ CARD_toolchain += lex=$(IX9)/generators/lex/mini-lex yacc=$(IX9)/generators/yacc
 # system again each time instead.)
 # (Only files: the symbolic links in git are copied, except bin, which
 # is a link to a directory. /src is the repository, as in tiny-kernel's
-# image, instead of the everyday card's five small examples. Without
-# git, as in Docker's image, it has the files that tests/ix_files.sh
-# finds.)
+# image. Without git, as in Docker's image, it has the files that
+# tests/ix_files.sh finds.)
 IX_FILES = git ls-files -co --exclude-standard 2>/dev/null || tests/ix_files.sh
 CARD_IX := $(foreach f,$(shell cd ../.. && { $(IX_FILES); } | grep -v '^docs/\|^_' | while read f; do [ -f "$$f" ] && echo "$$f"; done),src/$(f)=../../$(f))
-CARD_SRC =
 endif
 # The binds that make /bin out of these directories, one for each: the
 # card's /lib/namespace, lines of rc that boot.rc reads. (Plan 9's file

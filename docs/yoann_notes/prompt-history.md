@@ -74297,3 +74297,45 @@ Claude restarted the run with keepalive pings off, the Mac kept awake, and a per
 Claude expects the restarted run to take 35 to 45 minutes.
 Commit `8beb8a06` remains local and unpublished, with the live page still at `?v=12` and 8 million.
 Claude said it would publish assets and `?v=13` only if this run completes the build.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 12:49
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude ran `cd /examples; mk` on mini-9pi under QEMU, including `counter` linked against `/lib`, taking 48 seconds.
+Claude recorded that console output as the check's expected output and reran the check once more.
+Claude then changed that expected-output line to the masked form that Linux `sed` produces, since macOS `sed` had not applied the mask.
+Claude was about to commit that fix.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 12:55
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude confirmed both pieces were already committed (`4ecefbfb` examples, `7a58b693` for `mk install` and the card), leaving only untracked `tiny/docs/`, which is not its work. Claude proposed five follow-ups, ordered with Linux checks (`make self`, `make check-examples`) and card re-recording first. Claude flagged the everyday card's room: 59 MB of libraries and about 8 MB of compilers in a 223 MB file system. Claude suggested trimming to the libraries the examples link, which is about half, and replacing the card's scattered `/src` hello programs with `/examples`. Claude also noted the manual lacks a section on `/examples` and `mk install`, and that plain `mini-mk MINI=mini-` in `examples/` now needs `LIB=` and `D=`.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 12:51
+
+**Yoann:**
+
+> I notices that on the web the cursor was shifted; when I right clicked the meny actually appearead more on the right and more down than where I clicked.
+
+**Claude (summary):**
+
+Claude reported that the cursor-offset fix was committed as `7c6d18b0`.
+Claude was pushing the commit so the live web page would pick up the corrected canvas.
+Claude planned to check the fix on the live page after the push completed.
+Yoann's follow-up asked to commit, which points at the committed fix as the focus.

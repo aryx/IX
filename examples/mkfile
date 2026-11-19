@@ -27,21 +27,24 @@
 #     cd /examples; mk hello; hello        on mini-9pi's card
 #
 # On the host it works the same way, with the tools mini-cc..., and with
-# /lib as the top mkfile installs it, in _mk: its mk examples says the
-# five names below, for Linux on arm64 (mini-5i runs the programs where
-# the host is not one) and for mini-9pi:
-#     mini-mk MINI=mini- examples
-#     mini-mk MINI=mini- O=5 OS=plan9 examples
-#     mini-5i _mk/7/examples/hello
+# /lib as the top mkfile's install made it, in _mk (cd ..; mini-mk
+# MINI=mini- install, and with O=5 OS=plan9 for mini-9pi's), where the
+# programs go too; mini-5i runs Linux's where the host is not one:
+#     mini-mk MINI=mini-                   for Linux on arm64
+#     mini-5i ../_mk/7/examples/hello
+#     mini-mk MINI=mini- O=5 OS=plan9      mini-9pi's programs
 
 # the machine (5: arm, 7: arm64) and the system (plan9 or linux) the
 # programs are for; where the libraries are; where the programs go.
+# On mini-9pi they are its own, /lib and here; on the host, which has
+# no objtype, Linux's on arm64, and the top mkfile's directories.
 # (MINI, the tools' prefix, is given no value here: nothing on the
 # card, and on the host mini-, said to mk or in the environment)
-O=5
-OS=plan9
-LIB=/lib
-D=.
+O=`{if(~ $#objtype 0) echo 7; if not echo 5}
+OS=`{if(~ $#objtype 0) echo linux; if not echo plan9}
+HOST=`{if(~ $OS linux) echo ../_mk/$O; if not echo ../_mk/$O-$OS}
+LIB=`{if(~ $#objtype 0) echo $HOST/lib; if not echo /lib}
+D=`{if(~ $#objtype 0) echo $HOST/examples; if not echo .}
 MADE=`{mkdir -p $D}
 
 CC=${MINI}cc -m $O

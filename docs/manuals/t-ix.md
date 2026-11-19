@@ -1071,7 +1071,7 @@ a key held is typed again. Without a window the machine does not wait,
 and its speed (8 million by default) only says how long its second is.
 The kernel reads the speed, so the programs that count ticks (the games,
 `ping`, IL's timers) keep their pace at any speed, while those that
-compute finish sooner. The web page runs at 8 million.
+compute finish sooner. The web page runs at 20 million, as a window.
 
 ### 7.7 A program that draws its whole window: `run_canvas`, the menus
 

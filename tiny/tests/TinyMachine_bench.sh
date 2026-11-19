@@ -12,7 +12,7 @@
 # machine's time, so it includes the time the machine slept in a wfi,
 # which costs the host nothing: a session that idles (paint) shows a
 # higher rate than one that computes (office, tetris). The page
-# (TinyMachineWeb.ml) wants TinyMachineDevices.rate, 8 million a second, of
+# (TinyMachineWeb.ml) wants its page_rate, 20 million a second, of
 # what node gives less a frame's other work.
 #
 # Usage: TinyMachine_bench.sh [session, default paint] [-prof]

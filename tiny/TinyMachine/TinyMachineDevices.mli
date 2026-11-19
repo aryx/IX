@@ -59,8 +59,8 @@ val time : int
 (* [rate] is the number of instructions per second. It is set before
  * [create], which puts it in the read-only register "rate", and
  * tiny-kernel uses it to make its tick 2.5 ms. A host with a window
- * holds the machine to it. The default, 8 million, is what
- * the web page keeps up with and what the sessions were recorded at. *)
+ * or a web page holds the machine to it. The default, 8 million, is
+ * what the sessions were recorded at. *)
 val default_rate : int
 val rate : int ref
 

@@ -13,7 +13,9 @@
  * disk2. For example, ?image=boot.img&disk=disk.img&disk2=src.img
  * gives tiny-kernel's system and sources, and
  * ?image=kernel.img&disk=fs.img gives t6; a disk's writes last as long
- * as the page. The page can also say what to fetch in a variable of
+ * as the page. Each disk is grown to 64 MB in the page's memory, so
+ * that tiny-kernel can be built in /src, which the 8 MB fetched cannot
+ * hold. The page can also say what to fetch in a variable of
  * its own, tiny_machine = { image: ..., disk: ..., disk2: ... }, where
  * each is an address, and this comes before both. docs/t-ix.html, the
  * website's page, does this, because its files are in another place,
@@ -34,7 +36,8 @@
  *
  * The loop is the browser's. At each frame (requestAnimationFrame), it
  * runs as many instructions as the time since the last frame is worth
- * at the machine's speed (TinyMachineDevices.rate), but no more than
+ * at the machine's speed (20 million instructions a second, as
+ * TinyMachine's with a window), but no more than
  * [budget] milliseconds of them. This way a browser too slow for that
  * speed still draws and listens: the machine is then slower, and the
  * status line says so, as a percentage of the full speed. Then the

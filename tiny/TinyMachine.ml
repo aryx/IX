@@ -31,8 +31,8 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
       are its
   tiny-machine -window -rate 40 kernel.img
       the machine at 40 million instructions a second (with a window, 20 by
-      default; without one, 8, the speed the recorded sessions and the web
-      page use). tiny-kernel reads the rate, so its programs keep their
+      default, as the web page; without one, 8, the speed the recorded
+      sessions use). tiny-kernel reads the rate, so its programs keep their
       pace: a faster machine has more instructions in each of its ticks of
       2.5 ms
   tiny-machine -date 819000000 kernel.img

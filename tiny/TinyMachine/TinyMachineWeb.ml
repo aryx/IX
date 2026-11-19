@@ -537,8 +537,27 @@ let wire_show () =
 (* the milliseconds of a frame the machine may take *)
 let budget = 12.
 
+(* The page's speed, in instructions per second: TinyMachine's with a
+ * window. Under node the machine runs 30 to 49 million a second on an
+ * M3 Pro (tests/TinyMachine_bench.sh); a browser that cannot keep up
+ * says so in the status line. At the 8 million of before, building
+ * tiny-kernel in /src took an hour and a half of the page's time. *)
+let page_rate = 20_000_000
+
+(* A disk as the page uses it: grown to 64 MB, as TinyKernel/Makefile
+ * grows a run's (run.img), since the fetched disk is as small as its
+ * files allow. tiny-kernel's file system takes the whole disk (KFS's
+ * fs_mount), and building it in /src needs 29 MB where src.img has 8.
+ * The bytes added are the browser's memory only. *)
+let disk_size = 64 * 1024 * 1024
+let grown disk =
+  let b = Bytes.make (max disk_size (String.length disk)) '\000' in
+  Bytes.blit_string disk 0 b 0 (String.length disk);
+  b
+
 let run image disks www =
   let on_open (k : TinyMachineDevices.console) = k.opened <- true in
+  TinyMachineDevices.rate := page_rate;
   (* the wire's other end, which gives packets to the machine it is
    * called by: by a reference *)
   let machine = ref None in
@@ -659,5 +678,5 @@ let () =
           | d :: rest ->
               fetch d (function
                 | None -> missing d
-                | Some disk -> disks rest (Bytes.of_string disk :: got)) in
+                | Some disk -> disks rest (grown disk :: got)) in
         disks (List.filter_map param [ "disk"; "disk2" ]) [])

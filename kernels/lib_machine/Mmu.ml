@@ -32,7 +32,10 @@ let pgroundup a = (a + pgsize - 1) land lnot (pgsize - 1)
 let free_head = ref 0
 let free_count = ref 0
 
-let kfree pa = Phys.set32 pa !free_head; free_head := pa; incr free_count
+(* (freed: how many were given back since the start, for one who waits
+ * for a page to see that others still give some: Fault's page) *)
+let freed = ref 0
+let kfree pa = Phys.set32 pa !free_head; free_head := pa; incr free_count; incr freed
 
 let () =
   let lo, hi = Arch.pages in

@@ -104,22 +104,28 @@ KERNDATE ?= $(PRINCIPIA)
 # know nothing of a kernel. PIXEL=c uses principia's C pixel libraries
 # (lib_graphics/c), as before stage F.
 PIXEL ?= ocaml
-# The compiler. On the Pi 1 it is ix's own tools (kernel.mk's
-# COMPILER=ix: mini-ml for the OCaml and mini-cc for the C, run by the
-# mkfile), so that ix's kernel runs code from ix's compiler at every
-# boot. Its code runs 11% more instructions than ocaml-light's at
-# session-c, leaving aside the boot's clearing of the bss (2026-10-29).
-# make COMPILER=light builds with ocaml-light, into an image of its own
-# (kernel-pi1-light.img). With the same file for both, switching would
-# leave it stale, because an ix image is newer than ocaml-light's
-# kernel.elf.
+# The compiler. On the Pi 1 and the Pi 2 it is ix's own tools
+# (kernel.mk's COMPILER=ix: mini-ml for the OCaml and mini-cc for the
+# C, run by the mkfile), so that ix's kernel runs code from ix's
+# compiler at every boot. Its code runs 11% more instructions than
+# ocaml-light's at session-c, leaving aside the boot's clearing of the
+# bss (2026-10-29). make COMPILER=light builds with ocaml-light, into
+# an image of its own (kernel-pi1-light.img). With the same file for
+# both, switching would leave it stale, because an ix image is newer
+# than ocaml-light's kernel.elf.
 BOARD ?= pi1
-# (The Pi 2 used ix's tools too from 9f9e8389, until the build on its
-# card under QEMU, with its four cores, stopped in a run of k. It went
-# back to ocaml-light on 2026-10-29: see docs/plans/bugs/ix.md.)
-COMPILER ?= $(if $(filter pi1,$(BOARD)),ix,light)
+# (The Pi 2 used ix's tools from 9f9e8389 to 2026-10-29, when the
+# build on its card stopped in a run of k and it went back to
+# ocaml-light: docs/plans/bugs/ix.md. That kernel had one core, l2.s
+# parking the others. Ix's tools again since 2026-11-19, with the four
+# cores: ocaml-light's kernel ran out of memory in the whole build, its
+# heap growing to the kernel's 96 MB, where mini-ml's is two halves of
+# 32 (plan_9pi_self_speed.md); the author: "let's build mini-9pi with
+# mini-ml instead of ocaml-light, so we have better control".
+# old: COMPILER ?= $(if $(filter pi1,$(BOARD)),ix,light))
+COMPILER ?= $(if $(filter pi1 pi2,$(BOARD)),ix,light)
 ifeq ($(COMPILER),light)
-ifneq ($(filter pi1,$(BOARD)),)
+ifneq ($(filter pi1 pi2,$(BOARD)),)
 IMAGE ?= kernel-$(BOARD)-light.img
 endif
 endif
@@ -555,17 +561,19 @@ run-ix: ix
 # ix's own sessions have many lines, so a line is typed 0.3 s after a
 # prompt, not 1 s.)
 IXQUIET = --quiet 0.3
-# No page left (docs/plans/bugs/ix.md, 2026-10-10). Six programs at
-# once ask for more than the board has (tests/hog asks for up to 128 MB
-# each, of the 352 MB that the kernel gives processes under QEMU; it
-# was 192 MB when this was written, and three programs were ended then,
-# one now). The kernel ends those it cannot serve, by a note, and goes
-# on: the shell answers afterwards, and a program runs. Which ones end
+# No page left (docs/plans/bugs/ix.md, 2026-10-10). Three programs at
+# once ask for more than the board has (tests/hog: 150 MB each, of the
+# 335 MB that the kernel gives processes under QEMU). A process that
+# finds no page waits for one (Fault's page): when none was given back
+# for a minute the kernel ends it, by a note, and goes on: the others
+# then have its pages, the shell answers afterwards, and a program
+# runs. (old: six of 60 MB, one ended at once; since the wait they all
+# end well, each after another's exit.) Which ones end
 # is up to the scheduler, so the console is not compared. The check
 # only looks that one was ended, that the lines after it are there,
 # and that none is a panic.
 check-hog: ix
-	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 120 --out $(B)/qemu-hog.txt --lines tests/session-hog.cmds -- $(QEMU) $(QEMU_BOOT_IX) || true
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/qemu-hog.txt --lines tests/session-hog.cmds -- $(QEMU) $(QEMU_BOOT_IX) || true
 	@! grep -a panic $(B)/qemu-hog.txt && grep -a -q 'virtual memory' $(B)/qemu-hog.txt && grep -a -q '^still here' $(B)/qemu-hog.txt && grep -a -q '^hello from OCaml' $(B)/qemu-hog.txt \
 	  && echo "ok 9pi: no page left: the processes ended ($$(grep -a -c 'virtual memory' $(B)/qemu-hog.txt) notes), the kernel goes on, under QEMU" \
 	  || { echo "FAIL 9pi: no page left"; tail -5 $(B)/qemu-hog.txt; exit 1; }
@@ -914,16 +922,20 @@ card: ix
 # for what a build makes (346 MB for mini-9pi's programs). It is 1 GB,
 # while the everyday card stays 256 MB and is flashed 4 times faster.
 card-self: ix
-	$(MAKE) BOARD=pi2 ix
+	$(MAKE) BOARD=pi2 ix $(SELF_SMP)
 	rm -f $(BUILD)/card-self-fs.img
 	$(MAKE) SELF=1 $(BUILD)/card-self.img
-# ix built by ix on that card, on the Pi 2 under QEMU (with one core:
-# boot.rc's NPROC). Each file it makes is compared with Linux's from
-# the same sources (tests/self.sh, the top mkfile; $(BUILD)/self/).
-# self-quick builds a part of lib_core (its C library, the runtime,
-# three units) and two programs linked with them, one in C and one in
-# OCaml, and runs them (tests/self/). It takes 4 minutes, where self
-# takes 3 hours.
+# ix built by ix on that card, on the Pi 2 under QEMU, with its four
+# cores (the kernel built with SMP=1; boot.rc's NPROC is then 4, mk's
+# jobs; SELF_CORES=1: one core, as it was until 2026-11-19). Each file
+# it makes is compared with Linux's from the same sources
+# (tests/self.sh, the top mkfile; $(BUILD)/self/). self-quick builds a
+# part of lib_core (its C library, the runtime, three units) and two
+# programs linked with them, one in C and one in OCaml, and runs them
+# (tests/self/): 18 s of mk on the card, 26 on one core. self is 27
+# minutes of mk on the card, 48 on one core (2026-11-19; it took 3
+# hours).
+self self-quick: SELF_SMP = $(if $(filter 1,$(SELF_CORES)),,SMP=1)
 self self-quick: card-self
 	cd ../.. && dune build ./kernels/9pi/filesystems/lib_xv6fs/tests/Xv6test.exe
 	$(MAKE) --no-print-directory BOARD=pi2 SELFQ=$(if $(filter self-quick,$@),-q) self-run

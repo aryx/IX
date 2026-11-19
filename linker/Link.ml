@@ -64,6 +64,23 @@ let sym_of t version (n : Asm.name) = lookup t n.sym (if n.static then version e
  * of it. *)
 let weak = 32
 
+(* opti: one copy of each operand that is written the same, R3 or
+ * 8(R10) or x+0(SB), for all the program's instructions, and one pair
+ * of a file and a line for the instructions of that line. An object
+ * read has a block for each operand of each instruction: 2 million
+ * operands for mini-netscape's million instructions, 18 of its 38
+ * million words (the half are registers; an x+8(SB) is 13 words), and
+ * a pair a line each, 3 more. mini-ld on the card had 195 MB alive
+ * there, and four links at once filled the Pi 2 (2026-11-19). The
+ * operands are never changed in place: a pass that rewrites one makes
+ * another.
+ * old: mk op i.suffixes i.args, and where = (file, line) for each *)
+let operands : (Asm.operand, Asm.operand) Hashtbl.t = Hashtbl.create 4096
+let shared (a : Asm.operand) =
+  match Hashtbl.find_opt operands a with
+  | Some b -> b
+  | None -> Hashtbl.add operands a a; a
+
 (* one object into the program (5l's ldobj): its instructions, its
  * TEXTs, GLOBLs and DATAs; each object has its own version, for its
  * name<>s *)
@@ -80,13 +97,15 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
    * read in the history of the object before it (libmach takes the
    * last one met), a file that is not its own *)
   let nohist = o.history = [] in
+  let where = ref (file, 0) in
   let progs = Array.map (fun (it, line) ->
     let line = if nohist then 0 else line in
-    let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = (file, line); frame = 0; leaf = false; autos = [] } in
+    if snd !where <> line then where := (file, line);
+    let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = !where; frame = 0; leaf = false; autos = [] } in
     match (it : Asm.item) with
     | Ins i -> (
         match decode decode_machine i.op with
-        | Some op -> mk op i.suffixes i.args
+        | Some op -> mk op i.suffixes (List.map shared i.args)
         | None -> error "%s:%d: unknown opcode %s" file line i.op)
     | Text (n, flag, frame) ->
         let s = sym_of t version n in
@@ -115,7 +134,7 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
     | _ -> ()) items;
   Array.iteri (fun i p ->
     match p with
-    | Some p -> p.args <- List.map (function Asm.Target j -> (match progs.(j) with Some q -> p.target <- Some q | None -> ()); Asm.Target j | a -> a) p.args
+    | Some p -> List.iter (function Asm.Target j -> (match progs.(j) with Some q -> p.target <- Some q | None -> ()) | _ -> ()) p.args
     | None -> ignore i) progs;
   Debug_link.autos history progs;
   (* opti: while the objects are loaded t.progs is the last instruction

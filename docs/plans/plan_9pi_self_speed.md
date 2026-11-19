@@ -549,10 +549,45 @@ the emptied half back when it is 64 MB or more (segfree, which the
 kernel now takes for a program's own data, and mini-5i), and a fault
 with no page left waits a minute at most.
 
-Open at this commit: the whole build on four cores with the memory
-given back (running); the Pi 2's default compiler, still ocaml-light;
-make self-mix on four cores; the mini-ml kernel's 26 s on one core
-where ocaml-light's is 21.
+## 2026-11-19: the whole build passes, four cores, the kernel ix's own
+
+The whole build on four cores with the memory given back, three runs:
+
+| | mk on the card | built | what stopped it |
+|---|---|---|---|
+| the half given back at 64 MB, a minute's wait | 1,795 s | 83 of 85 | two mini-ld refused after their minute, beside a build of games still going |
+| at 16 MB, the wait going on while others give pages back | 1,283 s | 84 of 85 | one mini-ld in games: every large link waited for the others |
+| and mini-ld sharing its operands | 1,620 s | 85 of 85 | nothing |
+
+The last: 5 ok, the 2,919 files made on the card Linux's byte for
+byte, both hello programs. 27 minutes against 48 on one core, 1.8
+times; the first pass of this build since 2026-10-29.
+
+mini-ld's share of it: the program it links was a block for each
+operand of each instruction. mini-netscape: 1.08 million instructions,
+2.03 million operands, 38.6 million words (64 bits), of which 18.1 the
+operands and their lists (half are registers, 2 words each; an
+x+8(SB) is 13) and 3 a pair of file and line for each instruction.
+One copy of each operand written the same, and one pair a line: 23.8
+million words, 193 MB alive after the load where it was 305. The same
+file; the ARM mini-ld under mini-5i 10% sooner.
+
+What the build still shows: the directories' times add to 5,525 s
+where they add to 2,870 s on one core. Some wait for memory:
+languages/smalltalk/hosts/draw 586 s for 17 alone, lib_playground/apis
+304 for 12. games, twice (each platform), is 912 s of the 1,152 s
+critical path. So the Pi 2's 847 MB bound the four cores more than the
+kernel's lock does, and a link's memory is the next thing to cut: 22
+words an instruction now, 11 of them the instruction's record, three
+of whose fields are a TEXT's alone.
+
+The Pi 2's kernel is ix's tools' by default (kernels/9pi/Makefile's
+COMPILER), and make self and self-quick run on four cores
+(SELF_CORES=1: one).
+
+Open: the mini-ml kernel's 26 s on one core where ocaml-light's is 21;
+QEMU's settings, none given today; the cores of this kernel on a
+board, not run.
 
 ## The gate
 

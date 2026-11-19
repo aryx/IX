@@ -656,7 +656,7 @@ static value overhead = 100;
  * overhead, where doubling leaves it up to twice that: mini-ld's link
  * of mini-rm 5% less memory, 16% longer, a collection coming sooner) */
 #ifdef plan9
-#define GIVEBACK (64 * 1048576 / sizeof(value))		/* words */
+#define GIVEBACK (16 * 1048576 / sizeof(value))		/* words */
 extern int segfree(void*, ulong);
 #endif
 static void
@@ -667,7 +667,7 @@ major(value need)
 	collect();
 #ifdef plan9
 	/* The half just emptied given back to the system, when it is large
-	 * (64 MB and more): its pages are memory until then, and a program
+	 * (16 MB and more; 64 at first, and eight links of 60 each were not asked): its pages are memory until then, and a program
 	 * holds its half in use, filled to its size before the next
 	 * collection, and this one, as large: about 310 MB for 120 alive.
 	 * Four mini-ld at once, the build of ix on the card with four cores,

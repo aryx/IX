@@ -70,9 +70,13 @@ let map_seg pgdir s pg pa =
  * for one, a tenth of a second at a time: another's exit gives its
  * pages back. Plan 9's newpage sleeps the same way (on palloc.r,
  * woken by a page's free; here the clock looks again, which needs no
- * wakeup in Mmu). A minute at most: every process may be waiting, and
- * the one whose time ends first is refused as before, its pages then
- * the others'. A note ends the wait (Proc.tsleep raises it).
+ * wakeup in Mmu). A minute at most with no page given back by
+ * anyone (Mmu.freed): every process may be waiting, and the one whose
+ * minute ends first is refused as before, its pages then the others'.
+ * While others give pages back it waits on: two mini-ld waited their
+ * minute and were refused beside a build of games that went on for
+ * ten (old: go (n - 1) whatever the others did). A note ends the wait
+ * (Proc.tsleep raises it).
  * Seen in the whole build of ix on the card with four cores
  * (2026-11-18): four mini-ld at once, a copying collector's two
  * halves each, filled the Pi 2's 847 MB, and seven directories failed
@@ -80,12 +84,13 @@ let map_seg pgdir s pg pa =
  * old: match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem) *)
 let page_wait = 600
 let page () =
-  let rec go n =
+  let rec go n seen =
     match Mmu.kalloc () with
     | Some pa -> pa
-    | None when n > 0 -> Proc.tsleep 100; go (n - 1)
+    | None when !Mmu.freed <> seen -> Proc.tsleep 100; go page_wait !Mmu.freed
+    | None when n > 0 -> Proc.tsleep 100; go (n - 1) seen
     | None -> raise (Error enovmem) in
-  go page_wait
+  go page_wait !Mmu.freed
 
 (* a page of s made: zeroed, or read from the image; recorded, mapped *)
 let make pgdir s pg =

@@ -7,7 +7,10 @@
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
-  #screen { border: 1px solid #444; background: black; cursor: crosshair; display: block; max-width: 100%; height: auto; }
+  /* the screen is wider than the text's column: centred on it, and no
+     wider than the window */
+  #screen { border: 1px solid #444; background: black; cursor: crosshair; display: block; height: auto;
+            max-width: calc(100vw - 2em); margin-left: 50%; transform: translateX(-50%); }
   #console { height: 14em; overflow-y: scroll; background: #fff; border: 1px solid #444; margin: 0.5em 0;
              padding: 0.3em; white-space: pre-wrap; font: 13px monospace; line-height: 1.2; }
   #status { color: #555; font-size: 90%; font-family: sans-serif; }
@@ -49,7 +52,7 @@ is the tiny system's own code, compiled by its own compilers.
 
 <h2 id="machine">The machine</h2>
 
-<canvas id="screen" width="640" height="480" tabindex="0"></canvas>
+<canvas id="screen" width="1024" height="768" tabindex="0"></canvas>
 <pre id="console"></pre>
 <div id="status">The machine needs JavaScript.</div>
 <canvas id="wire" width="640" height="60"></canvas>
@@ -123,7 +126,7 @@ next thing to do. (A phone has no keys to type with.)
 <p>
 tiny-machine is 16 registers, one instruction format, two modes, one
 trap, a timer that counts instructions, pages, a console, a disk, a
-screen of 640 by 480 bytes and a mouse. It is three files of OCaml:
+screen of 1024 by 768 bytes and a mouse. It is three files of OCaml:
 </p>
 <ul>
 <li><a href="codemap.html?focus=tiny/TinyMachine/TinyMachineCPU.ml"><code>TinyMachineCPU.ml</code></a> &mdash; the CPU: its instructions, its assembler, its interpreter;</li>

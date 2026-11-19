@@ -192,6 +192,12 @@ type screen = {
 }
 
 let screen_open canvas =
+  (* The canvas takes the machine's size, whatever the page gave it:
+   * on a canvas of 640 by 480 (docs/t-ix.html's, after the screen
+   * became 1024 by 768) the picture was cut and the mouse, scaled by
+   * the two sizes, was right of and below the pointer. *)
+  U.set canvas (Js.string "width") TinyMachineDevices.width;
+  U.set canvas (Js.string "height") TinyMachineDevices.height;
   let context = call canvas "getContext" [| str "2d" |] in
   let picture =
     call context "createImageData"

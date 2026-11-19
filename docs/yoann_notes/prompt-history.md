@@ -74440,3 +74440,124 @@ Claude added a saved rule that `make test` must run before every commit.
 Claude recorded `make test-all` and `make self` as optional, since each takes over twenty minutes.
 Claude decided commit messages will state whenever `make test-all` or `make self` was not run.
 Claude also said `make test` was still running and would report the result when it finished.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:04
+
+**Yoann:**
+
+> self-tix is faster now though
+
+**Claude (summary):**
+
+Claude noted that the self-tix build now takes about six minutes on four cores, so it is affordable before a commit again.
+Claude recorded this alongside the rule, reading it as applying to changes in `tiny/` (kernel or toolchain), with `make self` for mini-9pi and `make test-all` staying optional.
+Claude pointed out that this session touched nothing under `tiny/`, so `make test` was the check that mattered.
+Claude reported that `make test` showed only the known ReBirth frame failure, with the fix for the order test broken by the `LIBS` split still being committed.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:10
+
+**Yoann:**
+
+> ok let's run the self quick test
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:10
+
+**Yoann:**
+
+> anything to commit?
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:01
+
+**Yoann:**
+
+> still in?
+
+**Claude (summary):**
+
+Claude said the build was still running twelve minutes in, past an earlier dropped connection.
+Claude estimated the build held 78–95% of the new 20 million rate, finishing in about 30 minutes.
+Claude planned to publish the assets and ?v=13 once the build completed.
+Claude planned to report the build's total time to the user after publishing finished.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:10
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude described the in-Chrome `build -j 4` run as 20 minutes in and on track to finish in 20 to 25 minutes. Claude planned to publish the new bc.js and src.img assets, bump the page to `?v=13`, and retest the live page once the build completed. Claude also flagged two open decisions for Yoann: running cores on the page, and whether t6 should stay at 20 million or drop back to 8 million. The t6 point is the one Yoann reacted to.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:10
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended re-recording the stale card sessions on Linux as the next step, since they had drifted before.
+Claude noted that `card-ix`, `card-filter` and `card-script` now also differ by four new programs, `/examples`, and the missing `/src`.
+Claude said the same Linux run would also confirm the memory line in `session-card-examples`.
+Claude pointed out that this step needs Linux, either Docker on this machine or CI.
+Claude also listed watching CI's daily `make self`, trying `mk install LIBDIR=/lib`, rebuilding the `/examples` programs, and adding a `dune` file.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:17
+
+**Yoann:**
+
+> t6 is not really important, but if it's an easy fix for the web, let's do it
+
+**Claude (summary):**
+
+Claude reported that t6's page now asks for 8 million and shows "Running at full speed" again.
+Claude said tiny-kernel stays at 20, since only the t6 page needed the fix.
+Claude is running `make test` and will commit the change once the tests pass.
+Claude noted the in-Chrome build is 29 minutes in and at 88% complete.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:18
+
+**Yoann:**
+
+> docker is running
+
+**Claude (summary):**
+
+Claude started a container from the ix-mix-base image, now that Docker is running.
+The container holds the committed HEAD tree, so the build tests what is in git rather than local edits.
+It runs the build first, then `make self-quick-mix`, then `make check-examples`, in that order.
+Claude noted the image's OCaml 4.14.2 differs from the Mac's 5.5.1, which fits the diagnosis.
+Claude said it would report back once the container run finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:25
+
+**Yoann:**
+
+> what's next? Can I close this session?
+
+**Claude (summary):**
+
+Claude said the session can close, since all its work is committed and on origin/main.
+Claude pointed out three working-tree changes from other sessions: prompt-history.md, self.sh, and untracked tiny/docs/.
+Claude listed re-recording the stale card-ix, card-filter, and card-script sessions on Linux as the main remaining task.
+Claude flagged that make self-quick-mix fails on this Mac, likely from OCaml 5.5.1 versus 4.14.2 in the image.
+Claude noted a 57 MB tree tar in the session's scratch directory, which goes away when the session ends.

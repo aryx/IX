@@ -74561,3 +74561,18 @@ Claude pointed out three working-tree changes from other sessions: prompt-histor
 Claude listed re-recording the stale card-ix, card-filter, and card-script sessions on Linux as the main remaining task.
 Claude flagged that make self-quick-mix fails on this Mac, likely from OCaml 5.5.1 versus 4.14.2 in the image.
 Claude noted a 57 MB tree tar in the session's scratch directory, which goes away when the session ends.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:24
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude reported that the page build had been running for 34 minutes so far.
+Claude said the build was still going, at roughly 94–96% of full speed.
+Claude chose to wait for the build to finish before taking any further action.
+Claude planned to publish once it completed: upload assets, bump the cache to ?v=13, then push.

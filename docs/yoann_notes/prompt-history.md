@@ -74339,3 +74339,104 @@ Claude reported that the cursor-offset fix was committed as `7c6d18b0`.
 Claude was pushing the commit so the live web page would pick up the corrected canvas.
 Claude planned to check the fix on the live page after the push completed.
 Yoann's follow-up asked to commit, which points at the committed fix as the focus.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 12:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing to commit, since commits 8beb8a06 and 7c6d18b0 were already pushed.
+Claude noted that 8beb8a06 raised the emulated machine to 20 million instructions per second and grew its disks to 64 MB.
+Claude noted that 7c6d18b0 fixed the screen and mouse, and that the fix is live on the website.
+Claude left the untracked tiny/docs/ path alone because it is not Claude's work.
+Claude said the in-Chrome build -j 4 was still running about 8 minutes in, and would publish assets and ?v=13 once it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 12:57
+
+**Yoann:**
+
+> let's do 3 and 4, and part of 5 with the Make plin mini-mk MINI=mini- if possible
+
+**Claude (summary):**
+
+Claude said the card's `/src` now holds only `/examples`, with the self-hosting card's `/src` unchanged.
+Claude trimmed the everyday card from 167 MB to about 142 MB by dropping the browsers' and troff's libraries, which no example links.
+Claude also added a `/examples`, `/lib` and `mk install` subsection to `docs/manuals/m-ix.md`.
+Claude built a fresh card in its own directory to rerun `check-examples` before committing.
+Plain `mini-mk MINI=mini-` in `examples/` now works on the host, including with `O=5 OS=plan9`.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:02
+
+**Yoann:**
+
+> but those checks take more than 25min no?
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:02
+
+**Yoann:**
+
+> let's commit in the mean time
+
+**Claude (summary):**
+
+Claude reported that all its work was already committed, with `7541c974` as the latest commit.
+Claude pointed out that `docs/yoann_notes/prompt-history.md` is the only modified file, holding this session's new entries.
+Claude declined to commit that file alone, planning to include it in the next commit instead.
+Claude noted that the untracked `tiny/docs/` directory is not its work and should be left out.
+Claude asked whether to start `make test` now.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:03
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude started `make test` in the background and said it would report the result when it finished.
+Yoann's reply points to this test run, so the focus is on it.
+He wants `make test` run before every commit, and he specified that it means the lite test suite.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:03
+
+**Yoann:**
+
+> we should always run make test before commit (it's the lite tests)
+
+**Claude (summary):**
+
+Claude saved a standing rule that `make test` must run before every commit in ix.
+Claude treated the lite `make test` target as the required pre-commit check, not the full suite.
+Claude recorded the rule so it carries into future sessions on this project.
+Claude started a `make test` run covering the three commits it had skipped the check for.
+Claude admitted the omission and said it would report the run's result and fix any failures.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 13:04
+
+**Yoann:**
+
+> it's make test-all and make self that are optional because they are currently very long, more than 20min
+
+**Claude (summary):**
+
+Claude added a saved rule that `make test` must run before every commit.
+Claude recorded `make test-all` and `make self` as optional, since each takes over twenty minutes.
+Claude decided commit messages will state whenever `make test-all` or `make self` was not run.
+Claude also said `make test` was still running and would report the result when it finished.

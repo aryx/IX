@@ -13,7 +13,8 @@
 cd "$(dirname "$0")/../../.."
 # (a list of the mkfile: its lines up to one that does not end with \)
 list() { sed -n "/^$1=/,/[^\\\\]\$/p" mkfile | sed "s/^$1=//; s/\\\\\$//; s/\\\${[^}]*}//g"; }
-first=" $(list LIBS | tr '\n' ' ') assembler "
+# (LIBS is lib_core and LIBS1, the others)
+first=" lib_core $(list LIBS1 | tr '\n' ' ') assembler "
 dirs=$(list BOTH; list LINUX; list PLAN9)
 [ -n "$dirs" ] || { echo "FAIL no BOTH, LINUX or PLAN9 read in the top mkfile"; exit 1; }
 bad=0

@@ -84,11 +84,16 @@ let map_seg pgdir s pg pa =
  * old: match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem) *)
 let page_wait = 600
 let page () =
+  (* (the time slept counted: /dev/waits) *)
+  let waited () =
+    let t0 = Machine.timer_now () in
+    Proc.tsleep 100;
+    Proc.add_wait Proc.page_waited Proc.page_us ((Machine.timer_now () - t0) land 0x3fffffff) in
   let rec go n seen =
     match Mmu.kalloc () with
     | Some pa -> pa
-    | None when !Mmu.freed <> seen -> Proc.tsleep 100; go page_wait !Mmu.freed
-    | None when n > 0 -> Proc.tsleep 100; go (n - 1) seen
+    | None when !Mmu.freed <> seen -> waited (); go page_wait !Mmu.freed
+    | None when n > 0 -> waited (); go (n - 1) seen
     | None -> raise (Error enovmem) in
   go page_wait !Mmu.freed
 

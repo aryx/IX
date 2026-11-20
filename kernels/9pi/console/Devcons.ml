@@ -14,7 +14,9 @@ let files = [ "cons", 0o660; "consctl", 0o220; "bintime", 0o664; "cputime", 0o44
               (* (not 9pi's: 9front's, the keys as they go down and up: below) *)
               "kbd", 0o440;
               (* (9pi's is its version's number; here the kernel's stamp) *)
-              "osversion", 0o444 ]
+              "osversion", 0o444;
+              (* (not 9pi's: what the machine waited on, Proc's) *)
+              "waits", 0o444 ]
 
 let qdir = 0
 let numsize = 12
@@ -233,6 +235,12 @@ let read (c : chan) n off =
       readstr off n (pad numsize secs ^ pad vlnumsize (secs ^ "000000000")
                      ^ pad vlnumsize (string_of_int !Proc.ticks) ^ pad vlnumsize "100")
   | "sysstat" -> readstr off n (sysstat ())
+  (* ms in all since the boot: each core's waits for the kernel's lock,
+   * processes ready that no core ran yet, processes waiting for a page *)
+  | "waits" ->
+      readstr off n (Printf.sprintf "lock %s\nready %d\npage %d\n"
+                       (String.concat " " (List.init !cores (fun c -> string_of_int (Machine.klock_wait c))))
+                       !Proc.ready_waited !Proc.page_waited)
   | "cputime" ->
       let ms = (!Proc.ticks - p.start) * 10 in
       readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ p.utime; p.stime; ms; p.cutime; p.cstime ]))

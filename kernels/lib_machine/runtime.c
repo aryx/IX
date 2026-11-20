@@ -398,15 +398,29 @@ static void watchdog(int me)
  * old: unsigned t0 = now_us();
  *      while (!klock_try()) if (!watchdog_said && since_us(t0) > WATCHDOG_US) watchdog(core());
  *      klock_holder = core(); klock_since = now_us(); */
+/* How long each core waited for the lock: in all (µs, /dev/waits), and
+ * at its last take, for the process whose kernel's entry it was: that
+ * wait is not its own code's time (Proc.charge_entry). The clock is
+ * read twice by a take that waits, and not at all by one that does
+ * not: the opti above holds for the tries.
+ * old: unsigned t0 = 0, tries = 0, timed = 0; the clock read first
+ * after 4,096 tries, for the watchdog alone */
+static uvlong klock_waited[NCORE];
+static unsigned klock_lastwait[NCORE];
+value klock_wait(value vc) { return Val_long((long)(klock_waited[Long_val(vc) % NCORE] / 1000)); }
+value klock_last(value unit) { (void)unit; return Val_long(klock_lastwait[core()]); }
+
 void klock_take(void)
 {
-  unsigned t0 = 0, tries = 0, timed = 0;
+  unsigned t0, tries = 0;
+  int c = core();
+  if (klock_try()) { klock_holder = c; klock_lastwait[c] = 0; return; }
+  t0 = now_us();
   while (!klock_try())
-    if ((++tries & 4095) == 0 && !watchdog_said) {
-      if (!timed) { t0 = now_us(); timed = 1; }
-      else if (since_us(t0) > WATCHDOG_US) watchdog(core());
-    }
-  klock_holder = core();
+    if ((++tries & 4095) == 0 && !watchdog_said && since_us(t0) > WATCHDOG_US) watchdog(c);
+  klock_lastwait[c] = since_us(t0);
+  klock_waited[c] += klock_lastwait[c];
+  klock_holder = c;
 }
 
 #ifdef MINI_ML
@@ -529,6 +543,8 @@ value cores_test(value unit)
 }
 #else
 value cores_test(value unit) { (void)unit; return Val_bool(0); }
+value klock_wait(value c) { (void)c; return Val_long(0); }
+value klock_last(value unit) { (void)unit; return Val_long(0); }
 value cores_wake(value unit) { (void)unit; return Val_unit; }
 value core_tick(value unit) { (void)unit; return Val_bool(0); }
 value cores_run(value n) { (void)n; return Val_unit; }

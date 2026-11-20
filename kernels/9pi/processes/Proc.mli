@@ -128,6 +128,15 @@ val sched : unit -> unit
 (* the time since the process was last counted is its own code's
  * (user) or the kernel's: Types' utime and stime *)
 val charge : Types.proc -> user:bool -> unit
+(* at the kernel's entry from the user: the time since is the user's,
+ * less this core's last wait for the kernel's lock *)
+val charge_entry : Types.proc -> unit
+(* what the machine waited on, in ms: a process ready and not run, one
+ * waiting for a page (Fault adds to it: add_wait page_waited page_us) *)
+val ready_waited : int ref
+val page_waited : int ref
+val page_us : int ref
+val add_wait : int ref -> int ref -> int -> unit
 val sleep : wait_chan -> unit
 
 (* [tsleep ms] sleeps ms milliseconds (rounded up to the next tick,

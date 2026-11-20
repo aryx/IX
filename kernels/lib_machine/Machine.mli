@@ -260,6 +260,11 @@ external core_tick : unit -> bool = "core_tick"
  * minutes, so two readings are subtracted and masked. The time a core
  * waits for the kernel's lock is not counted. *)
 external core_idle : int -> int = "core_idle"
+(* the milliseconds core [c] waited for the kernel's lock, in all; the
+ * microseconds of this core's last take of it (runtime.c's klock_take:
+ * Proc.charge_entry, /dev/waits) *)
+external klock_wait : int -> int = "klock_wait"
+external klock_last : unit -> int = "klock_last"
 (* with true, both caches are emptied at each change of process, as
  * principia's 9pi does. It is slower, and it is what to try when
  * programs die with the caches on and not with them off. *)

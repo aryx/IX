@@ -82,7 +82,7 @@ let guard where f =
 let timed where f =
   guard where (fun () ->
     let p = Proc.myproc () in
-    Proc.charge p ~user:true;
+    Proc.charge_entry p;
     f ();
     Proc.charge p ~user:false)
 

@@ -48,10 +48,14 @@ let readieds : proc option array = Array.make 4 None
  * p gets a fresh 100ms (9pi's keeps the stale one of the process's last
  * dispatch, so an interactive command could be preempted at its first
  * tick; a divergence of mini-9pi's, for fewer races in a session) *)
+(* when each slot's process was made ready (/dev/waits' ready) *)
+let readied = Array.make nproc 0
+
 let ready p =
   let cur = Machine.current () in
   if cur <> p.slot && cur <> scheduler_slot then readieds.(Machine.core ()) <- Some p;
   p.state <- Runnable;
+  readied.(p.slot) <- Machine.timer_now ();
   runq := !runq @ [ p ];
   (* a core with nothing to run may take it *)
   Machine.cores_wake ()
@@ -67,17 +71,33 @@ let ready p =
  * count: the user's.
  * old: nothing counted; a recipe of 12 s whose tool said 0.4 could not
  * say where the rest went (plan_9pi_self_speed.md, 2026-11-20) *)
+let add_user (p : proc) d = let u = p.uus + d in p.utime <- p.utime + (u / 1000); p.uus <- u mod 1000
+let add_sys (p : proc) d = let s = p.sus + d in p.stime <- p.stime + (s / 1000); p.sus <- s mod 1000
 let charge (p : proc) ~user =
   let now = Machine.timer_now () in
   let d = (now - p.since) land 0x3fffffff in
   p.since <- now;
-  if user then begin
-    let u = p.uus + d in
-    p.utime <- p.utime + (u / 1000); p.uus <- u mod 1000
-  end else begin
-    let s = p.sus + d in
-    p.stime <- p.stime + (s / 1000); p.sus <- s mod 1000
-  end
+  if user then add_user p d else add_sys p d
+
+(* What the machine waits on, in all (/dev/waits, in ms with the µs
+ * not yet one; Linux's pressure files say the same of its own): a
+ * process ready that no core runs yet (from readied, above), and one
+ * waiting for a page (Fault's page). The
+ * cores' waits for the kernel's lock are runtime.c's. *)
+let ready_waited = ref 0
+let ready_us = ref 0
+let page_waited = ref 0
+let page_us = ref 0
+let add_wait total us d = let t = !us + d in total := !total + (t / 1000); us := t mod 1000
+
+(* at the kernel's entry from the user (Main's timed): the time since
+ * is the user's, but for what this core waited for the kernel's lock,
+ * which is nobody's (runtime.c's klock_take, just before) *)
+let charge_entry (p : proc) =
+  let now = Machine.timer_now () in
+  let d = (now - p.since) land 0x3fffffff in
+  p.since <- now;
+  add_user p (d - min d (Machine.klock_last ()))
 
 let sched () =
   let p = match procs.(Machine.current ()) with Some p -> Some p | None -> None in
@@ -160,6 +180,7 @@ let scheduler () =
      | None -> !idle ()
      | Some (p, fresh) ->
          if p.state = Runnable then begin
+           add_wait ready_waited ready_us ((Machine.timer_now () - readied.(p.slot)) land 0x3fffffff);
            p.state <- Running;
            if fresh then schedticks.(core) <- !ticks + 10;
            switches.(core) <- switches.(core) + 1;

@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # tiny-kernel: TinyKernel.ml, a free kernel in ML for
-# tiny-machine (docs/notes/notes_tiny_kernel.md):
+# tiny-machine (tiny/docs/notes/notes_tiny_kernel.md):
 #
 #   make run          runs the kernel on tiny-machine, with sh on the console
 #   make run-window   does the same in a window of the host's, with the

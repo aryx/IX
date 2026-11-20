@@ -9,7 +9,7 @@ yet another TinyCalls.mli with similar content like fd_stdin which could
 go also in TinyLibSystem.mli; u_read seems very similar to reading
 function in TinyLibSystem"; and: "yes, write the plan".
 
-Companions: [`../../../tiny/TinyLibSystem/README.md`](../../../tiny/TinyLibSystem/README.md),
+Companions: [`../../../tiny/TinyLibSystem/README.md`](../../../TinyLibSystem/README.md),
 the interface's implementations as they are; [`plan_tiny_windows.md`](plan_tiny_windows.md),
 where TinyCalls was born, for the window programs tested on the host.
 

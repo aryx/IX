@@ -1,7 +1,7 @@
 # Plan: m-IX building itself in mini-9pi in 25 minutes on one core, under 10 on four (`kernels/9pi/`, `kernels/lib_machine/`, `languages/ml/runtime/`)
 
 The author (2026-11-15), after t-IX's self-build went from 50 minutes
-to under 10 ([plan_tiny_self_speed.md](done/plan_tiny_self_speed.md)):
+to under 10 ([plan_tiny_self_speed.md](../../tiny/docs/plans/done/plan_tiny_self_speed.md)):
 "we've managed to optimize significantly the self build of t-ix under
 t-ix and get under 10min, with a tiny-machine interpreter with a simple
 implementation ... So there is no reason we can't reach under 10min

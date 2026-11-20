@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # t6, a free kernel in C, a step before TinyKernel.ml
-# (docs/plans/done/plan_tiny_os.md):
+# (tiny/docs/plans/done/plan_tiny_os.md):
 #
 #   make run          runs the kernel on tiny-machine, with the disk
 #                     fs.img, and sh

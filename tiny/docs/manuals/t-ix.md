@@ -9,8 +9,8 @@ programs' headers say (`TinyMachineCPU.ml`'s, `TinyMachine.ml`'s,
 `TinyKernel.ml`'s): they are the first source, and where this manual
 and a header differ, the header is right. Each
 program's header says how it works and why
-([`tiny/README.md`](../../tiny/README.md) lists them); the plans say
-how each was decided ([plan_tiny_os.md](../plans/plan_tiny_os.md),
+([`tiny/README.md`](../../README.md) lists them); the plans say
+how each was decided ([plan_tiny_os.md](../plans/done/plan_tiny_os.md),
 [plan_tiny_windows.md](../plans/done/plan_tiny_windows.md),
 [notes_tiny_kernel.md](../notes/notes_tiny_kernel.md)).
 
@@ -69,7 +69,7 @@ their own, with no machine: `tiny-office file`, `tiny-www OCaml`,
 
 ## 2. How t-ix is put together
 
-![Who builds what in ix](../pics/toolchains.svg)
+![Who builds what in ix](../../../docs/pics/toolchains.svg)
 
 The picture shows all of ix; t-ix is its right half. The rest of this
 section describes that half in words.
@@ -449,7 +449,7 @@ it and lost) and the packet:
         856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
 
 A line that starts with `www` asks for a web page, for tiny-kernel's
-browser (`docs/plans/done/plan_tiny_browser.md`). The other end sends the
+browser (`tiny/docs/plans/done/plan_tiny_browser.md`). The other end sends the
 page's bytes as the site sent them, then closes. The rest of the line
 is an address. A bare title such as `OCaml` or `Plan 9 from Bell Labs`
 names an English Wikipedia article, and an article's address is

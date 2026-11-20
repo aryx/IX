@@ -1,7 +1,7 @@
 (* A tiny web browser, called www, that runs on tiny-kernel. The
  * full-size browser in ix lives in browsers/ (mini-netscape and
  * mini-lynx, built on the mini-chrome engine); this one keeps only the
- * essentials. The design is in docs/plans/done/plan_tiny_browser.md.
+ * essentials. The design is in tiny/docs/plans/done/plan_tiny_browser.md.
  *
  * The program has two parts. The reading turns the bytes of a page, as
  * they arrive, into the lines shown on the screen; it is most of what
@@ -86,7 +86,7 @@
  * html.c).
  *
  * references:
- *  - docs/plans/done/plan_tiny_browser.md: the reasons for each choice, and
+ *  - tiny/docs/plans/done/plan_tiny_browser.md: the reasons for each choice, and
  *    what Wikipedia actually sends
  *  - browsers/README.md: the full-size browser this one is a tiny
  *    version of

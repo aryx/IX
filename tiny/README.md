@@ -62,6 +62,10 @@ boots it and its parts sit beside it.
 - `examples/` holds the same files as tiny-kernel's `/examples`: small
   programs in C and ML to read, build and run.
 - `tests/` has each program's tests, `tests/TinyXxx_test.sh`.
+- `docs/` has t-IX's documents, as ix's `docs/` has m-IX's: the manual
+  (`manuals/t-ix.md`), the plans with their Status logs (`plans/`, and
+  `plans/done/` for the closed ones) and the notes (`notes/`). The web
+  page, `t-ix.html`, is in ix's `docs/`, with the website.
 
 ## Conventions
 
@@ -143,7 +147,7 @@ of those in the top README.md.
 **The toolchain**, also in tiny-kernel's `/bin` (`cc`, `ml`, `as`,
 `ld`). There, each tool makes byte for byte what the same tool makes on
 the host, and step 8 of
-[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md)
+[plan_tiny_self_hosting.md](docs/plans/done/plan_tiny_self_hosting.md)
 builds t-IX with them.
 
 | program | what it is | lines | mini twin | file |
@@ -327,7 +331,7 @@ make self-quick-tix             # the same, from the top directory
 ```
 
 The plan and its history are in
-[plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md).
+[plan_tiny_self_hosting.md](docs/plans/done/plan_tiny_self_hosting.md).
 
 ## How it became fast
 
@@ -431,20 +435,20 @@ faster, but not the cores: a page is one thread.
 
 The full list, with each one's commit, its measure and the switch that
 turns it off, is in
-[notes_tiny_opti_inventory.md](../docs/notes/notes_tiny_opti_inventory.md).
+[notes_tiny_opti_inventory.md](docs/notes/notes_tiny_opti_inventory.md).
 The last three rows of the table above are
-[plan_tiny_self_speed.md](../docs/plans/done/plan_tiny_self_speed.md),
+[plan_tiny_self_speed.md](docs/plans/done/plan_tiny_self_speed.md),
 which has the profiles, each step's numbers and what is left to do.
 
 ## More
 
-- [`docs/manuals/t-ix.md`](../docs/manuals/t-ix.md), the manual: the
+- [`docs/manuals/t-ix.md`](docs/manuals/t-ix.md), the manual: the
   CPU, the machine's devices, how a C or an ML program is built, the
   kernels, the drawing messages, the window system, how a game is
   written.
-- [`docs/projects.md`](../docs/projects.md) places t-IX among ix's
+- [`../docs/projects.md`](../docs/projects.md) places t-IX among ix's
   projects.
-- [`docs/notes/notes_tiny_spirit.md`](../docs/notes/notes_tiny_spirit.md)
+- [`docs/notes/notes_tiny_spirit.md`](docs/notes/notes_tiny_spirit.md)
   says where this directory departs from its own definition, and what
   was decided.
 - The plans' Status logs (`docs/plans/`) tell how each part was chosen

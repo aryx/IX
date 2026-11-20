@@ -30,9 +30,9 @@ ideas and names where they help"; the tiny-c list shrinks to what our
 own code needs (enum, function pointers), as `goto`, function-like
 macros and `#if` were needed only to compile xv6 as it is.
 
-Companions: [`projects.md`](../projects.md), the map of ix's projects;
-[`plan_arm.md`](plan_arm.md), where TinyCPU and TinyMachine were
-designed; [`plan_cc.md`](plan_cc.md), for `tiny-c -tm`.
+Companions: [`projects.md`](../../../../docs/projects.md), the map of ix's projects;
+[`plan_arm.md`](../../../../docs/plans/done/plan_arm.md), where TinyCPU and TinyMachine were
+designed; [`plan_cc.md`](../../../../docs/plans/done/plan_cc.md), for `tiny-c -tm`.
 
 ## Context
 

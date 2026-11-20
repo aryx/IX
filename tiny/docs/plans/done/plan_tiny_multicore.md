@@ -12,7 +12,7 @@ didactic to also have a tiny machine with multiple cores, and not wait
 for m-ix to see and leverage those multiple cores"; then "maybe we
 could have a plan_tiny_multicore.md".
 
-m-IX's side is [plan_multicore.md](../plan_multicore.md) (mini-9pi on the
+m-IX's side is [plan_multicore.md](../../../../docs/plans/plan_multicore.md) (mini-9pi on the
 Pi 2's four cores, mini-qemu's cores on the host's domains). This plan
 takes its two rules for the emulator (turns by default, domains under
 OCaml 5 behind a switch) and makes the other choice for the kernel:

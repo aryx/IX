@@ -50,7 +50,7 @@
  * ls -l (tiny-kernel has no owners, modes or times, so it shows only a
  * file's kind, links and size), and the wording of each program's
  * errors, which here are all "tool: file: reason". The plan, and what was found
- * along the way, is in docs/plans/done/plan_tiny_utilities.md.
+ * along the way, is in tiny/docs/plans/done/plan_tiny_utilities.md.
  *
  * twist:
  * The utilities that walk a file tree share one fold, where each twin

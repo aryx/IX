@@ -7,15 +7,21 @@ reader of the code), and a **related-work note** (`related-work/`,
 where it sits among the real systems). Besides them, **notes**
 (`notes/`) that cut across the programs: what was learnt debugging,
 profiling and speeding them up, the font, the frame, the sound, the
-keyboard, the tiny programs' spirit. `yoann_notes/` is the author's.
+keyboard. `yoann_notes/` is the author's.
+
+t-IX's own documents are with its code, in
+[`tiny/docs/`](../tiny/docs/), under the same names: its manual, its
+plans (`plan_tiny_*.md`) and its notes (`notes_tiny_*.md`, the tiny
+programs' spirit among them). Its web page, [t-ix.html](t-ix.html),
+stays here, with the website.
 
 How the projects relate (the mini and tiny programs, the real and our
 own machines, the kernels, the code that is not OCaml):
 [projects.md](projects.md).
 
 The manuals (`manuals/`): [m-ix.md](manuals/m-ix.md), the switches of
-m-ix's programs; [t-ix.md](manuals/t-ix.md), the tiny machine and what
-runs on it; [mini-qemu.md](manuals/mini-qemu.md); and
+m-ix's programs; [t-ix.md](../tiny/docs/manuals/t-ix.md), in
+`tiny/docs/`, the tiny machine and what runs on it; [mini-qemu.md](manuals/mini-qemu.md); and
 [hosts.md](manuals/hosts.md), which programs run on Linux and macOS
 too, and which only under mini-9pi or tiny-kernel, and why.
 
@@ -45,8 +51,8 @@ too, and which only under mini-9pi or tiny-kernel, and why.
 | mini-dos, a DOS for the Pi in OCaml: one program at a time and no protection, a BIOS, int 21h and `COMMAND` over the card's FAT; then what programs made of it: a resident program, XMS, an extender (`DOSX`) that leaves the MMU-off "real mode" and comes back for each call, mode 13h with its palette and two pages (proposed, nothing written) | [plan_system_dos.md](plans/plan_system_dos.md) | | | `kernels/dos/` (to come; `survey.sh`) |
 | mini-squeak, Squeak on the bare Pi, and mini-smalltalk under it: the author's playground's Smalltalk (the Blue Book's virtual machine in OCaml, the system and Morphic in Smalltalk) made a program of ix's; three hosts for one Squeak: the bare Pi, a window on Linux, a window of mini-rio under mini-9pi (stages 0 to 4 and 6 done: mini-smalltalk on Linux, by dune and by mini-ml; mini-squeak in a window on Linux, and on the emulated bare Pi 4, started from an image, the same first screen; slow by mini-ml) | [plan_system_squeak.md](plans/done/plan_system_squeak.md) | | | `languages/smalltalk/` (`mini-smalltalk -h`, `mini-squeak -h`; 57 tests), `kernels/squeak/` (its [README](../kernels/squeak/README.md); `./mini-pi -g -q mini-squeak`) |
 | riscv64, a third architecture: the toolchain (`-m j`), mini-5i, its boards' emulator in a directory of its own (QEMU's `virt`, the RV2), the kernels by mini-ml alone, then the author's Orange Pi RV2 (proposed, nothing written) | [plan_riscv.md](plans/plan_riscv.md) | | | (to come) |
-| the steps before tiny-kernel on tiny-machine: v0 (a page of assembly), t6 (a kernel in C); v6, xv6 on it, removed on 2026-10-13 | [plan_tiny_os.md](plans/done/plan_tiny_os.md) | (to write) | (to write) | `tiny/TinyKernel/steps/` |
-| t-IX's signatures with clearer types than string, int and bool: descriptors, processes, boxes, the kernel's enumerations, after Fpath.t and Exit.t | [plan_tiny_types.md](plans/done/plan_tiny_types.md) | | | `tiny/` |
+| the steps before tiny-kernel on tiny-machine: v0 (a page of assembly), t6 (a kernel in C); v6, xv6 on it, removed on 2026-10-13 | [plan_tiny_os.md](../tiny/docs/plans/done/plan_tiny_os.md) | (to write) | (to write) | `tiny/TinyKernel/steps/` |
+| t-IX's signatures with clearer types than string, int and bool: descriptors, processes, boxes, the kernel's enumerations, after Fpath.t and Exit.t | [plan_tiny_types.md](../tiny/docs/plans/done/plan_tiny_types.md) | | | `tiny/` |
 
 ## The principles
 

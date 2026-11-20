@@ -1,6 +1,6 @@
 (* tiny-office is one program that shows a page of objects, where each
  * object is a kind of document in a box
- * (docs/plans/done/plan_tiny_office.md).
+ * (tiny/docs/plans/done/plan_tiny_office.md).
  *
  * It is the compound document of the Xerox Star and of Smalltalk, cut
  * down:

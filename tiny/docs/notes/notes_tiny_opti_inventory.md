@@ -1,6 +1,6 @@
 # t-IX's optimizations, and what each one is worth
 
-The twin of [notes_opti_inventory.md](notes_opti_inventory.md) (m-ix's
+The twin of [notes_opti_inventory.md](../../../docs/notes/notes_opti_inventory.md) (m-ix's
 graphics and mini-ml) for t-IX: tiny-machine, tiny-kernel, tiny-ml and
 the tiny programs. Started 2026-10-27 (the author, after play's WAV
 was made to keep up: "maybe we can start a notes_tiny_opti_inventory.md

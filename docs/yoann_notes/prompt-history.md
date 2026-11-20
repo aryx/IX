@@ -74715,3 +74715,40 @@ Claude's section has a timeline of `make self` from 5 h 30 min down to 5 min 50 
 It also covers optimizations by layer (machine, kernel, compilers and runtime, cores), with measured gains and pointers to the inventory and speed-plan files.
 Claude flagged that the 3 h to 50 min stretch is not attributed step by step, and asked whether "the README" meant the top-level one.
 Claude also fixed a stale "hours" claim for `make -C TinyKernel self`, now 6 minutes on four cores.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 09:07
+
+**Yoann:**
+
+> excellent, let's commit the tiny/ README change
+
+**Claude (summary):**
+
+Claude committed the tiny/README.md change as b598a64f, adding the "How it became fast" section.
+Claude also corrected the make self line in that README to say 6 minutes.
+Claude ran make test in tiny/ first, and it passed with 34 jobs and 0 failures.
+Claude did not push, since main is two commits ahead of origin, one from another session.
+Claude recorded the live-page build result, 2,713 s ending on the kernel's link, in the commit message.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 09:14
+
+**Yoann:**
+
+> maybe we can move some of the docs/ that concerns t-ix to tiny/docs/ instead, with a tiny/docs/{plans,notes,manuals,...}
+
+------------------------------------------------------------------------
+
+## 2026-11-20 09:15
+
+**Yoann:**
+
+> t-ix.html must remain in docs/ because that's for the website
+
+**Claude (summary):**
+
+Claude said it would run a link check across every markdown file to find what the move broke.
+The answer was a single sentence with no concrete findings, files written, or commits made.

@@ -34,6 +34,12 @@ type t = {
   mutable jobs : int;
   mutable total : float;
   mutable roots : Graph.node list;
+  (* -p's: the walks of the graph from a root (make's loop), and the
+   * arcs they looked at *)
+  mutable walks : int;
+  mutable arcs : int;
+  (* the walk a node was last looked at in, not made (work) *)
+  waiting : (string, int) Hashtbl.t;
 }
 
 exception Failed
@@ -49,7 +55,7 @@ let create ~hashes mk g io flags =
     ood = Outofdate.create ~hashes ~time:(time_of g times) ~prog:io.prog ();
     status = Hashtbl.create 101; queue = Queue.create (); slots = [| None |];
     running = 0; errors = 0; busy = [| 0.; 0. |]; tick = 0.;
-    starts = Hashtbl.create 17; spent = Hashtbl.create 101; first = 0.; jobs = 0; total = 0.; roots = [] }
+    starts = Hashtbl.create 17; spent = Hashtbl.create 101; first = 0.; jobs = 0; total = 0.; roots = []; walks = 0; arcs = 0; waiting = Hashtbl.create 101 }
 
 let time t name = time_of t.g t.times name
 let status t (n : Graph.node) = Hashtbl.find_opt t.status n.name ||| Notmade
@@ -221,8 +227,21 @@ let dorecipe t did (node : Graph.node) =
 
 (* mk.c's work(), without the pretending of missing intermediates
  * (principia's default, as -i) *)
+(* opti: a node looked at in this walk and left not made is not looked
+ * at again in it, by another of its targets: nothing ends between two
+ * walks' ends, so it would be found as it was (and when the walk did
+ * something, a job queued, or a node made by -n, make's loop walks
+ * again). A directory's units name each other (.depend) and all wait
+ * for the generated ones: each was walked again through every path to
+ * it, as a tree. editors/emacs/draw on mini-9pi: 108 walks, 46 million
+ * arcs, 2.6 s of mk's own after each job, on the core the job runs on;
+ * its 74 recipes took 268 s for 104 s of compiles and a link
+ * (2026-11-20). The same here with recipes that do nothing: 8,177 arcs,
+ * the units made as soon as asked.
+ * old: if status t node = Notmade then, alone *)
 let rec work t did (node : Graph.node) =
-  if status t node = Notmade then
+  if status t node = Notmade && Hashtbl.find_opt t.waiting node.name <> Some t.walks then begin
+    Hashtbl.replace t.waiting node.name t.walks;
     if node.arcs = [] then begin
       if time t node.name = 0. then begin
         t.io.eprint (Printf.sprintf "mk: don't know how to make '%s' in %s\n" node.name t.io.cwd);
@@ -234,6 +253,7 @@ let rec work t did (node : Graph.node) =
     else begin
       let outofdate = ref t.flags.always and ready = ref true in
       node.arcs |> List.iter (fun (a : Graph.arc) ->
+        t.arcs <- t.arcs + 1;
         match a.prereq with
         | Some p ->
             work t did p;
@@ -244,6 +264,7 @@ let rec work t did (node : Graph.node) =
         if !outofdate then dorecipe t did node
         else (Outofdate.up_to_date t.ood node; set_status t node Made)
     end
+  end
 
 let make t ~nproc ~nrep target =
   let nproc = max 1 nproc in
@@ -270,6 +291,7 @@ let make t ~nproc ~nrep target =
   let rec loop () =
     if status t root = Notmade then begin
       let did = ref false in
+      t.walks <- t.walks + 1;
       work t did root;
       if !did then (everdid := true; loop ())
       else if waitup t || status t root = Made then loop ()
@@ -327,6 +349,7 @@ let profile t ~start =
   let b = Buffer.create 256 in
   Printf.bprintf b "mk: %.1f s: %.1f s before the first recipe, then %d recipes of %.1f s in all in %.1f s, %.1f at once\n"
     all before t.jobs t.total ran (if ran > 0. then t.total /. ran else 0.);
+  Printf.bprintf b "mk: %d walks of the graph, %d arcs looked at\n" t.walks t.arcs;
   Printf.bprintf b "mk: the critical path, %.1f s of them:\n" (List.fold_left (fun acc (_, s) -> acc +. s) 0. path);
   List.iter (fun (name, s) -> Printf.bprintf b "%8.1f  %s\n" s name) path;
   (* (and the longest recipes, whatever path they are on: a recipe far

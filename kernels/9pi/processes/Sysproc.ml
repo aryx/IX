@@ -18,10 +18,14 @@ let exits (p : proc) status =
      match (try find_proc p.parent with Not_found -> None) with
      | Some q ->
          q.nchild <- q.nchild - 1;
+         (* its times, and its children's, are its parent's children's *)
+         Proc.charge p ~user:false;
+         q.cutime <- q.cutime + p.utime + p.cutime;
+         q.cstime <- q.cstime + p.stime + p.cstime;
          if List.length q.waitq < 128 then begin
            let msg = if status = "" then "" else p.text ^ " " ^ string_of_int p.pid ^ ": " ^ status in
            let msg = if String.length msg >= errmax then String.sub msg 0 (errmax - 1) else msg in
-           q.waitq <- { wpid = p.pid; wtime = (!Proc.ticks - p.start) * 10; wmsg = msg } :: q.waitq;
+           q.waitq <- { wpid = p.pid; wutime = p.utime + p.cutime; wstime = p.stime + p.cstime; wtime = (!Proc.ticks - p.start) * 10; wmsg = msg } :: q.waitq;
            Proc.wakeup (Child_exit q.pid)
          end
      | None -> ());
@@ -112,7 +116,8 @@ let sysrfork (p : proc) flag =
       notify = p.notify; noteid = (if flag land rfnoteg <> 0 then !noteids else p.noteid);
       errstr = ""; text = p.text; start = !Proc.ticks; psstate = ""; args = ""; setargs = false;
       notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0; procctl = Pc_none; hang = false; traptype = 0;
-      rgrp = (if flag land rfrend <> 0 then { rend = [] } else p.rgrp); rendtag = 0; rendval = 0 } in
+      rgrp = (if flag land rfrend <> 0 then { rend = [] } else p.rgrp); rendtag = 0; rendval = 0;
+      since = Machine.timer_now (); utime = 0; uus = 0; stime = 0; sus = 0; cutime = 0; cstime = 0 } in
     if flag land rfnowait = 0 then p.nchild <- p.nchild + 1;
     ignore (Mmu.write pgdir (Exec.ustktop - Exec.tos_size + 52) (Machine.le32 pid));
     Machine.tf_copy slot;
@@ -150,7 +155,7 @@ let sysawait (p : proc) buf n =
     | [] -> Proc.sleep (Child_exit p.pid); wait ()
     | w :: rest -> p.waitq <- rest; w in
   let w = wait () in
-  user_snprint p buf n (Printf.sprintf "%d %d %d %d %s" w.wpid 0 0 w.wtime (Dev.quote w.wmsg))
+  user_snprint p buf n (Printf.sprintf "%d %d %d %d %s" w.wpid w.wutime w.wstime w.wtime (Dev.quote w.wmsg))
 
 (*****************************************************************************)
 (* brk *)

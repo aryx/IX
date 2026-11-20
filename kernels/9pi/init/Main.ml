@@ -77,10 +77,19 @@ let guard where f =
     ignore (Machine.panic (what ^ (if at = "" then "" else "\nraised at:" ^ at)))
 
 (* a system call (its notes delivered on its way back: Syscall) *)
-let trap () = guard "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))
+(* from the user and back: what ran since the last count was the
+ * user's, what runs here the kernel's (Proc.charge) *)
+let timed where f =
+  guard where (fun () ->
+    let p = Proc.myproc () in
+    Proc.charge p ~user:true;
+    f ();
+    Proc.charge p ~user:false)
+
+let trap () = timed "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))
 
 let irq () =
-  guard "an interrupt" (fun () ->
+  timed "an interrupt" (fun () ->
     let p = Proc.myproc () in
     Machine.doing p.pid p.text "interrupt";
     (* (the devices and the clock are the first core's; another core's
@@ -99,7 +108,7 @@ let hex s =
  * pc, the address): a page fault resolved (Fault), or the note 9pi's
  * trap posts, which kills it (trap.c, faultarm) *)
 let fault ec ((esr : string), (pc : string), (addr : string)) =
-  guard "a fault" (fun () ->
+  timed "a fault" (fun () ->
     let p = Proc.myproc () in
     Machine.doing p.pid p.text "fault";
     (* a breakpoint (5db's BKPT, E1200070: a prefetch abort, or an
@@ -144,6 +153,7 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
 let process_start (_ : int) =
   guard "a process's start" (fun () ->
     let p = Proc.myproc () in
+    p.since <- Machine.timer_now ();
     (* (a process of the kernel's own: its work, which does not end) *)
     (match List.assoc_opt p.slot !Proc.kernel_work with
      | Some work -> work (); while true do Proc.tsleep 100000 done
@@ -286,7 +296,8 @@ let () =
            slash = slash; dot = Kchan.clone slash; notify = 0; noteid = 1;
            errstr = ""; text = "*init*"; start = 0; psstate = ""; args = ""; setargs = false;
            notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0; procctl = Pc_none; hang = false; traptype = 0;
-           rgrp = { rend = [] }; rendtag = 0; rendval = 0 };
+           rgrp = { rend = [] }; rendtag = 0; rendval = 0;
+      since = Machine.timer_now (); utime = 0; uus = 0; stime = 0; sus = 0; cutime = 0; cstime = 0 };
   Proc.nextpid := 2;
   (* (the generator started now: its first words, thrown away, are long gone at the first read) *)
   Rng.start ();

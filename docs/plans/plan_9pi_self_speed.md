@@ -589,6 +589,43 @@ Open: the mini-ml kernel's 26 s on one core where ocaml-light's is 21;
 QEMU's settings, none given today; the cores of this kernel on a
 board, not run.
 
+## 2026-11-20: where a third of the build went: mk's own walks
+
+The whole build on one core with each tool timed (SELF_TIMES=1): 3,687 s
+of mk on the card, of which mini-ml 1,222 s (1,370 runs), mini-ld
+1,131 s (122 links, 9.3 s each), mini-ar 279 s, and 1,050 s in no tool.
+
+- mini-ar: 388 of its 413 runs listed a library's members for a
+  program's -start (mkfiles/units.rc), the library read whole each
+  time, 250 s. The list is written once with the library (lib.a.units).
+- The 1,050 s. editors/emacs/draw had 261 of them: 74 recipes of 268 s
+  by mk's clock for 104 s of tools, the first recipes 12 s for a tool
+  of 0.4. Ruled out by a run each: mk's own work in a dry run, the
+  generators, the environment's size, a shell's start, a target made
+  again in the built directory. What found it: the kernel counting the
+  time each process runs, in its own code and in the kernel
+  (Proc.charge; time's u and s, /dev/cputime, /proc/n/status, which
+  said 0), and mk -p saying its walks. mk's own time was 37 s after 40
+  of the build, 77 after 80, 117 after 120: it computed all the while
+  its recipe ran, on the same core. 108 walks of the graph, 46 million
+  arcs: a node not ready was walked again through every path to it, a
+  directory's units naming each other and all waiting for the generated
+  ones. Natively, recipes that do nothing: 8,177 arcs. A node looked at
+  in a walk and left not made is now left alone for the rest of it:
+  954,000 arcs, and the directory 78 s where it was 275.
+
+| the whole build, mk on the card | one core | four cores |
+|---|---|---|
+| 2026-11-19 (85 directories) | 2,881 s | 1,620 s |
+| 2026-11-20, each tool timed (86) | 3,687 s | |
+| with the units' list and mk's walk | 2,521 s | 1,547 s |
+
+Both of the last line 5 ok, 86 directories, the 3,803 files Linux's.
+On four cores the recipes add to 5,142 s where they add to 2,520 s on
+one: each is twice as long beside the others (games.dir 457 s for 312).
+That, the memory and the kernel's lock, is what is left between 1.6
+times and more.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

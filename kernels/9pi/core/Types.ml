@@ -189,7 +189,9 @@ type procctl = Pc_none | Pc_stop | Pc_trace
 
 (* a child's end, as await gives it: its pid, its time (ms), its message
  * ("text pid: status", or "") *)
-type waitmsg = { wpid : int; wtime : int; wmsg : string }
+(* (wutime, wstime: what it ran in its own code and in the kernel, ms,
+ * its children's that ended before it added, as Plan 9's pexit) *)
+type waitmsg = { wpid : int; wutime : int; wstime : int; wtime : int; wmsg : string }
 
 type proc = {
   pid : int;
@@ -243,6 +245,17 @@ type proc = {
   mutable rgrp : rgrp;
   mutable rendtag : int;
   mutable rendval : int;
+  (* the time it ran (Proc.charge): in its own code and in the kernel,
+   * ms, each with the microseconds not yet a ms; since: the board's
+   * clock (Machine.timer_now) when it was last counted; and the same
+   * two of its children that ended (Plan 9's TCUser and TCSys) *)
+  mutable since : int;
+  mutable utime : int;
+  mutable uus : int;
+  mutable stime : int;
+  mutable sus : int;
+  mutable cutime : int;
+  mutable cstime : int;
 }
 
 (* a rendezvous group (Rgrp): its processes waiting, the last first *)

@@ -235,7 +235,7 @@ let read (c : chan) n off =
   | "sysstat" -> readstr off n (sysstat ())
   | "cputime" ->
       let ms = (!Proc.ticks - p.start) * 10 in
-      readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ 0; 0; ms; 0; 0 ]))
+      readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ p.utime; p.stime; ms; p.cutime; p.cstime ]))
   (* the board's generator (Rng).
    * old: let r = Bytes.make n '\000' in for i = 0 to n - 1 do Bytes.set r i (Char.chr (Random.int 256)) done; ...,
    * numbers anyone computes again: no secret of TLS's could be read here *)

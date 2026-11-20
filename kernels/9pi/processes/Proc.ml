@@ -56,7 +56,34 @@ let ready p =
   (* a core with nothing to run may take it *)
   Machine.cores_wake ()
 
-let sched () = Machine.swtch scheduler_slot
+(* The time a process runs, in its own code (user) or in the kernel
+ * (Plan 9's TUser and TSys; time(1)'s u and s, a wait message's, and
+ * /dev/cputime's, which were 0). Counted by the board's clock, in
+ * microseconds, at each change: the kernel entered (Main's trap, irq
+ * and fault: what ran since was the user's), left again for the user
+ * (the kernel's), and the processor given up (sched: the kernel's;
+ * what passes until it runs again is nobody's, a wait). With several
+ * cores, a wait for the kernel's lock at the entry is before the
+ * count: the user's.
+ * old: nothing counted; a recipe of 12 s whose tool said 0.4 could not
+ * say where the rest went (plan_9pi_self_speed.md, 2026-11-20) *)
+let charge (p : proc) ~user =
+  let now = Machine.timer_now () in
+  let d = (now - p.since) land 0x3fffffff in
+  p.since <- now;
+  if user then begin
+    let u = p.uus + d in
+    p.utime <- p.utime + (u / 1000); p.uus <- u mod 1000
+  end else begin
+    let s = p.sus + d in
+    p.stime <- p.stime + (s / 1000); p.sus <- s mod 1000
+  end
+
+let sched () =
+  let p = match procs.(Machine.current ()) with Some p -> Some p | None -> None in
+  Option.iter (fun p -> charge p ~user:false) p;
+  Machine.swtch scheduler_slot;
+  Option.iter (fun (p : proc) -> p.since <- Machine.timer_now ()) p
 
 (* a pending note interrupts a sleep (Eintr), before or after *)
 let eintr = "interrupted"

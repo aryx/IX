@@ -114,7 +114,7 @@ let status p =
   (* the segments but the stack ("mostly non-existent") *)
   let mem = List.fold_left (fun n s -> if s.kind = Stack then n else n + (s.top - s.base)) 0 p.segs in
   field knamelen p.text ^ field knamelen !Dev.eve ^ field 12 st
-  ^ num 0 ^ num 0 ^ num ((!Proc.ticks - p.start) * 10) ^ num 0 ^ num 0 ^ num (mem / 1024) ^ num 10 ^ num 10
+  ^ num p.utime ^ num p.stime ^ num ((!Proc.ticks - p.start) * 10) ^ num p.cutime ^ num p.cstime ^ num (mem / 1024) ^ num 10 ^ num 10
   ^ String.make (statsize - (2 * knamelen) - 12 - (8 * numsize)) ' '
 
 (* %.Nx: hex, zero-padded to w digits *)

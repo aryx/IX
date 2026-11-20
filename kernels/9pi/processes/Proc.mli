@@ -125,6 +125,9 @@ val ready : proc -> unit
 (* [sched ()] goes back to the scheduler. [sleep c] sleeps until a
  * wakeup on the channel c readies the sleepers; the CPU is given up. *)
 val sched : unit -> unit
+(* the time since the process was last counted is its own code's
+ * (user) or the kernel's: Types' utime and stime *)
+val charge : Types.proc -> user:bool -> unit
 val sleep : wait_chan -> unit
 
 (* [tsleep ms] sleeps ms milliseconds (rounded up to the next tick,

@@ -47,9 +47,15 @@ $D/%.$O: $LOCAL $MLEXE
 	for(d in $DIRS) if(~ $d/$stem.ml $LOCAL) f=$d/$stem.ml
 	if(~ $#f 0) f=$D/$stem.ml
 	$ML $INCLUDES -o $target $f
+# (lib.a.units: its units' names in their order, what mkfiles/units.rc
+# says for a program's -start, written once here. Each program's link
+# asked mini-ar t of each of its libraries, which reads the library
+# whole: 388 times in a build of ix on the card, 250 s of its 3,687
+# (2026-11-19).)
 $D/lib.a: $OBJS mkfile
-	rm -f $target
+	rm -f $target $target.units
 	$AR u $target $OBJS
+	$AR t $target | sed 's,.*/,,; s,\.ml$,,' > $target.units
 
 # its directories, for a program's -I (mkfiles/mklibs reads them: the
 # library knows which, a system's or a platform's among them), and the

@@ -5,4 +5,7 @@
 # they start in: what $AR t lists, a unit's source file, made its
 # name. An rc script, as the recipes (mkfiles/mkconfig's $RC runs it).
 # usage: $RC mkfiles/units.rc lib.a...
-for(a in $*) $AR t $a | sed 's,.*/,,; s,\.ml$,,'
+# (lib.a.units, made with the library by mkfiles/mklib, read when it is
+# there; a library made another way, or before: asked as before.
+# old: for(a in $*) $AR t $a | sed 's,.*/,,; s,\.ml$,,', each time)
+for(a in $*) cat $a.units >[2]/dev/null || $AR t $a | sed 's,.*/,,; s,\.ml$,,'

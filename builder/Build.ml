@@ -329,4 +329,11 @@ let profile t ~start =
     all before t.jobs t.total ran (if ran > 0. then t.total /. ran else 0.);
   Printf.bprintf b "mk: the critical path, %.1f s of them:\n" (List.fold_left (fun acc (_, s) -> acc +. s) 0. path);
   List.iter (fun (name, s) -> Printf.bprintf b "%8.1f  %s\n" s name) path;
+  (* (and the longest recipes, whatever path they are on: a recipe far
+   * longer than the tool it runs is seen here, where the tools' own
+   * times, TIMES=time, add up to less: editors/emacs/draw's 280 s for
+   * 104 of its compiles and its link, 2026-11-20) *)
+  let longest = List.sort (fun (_, x) (_, y) -> compare y x) (Hashtbl.fold (fun name s acc -> (name, s) :: acc) t.spent []) in
+  Printf.bprintf b "mk: the longest recipes:\n";
+  List.iteri (fun i (name, s) -> if i < 8 then Printf.bprintf b "%8.1f  %s\n" s name) longest;
   Buffer.contents b

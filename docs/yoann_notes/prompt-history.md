@@ -74576,3 +74576,34 @@ Claude reported that the page build had been running for 34 minutes so far.
 Claude said the build was still going, at roughly 94–96% of full speed.
 Claude chose to wait for the build to finish before taking any further action.
 Claude planned to publish once it completed: upload assets, bump the cache to ?v=13, then push.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 20:31
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude reported that the test suite passed (34 jobs, 0 failures) and planned to commit and push the page's `?v=13`.
+Claude also reported that the live t6 check passed at full speed.
+The live tiny-kernel run timed out at 30 seconds while still loading its files, so Claude decided to retry it.
+Claude was checking whether the timeout came from a slow download or a real problem.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 20:44
+
+**Yoann:**
+
+> let's fix make test
+
+**Claude (summary):**
+
+Claude found two failing tests in m-ix, mini-files and mini-music, both checking recorded frames.
+Claude reran each failing test alone to separate a real difference from one that appears only under full-run load.
+Claude edited the recorded-frame expectations, recording OCaml 5's sum on the one line that differs.
+Claude was checking both tests on both builds, then the full `make test`, when the answer ended.
+Claude had not yet reported a passing run or committed anything.

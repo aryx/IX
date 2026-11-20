@@ -57,17 +57,20 @@ while IFS='|' read -r name frames script sum; do
 done < $E
 [ -n "${RECORD:-}" ] && cp $T/new $E
 
-said() { local i; for i in $(seq 10); do [ -f $T/said ] && break; sleep 0.1; done; cat $T/said 2>/dev/null | sed "s#$T#T#g" | tr '\n' ';'; rm -f $T/said; }
+# (the program started outlives mini-files, and its line comes after:
+# 0.3 s on macOS, 2.5 s seen, so 10 s when a line is expected, tenths
+# given, and 1 s to see none)
+said() { local i; for i in $(seq ${1:-10}); do [ -f $T/said ] && break; sleep 0.1; done; cat $T/said 2>/dev/null | sed "s#$T#T#g" | tr '\n' ';'; rm -f $T/said; }
 check() { if [ "$2" = "$3" ]; then echo "ok $1"; else echo "FAIL $1: $2, not $3"; r=1; fi; }
 # (the rows from the top, y 434 and 24 less each: docs, many, music,
 # data.bin, notes.txt, report.pdf)
 run 8 'at(-400;314):1-8,click:3,click:6' $T/o.ppm
-check "a double click on report.pdf: mini-page given its whole path" "$(said)" "mini-page T/tree/report.pdf;"
+check "a double click on report.pdf: mini-page given its whole path" "$(said 100)" "mini-page T/tree/report.pdf;"
 run 8 'at(-400;314):1-8,click:3' $T/o.ppm
 check "a single click: nothing started" "$(said)" ""
 run 12 'down:2,down:4,down:6,down:8,return:10' $T/o.ppm
-check "Enter on notes.txt: mini-emacs" "$(said)" "mini-emacs T/tree/notes.txt;"
+check "Enter on notes.txt: mini-emacs" "$(said 100)" "mini-emacs T/tree/notes.txt;"
 # (in docs/: inner rows a.txt, archive.gz, book.pdf, film.y4m)
 run 12 'return:2,down:4,down:6,down:8,return:10' $T/o.ppm
-check "Enter on a film: mini-play" "$(said)" "mini-play T/tree/docs/film.y4m;"
+check "Enter on a film: mini-play" "$(said 100)" "mini-play T/tree/docs/film.y4m;"
 exit $r

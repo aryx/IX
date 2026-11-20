@@ -25,6 +25,10 @@
 # the second, the playground's golden frame is not compared.
 # RECORD=2 writes that second sum, for the lines whose frame differs
 # (run on mini-mk's build).
+# A third sum is the frame by OCaml 5's code where it is neither: 5.5.1
+# on arm64 rounds a few products otherwise than 4.14 and than mini-ml
+# (mini-rebirth's running: 7 pixels of a million, each a level apart).
+# RECORD=2 on OCaml 5's build adds it, after a second sum is there.
 # FRAMES=file: another list than the games' (editors/drscheme/tests/frames.sh,
 # lib_gui/examples/tests/frames.sh, apps/office/tests/frames.sh: the same test of
 # their programs).
@@ -55,9 +59,10 @@ one() {
   PLAYGROUND_STORE=$w/store $(program $game) -dump-frame $frames $w/f.ppm "$@" > /dev/null 2> $w/err || { echo "FAIL $game $name: $(head -1 $w/err)"; return; }
   got=$(sha256sum < $w/f.ppm | cut -d' ' -f1)
   if [ "${RECORD:-}" = 2 ]; then
-    [ "$got" != "$sum" ] && sum2=$got; echo "$game|$name|$args|$sum${sum2:+|$sum2}" > $W/$i.rec; return
+    case "|$sum|$sum2|" in *"|$got|"*) ;; *) sum2=${sum2:+$sum2|}$got;; esac; echo "$game|$name|$args|$sum${sum2:+|$sum2}" > $W/$i.rec; return
   elif [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got${sum2:+|$sum2}" > $W/$i.rec
-  elif [ -n "$sum2" ] && [ "$got" = "$sum2" ]; then echo "ok $game $name (mini-ml's frame: a pixel's level apart from OCaml's)"; return
+  elif [ -n "$sum2" ] && [ "$got" = "${sum2%%|*}" ]; then echo "ok $game $name (mini-ml's frame: a pixel's level apart from OCaml's)"; return
+  elif case "|$sum2|" in *"|$got|"*) true;; *) false;; esac; then echo "ok $game $name (OCaml 5's frame: a pixel's level apart from OCaml 4.14's)"; return
   elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"
   else echo "ok $game $name"; fi
   # (a program the playground names TinyXxx and ix Xxx: DrScheme)

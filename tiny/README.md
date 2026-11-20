@@ -322,12 +322,119 @@ runtime or in the kernel.
 
 ```bash
 make -C TinyKernel self-quick   # a few targets (ping, the library) rebuilt on tiny-kernel, 3 minutes
-make -C TinyKernel self         # the whole image and system, hours
+make -C TinyKernel self         # the whole image and system, 6 minutes on four cores
 make self-quick-tix             # the same, from the top directory
 ```
 
 The plan and its history are in
 [plan_tiny_self_hosting.md](../docs/plans/done/plan_tiny_self_hosting.md).
+
+## How it became fast
+
+The first time t-IX built itself, in October 2026, the build took five
+and a half hours. It now takes six minutes. The host's tools build the
+same files in about three seconds, so at 50 minutes the build on
+tiny-kernel was still about 1,000 times slower than the host's; it is
+about 110 times slower now. No single change did this. Each layer was
+costing a factor of its own, and the factors multiplied: the machine,
+the kernel, the two compilers, their runtime and the build itself.
+
+| `make self` | when | what had changed |
+|---|---|---|
+| 5 h 30 min | 2026-10-20 | the first whole builds |
+| about 3 h | 2026-10-21 | SHA-1 in C |
+| 50 min 24 s | 2026-11-14 | the baseline of the speed plan |
+| 11 min 50 s | 2026-11-15 | the plan's steps, on one core |
+| 5 min 50 s | 2026-11-15 | four cores, each on a core of the host |
+
+The stretch from three hours to 50 minutes was not measured step by
+step. In it the compilers came to write their objects themselves (the
+assembly pass had been 31% of the build) and the library became an
+archive (each link had been reading its 16 objects again). The tree
+also grew all the while, so the later times are for more programs.
+
+Every optimization fixes a general cause where it is. None rewrites a
+slow function in assembly, and each keeps the simple code it replaced
+in a comment (`old:`), so that the code can still be read as it was
+first written. Here are the ones that counted most, by layer.
+
+**The machine** (tiny-machine):
+
+- *Batched ticks.* After an instruction that looks at the devices, the
+  machine runs bare steps up to the next moment when something can
+  change. This took it from 15 to 22 million instructions a second.
+- *Decoded instructions are kept*, by their word, so that a loop is
+  decoded once.
+- *`wfi`.* The idle kernel sleeps, and the machine adds the time
+  slept at once instead of running it.
+- *Memory reached directly.* Within a stretch of instructions nothing
+  can change the mode or the program's window, so a load, a store or a
+  fetch inside the window reads memory itself, without translating the
+  address each time. The machine became 1.5 times faster, in the web
+  page too.
+- *Compiled for speed.* The long runs use dune's release profile,
+  which inlines across libraries: 1.25 times faster for no line
+  changed.
+
+**The kernel** (tiny-kernel):
+
+- *A name is looked up in place.* Looking up one name read its whole
+  directory into a string and cut every entry out of it, for each part
+  of each path opened. It now compares the name in the block's buffer.
+  This alone made the build 1.4 times faster, and it was the largest
+  cost found anywhere in the kernel.
+- *The scheduler does nothing when there is nothing to do.* An idle
+  kernel retried every waiting process at each interrupt, a quarter of
+  an idle machine's instructions. Later, moving the running process to
+  the end of the list at each tick stopped rebuilding the list.
+- *The shell spawns a simple command* instead of forking, which copied
+  the shell's megabyte for exec to drop it at once. fork and exec
+  remain for the rest.
+- *Copies go eight words a turn* (`k_copy`), and text is drawn a whole
+  string in one call.
+
+**The compilers and their runtime** (tiny-cc, tiny-ml):
+
+- *tiny-cc keeps variables in registers.* A scalar variable whose
+  address is never taken lives in a register, an operand is read where
+  it is, and a constant is an immediate. A loop that copies bytes went
+  from 31 instructions a byte to 11. Since the runtime and part of the
+  kernel are C, every program gained: 1.5 times.
+- *tiny-ml allocates inline.* A block is allocated by a few
+  instructions in the code, and the runtime is called only to collect.
+- *tiny-ml reads strings inline* (`String.length`, `s.[i]`), and an ML
+  program's heap starts at its full size: the collector went from 26%
+  of the browser's instructions to 2%.
+- *tiny-ml's names are in hash tables.* Compiling TinyML.ml on
+  tiny-kernel went from 11 minutes to 3.
+- *SHA-1 and Marshal are in C.* tiny-build digests every file, and
+  SHA-1 in ML, with a word as two halves of 16 bits, ran at 2.6 KB a
+  second: 3.8 of the first build's 5.5 hours.
+
+**The cores**:
+
+- *Four cores in parallel.* tiny-kernel runs its programs on four
+  cores and `build -j 4` compiles four units at once. tiny-machine
+  gives each core a core of the host (an OCaml 5 domain).
+- *An idle core blocks*, where it was spinning on a core of the host,
+  and *another core's slice is 8 ticks*. The kernel runs on the first
+  core alone, so the end of every slice on another core was a round
+  trip to it, and with a slice of one tick these round trips were most
+  of its work. This took four cores from 7 min 49 s to 5 min 50 s.
+
+What limits the build now is the kernel on one core: four cores are
+twice as fast as one, not four times.
+
+The web page gains what makes a program need fewer instructions (the
+kernel's and the compilers' changes) and what makes the machine itself
+faster, but not the cores: a page is one thread.
+
+The full list, with each one's commit, its measure and the switch that
+turns it off, is in
+[notes_tiny_opti_inventory.md](../docs/notes/notes_tiny_opti_inventory.md).
+The last three rows of the table above are
+[plan_tiny_self_speed.md](../docs/plans/done/plan_tiny_self_speed.md),
+which has the profiles, each step's numbers and what is left to do.
 
 ## More
 

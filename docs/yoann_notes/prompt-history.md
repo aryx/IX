@@ -74607,3 +74607,111 @@ Claude reran each failing test alone to separate a real difference from one that
 Claude edited the recorded-frame expectations, recording OCaml 5's sum on the one line that differs.
 Claude was checking both tests on both builds, then the full `make test`, when the answer ended.
 Claude had not yet reported a passing run or committed anything.
+
+------------------------------------------------------------------------
+
+## 2026-11-19 20:45
+
+**Yoann:**
+
+> can we close this session?
+
+**Claude (summary):**
+
+Claude confirmed everything is committed and pushed in both the ix and assets repositories, with the scratch worktree removed.
+Claude said closing the session would stop the live-page verification build, which needs about 50 more minutes.
+The live tiny-kernel page boots at `?v=13`, confirmed at 85% speed in headless Chrome.
+The full `cd /src; build -j 4` on the live page is unconfirmed: the run dropped after 26 minutes, possibly from the Mac sleeping.
+Claude suggested running `cd /src`, then `build -j 4`, then `ls -l boot.img` to finish the missing check.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 08:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the two test scripts, the music frame list, and `prompt-history.md` on main without pushing.
+Claude left out the `mkfiles/mklib` and `mkfiles/units.rc` changes, which appeared during the session and likely came from another session.
+Claude also left out the untracked `tiny/docs/` directory, since it is not part of this work.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 08:15
+
+**Yoann:**
+
+> what's next? can I close this session?
+
+**Claude (summary):**
+
+Claude said the session can be closed because the fix is committed and `make test` passes.
+Claude flagged that the commit exists only on local main and has not been pushed.
+Claude noted the music frame cause is unresolved: it recorded OCaml 5's sum rather than finding which products round differently under 5.5.1.
+Claude offered a separate hunt for one frame across all compilers, as was done for `Affine.rotate_degrees`.
+Claude listed a leftover 4.14 build in the scratchpad directory, safe to delete and cleared on reboot.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 08:15
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude restarted the one missing check: a full `cd /src; build -j 4` run in headless Chrome on the live page.
+Claude is holding the Mac awake with display and system sleep both blocked, since sleep is the likely cause of the last two Chrome losses.
+Claude noted that closing the lid can still put the machine to sleep despite those blocks.
+The build should take about 50 minutes, and Claude said it would report when it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 08:33
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude reported that the live-page build was 17 minutes in and still running with no console errors.
+Claude said the live page booted fine and the last reading was "Running at full speed".
+Claude estimated about 30 more minutes until the build finishes, based on the earlier pace.
+Claude planned to report the log's last line, the `boot.img` file, and the size of /src when it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 08:56
+
+**Yoann:**
+
+> what are we doing in this session?
+
+**Claude (summary):**
+
+Claude summarized the session's work bringing the faster t-ix build to the web page, committed, pushed, and live at `?v=13`.
+Claude's most relevant point is the speed history: the same build went from 12 min 5 s to 6 min 10 s on the page.
+Claude also noted that `ls -l /bin` dropped from 9 s to 2 s, and that the page now runs at 20 million instructions per second.
+Claude fixed the shifted cursor by correcting the page's 640×480 canvas to match the 1024×768 screen.
+A full `build -j 4` run on the live page is still in progress, expected to finish within minutes.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 08:58
+
+**Yoann:**
+
+> maybe we can add a section at the end of the README with the history of major optimizations that allowed to significantly speedup the compilation of t-ix under t-ix (and more generally t-ix major opti, be it in tiny-ml, in the kernel, in using cores, etc.)
+
+**Claude (summary):**
+
+Claude added a "How it became fast" section to `tiny/README.md`, just before the closing "More" links, uncommitted.
+Claude's section has a timeline of `make self` from 5 h 30 min down to 5 min 50 s on four cores.
+It also covers optimizations by layer (machine, kernel, compilers and runtime, cores), with measured gains and pointers to the inventory and speed-plan files.
+Claude flagged that the 3 h to 50 min stretch is not attributed step by step, and asked whether "the README" meant the top-level one.
+Claude also fixed a stale "hours" claim for `make -C TinyKernel self`, now 6 minutes on four cores.

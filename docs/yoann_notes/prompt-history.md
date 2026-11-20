@@ -74752,3 +74752,35 @@ Claude recorded the live-page build result, 2,713 s ending on the kernel's link,
 
 Claude said it would run a link check across every markdown file to find what the move broke.
 The answer was a single sentence with no concrete findings, files written, or commits made.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 09:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the 27 t-IX documents as `b22f9725` under `tiny/docs/`, fixing 31 links and path references.
+Claude noted the commit is not pushed, since main is 4 commits ahead of origin.
+The manual link in `docs/t-ix.html` now points to `tiny/docs/manuals/t-ix.md` on GitHub, which only resolves after pushing.
+The live site still serves the old page with its working link, so nothing is broken yet.
+Claude offered to push on request.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 10:01
+
+**Yoann:**
+
+> can we do this history of opti, especially related to the self build, but this time for m-ix? Not sure were to put it. the toplevel README is already too long, so maybe in docs/notes/notes_opti_inventory.md in a new section
+
+**Claude (summary):**
+
+Claude added Part 3, "m-IX building itself," to docs/notes/notes_opti_inventory.md after the graphics and compiler parts.
+Part 3 tabulates the self-build times, from 4 h 52 min on 2026-10-21 down to 27 min on four cores.
+It traces what moved the time in order: the card cache, late-October compiler work, and November's kernel change that kept program text across execs.
+It also lists the ideas tried and dropped, each with its measurement, and where the build stands against the 25-minute and under-10-minute goals.
+Claude left the change uncommitted and flagged the 176-minute row and the closing t-IX comparison for checking.

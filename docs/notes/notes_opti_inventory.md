@@ -1,11 +1,13 @@
 # The optimizations, and what each one is worth
 
-Two parts. Part 1, the frame-time optimizations of a month in the
+Three parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
 O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C56,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
-for the compiler part").
+for the compiler part"). Part 3, the history of m-IX building itself
+in mini-9pi, from nearly five hours to 27 minutes, and of what moved
+its time: mostly the kernel.
 
 # Part 1: the frame-time optimizations of a month (the graphics)
 
@@ -938,10 +940,191 @@ and C26). C25 is a line in mini-ml's Main (Gc.set), C26 a define.
    tests/icount.c): mini-doom's frame 2.5 times OCaml's before C15;
    not measured again since C15 to C22.
 3. m-ix built under m-ix on the card: 176 minutes before C8; not run
-   since.
+   since. (Run since: Part 3 has its times. What C8 to C58 gave the
+   build was never measured alone.)
 4. Division by a variable on arm, 4.8% of mini-doom's frame and 3.4%
    of a compile, is principia's `_div`: CLZ needs ix's assembler to
    have it, the VFP's division would put the FPU in every C program's
    integer division, kernels' too. Not decided.
 5. C12's young generation size (1M words) was chosen by one compile's
    measure (Typing.ml) against 256K; not measured for the games.
+
+# Part 3: m-IX building itself (the self build's history)
+
+The author, 2026-11-20, after the same history was written for t-IX
+(tiny/README.md, "How it became fast"): "can we do this history of
+opti, especially related to the self build, but this time for m-ix?".
+
+`make self-mix` (kernels/9pi's `make self`, tests/self.sh) builds
+m-IX's libraries and programs, 85 directories, with m-IX's own tools
+(mini-mk, mini-ml, mini-cc, mini-ld...) inside mini-9pi, on a Pi 2
+that QEMU emulates. It then compares each file with the same build's
+on Linux, byte for byte. The first whole build took nearly five hours.
+It now takes 27 minutes, on four cores, with a kernel that m-IX's own
+compiler built.
+
+This part is a history, not an inventory: it tells which changes moved
+the build's time, in their order, and which did not. The compiler's
+own optimizations are Part 2's rows (C1 to C58), and this part only
+says which of them the build felt. Every number is copied from the
+plans, with the setting they give:
+[plan_self_hosting.md](../plans/plan_self_hosting.md) (October),
+[plan_9pi_self_speed.md](../plans/plan_9pi_self_speed.md) (November)
+and [plan_multicore.md](../plans/plan_multicore.md). The times are
+mk's on the card under QEMU on the author's Mac, unless CI is named.
+
+## The times
+
+| the whole build | when | cores | what had changed |
+|---|---|---|---|
+| 4 h 52 min | 2026-10-21 | 1 | the first whole build (74 directories) |
+| 2 h 59 min | 2026-10-21 | 1 | the card's cache, mini-ar, the recipes |
+| 176 min | 2026-10-22 | 1 | the same build run again, by `make self` |
+| 55 to 60 min (about 85 in CI) | 2026-11-15 | 1 | the compiler's optimizations after that (Part 2's C8 to C58) |
+| 48 min | 2026-11-18 | 1 | the kernel's changes below; the Pi 2's kernel built by mini-ml (85 directories) |
+| 27 min | 2026-11-19 | 4 | the four cores, and the memory of a link |
+
+For comparison: the same build on Linux, by the tools that OCaml
+compiled, takes 90 s with one job. The same build by m-IX's own ARM
+programs under qemu-arm, with Linux's kernel in place of mini-9pi,
+takes about 20 minutes. That is the floor: what the compiler's code
+and QEMU's translation cost, without mini-9pi. So on one core the
+kernel and the emulated machine now cost about 2.4 times the floor,
+where they cost about 3.
+
+Two stretches of the table were not measured step by step. From 176
+minutes to about an hour, three weeks passed with no whole build: the
+compiler changed all the while (mini-ml compiling three of its own
+units went from 9.22 G instructions to 5.2 G, Part 2), and so did the
+tree. And CI's nightly build failed each night from 2026-10-30 to
+2026-11-18, so the times of November were first measured on
+`make self-quick`, a part of lib_core and two programs: 52 s on the
+card on 2026-11-17, and 21 s the day after.
+
+## What moved it, in order
+
+**October: the card and the tools.** A compile of Pervasives took
+0.07 s on Linux and 7.0 s on the card. The PC sampled through QEMU's
+gdb stub said where: the SD card's driver 40%, mini-ml 40% (a quarter
+of it its collector), the rest of the kernel 20%.
+
+- *The file system's cache from 2 MB to 32 MB.* The cache was smaller
+  than mini-ml itself (2.7 MB) and was forgotten whole when full, so
+  each compile read the compiler from the card again, a word at a
+  time. 7.0 s to 5.1 s.
+- *Writes kept and written later*, by 1 MB or each second, by a kernel
+  process. 5.1 s to 4.3 s.
+- *A program's first heap 4 MB on Plan 9* (C26). 4.3 s to 4.05 s.
+- *mini-ar keeps a member's source and names beside its bytes*, so
+  that updating an archive no longer reads every object.
+- *The recipes without their `mkdir` and `ls`*: up to ten processes a
+  unit, a fifth of a library's time in mk's own part.
+
+Together: 4 h 52 min to 2 h 59 min, the libraries 2.3 times faster.
+
+**Late October: the compiler.** mini-ml's code and runtime became
+faster for every program, the compiler included: the checked bytes and
+the typed comparisons in place (C8 to C11: a compile 0.78 of its
+instructions), the collector's scan (C55, C56: 0.85), the start
+object's functions compiled by the SSA back end (C43: 0.86), and the
+linker's own slow places (C46, C48, C49). None of these was timed on
+the card alone.
+
+**November: the kernel**
+([plan_9pi_self_speed.md](../plans/plan_9pi_self_speed.md)). The
+kernel was more than half of the build's time (57% by its own clock),
+its page faults alone 36%. Each
+step is make self-quick's time on one core.
+
+- *A program's text is kept after its last process* (Plan 9's cached
+  images). The next exec of the same file gets its pages at once,
+  where it read them from the file system's cache again at each exec:
+  a third of all the pages given were a program's text. 52 s to 32 s,
+  the largest single gain, and more than the pages' own cost: QEMU
+  also translated each program's code again at each run.
+- */boot's programs kept too* (rc, echo, bind), one line: 32 s to 26 s.
+- *The SD card by the DMA controller*, one request for a transfer's
+  sectors where the driver took each word from a register: 26 s to
+  23 s.
+- *The file system's searches.* A file made looked for a free inode
+  from the first one, a read for each of the card's 5,000; a name
+  looked up in a directory made a list of all its entries. 24 s to
+  22 s. (t-IX's kernel had the same lookup, and the same fix, three
+  days before.)
+- *A failed call no longer flushes the card.* A name that is not there
+  is a call that fails, and each wrote the waiting blocks: 3,500 opens
+  of a build, 20 to 118 ms each.
+- *The lock's waiters no longer read the clock at each try*: a
+  device's access, which QEMU serves one core at a time.
+
+**November: the cores.** Four cores gave 1.1 times at first: mk did run
+four jobs at once, but each took 2.4 times as long, because half of a
+compile is the kernel's and the kernel has one lock.
+
+- *The kernel's half made smaller* (all of the above) took the ratio
+  to 1.5, then 1.6.
+- *A directory's two serial steps.* The dependencies are computed by as
+  many mini-ml as there are cores, and the archive is written from the
+  objects' bytes where each object was read as a value and written
+  again: 1.6 billion instructions for lib_core.a. lib_core: 1.7 times
+  on four cores.
+- *The kernel built by m-IX's own tools.* ocaml-light's kernel ran out
+  of memory in a whole build (its malloc never gives back), one of the
+  reasons the build failed each night. The Pi 2's kernel is now
+  mini-ml's, with the cores' start, the lock and each core's stacks
+  written for it.
+- *The memory of four links at once.* A program of mini-ml's held the
+  half of its heap in use and the one just emptied: about 310 MB for
+  120 alive, and four mini-ld at once did not fit in the Pi 2's
+  847 MB. The runtime now gives the emptied half back, and mini-ld
+  shares its operands (193 MB alive after loading mini-netscape, where
+  it was 305).
+
+The whole build: 27 minutes on four cores against 48 on one, 1.8
+times, all 85 directories built, the 2,919 files Linux's byte for
+byte.
+
+## Tried and not kept
+
+The plan records these with their measures. They matter as much as
+the gains, since several looked certain from the profile.
+
+- Zeroing a page eight words a turn, and not zeroing a page a fork
+  copies whole: nothing. Under QEMU the cost is the number of stores,
+  and the zeroing was not where it seemed.
+- Pages zeroed ahead while the core is idle: one core is never idle
+  in a build.
+- rc writing its variables to /env only when changed: the system
+  calls halved (158,000 to 79,000) and the time did not move. Those
+  were the cheap calls.
+- The kernel's lock given back during a card's transfer, twice: a
+  second slower each time.
+- A table of the names looked up, blocks of 4,096 bytes on the card, a
+  program's data pages kept beside its text: each within the runs'
+  spread.
+- Division in software made shorter: 8.4% of the kernel's instructions
+  by mini-qemu's profile, and nothing under QEMU, which runs a loop of
+  registers best. Kept for the boards.
+
+One mistake of method is worth keeping too. Three comparisons of
+2026-11-17 said "no gain" and had compared a kernel with itself: the
+changed files had been copied with times older than the objects, so
+nothing was built again. The kernel now shows a stamp, the checksum of
+its objects, and tests/self.sh prints it beside each time.
+
+## Where it stands
+
+The goals were 25 minutes on one core and under 10 on four. The build
+is at 48 and 27. On four cores the directories' own times add up to
+twice what they add up to on one, and what bounds them now is memory
+more than the kernel's lock: some links wait for pages. The next
+things to cut, by the plan: a link's memory (22 words an instruction),
+and the mini-ml kernel's own speed (make self-quick 26 s on one core
+where ocaml-light's kernel took 21).
+
+Against t-IX's history (50 minutes to 6): t-IX gained most from its
+emulator and its compilers, which were simple and slow, and its four
+cores then gave 2 times. m-IX's compiler had been optimized already
+for its games, and its emulator is QEMU, so the build's gains came
+from the kernel: what it does at each exec, at each fault and at each
+access to the card.

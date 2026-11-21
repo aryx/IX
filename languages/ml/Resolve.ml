@@ -934,6 +934,9 @@ let implementation ~implicit:dictionaries load name items =
   Hashtbl.reset instances;
   Hashtbl.reset units;
   Hashtbl.reset defined;
+  (* a unit's M.x/2 its own: mini-analyze reads many units in a process,
+   * where a count kept from the units before moved its reports *)
+  shadowed := 0;
   own := None;
   Hashtbl.reset own_types;
   let scope = base name in

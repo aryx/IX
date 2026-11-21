@@ -74784,3 +74784,39 @@ Part 3 tabulates the self-build times, from 4 h 52 min on 2026-10-21 down to 27 
 It traces what moved the time in order: the card cache, late-October compiler work, and November's kernel change that kept program text across execs.
 It also lists the ideas tried and dropped, each with its measurement, and where the build stands against the 25-minute and under-10-minute goals.
 Claude left the change uncommitted and flagged the 176-minute row and the closing t-IX comparison for checking.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 12:13
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that the test suite passed, with 159 jobs and zero failures.
+Claude then said it was committing the note, but its answer did not show the commit result.
+
+------------------------------------------------------------------------
+
+## 2026-11-20 17:15
+
+**Yoann:**
+
+> can I close this session?
+
+------------------------------------------------------------------------
+
+## 2026-11-20 17:16
+
+**Yoann:**
+
+> make test-all seems to fail in CI
+
+**Claude (summary):**
+
+Claude reproduced the `make test-all` failure locally, though `Syscall.ml` had not changed since the baseline.
+Claude reported that all eight analyzer checks now match their recorded baselines.
+Claude started `make test` as a follow-up, since `Resolve.ml` is shared with mini-ml.
+Claude also traced the `/1` and `/2` suffix to the two top-level `trace` bindings in `Syscall.ml`.

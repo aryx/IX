@@ -74820,3 +74820,19 @@ Claude reproduced the `make test-all` failure locally, though `Syscall.ml` had n
 Claude reported that all eight analyzer checks now match their recorded baselines.
 Claude started `make test` as a follow-up, since `Resolve.ml` is shared with mini-ml.
 Claude also traced the `/1` and `/2` suffix to the two top-level `trace` bindings in `Syscall.ml`.
+
+------------------------------------------------------------------------
+
+## 2026-11-21 07:31
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed the `Resolve.ml` fix as 9b74b626 and pushed it to `main`, range 228996ad..9b74b626.
+Claude left the untracked `tiny/docs/literate/` out of the commit and staged only `languages/ml/Resolve.ml` and `docs/yoann_notes/prompt-history.md`.
+Claude noted that the docker workflow on this push will show whether `test-all` is green, but did not check it yet.
+Claude flagged that another session's commit ecd81d51 reports one `make test` failure in mini-acid's mlvalues/typed session under mini-5i, possibly tied to the `Resolve.ml` change.
+Claude said its own `make test` had 0 failures, so it doubts the change caused it, and `make self-quick-mix` has not been run.

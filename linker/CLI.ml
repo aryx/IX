@@ -114,7 +114,7 @@ let link (m : _ machine) caps arch format entry out files =
      * cut at its + *)
     List.iter (fun (p : _ Program.prog) ->
       match p.op, p.args with
-      | Program.Func, Asm.Mem { name = Some n; _ } :: _ ->
+      | Program.Func _, Asm.Mem { name = Some n; _ } :: _ ->
           Buffer.add_string b (Printf.sprintf "%08x %s%s\n" p.pc n.sym (if n.static then "<>" else ""))
       | _ -> ()) t.progs;
     FS.write_perm caps 0o644 (Fpath.v (Fpath.to_string out ^ ".map")) (Buffer.contents b)

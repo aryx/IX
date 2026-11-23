@@ -284,7 +284,7 @@ let aclass ctx (p : prog) (a : A.operand option) : cls * int64 =
 let prepare (t : op Program.t) =
   List.iter (fun (p : prog) ->
     match p.op, p.args with
-    | Func, _ -> if p.frame > 0 then p.frame <- rnd p.frame 8
+    | Func f, _ -> if f.frame > 0 then f.frame <- rnd f.frame 8
     | Ins (Arith (a, sz)), A.Imm n :: rest when n < 0L ->
         p.op <- Ins (Arith ((match a with Add -> Sub | Sub -> Add | Adds -> Subs | Subs -> Adds), sz));
         p.args <- A.Imm (Int64.neg n) :: rest
@@ -305,7 +305,7 @@ let ends (p : prog) = match p.op with B | Ins (Ret | Return) -> true | _ -> fals
 let mem_off b off = A.Mem { base = A.R b; name = None; off = Int64.of_int off; index = None }
 let mem b = mem_off b 0
 let imm n = A.Imm (Int64.of_int n)
-let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false; autos = [] }
+let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None }
 let become (p : prog) op suffixes args = p.op <- op; p.suffixes <- suffixes; p.args <- args; p.target <- None
 
 (* the frame: 16-aligned, with R30 at its bottom, pushed by a
@@ -316,22 +316,22 @@ let rewrite (t : op Program.t) =
   let cur = ref None in
   List.iter (fun (p : prog) ->
     match p.op with
-    | Func -> p.leaf <- true; cur := Some p
+    | Func f -> f.leaf <- true; cur := Some f
     | Bl -> Option.iter (fun c -> c.leaf <- false) !cur
     | _ -> ()) t.progs;
   let autosize = ref 0 and leaf = ref true in
   t.progs <- List.concat_map (fun (p : prog) ->
     match p.op with
-    | Func ->
-        let a = if p.frame < 0 then 0 else p.frame + pcsz in
-        let a = if p.leaf && a <= pcsz then 0 else rnd a 16 in
+    | Func f ->
+        let a = if f.frame < 0 then 0 else f.frame + pcsz in
+        let a = if f.leaf && a <= pcsz then 0 else rnd a 16 in
         autosize := a;
-        p.frame <- a - pcsz;
-        if a = 0 then p.leaf <- true;
-        leaf := p.leaf;
-        let push = if p.leaf then 0 else min a 0xf0 in
+        f.frame <- a - pcsz;
+        if a = 0 then f.leaf <- true;
+        leaf := f.leaf;
+        let push = if f.leaf then 0 else min a 0xf0 in
         let sub = if a > push then [ prog_like p (Ins (Arith (Sub, X))) [] [ imm (a - push); A.Reg reg_sp ] ] else [] in
-        p :: sub @ (if p.leaf then [] else [ prog_like p (Ins (Mov (Int X64))) [ "W" ] [ A.Reg reg_link; mem_off reg_sp (- push) ] ])
+        p :: sub @ (if f.leaf then [] else [ prog_like p (Ins (Mov (Int X64))) [ "W" ] [ A.Reg reg_link; mem_off reg_sp (- push) ] ])
     | Ins Return ->
         let ret = [ prog_like p (Ins Ret) [] [ mem reg_link ] ] in
         if !leaf then
@@ -435,13 +435,13 @@ let opbra : op Program.op -> int32 = function
   | B -> 5 lsl 26
   | Bl -> (1 lsl 31) lor (5 lsl 26)
   | Bcond c -> (0x2a lsl 25) lor word (cond_bits c)
-  | (Func | Nop | Bcase | Ins _) as op -> error "bad bra %s" (show_op show op)
+  | (Func _ | Nop | Bcase | Ins _) as op -> error "bad bra %s" (show_op show op)
 
 let opbrr : op Program.op -> int32 = function
   | Bl -> (0x6b lsl 25) lor (1 lsl 21) lor (0x1f lsl 16)
   | B -> (0x6b lsl 25) lor (0x1f lsl 16)
   | Ins Ret -> (0x6b lsl 25) lor (2 lsl 21) lor (0x1f lsl 16)
-  | (Func | Nop | Bcond _ | Bcase | Ins _) as op -> error "bad brr %s" (show_op show op)
+  | (Func _ | Nop | Bcond _ | Bcase | Ins _) as op -> error "bad brr %s" (show_op show op)
 
 (* loads and stores: size's log, vector, opc (7l's LDSTR12U, LDSTR9S) *)
 let ldst = function
@@ -758,7 +758,7 @@ let select ctx (p : prog) : action =
   | Ins Dword when fits NONE VCON || fits NONE LEXT ->
       act 8 None (fun () -> let d = snd (aclass ctx p v.to_) in [ Int64.to_int32 d; Int64.to_int32 (Int64.shift_right_logical d 32) ])
   | Ins Word when fits NONE LCON || fits NONE LEXT -> one (fun () -> Int64.to_int32 (snd (aclass ctx p v.to_)))
-  | Func | Nop | B | Bl | Bcond _ | Bcase
+  | Func _ | Nop | B | Bl | Bcond _ | Bcase
   | Ins (Neg _ | Mvn _ | Ext _ | Div _ | Mul _ | Mneg _ | Mull _ | Mulh _ | Rem _ | Farith _ | Fcmp _ | Fcvtz _ | Cvtf _ | Fcvt _ | Funary _
         | Movp _ | Cbz _ | Ret | Return | Svc | Case | Dword | Word | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _) -> illegal ()
 
@@ -832,12 +832,12 @@ let layout (t : op Program.t) =
         if p.op = Ins Dword && !pc land 7 <> 0 then pc := !pc + 4;
         p.pc <- !pc;
         out := p :: !out;
-        if p.op = Func then begin
-          ctx.autosize <- p.frame + pcsz;
+        match p.op with
+        | Func f ->
+          ctx.autosize <- f.frame + pcsz;
           (match p.args with A.Mem { name = Some n; _ } :: _ -> (sym_of t p.version n).value <- !pc | _ -> ());
           go rest
-        end
-        else begin
+        | _ -> begin
           let a = select ctx p in
           if a.pool <> None then add_pool p a.pool;
           let rest = if p.op = B || p.op = Ins Ret then check p rest false else rest in
@@ -858,8 +858,9 @@ let encode (t : op Program.t) : Bytes.t =
   let ctx = { t; autosize = 0; lastcase = 0 } in
   let b = Bytes.make t.text_size '\000' in
   List.iter (fun (p : prog) ->
-    if p.op = Func then ctx.autosize <- p.frame + pcsz
-    else begin
+    match p.op with
+    | Func f -> ctx.autosize <- f.frame + pcsz
+    | _ -> begin
       (* chosen again, now that the pcs are known: as layout chose it *)
       let a = select ctx p in
       let ws = a.words () in

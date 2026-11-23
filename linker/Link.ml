@@ -18,7 +18,7 @@ let decode machine = function
   | s -> Option.map (fun m -> Ins m) (machine s)
 
 let show_op show = function
-  | Func -> "TEXT" | Nop -> "NOP" | B -> "B" | Bl -> "BL" | Bcond c -> "B" ^ string_of_cond c | Bcase -> "BCASE"
+  | Func _ -> "TEXT" | Nop -> "NOP" | B -> "B" | Bl -> "BL" | Bcond c -> "B" ^ string_of_cond c | Bcase -> "BCASE"
   | Ins m -> show m
 
 exception Error of string
@@ -81,10 +81,34 @@ let shared (a : Asm.operand) =
   | Some b -> b
   | None -> Hashtbl.add operands a a; a
 
+(* opti: and one copy of each list of operands, and of each opcode. The
+ * instructions are many and their operands few: mini-netscape's 1.08
+ * million instructions have 50,223 lists of operands written
+ * differently and 56 opcodes, where each had its list's cells (6.1
+ * million words) and its opcode's blocks (Ins and the machine's own,
+ * Alu And: 3.8 million). 25 million words alive after its load, 17
+ * after (2026-11-23; Arm.prepare keeps the lists). Like the operands,
+ * a list or an opcode is never changed in place, only replaced.
+ * old: List.map shared i.args, and decode's op, for each instruction *)
+let arg_lists : (Asm.operand list, Asm.operand list) Hashtbl.t = Hashtbl.create 4096
+let shared_args (l : Asm.operand list) =
+  let l = List.map shared l in
+  match Hashtbl.find_opt arg_lists l with
+  | Some l' -> l'
+  | None -> Hashtbl.add arg_lists l l; l
+
+(* (a table for each load: the opcodes are a machine's, 'm) *)
+let shared_decode decode_machine =
+  let ops = Hashtbl.create 64 in
+  fun s ->
+    match Hashtbl.find_opt ops s with
+    | Some op -> op
+    | None -> let op = decode decode_machine s in Hashtbl.add ops s op; op
+
 (* one object into the program (5l's ldobj): its instructions, its
  * TEXTs, GLOBLs and DATAs; each object has its own version, for its
  * name<>s *)
-let add_object t ~decode:decode_machine version (o : Asm.obj) =
+let add_object t ~decode_op version (o : Asm.obj) =
   let file = Fpath.to_string o.file in
   if o.arch <> t.arch then error "%s: an object for another machine" file;
   (* the history's paths first, as 5a writes them before the code *)
@@ -101,19 +125,18 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
   let progs = Array.map (fun (it, line) ->
     let line = if nohist then 0 else line in
     if snd !where <> line then where := (file, line);
-    let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = !where; frame = 0; leaf = false; autos = [] } in
+    let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = !where } in
     match (it : Asm.item) with
     | Ins i -> (
-        match decode decode_machine i.op with
-        | Some op -> mk op i.suffixes (List.map shared i.args)
+        match decode_op i.op with
+        | Some op -> mk op i.suffixes (shared_args i.args)
         | None -> error "%s:%d: unknown opcode %s" file line i.op)
     | Text (n, flag, frame) ->
         let s = sym_of t version n in
         if s.kind = Text then error "%s:%d: %s defined twice" file line n.sym;
         s.kind <- Text;
-        (match mk Func [] [ Asm.Mem { base = SB; name = Some n; off = 0L; index = None }; Asm.Imm (Int64.of_int flag) ] with
-         | Some p -> p.frame <- Int64.to_int frame; Some p
-         | None -> None)
+        mk (Func { frame = Int64.to_int frame; leaf = false; autos = [] }) []
+          [ Asm.Mem { base = SB; name = Some n; off = 0L; index = None }; Asm.Imm (Int64.of_int flag) ]
     | Globl (n, flag, _) when flag land weak <> 0 -> (sym_of t version n).weak <- true; None
     | Globl (n, _, size) ->
         let s = sym_of t version n in
@@ -208,7 +231,8 @@ let wanted t n =
   match Hashtbl.find_opt t.syms (n, 0) with Some s -> s.kind = Undefined && not s.weak | None -> false
 
 let load caps t ~decode ~needs files =
-  let add_object t version o = add_object t ~decode version o in
+  let decode_op = shared_decode decode in
+  let add_object t version o = add_object t ~decode_op version o in
   let version = ref 0 in
   let next () = incr version; !version in
   let libs = ref [] in
@@ -252,20 +276,21 @@ let load caps t ~decode ~needs files =
   t.progs <- List.rev t.progs
 
 let load_objects t ~decode objs =
-  List.iteri (fun i o -> add_object t ~decode (i + 1) o) objs;
+  let decode_op = shared_decode decode in
+  List.iteri (fun i o -> add_object t ~decode_op (i + 1) o) objs;
   t.progs <- List.rev t.progs
 
 (*****************************************************************************)
 (* Branches *)
 (*****************************************************************************)
 
-let is_branch = function B | Bl -> true | Func | Nop | Bcond _ | Bcase | Ins _ -> false
+let is_branch = function B | Bl -> true | Func _ | Nop | Bcond _ | Bcase | Ins _ -> false
 
 let resolve t =
   (* BL f(SB) and B f(SB): to f's TEXT *)
   let texts = Hashtbl.create 64 in
   List.iter (fun p ->
-    if p.op = Func then match p.args with Asm.Mem { name = Some n; _ } :: _ -> Hashtbl.replace texts (sym_of t p.version n) p | _ -> ()) t.progs;
+    if is_func p.op then match p.args with Asm.Mem { name = Some n; _ } :: _ -> Hashtbl.replace texts (sym_of t p.version n) p | _ -> ()) t.progs;
   List.iter (fun p ->
     match p.args with
     | [ Asm.Mem { base = SB; name = Some n; _ } ] when is_branch p.op -> (

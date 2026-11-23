@@ -37,12 +37,12 @@ let symbols (t : _ Program.t) =
     | Undefined | Text -> ()) syms;
   List.iter (fun (p : _ prog) ->
     match p.op, p.args with
-    | Func, Asm.Mem { name = Some n; _ } :: _ ->
+    | Func f, Asm.Mem { name = Some n; _ } :: _ ->
         let s = Link.sym_of t p.version n in
-        List.iter (function Hist (files, line) -> put_hist b files line | Param _ | Local _ -> ()) p.autos;
-        put b s.version (if p.leaf then 'L' else 'T') s.value s.name;
-        put b 0 'm' (p.frame + 4) ".frame";
-        List.iter (function Local (n, o) -> put b 0 'a' (- o) n | Param (n, o) -> put b 0 'p' o n | Hist _ -> ()) p.autos
+        List.iter (function Hist (files, line) -> put_hist b files line | Param _ | Local _ -> ()) f.autos;
+        put b s.version (if f.leaf then 'L' else 'T') s.value s.name;
+        put b 0 'm' (f.frame + 4) ".frame";
+        List.iter (function Local (n, o) -> put b 0 'a' (- o) n | Param (n, o) -> put b 0 'p' o n | Hist _ -> ()) f.autos
     | _ -> ()) t.progs;
   Buffer.contents b
 
@@ -55,7 +55,7 @@ let lines (t : _ Program.t) =
   let oldpc = ref t.text_start and oldlc = ref 0 in
   List.iter (fun (p : _ prog) ->
     let line = snd p.where in
-    if line <> !oldlc && p.op <> Func && p.op <> Nop then begin
+    if line <> !oldlc && not (is_func p.op) && p.op <> Nop then begin
       let v = ref ((p.pc - !oldpc) / minlc) in
       while !v > 0 do let s = min !v 127 in byte (s + 128); v := !v - s done;
       let s = line - !oldlc in

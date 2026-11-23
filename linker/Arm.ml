@@ -108,7 +108,7 @@ let view (p : prog) : view =
   let op = p.op in
   let sc = scond p in
   (* a branch to a name is to its TEXT (resolved), a C_BRANCH *)
-  let branch = match op with B | Bl | Bcond _ | Bcase -> true | Func | Nop | Ins _ -> false in
+  let branch = match op with B | Bl | Bcond _ | Bcase -> true | Func _ | Nop | Ins _ -> false in
   let args = List.map (function A.Mem { base = SB; _ } when branch && p.target <> None -> A.Target 0 | a -> a) p.args in
   let v from reg to_ = { op; sc; from; reg; to_ } in
   match op, args with
@@ -262,9 +262,15 @@ let prepare (t : op Program.t) =
   List.iter (fun (p : prog) ->
     (* a constant is 32 bits, sign-extended, as 5l reads it from 5a's
      * object: $0x80000000 is $-2147483648 *)
-    p.args <- List.map (function A.Imm n -> A.Imm (Int64.of_int32 (Int64.to_int32 n)) | a -> a) p.args;
+    (* opti: only the lists with such a constant made again, the others
+     * kept as Link shares them (a map of all made 7 million words of
+     * mini-netscape's link again, of 24 alive)
+     * old: p.args <- List.map (...) p.args, for each *)
+    let sext n = Int64.of_int32 (Int64.to_int32 n) in
+    if List.exists (function A.Imm n -> sext n <> n | _ -> false) p.args then
+      p.args <- List.map (function A.Imm n -> A.Imm (sext n) | a -> a) p.args;
     match p.op, p.args with
-    | Func, _ -> p.frame <- rnd p.frame 4
+    | Func f, _ -> f.frame <- rnd f.frame 4
     | Ins (Fmov pr), A.Fimm x :: rest -> p.args <- float_constant t x ~single:(pr = F) :: rest
     (* (5l -f: a constant converted is the single one loaded) *)
     | Ins (Fcvt F), A.Fimm x :: rest ->
@@ -289,7 +295,7 @@ let ends (p : prog) = p.op = B || (p.op = Ins Ret && not (List.exists (fun s -> 
 let mem_off b off = A.Mem { base = A.R b; name = None; off = Int64.of_int off; index = None }
 let mem b = mem_off b 0
 let imm n = A.Imm (Int64.of_int n)
-let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false; autos = [] }
+let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None }
 let become (p : prog) op suffixes args = p.op <- op; p.suffixes <- suffixes; p.args <- args; p.target <- None
 
 let division (p : prog) = match p.op with Ins (Div _ | Mod _) -> true | _ -> false
@@ -303,21 +309,21 @@ let rewrite (t : op Program.t) =
   let cur = ref None in
   List.iter (fun (p : prog) ->
     match p.op with
-    | Func ->
-        p.leaf <- true;
-        cur := Some p;
+    | Func f ->
+        f.leaf <- true;
+        cur := Some f;
         (match p.args with A.Mem { name = Some n; _ } :: _ -> Hashtbl.replace texts (sym_of t p.version n).name p | _ -> ())
     | _ when p.op = Bl || division p -> Option.iter (fun c -> c.leaf <- false) !cur
     | _ -> ()) t.progs;
   let autosize = ref 0 and leaf = ref true in
   t.progs <- List.concat_map (fun (p : prog) ->
     match p.op with
-    | Func ->
-        if p.frame <= 0 && p.leaf then p.frame <- -4;
-        autosize := p.frame + 4;
-        if !autosize = 0 && not p.leaf then p.leaf <- true;
-        leaf := p.leaf;
-        if p.leaf && !autosize = 0 then [ p ]
+    | Func f ->
+        if f.frame <= 0 && f.leaf then f.frame <- -4;
+        autosize := f.frame + 4;
+        if !autosize = 0 && not f.leaf then f.leaf <- true;
+        leaf := f.leaf;
+        if f.leaf && !autosize = 0 then [ p ]
         else [ p; prog_like p (Ins (Mov W32)) [ "W" ] [ A.Reg reg_link; mem_off reg_sp (- !autosize) ] ]
     (* in place, as the branches to it stay *)
     | Ins Ret ->
@@ -405,7 +411,7 @@ let opbra (op : op Program.op) sc =
   | Bl -> ((sc land 15) lsl 28) lor (0x5 lsl 25) lor (1 lsl 24)
   | B -> (always lsl 28) lor (0x5 lsl 25)
   | Bcond c -> (cond_bits c lsl 28) lor (0x5 lsl 25)
-  | Func | Nop | Bcase | Ins _ -> error "bad branch %s" (show_op show op)
+  | Func _ | Nop | Bcase | Ins _ -> error "bad branch %s" (show_op show op)
 
 (* loads and stores of words and bytes (5l's olr, osr, olrr, osrr) *)
 let olr ~byte sc v b rt =
@@ -711,7 +717,7 @@ let select ctx (p : prog) : action =
   | Ins (Fcvt _ as m) when none && fits FREG FREG -> farith m
   | Ins (Fcmp _ as m) when not none && (fits FREG NONE || fits FCON NONE) -> fcmp m
   | Ins (Itof _ | Ftoi _ as m) when none && (fits FREG REG || fits REG FREG) -> fconv m
-  | Func | Nop | B | Bl | Bcond _ | Bcase
+  | Func _ | Nop | B | Bl | Bcond _ | Bcase
   | Ins (Mul _ | Div _ | Mod _ | Mula | Mull _ | Swi | Movm | Case | Word | Ret | Farith _ | Fcvt _ | Fcmp _ | Itof _ | Ftoi _) -> illegal ()
 
 (*****************************************************************************)
@@ -769,12 +775,12 @@ let layout (t : op Program.t) =
     | (p : prog) :: rest ->
         p.pc <- !pc;
         out := p :: !out;
-        if p.op = Func then begin
-          ctx.autosize <- p.frame + 4;
+        match p.op with
+        | Func f ->
+          ctx.autosize <- f.frame + 4;
           (match p.args with A.Mem { name = Some n; _ } :: _ -> (sym_of t p.version n).value <- !pc | _ -> ());
           go rest
-        end
-        else begin
+        | _ -> begin
           let a = select ctx p in
           pc := !pc + a.size;
           let v = view p in
@@ -810,8 +816,9 @@ let encode (t : op Program.t) : Bytes.t =
   let ctx = { t; autosize = 0 } in
   let b = Bytes.make t.text_size '\000' in
   List.iter (fun (p : prog) ->
-    if p.op = Func then ctx.autosize <- p.frame + 4
-    else begin
+    match p.op with
+    | Func f -> ctx.autosize <- f.frame + 4
+    | _ -> begin
       (* chosen again, now that the pcs are known: as layout chose it *)
       let a = select ctx p in
       let ws = a.words () in

@@ -74836,3 +74836,34 @@ Claude left the untracked `tiny/docs/literate/` out of the commit and staged onl
 Claude noted that the docker workflow on this push will show whether `test-all` is green, but did not check it yet.
 Claude flagged that another session's commit ecd81d51 reports one `make test` failure in mini-acid's mlvalues/typed session under mini-5i, possibly tied to the `Resolve.ml` change.
 Claude said its own `make test` had 0 failures, so it doubts the change caused it, and `make self-quick-mix` has not been run.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 08:11
+
+**Yoann:**
+
+> the self.yml CI job is currently failing
+
+**Claude (summary):**
+
+Claude noted the `gh run --log` output was truncated and read the full job log instead.
+Claude found the self build finished on the card, but `self.sh` failed when comparing results.
+Claude traced the card build failure to `games/`, where `ld` ran out of memory.
+Claude began checking what changed since the last green run, f223628b on Nov 20.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 08:41
+
+**Yoann:**
+
+> ok let's try 1 for now
+
+**Claude (summary):**
+
+Claude recommended measuring mini-ld's memory on the largest link, mini-netscape, before changing anything.
+Claude cut mini-ld's peak live data from 28M to 16M words (−43%) by sharing argument lists and opcodes, and by moving TEXT-only fields into a `Func of func` opcode.
+Claude also stopped `Arm.prepare` from rebuilding every argument list, which had been undoing that sharing.
+Output stayed byte-identical, with and without `-g`, and speed held at 1.3 s; `make test` passed with 0 failures.
+Claude then found `make self-quick-mix` failing on object-file differences and was checking whether an OCaml Marshal difference explains them.

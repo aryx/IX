@@ -20,7 +20,7 @@ let follow t ~ends =
   let invert (p : _ prog) =
     match p.op with
     | Bcond c -> Bcond (invert c)
-    | Func | Nop | B | Bl | Bcase | Ins _ -> let f, l = p.where in error "%s:%d: unknown relation" f l in
+    | Func _ | Nop | B | Bl | Bcase | Ins _ -> let f, l = p.where in error "%s:%d: unknown relation" f l in
   let link = Hashtbl.create 4096 and marked = Hashtbl.create 4096 in
   let ids = ref 0 in
   let fresh (p : _ prog) = p.pc <- !ids; incr ids in
@@ -34,7 +34,7 @@ let follow t ~ends =
   let is_marked (p : _ prog) = Hashtbl.mem marked p.pc in
   let mark (p : _ prog) = Hashtbl.replace marked p.pc () in
   (* a TEXT's target is the next TEXT (5l's ldobj) *)
-  let texts = List.filter (fun (p : _ prog) -> p.op = Func) t.progs in
+  let texts = List.filter (fun (p : _ prog) -> is_func p.op) t.progs in
   List.iteri (fun i (p : _ prog) -> p.target <- List.nth_opt (List.tl texts) i) texts;
   let rec chain (p : _ prog option) i =
     if i >= 20 then None else match p with Some (q : _ prog) when q.op = B -> chain q.target (i + 1) | _ -> p
@@ -51,9 +51,9 @@ let follow t ~ends =
     (* (a B to another function, mini-ml's tail call, is not followed:
      * what is left of this one would be laid after that TEXT, and a RET
      * there is the other function's, with its frame; 5c writes none) *)
-    | Some ({ op = B; target = Some q; _ } as p) when not (is_marked q) && q.op <> Func -> mark p; xfol (Some q)
+    | Some ({ op = B; target = Some q; _ } as p) when not (is_marked q) && not (is_func q.op) -> mark p; xfol (Some q)
     | Some p ->
-        let p = match p.op, p.target with B, Some q when q.op <> Func -> mark p; q | _ -> p in
+        let p = match p.op, p.target with B, Some q when not (is_func q.op) -> mark p; q | _ -> p in
         if is_marked p then begin
           (* up to 4 instructions from p, if they end the flow *)
           let rec find (q : _ prog) i =
@@ -96,7 +96,7 @@ let follow t ~ends =
             | Some _, Some l when p.op <> Bl ->
                 let q = chain (Some l) 0 in
                 (match q with
-                 | Some q when p.op <> Func && p.op <> Bcase && is_marked q ->
+                 | Some q when not (is_func p.op) && p.op <> Bcase && is_marked q ->
                      p.op <- invert p;
                      Hashtbl.replace link p.pc (Option.get p.target);
                      p.target <- Some q
@@ -108,5 +108,5 @@ let follow t ~ends =
         end
   in
   (match t.progs with p :: _ -> xfol (Some p) | [] -> ());
-  List.iter (fun (p : _ prog) -> if p.op = Func then p.target <- None) texts;
+  List.iter (fun (p : _ prog) -> if is_func p.op then p.target <- None) texts;
   t.progs <- List.rev !out

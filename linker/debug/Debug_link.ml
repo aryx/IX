@@ -25,9 +25,9 @@ let history lookup t (o : Asm.obj) =
 let autos history (progs : _ prog option array) =
   let cur = ref None and first = ref None in
   Array.iter (function
-    | Some ({ op = Func; _ } as p) -> cur := Some p; if !first = None then first := Some p
+    | Some { op = Func f; _ } -> cur := Some f; if !first = None then first := Some f
     | Some p ->
-        Option.iter (fun (f : _ prog) ->
+        Option.iter (fun (f : func) ->
           List.iter (function
             | Asm.Mem { base = (FP | SP) as b; name = Some n; off; _ } | Asm.Addr { base = (FP | SP) as b; name = Some n; off; _ } ->
                 let off = Int64.to_int off in
@@ -38,7 +38,7 @@ let autos history (progs : _ prog option array) =
                 else f.autos <- (if b = FP then Param (n.sym, off) else Local (n.sym, off)) :: f.autos
             | _ -> ()) p.args) !cur
     | None -> ()) progs;
-  Option.iter (fun (f : _ prog) -> f.autos <- history @ f.autos) !first
+  Option.iter (fun (f : func) -> f.autos <- history @ f.autos) !first
 
 (* the objects' acid declarations in the data, .acid, each once in
  * the order met, a string to its NUL *)

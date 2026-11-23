@@ -40,24 +40,33 @@ type sym = {
 (* Asm's conditions, here for the machines (which open Program) *)
 type cond = Asm.cond = EQ | NE | HS | LO | MI | PL | VS | VC | HI | LS | GE | LT | GT | LE
 
+(* what a TEXT says of its function in the symbol table (5l's autom):
+ * a path of its object's history, the files' numbers (none: a file's
+ * end) and the global line there; a parameter, n+4(FP), and a local,
+ * n-8(SP), by their offsets *)
+type auto = Hist of int list * int | Param of string * int | Local of string * int
+
+(* what only a TEXT has, so not every instruction: its frame size, as
+ * written (the machine rounds it), whether it calls nothing, and its
+ * history (the object's first), parameters and locals.
+ * opti: in the TEXT's opcode, where they were three fields of every
+ * instruction, 3.2 million words for mini-netscape's 6,746 TEXTs: 17
+ * million words alive after its load, 14 (2026-11-23).
+ * old: mutable frame, leaf and autos in prog *)
+type func = { mutable frame : int; mutable leaf : bool; mutable autos : auto list }
+
 (* an opcode: those this part looks at, the rest the machine's ['m] *)
 (* old: a string, compared here ("B", "BEQ", "TEXT") and matched in the
  * machines with catch-alls; each machine inverted a condition with its
  * own table of strings, and a typo in one was an error at run time *)
 type 'm op =
-  | Func                (* TEXT *)
+  | Func of func        (* TEXT *)
   | Nop
   | B
   | Bl
   | Bcond of cond       (* BEQ ... *)
   | Bcase
   | Ins of 'm
-
-(* what a TEXT says of its function in the symbol table (5l's autom):
- * a path of its object's history, the files' numbers (none: a file's
- * end) and the global line there; a parameter, n+4(FP), and a local,
- * n-8(SP), by their offsets *)
-type auto = Hist of int list * int | Param of string * int | Local of string * int
 
 (* an instruction of the program, with what linking adds to it
  * (5l's Prog, xix's Types.node) *)
@@ -69,9 +78,6 @@ type 'm prog = {
   mutable target : 'm prog option;   (* a branch's target; a load's pool word (5l's p->cond) *)
   version : int;                  (* its object's, for the object's name<>s *)
   where : string * int;           (* its file and line *)
-  mutable frame : int;            (* TEXT: the frame size, as written; the machine rounds it *)
-  mutable leaf : bool;            (* TEXT: calls nothing *)
-  mutable autos : auto list;      (* TEXT: its history (the object's first), parameters and locals *)
 }
 
 (* a DATA: a symbol, an offset, a width, a value *)
@@ -93,3 +99,5 @@ type 'm t = {
   mutable nfiles : int;           (* the File symbols so far *)
   mutable acid : string list;     (* the objects' acid declarations, the last first *)
 }
+
+let is_func = function Func _ -> true | Nop | B | Bl | Bcond _ | Bcase | Ins _ -> false

@@ -19,8 +19,8 @@
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every build that has the
-# file says dead: TinyLibSystem's functions one program does not call are
-# not dead), -exn exn_tiny.txt (a build's toplevel exceptions, a tool's
+# file says dead, TinyLibSystem's implementations one file: its functions
+# one program does not call are not dead), -exn exn_tiny.txt (a build's toplevel exceptions, a tool's
 # two builds each named, the host's name-host, but lib_core's every
 # program may raise). -check (make test's): the answer against the recording,
 # without line numbers (an edit above a function moves it). With no
@@ -149,12 +149,21 @@ runs | while IFS='|' read -r name flags files; do
   for x in $files; do printf '%s\t%s\n' $name $x; done >> $W/has
 done
 if [ $flag = -dead ]; then
-  # (kept where every program that has the file says it)
-  awk -F'\t' 'NR == FNR { has[$2]++; next }
-    { split($2, p, ":"); key = $2; sub(/:[0-9]+:/, ":", key)
-      n[key]++; line[key] = $2; file[key] = p[1] }
-    END { for (k in n) if (n[k] >= has[file[k]]) print line[k] }' \
-    $W/has $W/said | sort -u > $out
+  # (kept where every program that has the file says it. The
+  # implementations of an interface elsewhere, tiny/X.mli, are one file:
+  # TinyLibSystem's, unix/ and tinykernel/... A value the host's has for
+  # the interface, that only programs on tiny-kernel call, is not dead)
+  for f in $(cut -f2 $W/has | sort -u); do
+    b=$(basename $f .ml); d=$(dirname $f)
+    if [ ! -f $d/$b.mli ] && [ -f $T/$b.mli ] && [ $d != $T ]; then printf '%s\t%s\n' $f $T/$b.mli; fi
+  done > $W/groups
+  awk -F'\t' 'FILENAME == ARGV[1] { group[$1] = $2; next }
+    FILENAME == ARGV[2] { has[($2 in group) ? group[$2] : $2]++; next }
+    { split($2, p, ":"); g = (p[1] in group) ? group[p[1]] : p[1]
+      key = $2; sub(/:[0-9]+:/, ":", key); sub(/^[^:]*:/, g ":", key)
+      n[key]++; lines[key] = lines[key] $2 "\n"; file[key] = g }
+    END { for (k in n) if (n[k] >= has[file[k]]) printf "%s", lines[k] }' \
+    $W/groups $W/has $W/said | sort -u > $out
 else
   cut -f2- $W/said 2> /dev/null | sort -u > $out
 fi

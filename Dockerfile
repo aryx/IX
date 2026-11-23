@@ -16,6 +16,16 @@
 
 FROM ubuntu:24.04
 
+# The packages from Azure's copy of Ubuntu's archive, where GitHub's
+# runners are: on 2026-11-23 archive.ubuntu.com gave them 70 kB/s, and
+# self.yml's mix jobs spent up to 100 minutes of their 3 hours in
+# apt-get, the build of ix on the card hardly begun. Any machine can
+# read it; --build-arg APT_MIRROR=archive.ubuntu.com for Ubuntu's own.
+# (amd64's archive and security only: an arm64 image, as on a Mac,
+# reads ports.ubuntu.com, which Azure has no copy of)
+ARG APT_MIRROR=azure.archive.ubuntu.com
+RUN sed -i -E "s,//(archive|security)\.ubuntu\.com/ubuntu/,//$APT_MIRROR/ubuntu/," /etc/apt/sources.list.d/ubuntu.sources
+
 # Here are the packages installed and why:
 # - A C toolchain (for opam's OCaml), 
 # - opam

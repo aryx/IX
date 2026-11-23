@@ -212,11 +212,12 @@ let office_menus (o : office) : (string * (string * command) list) list =
                  ("Paint    C-x p", Do_add Box_paint) ]) ]
   @ (match o.editing with
      | Writing d ->
-         let mark k s = (if d.typing land k <> 0 then "* " else "  ") ^ s in
-         [ ("Format", [ (mark 1 "Bold       C-b", Do_style 1);
-                        (mark 2 "Italic     Tab", Do_style 2);
-                        (mark 4 "Underline  C-u", Do_style 4);
-                        (mark 8 "Large      C-l", Do_style 8);
+         let item k s =
+           ((if d.typing land k <> 0 then "* " else "  ") ^ s, Do_style k) in
+         [ ("Format", [ item Text.bold "Bold       C-b";
+                        item Text.italic "Italic     Tab";
+                        item Text.underlined "Underline  C-u";
+                        item Text.large "Large      C-l";
                         ("  Plain", Do_style 0) ]) ]
      | Cell (_, _, _, _) ->
          [ ("Sheet", [ ("Name...", Do_name);
@@ -457,11 +458,10 @@ let status (o : office) : P.shape list =
   let said = if o.message <> "" then o.message else match o.editing with
     | Writing d ->
         let names =
-          List.filter (fun t -> t <> "")
-            (List.init 4 (fun k ->
-               if d.typing land (1 lsl k) <> 0 then
-                 List.nth [ "bold"; "italic"; "underlined"; "large" ] k
-               else "")) in
+          List.filter_map (fun (bit, name) ->
+              if d.typing land bit <> 0 then Some name else None)
+            [ (Text.bold, "bold"); (Text.italic, "italic");
+              (Text.underlined, "underlined"); (Text.large, "large") ] in
         "text, typing "
         ^ (if names = [] then "plain" else String.concat " " names)
         ^ "; the Format menu, or C-b, Tab, C-u, C-l"

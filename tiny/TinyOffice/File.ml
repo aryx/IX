@@ -40,17 +40,20 @@ open Model
 let md_of_line (t : string) (st : string) : string =
   let n = String.length t in
   let all_large =
-    n > 0 && String.for_all (fun c -> Char.code c land 8 <> 0) st in
-  let base = if all_large then 8 else 0 in
+    n > 0 && String.for_all (fun c -> Char.code c land Text.large <> 0) st in
+  let base = if all_large then Text.large else 0 in
   let stars k =
-    if k = 1 then "**" else if k = 2 then "*" else if k = 3 then "***"
+    if k = Text.bold then "**" else if k = Text.italic then "*"
+    else if k = Text.bolds then "***"
     else "" in
   let opens k =
-    (if k land 8 <> 0 then "\\large{" else "")
-    ^ (if k land 4 <> 0 then "\\u{" else "") ^ stars (k land 3) in
+    (if k land Text.large <> 0 then "\\large{" else "")
+    ^ (if k land Text.underlined <> 0 then "\\u{" else "")
+    ^ stars (k land Text.bolds) in
   let closes k =
-    stars (k land 3) ^ (if k land 4 <> 0 then "}" else "")
-    ^ (if k land 8 <> 0 then "}" else "") in
+    stars (k land Text.bolds)
+    ^ (if k land Text.underlined <> 0 then "}" else "")
+    ^ (if k land Text.large <> 0 then "}" else "") in
   let one i c =
     if c = '\\' || c = '*' || c = '{' || c = '}'
        || (i = 0 && (c = '#' || c = '|' || c = '`')) then
@@ -72,7 +75,7 @@ let md_of_line (t : string) (st : string) : string =
 let line_of_md (l : string) : string * string =
   let n = String.length l in
   let base, start =
-    if n >= 2 && String.sub l 0 2 = "# " then 8, 2 else 0, 0 in
+    if n >= 2 && String.sub l 0 2 = "# " then Text.large, 2 else 0, 0 in
   let starts i w =
     i + String.length w <= n && String.sub l i (String.length w) = w in
   let rec any l = match l with k :: rest -> k lor any rest | [] -> 0 in
@@ -82,9 +85,10 @@ let line_of_md (l : string) : string * string =
         (String.make 1 (Char.chr (base lor stars lor any opened)) :: styles) in
     if i >= n then
       (String.concat "" (List.rev chars), String.concat "" (List.rev styles))
-    else if starts i "\\u{" then go (i + 3) (4 :: opened) stars chars styles
+    else if starts i "\\u{" then
+      go (i + 3) (Text.underlined :: opened) stars chars styles
     else if starts i "\\large{" then
-      go (i + 7) (8 :: opened) stars chars styles
+      go (i + 7) (Text.large :: opened) stars chars styles
     else if l.[i] = '\\' && i + 1 < n then
       go (i + 2) opened stars (String.make 1 l.[i + 1] :: chars)
         (String.make 1 (Char.chr (base lor stars lor any opened)) :: styles)
@@ -94,7 +98,8 @@ let line_of_md (l : string) : string * string =
     else if l.[i] = '*' then begin
       let k = if starts i "***" then 3 else if starts i "**" then 2 else 1 in
       go (i + k) opened
-        (stars lxor (if k = 1 then 2 else if k = 2 then 1 else 3)) chars styles
+        (stars lxor (if k = 1 then Text.italic else if k = 2 then Text.bold
+                     else Text.bolds)) chars styles
     end
     else add l.[i] in
   go start [] 0 [] []

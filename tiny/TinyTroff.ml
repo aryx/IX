@@ -36,7 +36,7 @@ let styled_lines (data : string) : (string * string) list =
 
 (* a line all large: a heading *)
 let heading (t : string) (st : string) =
-  t <> "" && String.for_all (fun c -> Char.code c land 8 <> 0) st
+  t <> "" && String.for_all (fun c -> Char.code c land Text.large <> 0) st
 
 (* a sheet's size, its columns and rows; each cell's value as it is
  * shown, and whether it is a number (at the right), an error *)
@@ -210,15 +210,15 @@ let esc (s : string) : string =
 
 (* a style's tags, opening and closing *)
 let opens (k : int) =
-  (if k land 8 <> 0 then "<span class=l>" else "")
-  ^ (if k land 4 <> 0 then "<u>" else "")
-  ^ (if k land 2 <> 0 then "<i>" else "")
-  ^ (if k land 1 <> 0 then "<b>" else "")
+  (if k land Text.large <> 0 then "<span class=l>" else "")
+  ^ (if k land Text.underlined <> 0 then "<u>" else "")
+  ^ (if k land Text.italic <> 0 then "<i>" else "")
+  ^ (if k land Text.bold <> 0 then "<b>" else "")
 let closes (k : int) =
-  (if k land 1 <> 0 then "</b>" else "")
-  ^ (if k land 2 <> 0 then "</i>" else "")
-  ^ (if k land 4 <> 0 then "</u>" else "")
-  ^ (if k land 8 <> 0 then "</span>" else "")
+  (if k land Text.bold <> 0 then "</b>" else "")
+  ^ (if k land Text.italic <> 0 then "</i>" else "")
+  ^ (if k land Text.underlined <> 0 then "</u>" else "")
+  ^ (if k land Text.large <> 0 then "</span>" else "")
 
 (* a line's characters, each run of a style in its tags (without the
  * styles of base, the line's own) *)
@@ -413,12 +413,12 @@ let line_pdf h colour x0 y0 x1 y1 =
   colour ^ " RG " ^ string_of_int x0 ^ " " ^ string_of_int (h - y0) ^ " m "
   ^ string_of_int x1 ^ " " ^ string_of_int (h - y1) ^ " l S\n"
 let text_pdf h style x y s =
-  let big = style land 8 <> 0 in
-  "0 0 0 rg BT /F" ^ string_of_int (style land 3) ^ " "
+  let big = style land Text.large <> 0 in
+  "0 0 0 rg BT /F" ^ string_of_int (style land Text.bolds) ^ " "
   ^ (if big then "26.67" else "13.33") ^ " Tf " ^ string_of_int x ^ " "
   ^ string_of_int (h - y - (if big then 24 else 12))
   ^ " Td (" ^ pdf_esc s ^ ") Tj ET\n"
-  ^ (if style land 4 <> 0 then
+  ^ (if style land Text.underlined <> 0 then
        line_pdf h "0 0 0" x (y + (if big then 30 else 15))
          (x + (String.length s * if big then 16 else 8))
          (y + (if big then 30 else 15))
@@ -439,7 +439,8 @@ let text_pdf_box h (b : obj) : string =
         incr j
       done;
       let y =
-        b.y + 2 + lay.top.(l) + lay.tall.(l) - (if k land 8 <> 0 then 32 else 16) in
+        b.y + 2 + lay.top.(l) + lay.tall.(l)
+        - (if k land Text.large <> 0 then 32 else 16) in
       runs !j (text_pdf h k (b.x + 4 + lay.px.(i)) y (String.sub t i (!j - i))
                :: acc)
     end in

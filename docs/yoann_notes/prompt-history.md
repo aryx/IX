@@ -75680,3 +75680,20 @@ Claude found TinyBrowser's toolbar init and view true positives: G.mouse and G.k
 Claude explained -own reports a directory's units as the program's (Http.ml's functions unused by www), -I reads them unreported, and tiny_check.sh keeps what every program having the file says.
 Claude added orrery and tiny-mkfs to tiny_check.sh (the C programs and js_of_ocaml's tiny-machine-web left out), and made it print the reports on stdout with no out-file.
 Claude made G.mouse and G.key take a gui's update (and key) rather than the record, TinyBrowser's toolbar its update alone: dead_tiny.txt from 13 lines to 8.
+
+**Yoann:**
+
+> for the other dead_tiny.txt, maybe we can add code somewhere that use the bold, underlined, and regular? I'm surprised TinyOffice does not use those playground functions
+
+> maybe orrery could use those functions? Or another graphical program?
+
+> ok let's do it
+
+> let's commit, then look at the office test image size
+
+**Claude (summary):**
+
+Claude found the office keeps a style byte (bold 1, italic 2, underlined 4, large 8) drawn as byte lsl 8, the playground's bits, but wrote them as raw numbers.
+Claude named them in Text.ml from the playground's (P.bold lsr 8...) and used the names in the keys, the Format menu, File.ml's Markdown, TinyTroff's HTML and PDF, and the style letters' table.
+Claude gave orrery a 12-sided glow around the Sun with regular, a bold date and an underlined keys heading, the picture checked and its checksum recorded.
+Claude found TinyOffice_test.sh's tiny-cpu half failing at HEAD already: its image 1,052,800 bytes over tiny-cpu's 1 MB, the test not in make test.

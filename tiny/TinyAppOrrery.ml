@@ -104,8 +104,9 @@ let ring colour x y r =
 
 (* The ground, which does not move: the night, its stars (dots from
  * the playground's random numbers, the same each time), the orbits and
- * the Sun. It is one value, so the playground sees it is the same at
- * each frame and draws it once. *)
+ * the Sun, its glow a polygon of 12 sides behind its disc. It is one
+ * value, so the playground sees it is the same at each frame and draws
+ * it once. *)
 let ground =
   let rec stars n seed acc =
     if n = 0 then acc
@@ -116,7 +117,7 @@ let ground =
   P.Group
     ((P.Rect (0, width, height) :: stars 150 7 [])
      @ List.map (fun (p : planet) -> ring 0x33 cx cy p.distance) planets
-     @ [ disc 252 cx cy 10 ])
+     @ [ P.Move (cx - 14, cy - 14, P.regular 12 248 14); disc 252 cx cy 10 ])
 
 let words colour x y s = P.Move (x, y, P.Words (colour, s))
 
@@ -127,10 +128,11 @@ let view m =
        [ disc p.colour x y p.radius;
          words 0xaa (x + p.radius + 2) (y - 4) p.name ])
        planets
-  @ [ words 255 8 8 (date m.days);
+  @ [ words (255 lor P.bold) 8 8 (date m.days);
       words 0xaa 8 28
         (string_of_int (m.speed * 30) ^ " days a second"
          ^ (if m.paused then ", paused" else ""));
+      words (0xaa lor P.underlined) 8 384 "keys";
       words 0xaa 8 400 "up, down: speed";
       words 0xaa 8 416 "space: pause";
       words 0xaa 8 432 "r: back to 2000";

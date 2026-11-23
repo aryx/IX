@@ -53,6 +53,17 @@ val go_to : Model.doc -> int -> unit
 (* replaces the selection *)
 val put_text : Model.doc -> string -> string -> unit
 
+(* A character's style, a byte of [sty]: the playground's bits of a
+ * colour's style (TinyLibPlayground.bold...), which are above the
+ * colour's byte, shifted down to it; a character is drawn in
+ * colour lor (style lsl 8). [bolds] are bold and italic, the
+ * Markdown's stars. *)
+val bold : int
+val italic : int
+val underlined : int
+val large : int
+val bolds : int
+
 (* [restyle d style] sets a style on the selection, or removes it when
  * the whole selection already has it. With nothing selected, it applies
  * to what is typed next. The style 0 is plain. *)

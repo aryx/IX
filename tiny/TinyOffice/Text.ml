@@ -9,6 +9,12 @@ open Model
 (* Text *)
 (*****************************************************************************)
 
+let bold = P.bold lsr 8
+let italic = P.italic lsr 8
+let underlined = P.underlined lsr 8
+let large = P.large lsr 8
+let bolds = bold lor italic
+
 (* A text box's data is its text, with a mark where the style changes:
  *
  *     A \{b}bold\{} word, and \{il}large italic\{}.
@@ -16,7 +22,7 @@ open Model
  * the style's letters between \{ and } (b bold, i italic, u
  * underlined, l large), \{} plain, \\ a backslash. Being edited, it is
  * two strings of the same length: the characters, and their styles. *)
-let letters = "biul"
+let letters = [ ('b', bold); ('i', italic); ('u', underlined); ('l', large) ]
 
 let decode (data : string) : string * string =
   let n = String.length data in
@@ -28,8 +34,8 @@ let decode (data : string) : string * string =
       | Some e ->
           let s = ref 0 in
           String.iter (fun c ->
-            match String.index_from_opt letters 0 c with
-            | Some k -> s := !s lor (1 lsl k)
+            match List.assoc_opt c letters with
+            | Some bit -> s := !s lor bit
             | None -> ()) (String.sub data (i + 2) (e - i - 2));
           go (e + 1) !s chars styles
       | None -> go n style chars styles
@@ -44,8 +50,8 @@ let decode (data : string) : string * string =
 let mark (s : int) =
   "\\{"
   ^ String.concat ""
-      (List.init 4 (fun k ->
-         if s land (1 lsl k) <> 0 then String.make 1 letters.[k] else ""))
+      (List.map (fun (c, bit) ->
+         if s land bit <> 0 then String.make 1 c else "") letters)
   ^ "}"
 
 let encode (txt : string) (sty : string) : string =
@@ -216,10 +222,10 @@ let write_key (o : office) (d : doc) (k : P.key) =
    | P.Down | P.Ctrl 'n' -> vertical (line + 1)
    | P.Ctrl 'a' -> go_to d (back d.cur)
    | P.Ctrl 'e' -> go_to d (forth d.cur)
-   | P.Ctrl 'b' -> restyle d 1
-   | P.Char '\t' -> restyle d 2
-   | P.Ctrl 'u' -> restyle d 4
-   | P.Ctrl 'l' -> restyle d 8
+   | P.Ctrl 'b' -> restyle d bold
+   | P.Char '\t' -> restyle d italic
+   | P.Ctrl 'u' -> restyle d underlined
+   | P.Ctrl 'l' -> restyle d large
    | P.Ctrl 'w' -> copy d; put_text d "" ""
    | P.Ctrl 'y' -> let (t, st) = !clipboard in put_text d t st
    | P.Ctrl 'g' -> d.anchor <- d.cur

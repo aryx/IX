@@ -11,10 +11,13 @@ type index = {
 }
 
 type t = {
+  (* the program's first file, and the project's root once found *)
+  first : string;
+  mutable root : string;
   (* the index, made on the first unit asked for: None until then, and
    * Some None when there is no project *)
   mutable index : index option option;
-  make : unit -> index option;
+  make : unit -> (string * index) option;
   (* the module names the program's files use *)
   needed : (string, unit) Hashtbl.t;
   (* the directories chosen for the program's units so far *)
@@ -68,20 +71,34 @@ let root (caps : < Cap.readdir; .. >) (file : string) : string option =
   | Some r -> Some r
 
 let create (caps : < Cap.readdir; .. >) (file : string) : t =
-  let make () : index option =
+  let make () : (string * index) option =
     match root caps file with
     | None -> None
     | Some r ->
         let idx = { homes = Hashtbl.create 1024; names = Hashtbl.create 256 } in
         walk caps idx r;
         Logs.info (fun m -> m "units: the project's at %s, %d names in %d directories" r (Hashtbl.length idx.homes) (Hashtbl.length idx.names));
-        Some idx in
-  { index = None; make; needed = Hashtbl.create 64; chosen = Hashtbl.create 16 }
+        Some (r, idx) in
+  { first = file; root = "."; index = None; make; needed = Hashtbl.create 64; chosen = Hashtbl.create 16 }
 
 let index (t : t) : index option =
   match t.index with
   | Some i -> i
-  | None -> let i = t.make () in t.index <- Some i; i
+  | None ->
+      let i = match t.make () with Some (r, idx) -> t.root <- r; Some idx | None -> None in
+      t.index <- Some i;
+      i
+
+(* the project's top directory a path is in: tiny for tiny/TinyML/Lexer.ml *)
+let part (t : t) (p : string) : string =
+  let p = FS.cleanname p in
+  let rel =
+    if t.root = "." then p
+    else if String.starts_with ~prefix:(t.root ^ "/") p then String.sub p (String.length t.root + 1) (String.length p - String.length t.root - 1)
+    else p in
+  match String.split_on_char '/' rel with x :: _ -> x | [] -> ""
+
+let own (t : t) (d : string) : bool = part t d = part t t.first
 
 let is_ident (c : char) : bool =
   match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '\'' -> true | _ -> false
@@ -115,7 +132,12 @@ let choose (t : t) (from : string) (name : string) (exts : string list) : string
   match index t with
   | None -> None
   | Some idx -> (
-      match List.concat_map (fun (e : string) -> found idx.homes (name ^ e)) exts with
+      (* (a directory with its own Stdlib is another platform's library,
+       * tiny/TinyLibCore: not the program's, whose library is given) *)
+      let other_stdlib (d : string) : bool =
+        match Hashtbl.find_opt idx.names d with Some names -> Hashtbl.mem names "Stdlib" | None -> false in
+      match List.filter (fun (d : string) -> not (other_stdlib d))
+              (List.concat_map (fun (e : string) -> found idx.homes (name ^ e)) exts) with
       | [] -> None
       | ds ->
           let supplies (d : string) : int =

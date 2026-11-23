@@ -11,7 +11,10 @@
  * whole rather than by the unit: the directory already chosen for one of
  * its units first, then the one that has the most of the units its files
  * name (TinyML/ alone has Compile and Link), then the nearest to the file
- * that names it. What is still a tie is warned about.
+ * that names it. What is still a tie is warned about. A directory with
+ * its own Stdlib is left out: another platform's standard library
+ * (tiny/TinyLibCore, whose Sha1 is t-IX's runtime's), the program's being
+ * the one given (-L).
  *
  * A platform's choice is not this module's: the implementations of one
  * interface (TinyLibSystem's unix/ and tinykernel/) have the same names,
@@ -30,3 +33,10 @@ val mentions : t -> string -> unit
  * the file [from], among those with its file of one of [exts] (".mli",
  * ".ml"); None if the project has none *)
 val choose : t -> string -> string -> string list -> string option
+
+(* [own t dir]: whether the units of [dir], a directory chosen, are the
+ * program's own, reported on: in the project's top directory of the
+ * program's first file (tiny/ for tiny/TinyBuildSystem.ml, its TinyML/
+ * and TinyKernel/ too); another's (lib_crypto) is a library, read and
+ * not reported on, as an -I's is *)
+val own : t -> string -> bool

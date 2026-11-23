@@ -150,15 +150,21 @@ program's library, lib_core's units it names, is read with it.
 
      A unit in none of these directories, the **-I**'s and the
      library's is looked for in the project, the first directory above
-     the first *file* with a `dune-project`, and is the program's own
+     the first *file* with a `dune-project`
      (`analyzers/ml/Unit_finder.ml`). Where several directories have a
      file of its name, the program as a whole decides: a directory
      already chosen for it, then the one with the most of the units
-     its files name, then the nearest. A program can so be given by
-     its main file alone; **-own** is for what the project cannot
-     decide, a platform's implementation of an interface
-     (`tiny/TinyLibSystem/unix`, `tinykernel`), and **-v** says each
-     unit found so, and a tie. A library's functions that
+     its files name, then the nearest; a directory with its own
+     `Stdlib` is another platform's library and never chosen. A unit
+     found in the first *file*'s top directory of the project is the
+     program's own (`tiny/` for `tiny/TinyBuildSystem.ml`), one found
+     elsewhere a library's (`lib_crypto`). A program can so be given
+     by its main file alone, `mini-analyze -dead tiny/TinyBuildSystem.ml`;
+     an interface whose implementations are elsewhere
+     (`tiny/TinyLibSystem.mli`) is read as one without code, and
+     **-own** chooses a platform's (`tiny/TinyLibSystem/unix`,
+     `tinykernel`). **-v** says each unit found so, and a tie. A
+     library's functions that
      this one program does not call are said dead too:
      `analyzers/datalog/tests/tiny_check.sh` gives each t-IX program this
      way and keeps what every build that has the file says. For one

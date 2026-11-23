@@ -243,16 +243,20 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   (* (each unit sees the program's directories, then the library's) *)
   let program_dirs = List.sort_uniq compare (List.map Fpath.parent paths) in
   (* (a unit in none of the directories given: the project's, its
-   * directory found by Unit_finder and then searched as an -own one) *)
+   * directory found by Unit_finder and then searched after the others,
+   * for what they do not have, its units the program's own) *)
   let finder = Unit_finder.create caps (match paths with p :: _ -> Fpath.to_string p | [] -> ".") in
   let chosen = ref [] in
   let library = dirs in
-  let dirs () = program_dirs @ !own_dirs @ !chosen @ library in
+  let dirs () = program_dirs @ !own_dirs @ library @ !chosen in
   (* (the program's own: its files' directories, unless an -I's, -own's,
-   * those found; tiny/ and ./tiny are one directory) *)
+   * those found in its part of the project; tiny/ and ./tiny are one
+   * directory) *)
   let mine (d : string) : bool =
     let is (x : Fpath.t) = FS.cleanname (Fpath.to_string x) = d in
-    List.exists is (!own_dirs @ !chosen) || (List.exists is program_dirs && not (List.exists is library)) in
+    List.exists is !own_dirs
+    || (List.exists is !chosen && Unit_finder.own finder d)
+    || (List.exists is program_dirs && not (List.exists is library)) in
   let look (from : string) (name : string) (exts : string list) : (Fpath.t * string) option =
     match find caps (dirs ()) name exts with
     | Some x -> Some x

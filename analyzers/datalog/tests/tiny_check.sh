@@ -7,9 +7,9 @@
 # TinyLibSystem (the Buildfile's programs); on the host, by OCaml on
 # lib_core and the host's TinyLibSystem (tiny/dune's tools, the windows'
 # programs of user/sdl/, tiny-machine...). A program is given by its main
-# file alone, the analyzer reading the units it names (-own: tiny/'s
-# directories, their units reported on as the program's); lib_core's
-# units it finds by itself, the other ix libraries' by -I. -caps reads
+# file alone: the analyzer finds the units it names in the project
+# (Unit_finder), its own, and lib_core's by itself; the other ix
+# libraries' are given by -I, read and not reported on. -caps reads
 # each on the host alone: the analyzer does not know tiny-kernel's calls'
 # capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
 # does not read: tiny-machine-window, user/sdl/'s own TinyLibSystem,
@@ -46,18 +46,14 @@ expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 T=tiny
-# How each program is read. On the host (O), as OCaml builds it, on
-# lib_core and the host's TinyLibSystem: the directories of tiny/'s
-# units are -own (the analyzer reads the units a program names from
-# there, and reports on them as on the program's own files), the host's
-# TinyLibSystem first so that it is the one found. On tiny-kernel (K), as
-# t-IX builds it: on TinyLibCore and tiny-kernel's TinyLibSystem
-# (TinyLibCore's Cap.mli names the capabilities TinyLibSystem.mli takes,
-# which tiny-ml leaves out). TinyML/ and TinyC/ have units of the same
-# names (Lexer, Types...), so each is given only to its own program.
-O="-own $T/TinyLibSystem/unix -own $T"
-K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel -own $T"
-M="-own $T/TinyMachine"
+# How each program is read: its platform, the one choice the analyzer
+# cannot make (TinyLibSystem's implementations have the same names). On
+# the host (O), as OCaml builds it, on lib_core and the host's
+# TinyLibSystem. On tiny-kernel (K), as t-IX builds it: on TinyLibCore and
+# tiny-kernel's TinyLibSystem (TinyLibCore's Cap.mli names the
+# capabilities TinyLibSystem.mli takes, which tiny-ml leaves out).
+O="-own $T/TinyLibSystem/unix"
+K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel"
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"
 # a program a line: its name; where it runs: k tiny-kernel alone (the
@@ -76,20 +72,20 @@ tiny-build|b||$T/TinyBuildSystem.ml|-I lib_crypto
 tiny-shell|b||$T/TinyShell.ml
 tiny-editor|b||$T/TinyEditorLine.ml
 tiny-utils|b||$T/TinyUtilities.ml
-tiny-cc|b|-own $T/TinyC|$T/TinyC.ml
+tiny-cc|b||$T/TinyC.ml
 tiny-db|b||$T/TinyDatabase.ml
 tiny-vcs|b||$T/TinyVCS.ml|-I lib_crypto
 tiny-as|b||$T/TinyAssembler.ml
 tiny-ld|b||$T/TinyLinker.ml
 tiny-ar|b||$T/TinyArchiver.ml
-tiny-cpu|h|$M|$T/TinyCPU.ml
+tiny-cpu|h||$T/TinyCPU.ml
 tiny-prof|b||$T/TinyProfiler.ml
-tiny-ml|b|-own $T/TinyML|$T/TinyML.ml
-tiny-machine|h|$M -own $T/TinyKernel -own $T/TinyBrowser -I lib_core/parallel|$T/TinyMachine.ml
-tiny-machine-socket|h|$M|$T/TinyMachine/TinyMachineSocket.ml
-tiny-machine-fetch|h|$M $NET -I lib_graphics/core -I lib_graphics/images|$T/TinyMachine/TinyMachineFetch.ml
+tiny-ml|b||$T/TinyML.ml
+tiny-machine|h|-I lib_core/parallel|$T/TinyMachine.ml
+tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml
+tiny-machine-fetch|h|$NET -I lib_graphics/core -I lib_graphics/images|$T/TinyMachine/TinyMachineFetch.ml
 tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml
-tiny-mkfs|h|$M -I $T/TinyKernel/host -I $T/TinyKernel|$T/TinyKernel/host/TinyMkfs.ml
+tiny-mkfs|h|-I $T/TinyKernel/host -I $T/TinyKernel|$T/TinyKernel/host/TinyMkfs.ml
 mkfont|h|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$T/TinyKernel/fonts/Mkfont.ml
 windows|k||$T/user/windows.ml
 bigmem|k||$T/user/bigmem.ml
@@ -99,10 +95,10 @@ orrery|b||$T/user/orrery.ml
 calc|b||$T/user/calc.ml
 temp|k||$T/user/temp.ml
 emacs|b||$T/user/emacs.ml
-office|b|-own $T/TinyOffice|$T/user/office.ml
-troff|b|-own $T/TinyOffice|$T/user/troff.ml
+office|b||$T/user/office.ml
+troff|b||$T/user/troff.ml
 play|b||$T/user/play.ml
-www|b|-own $T/TinyBrowser|$T/user/www.ml
+www|b||$T/user/www.ml
 trace|k||$T/user/trace.ml
 debug|k||$T/user/debug.ml
 EOF

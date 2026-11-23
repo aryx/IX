@@ -169,10 +169,17 @@ let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.sour
   | Ok tree when !flat_dir <> None -> Ok (tree, text)
   | Ok tree -> rewritten caps f text tree
 
+(* how a unit's file is found: by the file that names it, the unit's
+ * name, the extensions *)
+type look = string -> string -> string list -> (Fpath.t * string) option
+
 (* CLI's loader *)
-let loader (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) : Scope.loader =
+let loader (caps : < Cap.open_in; Cap.readdir; .. >) (look : look) (file : Fpath.t) : Scope.loader =
  fun name ->
-  match find caps dirs name [ ".mli"; ".ml" ] with
+  let exts = [ ".mli"; ".ml" ] in
+  (* (the naming unit's own directory first) *)
+  let found = match find caps [ Fpath.parent file ] name exts with Some x -> Some x | None -> look (Fpath.to_string file) name exts in
+  match found with
   | None -> None
   | Some (f, text) -> (match parsed caps (Fpath.to_string f) text with Ok (src, _) -> Some src | Error m -> raise (Resolve.Error (0, m)))
 
@@ -197,22 +204,22 @@ let derives (name : string) (items : Ast.item list) : unit =
     items
 
 (* one unit: its facts made; the units it names *)
-let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (file : Fpath.t) (text : string) : (string list, string) result =
+let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (look : look) (file : Fpath.t) (text : string) : (string list, string) result =
   let f = Fpath.to_string file in
   let name = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
   Hashtbl.replace files name f;
   (* (an .ml without its .mli beside it: the unit's interface, if one is
-   * in the directories) *)
+   * found) *)
   if Filename.check_suffix f ".ml" && FS.read_opt caps (Fpath.v (f ^ "i")) = None then
     Option.iter (fun ((m, _) : Fpath.t * string) -> Hashtbl.replace interfaces f (Fpath.to_string m))
-      (find caps dirs name [ ".mli" ]);
+      (look f name [ ".mli" ]);
   match parsed caps f text with
   | Error m -> Error m
   | Ok (Ast.Signature _, _) -> Ok []
   | Ok (Ast.Structure items, text) -> (
       derives name items;
       try
-        let items = Resolve.implementation ~implicit:true (loader caps (Fpath.parent file :: dirs)) name items in
+        let items = Resolve.implementation ~implicit:true (loader caps look file) name items in
         let named = Resolve.units_named () in
         let dir = FS.cleanname (Filename.dirname f) in
         List.iter (fun (u : string) -> Hashtbl.replace wanted (dir, u) ()) named;
@@ -235,23 +242,45 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   Typing.keep := true;
   (* (each unit sees the program's directories, then the library's) *)
   let program_dirs = List.sort_uniq compare (List.map Fpath.parent paths) in
-  let dirs = program_dirs @ !own_dirs @ dirs in
-  (* (tiny/ and ./tiny are one directory) *)
-  let mine_dirs = List.map (fun (d : Fpath.t) -> FS.cleanname (Fpath.to_string d)) !own_dirs in
-  (* (a unit's code: a file given, or an .ml in the directories; asked
-   * as a unit's calls are made, before the units it names are found) *)
+  (* (a unit in none of the directories given: the project's, its
+   * directory found by Unit_finder and then searched as an -own one) *)
+  let finder = Unit_finder.create caps (match paths with p :: _ -> Fpath.to_string p | [] -> ".") in
+  let chosen = ref [] in
+  let library = dirs in
+  let dirs () = program_dirs @ !own_dirs @ !chosen @ library in
+  (* (the program's own: its files' directories, unless an -I's, -own's,
+   * those found; tiny/ and ./tiny are one directory) *)
+  let mine (d : string) : bool =
+    let is (x : Fpath.t) = FS.cleanname (Fpath.to_string x) = d in
+    List.exists is (!own_dirs @ !chosen) || (List.exists is program_dirs && not (List.exists is library)) in
+  let look (from : string) (name : string) (exts : string list) : (Fpath.t * string) option =
+    match find caps (dirs ()) name exts with
+    | Some x -> Some x
+    (* (a unit the directories know otherwise, by its .mli alone, has no
+     * other code: TinyLibCore's Cap, lib_core/parallel's Parallel) *)
+    | None when find caps (dirs ()) name [ ".mli"; ".ml" ] <> None -> None
+    | None -> (
+        match Unit_finder.choose finder from name exts with
+        | None -> None
+        | Some d ->
+            let d = Fpath.v d in
+            if not (List.mem d !chosen) then chosen := !chosen @ [ d ];
+            find caps [ d ] name exts) in
+  (* (a unit's code: a file given, or an .ml found; asked as a unit's
+   * calls are made, before the units it names are found) *)
   let bodies = Hashtbl.create 16 in
   Closure_facts.has_body :=
     (fun (u : string) ->
       match Hashtbl.find_opt bodies u with
       | Some b -> b
       | None ->
-          let b = Hashtbl.mem own u || find caps dirs u [ ".ml" ] <> None in
+          let b = Hashtbl.mem own u || look "" u [ ".ml" ] <> None in
           Hashtbl.replace bodies u b;
           b);
   let read (file : Fpath.t) (text : string) (mine : bool) =
-    match unit_ caps dirs file text with
-    | Ok named -> List.iter (fun u -> Queue.add u todo) named
+    Unit_finder.mentions finder text;
+    match unit_ caps look file text with
+    | Ok named -> List.iter (fun u -> Queue.add (u, Fpath.to_string file) todo) named
     | Error m -> if mine then errors := m :: !errors else unread := m :: !unread in
   List.iter
     (fun (p : Fpath.t) ->
@@ -261,13 +290,13 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
       | None -> errors := ("cannot open " ^ Fpath.to_string p) :: !errors)
     paths;
   while not !alone && not (Queue.is_empty todo) do
-    let u = Queue.pop todo in
+    let u, from = Queue.pop todo in
     if not (Hashtbl.mem files u) then begin
       Hashtbl.replace files u "";
-      match find caps dirs u [ ".ml" ] with
-      | Some (f, text) when List.mem (FS.cleanname (Fpath.to_string (Fpath.parent f))) mine_dirs ->
-          (* (an -own directory's unit: the program's, as a file given,
-           * marked before it is read for Tree_facts) *)
+      match look from u [ ".ml" ] with
+      | Some (f, text) when mine (FS.cleanname (Fpath.to_string (Fpath.parent f))) ->
+          (* (a unit of the program's: as a file given, marked before it
+           * is read for Tree_facts) *)
           Hashtbl.replace own u ();
           Logs.info (fun m -> m "reading %s" (Fpath.to_string f));
           read f text true
@@ -290,7 +319,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
                 (fun (n : string) ->
                   if listed caps d n then Some (Fpath.to_string Fpath.(d / n)) else None)
                 names)
-            dirs in
+            (dirs ()) in
         (* (one file by two names, lib_crypto/../lib_crypto: once) *)
         let found = List.map FS.cleanname found in
         Hashtbl.replace homes u

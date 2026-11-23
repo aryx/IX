@@ -160,7 +160,9 @@ program's library, lib_core's units it names, is read with it.
 # EXAMPLES
 In ix's root, `bin/` first on the path; elsewhere **-r** and **-L**
 say where ix is (`IX`). Each report's last line, its counts, is left
-out here, and long lines are cut.
+out here, and long lines are cut. The files are in
+`analyzers/examples/`, and its `run.sh` runs these commands against
+the reports in full (`expected.out`).
 
 A C program, `calc.c`: a table of operations, one called by pointer.
 
@@ -245,6 +247,8 @@ Log.ml:2: Log.shout: no capability, needs Cap.stdout
 % mini-analyze ... -exn Log.ml Main.ml
 Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3
   (Main.first)
+Main.ml: the toplevel may let Invalid_argument escape, raised at
+  Bytes.ml:26 (init), Pervasives.ml:146 (Pervasives.^), ...
 ```
 
 One of ix's programs, all its units, in ix's root (a second):
@@ -310,6 +314,10 @@ across_call('main:s/-8','main:7').
 
 `analyzers/datalog/README.md`
 :    The analyses run on ix, what they found, their costs.
+
+`analyzers/examples/`
+:    The programs of EXAMPLES, and `run.sh`, which checks their
+     reports.
 
 # SEE ALSO
 \man{datalog}{1}, \man{cc}{1}, \man{ml}{1}, \man{dotnet}{1}

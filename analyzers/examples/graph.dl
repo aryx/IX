@@ -1,0 +1,4 @@
+calls(G, F) :- in_function(I, G), call_direct(I, F).
+calls(G, F) :- in_function(I, G), target(I, F).
+reaches(G, F) :- calls(G, F).
+reaches(G, F) :- reaches(G, H), calls(H, F).

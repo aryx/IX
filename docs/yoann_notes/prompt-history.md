@@ -74867,3 +74867,67 @@ Claude cut mini-ld's peak live data from 28M to 16M words (−43%) by sharing ar
 Claude also stopped `Arm.prepare` from rebuilding every argument list, which had been undoing that sharing.
 Output stayed byte-identical, with and without `-g`, and speed held at 1.3 s; `make test` passed with 0 failures.
 Claude then found `make self-quick-mix` failing on object-file differences and was checking whether an OCaml Marshal difference explains them.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:05
+
+**Yoann:**
+
+> in the man page of analyze, there is a calc.c and Log.ml examples; are they somewhere under ix ? Maybe we could create an examples/ in addition to tests/ sometimes?
+
+**Claude (summary):**
+
+Claude found that calc.c, Log.ml, Main.ml and graph.dl exist only as text in docs/man/1/analyze.md, so nothing checks the man page outputs.
+Claude proposed an analyzers/examples/ directory, matching the existing examples/ and tests/ convention, with source files copied from the man page.
+Claude suggested a run.sh that runs each man page command, compares output to expected files, and hooks into make test.
+Claude recommended the man page point to $IX/analyzers/examples/ so readers can run the commands as written.
+Claude asked whether to set this up, leaving out the dc-dependent example since it would change as dc changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:05
+
+**Yoann:**
+
+> or maybe put that in the toplevel examples/ ?
+
+**Claude (summary):**
+
+Claude recommended against putting the analysis examples flat in the toplevel `examples/`, since that directory holds programs built and run by mk.
+Claude pointed out that `calc.c` has an intentional `free` bug and `Log.ml`/`Main.ml` have dead code and an escaping exception, so they are meant for analysis.
+Claude noted the man page cites line numbers, so the Claude Code copyright header would shift them and should be left off these files.
+Claude offered two places, `analyzers/examples/` or `examples/analyze/`, and proposed a test comparing the man page's commands to expected outputs.
+Yoann chose `analyzers/examples/`, so that is the option to set up next.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:03
+
+**Yoann:**
+
+> ok let's commit and push and rerun the self workflow
+
+**Claude (summary):**
+
+Claude committed the linker change as 8708184c and pushed it to main.
+Claude then manually started the self workflow, run 45143728941, on GitHub Actions.
+Claude estimated the run would take about 50 minutes, based on the last failing runs.
+Claude said it would check whether the card now finishes `games/` without running out of memory, via the mix job's `self:` lines.
+If the run fails, Claude said it would read the full job log to find what stopped it.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:07
+
+**Yoann:**
+
+> ok let's do analyzers/examples/ maybe
+
+**Claude (summary):**
+
+Claude copied the example files exactly from the man page into analyzers/examples/.
+Claude ran the man page's commands on them, writing the options out because zsh does not split $R.
+The example test passed, so Claude moved on to the next step.
+Claude planned to hook the examples into make test as the next change.
+Claude also planned to update the man page to match the hooked examples.

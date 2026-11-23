@@ -348,6 +348,7 @@ job "mini-analyze's two roads: native and .NET (one process, rules compiled), th
 job "mini-analyze -facts, -flow of C: a C file's facts, the pointer analysis and liveness on them" analyzers/c/tests/run.sh
 job "mini-analyze -flow: ML's SSA as facts, liveness and dominators against the compiler's" analyzers/ml/tests/run.sh
 job "mini-analyze: toy C and ML programs, each call through a pointer or a closure, its targets, the bugs and dead functions found" analyzers/tests/run.sh
+job "mini-analyze: the man page's examples, run as it writes them, its reports" analyzers/examples/run.sh
 job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
 job "mini-troff, mini-man: a page of ix's own" typesetting/tests/sample.sh

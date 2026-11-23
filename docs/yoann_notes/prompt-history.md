@@ -75640,3 +75640,18 @@ Claude found -types needed (TinyLibSystem.mli names Cap in its types) but -I tin
 Claude added a one-line tiny/TinyLibCore/Cap.mli instead of a symlink, which would bring lib_core's essay and break t-IX's self-containment.
 Claude removed -types, now unused, and gave the command: mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml.
 Claude traced make test's two failures to mini-acid's flaky case (passing alone) and ix built by ix, with another session editing the mkfiles.
+
+**Yoann:**
+
+> ok back to dead_tiny.txt, why TinyAppTemperature.ml has one dead function reported? Looks like a false positive
+
+> yes, let's fix mklist
+
+> I don't fully understand though why a span has an effect on deadcode detection though
+
+**Claude (summary):**
+
+Claude traced the false dead callback (line 53's fun s -> Fahrenheit s) with mini-datalog queries on the facts: each walked all four widgets, but place's widget got only the first.
+The 2nd to 4th widgets of the list literal were typed widget list: mini-ml's mklist gave each inner cons cell its element's span, and Typing keeps types by (span, kind), so a constructor element's type was overwritten by its cell's.
+mini-analyze's points-to rules filter values by type, so those widgets never reached place, and the second input's callback was never called.
+Claude gave each cell the span from its element to the list's end, as OCaml does: temp has nothing dead, no other recording changed.

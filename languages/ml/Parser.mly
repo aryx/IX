@@ -46,11 +46,17 @@ let uminus at op e =
   | ("-" | "-."), Econst (Float f) -> mkexp at (Econst (Float ("-" ^ f)))
   | _ -> mkexp at (Eapply (ident at ("~" ^ op), [ e ]))
 
+(* A cell's span runs from its element to the list's end, as OCaml's
+ * parser gives it, and not the element's own: Typing keeps a type by
+ * span and kind, and a cell then had the same key as an element that is
+ * a constructor's or a tuple, its list type the element's (mini-analyze
+ * dropped every element after the first as not of the element's type). *)
 let rec mklist at = function
   | [] -> mkexp at (Econstruct ([ "[]" ], None))
   (* mlpp: espan *)
   | e :: l ->
-      { e = Econstruct ([ "::" ], Some { e = Etuple [ e; mklist at l ]; eloc = e.eloc; espan = e.espan }); eloc = e.eloc; espan = e.espan }
+      let espan = fst e.espan, snd (span at) in
+      { e = Econstruct ([ "::" ], Some { e = Etuple [ e; mklist at l ]; eloc = e.eloc; espan }); eloc = e.eloc; espan }
 
 let rec mkpatlist at = function
   | [] -> mkpat at (Pconstruct ([ "[]" ], None))

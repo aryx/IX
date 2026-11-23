@@ -1,4 +1,3 @@
-tiny/TinyAppTemperature.ml:53: dead: TinyAppTemperature:fun at line 53, nothing names it
 tiny/TinyBrowser.ml:294: dead field: init stored in TinyBrowser.toolbar, nothing live reads it
 tiny/TinyBrowser.ml:294: dead field: view stored in TinyBrowser.toolbar, nothing live reads it
 tiny/TinyBrowser.ml:295: dead: TinyBrowser:fun at line 295, nothing names it

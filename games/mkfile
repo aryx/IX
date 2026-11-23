@@ -37,7 +37,12 @@ all:V: directories
 # (after mkgames, whose mkconfig says OS when the caller did not; the
 # names made by rc, an empty list on Linux: mk's ${SOFT:%=%.soft} of an
 # empty SOFT is the word SOFT, as Plan 9's mk's varsub.c)
-SOFT=`{if(~ $OS plan9) for(c in $CATEGORIES) echo $c.soft}
+# (SOFTWARE=0, given to this mk or the top one: the draw platform
+# alone, as tests/self.sh's build of ix on the card and on Linux: the
+# author, 2026-11-23, "for the self jobs it's fine to skip all the soft
+# variant, and keep just the draw one"; a game's units compiled again
+# for it were the critical path's last 190 s of 753)
+SOFT=`{if(~ $OS plan9 && ! ~ $SOFTWARE 0) for(c in $CATEGORIES) echo $c.soft}
 directories:V: ${CATEGORIES:%=%.games} $SOFT
 %.games:V: libs
 	b=(); if(~ $B /*) b='B='^$B

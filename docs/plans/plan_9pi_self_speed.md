@@ -675,6 +675,8 @@ run's page (its summary). Each whole four-core run measured goes here:
 | + names and inodes kept (the Mac busy, load 20) | 1,510 s | 1,171 s (77%) | 670 s | fault-zero 260, Pwrite x 252, Pread x 204 |
 | + the card's transfers out of the lock | 1,456 s | 806 s (55%) | 590 s | Pwrite x 269, fault-zero 249, Pread x 187 |
 | + a fault's registers as integers, no breakpoint look on a data abort (the Mac quieter, load 5) | 1,106 s | 617 s (56%) | 400 s | Pwrite x 244, Pread x 178, fault-zero 150 |
+| the same, again (a quiet Mac; games' directories mk's targets, d457ad30) | 1,118 s | 610 s (54%) | 371 s | Pwrite x 244, Pread x 170, fault-zero 150 |
+| + the self build's games for the draw platform alone | 976 s | 529 s (54%) | 352 s | Pwrite x 225, Pread x 155, fault-zero 130 |
 
 The reads and writes were the card's (x, the card's file system;
 c870037a's run): its commands, polled with the lock held, 740 s of the
@@ -742,6 +744,27 @@ That run also showed a lost line of the build's log: two writes on
 one channel (mk and its recipes into one file) at one offset, a write
 now able to sleep under the storage qlock before moving it. Sysfile's
 write takes its bytes' place first, as Plan 9's sysfile.c.
+
+Then the critical path, 735 to 753 s of mk's 1,112 to 1,118: games
+(326 s) then the top mkfile's games-software (191 s), the same games
+again for the software platform. games/mkfile's directories and
+platforms became its mk's targets (506930c8; the critical path's games
+459 s); then the self build (tests/self.sh, the card's and Linux's)
+builds them for the draw platform alone (SOFTWARE=0: the author, "for
+the self jobs it's fine to skip all the soft variant, and keep just
+the draw one"). mk 976 s, the critical path 545 s, games 256 s of it,
+the 3,619 files Linux's. The critical path is now well under mk's
+time: 3,457 s of recipes, 3.5 at once on four cores; what is left is
+the work itself (the tools under QEMU, the kernel's lock).
+
+The card (d457ad30, self.sh's line of it): 704 MB read in 194 s, 558
+written in 148 s, for a build of 515 MB; the writes are what stays
+(a longer write-back would save 11 s), the reads what memory's
+pressure gave back of the cache. And GitHub's runner runs QEMU 2.6
+times slower than this Mac: self.yml at 8aeb061c, mk 2,904 s on the
+card where this Mac's was 1,118; its mix job 67 minutes, 48 of them
+the card's build, 10 the image's setup, 5 the rest of make self-mix,
+3 the image's export.
 
 ## The gate
 

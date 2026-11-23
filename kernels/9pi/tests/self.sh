@@ -18,6 +18,9 @@
 #     what the build made to BUILD/card-mk;
 #  3. the same mkfile on Linux in BUILD/src, for the card's machine
 #     and system: mini-mk -k MINI=mini- O=5 OS=plan9 (BUILD/linux.log);
+#     both with SOFTWARE=0, the games for the draw platform alone (the
+#     author, 2026-11-23: "for the self jobs it's fine to skip all the
+#     soft variant, and keep just the draw one");
 #  4. each file of the two _mk compared: the same, but the libraries'
 #     dirs (their tree's path), the .depend files with that path as
 #     the card's.
@@ -46,7 +49,7 @@ t=; [ -n "${SELF_TIMES:-}" ] && t="'TIMES=time'"
 o=; [ -n "${MLOPT:-}" ] && o="'MLOPT=$MLOPT'"
 cat > "$build/session.cmds" <<EOF
 cd /src
-mk -k -p 'MK=time mk' $t $o $q > /tmp/self.log >[2=1]
+mk -k -p 'MK=time mk' 'SOFTWARE=0' $t $o $q > /tmp/self.log >[2=1]
 grep '^mk: cd ' /tmp/self.log
 cat /dev/waits /dev/lockstat
 grep '^io ' '#S/sdM0/ctl'
@@ -89,7 +92,7 @@ rm -f "$build/fs.img"
 
 # 3. the same build on Linux
 (cd "$build/src" && PATH=$ix/bin:$PATH NPROC=4 \
-  mini-mk -k MINI=mini- O=5 OS=plan9 ${MLOPT:+"MLOPT=$MLOPT"} $q > "$build/linux.log" 2>&1)
+  mini-mk -k MINI=mini- O=5 OS=plan9 SOFTWARE=0 ${MLOPT:+"MLOPT=$MLOPT"} $q > "$build/linux.log" 2>&1)
 
 # 4. the two compared
 status=0

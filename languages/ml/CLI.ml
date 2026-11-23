@@ -119,8 +119,36 @@ let exists (caps : < caps; .. >) f =
   in
   List.mem (Filename.basename f) names
 
+(* OPTIMIZATION (interfaces' trees): a unit's .mli as its tree, kept
+ * beside its object (X.mlitree, by the compile of X.ml, which reads its
+ * own .mli), and read by the units compiled after it, found as the
+ * summaries are, in the -I's (mkconfig's STDSUM: lib_core's build),
+ * where they lexed and parsed the .mli each time (OCaml's .cmi keeps
+ * the typed interface; this, its tree alone: the same tree as the
+ * parse's, so an object is the same whether a unit's tree was there yet
+ * or not, at a build's jobs' whim). A compile of a game's unit of 270
+ * lines read 2,322 lines of interfaces, 96 million of its 289 million
+ * instructions (plan_9pi_self_speed.md, 2026-11-23). Taken only for
+ * the .mli's text it was made of (its digest), and whole (a write of
+ * another job's, not yet ended, is not read: Marshal's size).
+ * old: parse caps f, every time *)
+let tree_magic = "mini-ml interface tree 1\n"
+let tree_file name = name ^ ".mlitree"
+(* the unit being compiled and where its object goes: its tree written there *)
+let own_tree : (string * Fpath.t) option ref = ref None
+
+let tree_of (s : string) (digest : string) : Ast.signature option =
+  let n = String.length tree_magic and d = String.length digest in
+  if String.length s > n + d + 1 && String.sub s 0 n = tree_magic && String.sub s n d = digest && s.[n + d] = '\n' then
+    let o = n + d + 1 in
+    if String.length s >= o + Marshal.header_size && Marshal.total_size (Bytes.unsafe_of_string s) o = String.length s - o
+    then Some (Marshal.from_string s o)
+    else None
+  else None
+
 (* another unit's source, by module name: its .mli, else its .ml, in
- * the directories in order, its file's name lowercase or not *)
+ * the directories in order, its file's name lowercase or not; an
+ * .mli's kept tree when there is one of its text *)
 let loader (caps : < caps; .. >) dirs : Scope.loader =
  fun name ->
   let names = List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) [ ".mli"; ".ml" ] in
@@ -129,8 +157,28 @@ let loader (caps : < caps; .. >) dirs : Scope.loader =
   | None -> None
   | Some f -> (
       Logs.info (fun m -> m "unit %s: %s" name (Fpath.to_string f));
+      let mli = Fpath.has_ext ".mli" f in
+      let digest = match FS.read_opt caps f with Some text when mli -> Digest.to_hex (Digest.string text) | _ -> "" in
+      let kept =
+        if not mli then None
+        else List.find_map (fun d ->
+            let t = Fpath.(d / tree_file name) in
+            if exists caps t then Option.bind (FS.read_opt caps t) (fun s -> tree_of s digest) else None) dirs in
+      match kept with
+      | Some s -> Logs.info (fun m -> m "unit %s: its kept tree" name); Some (Ast.Signature s)
+      | None ->
       match parse caps f with
-      | Ok (_, src) -> Some src
+      | Ok (_, src) ->
+          (match !own_tree, src with
+           | Some (own, objdir), Ast.Signature s when own = name ->
+               let t = Fpath.(objdir / tree_file name) in
+               Logs.info (fun m -> m "writing %s" (Fpath.to_string t));
+               (* (a cache: where it cannot be written, -o /dev/null's
+                * /dev, the compile goes on without it) *)
+               (try FS.write caps t (tree_magic ^ digest ^ "\n" ^ Marshal.to_string s [ Marshal.No_sharing ])
+                with Sys_error e -> Logs.info (fun m -> m "%s not kept: %s" (Fpath.to_string t) e))
+           | _ -> ());
+          Some src
       | Error m -> raise (Resolve.Error (0, m)))
 
 exception Rejected of string
@@ -613,6 +661,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           0
       | Ok (text, Ast.Structure items) -> (
           let name = String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base file))) in
+          if not !listing then own_tree := Some (name, Fpath.parent (outfile file));
           match classes caps (Fpath.parent file :: incs) ~lenient:false (Fpath.to_string file) text items with
           | exception Rejected m -> fail m
           | _, tree, items -> (

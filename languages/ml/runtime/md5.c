@@ -46,21 +46,24 @@ md5_block(MD5 *m)
 	for(i = 0; i < 16; i++, p += 4)
 		w[i] = p[0] | p[1] << 8 | p[2] << 16 | (unsigned int)p[3] << 24;
 	a = m->h[0]; b = m->h[1]; c = m->h[2]; d = m->h[3];
-	for(i = 0; i < 64; i++){
-		/* without ~ on 32 bits: 7c's EORW $0xffffffff is an illegal
-		 * instruction by 7l (and so by mini-ld, its twin). The first two
-		 * are (b & c) | (~b & d) and (d & b) | (~d & c); ~d is -1 - d */
-		switch(i >> 4){
-		case 0: f = d ^ (b & (c ^ d)); g = i; break;
-		case 1: f = c ^ (d & (b ^ c)); g = (5 * i + 1) & 15; break;
-		case 2: f = b ^ c ^ d; g = (3 * i + 5) & 15; break;
-		default: f = c ^ (b | (0xffffffff - d)); g = (7 * i) & 15; break;
-		}
-		t = a + f + md5_k[i] + w[g];
-		r = md5_s[(i >> 4) * 4 + (i & 3)];
-		a = d; d = c; c = b;
-		b += t << r | t >> (32 - r);
-	}
+	/* without ~ on 32 bits: 7c's EORW $0xffffffff is an illegal
+	 * instruction by 7l (and so by mini-ld, its twin). The first two
+	 * are (b & c) | (~b & d) and (d & b) | (~d & c); ~d is -1 - d.
+	 * opti: a loop for each round, its function and its word's index
+	 * in it, where a switch chose them at each of the 64 steps (mini-ml
+	 * digesting the interfaces a compile reads: 3,789 instructions a
+	 * block, plan_9pi_self_speed.md, 2026-11-23).
+	 * old: for(i = 0; i < 64; i++){ switch(i >> 4){ case 0: f = ...; g = i; ...} ... } */
+#define MD5_STEP(F, G) \
+	t = a + (F) + md5_k[i] + w[G]; \
+	r = md5_s[(i >> 4) * 4 + (i & 3)]; \
+	a = d; d = c; c = b; \
+	b += t << r | t >> (32 - r);
+	for(i = 0; i < 16; i++){ MD5_STEP(d ^ (b & (c ^ d)), i) }
+	for(; i < 32; i++){ MD5_STEP(c ^ (d & (b ^ c)), (5 * i + 1) & 15) }
+	for(; i < 48; i++){ MD5_STEP(b ^ c ^ d, (3 * i + 5) & 15) }
+	for(; i < 64; i++){ MD5_STEP(c ^ (b | (0xffffffff - d)), (7 * i) & 15) }
+#undef MD5_STEP
 	m->h[0] += a; m->h[1] += b; m->h[2] += c; m->h[3] += d;
 }
 
@@ -71,15 +74,30 @@ md5_init(MD5 *m)
 	m->len = 0;
 }
 
+/* opti: the bytes copied into the block a piece at a time, the length
+ * (64 bits: helpers on arm) added once, where each byte was the
+ * length's increment and its & 63 (_andv's calls, 258,341 in a compile).
+ * old: for(i = 0; i < n; i++){ m->buf[m->len++ & 63] = p[i]; if((m->len & 63) == 0) md5_block(m); } */
 static void
 md5_add(MD5 *m, uchar *p, long n)
 {
-	long i;
+	long i, k, fill;
 
-	for(i = 0; i < n; i++){
-		m->buf[m->len++ & 63] = p[i];
-		if((m->len & 63) == 0)
+	fill = (long)(m->len & 63);
+	m->len += n;
+	while(n > 0){
+		k = 64 - fill;
+		if(k > n)
+			k = n;
+		for(i = 0; i < k; i++)
+			m->buf[fill + i] = p[i];
+		fill += k;
+		p += k;
+		n -= k;
+		if(fill == 64){
 			md5_block(m);
+			fill = 0;
+		}
 	}
 }
 

@@ -73,15 +73,14 @@ languages/dotnet/CLI.ml:61: CLI.entries: has < Cap.readdir >, names sys_read_dir
 languages/dotnet/CLI.ml:67: CLI.os: has < Cap.chdir; Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stderr, Cap.stdin, Cap.stdout
 languages/dotnet/csc/CLI.ml:10: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
 languages/ml/CLI.ml:109: CLI.exists: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.open_out, Cap.stderr, Cap.stdout; names Sys_plan9.dirread itself
-languages/ml/CLI.ml:124: CLI.loader: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
-languages/ml/CLI.ml:147: CLI.classes: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stdout
-languages/ml/CLI.ml:180: CLI.preprocess: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stdout
-languages/ml/CLI.ml:213: CLI.summaries: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
-languages/ml/CLI.ml:241: CLI.write_summary: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr, Cap.stdout
-languages/ml/CLI.ml:257: CLI.lower: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
-languages/ml/CLI.ml:282: CLI.output: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr
-languages/ml/CLI.ml:351: CLI.readdir: has < Cap.readdir >, names sys_read_directory itself
-languages/ml/CLI.ml:360: CLI.depend: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out
+languages/ml/CLI.ml:152: CLI.loader: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:195: CLI.classes: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.stdout
+languages/ml/CLI.ml:228: CLI.preprocess: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.stdout
+languages/ml/CLI.ml:261: CLI.summaries: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:289: CLI.write_summary: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:305: CLI.lower: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
+languages/ml/CLI.ml:330: CLI.output: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr
+languages/ml/CLI.ml:399: CLI.readdir: has < Cap.readdir >, names sys_read_directory itself
 languages/ml/CLI.ml:67: CLI.rewrite: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout
 languages/ml/CLI.ml:92: CLI.parse: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout
 languages/ml/debug/Lines_ml.ml:6: Lines_ml.source: has < Cap.open_in; Cap.readdir >, may not need Cap.readdir
@@ -103,10 +102,10 @@ lib_terminal/unix/Tty_unix.ml:37: Tty_unix.run_: has < Cap.clock >, needs Cap.st
 lib_terminal/unix/Tty_unix.ml:45: Tty_unix:fun at line 45: has < Cap.clock >, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:52: loop: has < Cap.clock >, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:9: go: no capability, needs Cap.stdout (Unix.stdout)
+machine/CLI.ml:104: run: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.exit (Stdlib.exit); names Stdlib.flush_all itself
 machine/CLI.ml:26: CLI.main: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.signal (Sys.set_signal); names Unix.environment itself
-machine/CLI.ml:60: report: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Stdlib.stdout itself
-machine/CLI.ml:71: CLI:fun at line 71: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.exit (Stdlib.exit)
-machine/CLI.ml:78: run: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.exit (Stdlib.exit); names Stdlib.flush_all itself
+machine/CLI.ml:86: report: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Stdlib.stdout itself
+machine/CLI.ml:97: CLI:fun at line 97: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.exit (Stdlib.exit)
 machine/process/Host.ml:100: Host:fun at line 100: has < Cap.chdir; Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Unix.rename itself
 machine/process/Host.ml:106: Host:fun at line 106: has < Cap.chdir; Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, needs Cap.stderr (Stdlib.flush_all), Cap.stdout (Stdlib.flush_all)
 machine/process/Host.ml:118: Host:fun at line 118: has < Cap.chdir; Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Unix.LargeFile.lstat itself

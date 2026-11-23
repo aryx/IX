@@ -75697,3 +75697,19 @@ Claude found the office keeps a style byte (bold 1, italic 2, underlined 4, larg
 Claude named them in Text.ml from the playground's (P.bold lsr 8...) and used the names in the keys, the Format menu, File.ml's Markdown, TinyTroff's HTML and PDF, and the style letters' table.
 Claude gave orrery a 12-sided glow around the Sun with regular, a bold date and an underlined keys heading, the picture checked and its checksum recorded.
 Claude found TinyOffice_test.sh's tiny-cpu half failing at HEAD already: its image 1,052,800 bytes over tiny-cpu's 1 MB, the test not in make test.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 21:44
+
+**Yoann:**
+
+> I was not able to run make self locally; got some errors, and worse C-c didn't work
+
+**Claude (summary):**
+
+Claude found the Ctrl-C failure came from GNU `timeout` placing itself and the machine in a new process group.
+Claude explained that this group isolation keeps the terminal's SIGINT from reaching the machine, so make just waits.
+Claude fixed this by introducing a `TIMEOUT` variable and applying it to every t-ix machine run in the Makefile.
+Claude then set out to verify the fix with a real pseudo-terminal and Ctrl-C, both with and without `--foreground`.
+Claude also checked the leftover m-ix and t-ix run logs to find what made `make self` fail.

@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -65,6 +65,12 @@ program's functions that its toplevel never reaches (calls.dl):
   ML calls, a library; without it what main does not reach is not looked at
 -r: the directory of points_to/ and the .dl files (analyzers/datalog)
 -I, -D: as mini-cc's; -L: lib_core's directory (lib_core)
+-own dir: ML: the units the program names found in dir are its own, reported
+  on as the files given: a program given by its main file alone; its
+  libraries' functions it does not call said dead too (tiny_check.sh keeps
+  what every program says). One file of a program: it and the main file
+  given, the libraries by -I, read but not reported on:
+  mini-analyze -dead -I tiny/TinyLibSystem/unix -I tiny tiny/user/temp.ml tiny/TinyAppTemperature.ml
 -facts, -flow, -flow-answers: facts printed, nothing analyzed. -facts: the
 facts the analyses load, not the analysis; -alone: an ML file's own facts, without those of the
 library units it names; -no-models: List's, Hashtbl's and @'s code read as
@@ -207,6 +213,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-fingerprint", Arg.Set fingerprint, " after the report, one number of every answer (Answers, Fingerprint)");
         ("-L", Arg.Set_string lib, " lib_core's directory, for an ML program's library");
         ("-I", Arg.String (fun d -> incs := d :: !incs), " a directory of #include's");
+        ("-own",
+         Arg.String (fun d -> Ml_front.own_dirs := !Ml_front.own_dirs @ [ Fpath.v d ]),
+         " dir: ML: the units the program names found there are its own, reported on as the files given");
         ("-D", Arg.String (fun d -> defs := d :: !defs), " name=value, as #define") ] in
   (* (-Idir and -Dx in one word too, as mini-cc's) *)
   let split a =
@@ -293,6 +302,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           c;
         if ml <> [] then
           List.iter (fun m -> Console.eprint caps (m ^ "\n"); incr failed) (Ml_front.program caps (incs @ Ml_front.library caps !lib) (List.map path ml));
+        (* (with the units -own found: the program's files, for -bugs's
+         * start order and SSA form as the files given) *)
+        let ml =
+          ml
+          @ List.sort compare
+              (Hashtbl.fold
+                 (fun (u : string) (f : string) acc ->
+                   if f <> "" && Hashtbl.mem Ml_front.own u && not (List.mem f ml) then f :: acc else acc)
+                 Ml_front.files []) in
         if !bugs then start_facts (given p) !start ml;
         (* (the program's own files in SSA form, their calls named as
          * Closure_facts' sites: bugs/pairs.dl's paths, ssa_ before each

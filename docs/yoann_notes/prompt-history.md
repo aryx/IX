@@ -75435,3 +75435,31 @@ Claude then planned to check how mini-ed parses its arguments before making the 
 **Claude (summary):**
 
 Claude reported that `make test`, `make check`, and `make self-quick-mix` all passed for the ed, rc, mini-chidb, and ar log-line batch, with the usual 67 Mac-only mismatches noted. Claude listed three options for what's next, with checking the failed `docker` CI run first as its pick. Claude then asked whether to commit and push the batch.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:36
+
+**Yoann:**
+
+> excellent
+
+**Claude (summary):**
+
+Claude said it would check the background run at 14:29 and report apt timings, the "self:" line, any FAIL lines, and depend.rc output. Yoann's follow-up, "check the self run", picks up that promised check, so the focus is on the self run. Claude's reply was only a short status note, with no other recommendations or file changes.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:50
+
+**Yoann:**
+
+> let's commit. and I guess we can close this session?
+
+**Claude (summary):**
+
+Claude committed and pushed the last batch, `25a1e8da..21ef6f85`, and confirmed the session could be closed.
+Claude made mini-analyze's man page examples real files in `analyzers/examples/`, with `make test` checking their reports.
+Claude changed `mini-analyze -exn` to list only the raises reachable from each toplevel, and updated the ix and tiny recordings.
+Claude made `-v`, `-debug` and `-quiet` work in most ix programs, leaving rc, ar, mini-chidb, mini-ld, lex and yacc unchanged.
+Claude made `make test` check that man page EXAMPLES files exist, which fixed acid's stale path and prolog's missing files.

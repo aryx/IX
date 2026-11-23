@@ -10,6 +10,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-r** *rules* ]
 [ **-L** *lib* ]
 [ **-I** *dir* ] ...
+[ **-own** *dir* ] ...
 [ **-D** *name*`=`*value* ] ...
 [ **-root** *f* ] ...
 [ **-start** *units* ]
@@ -128,7 +129,25 @@ program's library, lib_core's units it names, is read with it.
      Pervasives.
 
 **-I**, **-D**
-:    As \man{cc}{1}'s.
+:    As \man{cc}{1}'s. For ML, an **-I** directory's units that the
+     program names are read with it, but as a library: nothing is said
+     of them.
+
+**-own** *dir*
+:    ML: the units that the program names and that are found in *dir*
+     are its own, reported on as the *files* given are. A program can
+     then be given by its main file alone, the analyzer finding the
+     rest. The units of every directory are looked up in the order given,
+     after the directories of the *files*. A library's functions that
+     this one program does not call are said dead too:
+     `analyzers/datalog/tests/tiny_check.sh` gives each t-IX program this
+     way and keeps what every program that has the file says. For one
+     file of a program, give it and the main file, the libraries by
+     **-I**:
+     `mini-analyze -dead -I tiny/TinyLibSystem/unix -I tiny tiny/user/temp.ml tiny/TinyAppTemperature.ml`
+     says only what is dead in `temp.ml` and `TinyAppTemperature.ml`.
+     **-v** says each file read: `reading` for the program's own,
+     `the library's` for the others.
 
 **-root** *f*
 :    *F* is entered from where the facts do not go: assembly, a

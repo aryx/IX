@@ -138,6 +138,7 @@ let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (file 
 let unread : string list ref = ref []
 let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
+let own_dirs : Fpath.t list ref = ref []
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
@@ -146,7 +147,9 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   Typing.keep := true;
   (* (each unit sees the program's directories, then the library's) *)
   let program_dirs = List.sort_uniq compare (List.map Fpath.parent paths) in
-  let dirs = program_dirs @ dirs in
+  let dirs = program_dirs @ !own_dirs @ dirs in
+  (* (tiny/ and ./tiny are one directory) *)
+  let mine_dirs = List.map (fun (d : Fpath.t) -> FS.cleanname (Fpath.to_string d)) !own_dirs in
   let read (file : Fpath.t) (text : string) (mine : bool) =
     match unit_ caps dirs file text with
     | Ok named -> List.iter (fun u -> Queue.add u todo) named
@@ -163,6 +166,12 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     if not (Hashtbl.mem files u) then begin
       Hashtbl.replace files u "";
       match find caps dirs u [ ".ml" ] with
+      | Some (f, text) when List.mem (FS.cleanname (Fpath.to_string (Fpath.parent f))) mine_dirs ->
+          (* (an -own directory's unit: the program's, as a file given,
+           * marked before it is read for Tree_facts) *)
+          Hashtbl.replace own u ();
+          Logs.info (fun m -> m "reading %s" (Fpath.to_string f));
+          read f text true
       | Some (f, text) -> Logs.info (fun m -> m "the library's %s" (Fpath.to_string f)); read f text false
       | None -> ()
     end

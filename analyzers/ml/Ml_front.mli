@@ -17,6 +17,13 @@ val program : < Cap.open_in; Cap.readdir; .. > -> Fpath.t list -> Fpath.t list -
  * tests' facts of one unit, which mini-ml -facts gave) *)
 val alone : bool ref
 
+(* the directories whose units are the program's own (-own): a unit the
+ * program names that is found there is read and reported on as a file
+ * given on the command line is, so that a program can be given by its
+ * main file alone. A unit found in an -I directory or in the library is
+ * read too, but is not reported on. *)
+val own_dirs : Fpath.t list ref
+
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref
 

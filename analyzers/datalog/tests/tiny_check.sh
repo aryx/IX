@@ -5,19 +5,19 @@
 # mini-analyze FLAG on tiny/'s programs: the host's, those OCaml builds and
 # checks (tiny/dune's executables: Cap.main or TinyLibSystem.main), and
 # those tiny-kernel runs alone (windows, www, trace, debug, ...: OCaml only
-# checks their units, no program on the host), each with the units
-# TinyKernel/Makefile's UNITS_x gives it, on the host's TinyLibSystem.ml,
+# checks their units, no program on the host), each given by its main
+# file alone, the analyzer reading the units it names (-own: tiny/'s
+# directories, their units reported on as the program's), on the host's
+# TinyLibSystem.ml,
 # the same .mli as tiny-kernel's (whose functions only tiny-kernel's
 # builds of rc, ed, ml... would keep from being said dead, and whose
 # externals' capabilities mini-analyze does not know), since TinyLibSystem
 # is the one library of both systems' programs (old: left out,
-# TinyCalls.ml their calls). Each with
-# the modules of its tiny libraries, lib_core's found by itself, the
-# other ix libraries by -I. Not here: the SDL programs (tsdl, which
-# mini-analyze does not read: tiny-machine-window, tiny/user/sdl/'s apps)
-# and the kernel (its calls are the machine's, not a library's).
-# coupling: TinyKernel/Makefile's UNITS_x (I_x, F_x) for tiny-kernel's
-# programs below.
+# TinyCalls.ml their calls). lib_core's units are found by the
+# analyzer itself, the other ix libraries' by -I. Not here: the SDL
+# programs (tsdl, which mini-analyze does not read: tiny-machine-window,
+# tiny/user/sdl/'s apps) and the kernel (its calls are the machine's,
+# not a library's).
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every program that has the
@@ -43,67 +43,64 @@ case $flag in
 esac
 expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
-T=tiny; S=$T/TinyLibSystem/unix/TinyLibSystem.ml; R=$T/TinyLibRegex.ml
-M=$T/TinyMachine
-L=$T/TinyLibMachine.ml
-CPU="$L $M/TinyMachineCPU.ml"
-BROWSER=$(for m in Strings Charset Tokens Lines Html Url Http; do
-  printf "%s " $T/TinyBrowser/$m.ml; done)
-TML="$L "$(for m in Lexer Tree Formats Parser Types Machine Compile; do
-  printf "%s " $T/TinyML/$m.ml; done)
-TC="$L "$(for m in Types Lexer Tree Lower Parser Machine; do
-  printf "%s " $T/TinyC/$m.ml; done)
+T=tiny
+# The directories of tiny/'s units (-own): the analyzer reads the units a
+# program names from there, and reports on them as on the program's own
+# files. The host's TinyLibSystem first, so that it is the one found.
+# TinyML/ and TinyC/ have units of the same names (Lexer, Types...), so
+# each is given only to its own program.
+O="-own $T/TinyLibSystem/unix -own $T"
+M="-own $T/TinyMachine"
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"
-# tiny-kernel's programs: the Makefile's GUI and OFFICE
-GUI="$S $T/TinyLibDraw.ml $T/TinyLibPlayground.ml $T/TinyLibGUI.ml"
-OFFICE=$(for m in Model Text Sheet Drawing Paint Chart File; do
-  printf "%s " $T/TinyOffice/$m.ml; done)
-# a program a line: its name, its -I's (- for none), its files
+# a program a line: its name, its flags, its main file
 programs() {
   cat <<EOF
-tiny-build|-I lib_crypto|$S $T/TinyBuildSystem.ml
-tiny-shell|-|$S $R $T/TinyShell.ml
-tiny-editor|-|$S $R $T/TinyEditorLine.ml
-tiny-utils|-|$S $R $T/TinyUtilities.ml
-tiny-cc|-|$S $TC $T/TinyC.ml
-tiny-db|-|$S $T/TinyDatabase.ml
-tiny-vcs|-I lib_crypto|$S $T/TinyVCS.ml
-tiny-as|-|$L $S $T/TinyAssembler.ml
-tiny-ld|-|$L $S $T/TinyLinker.ml
-tiny-ar|-|$L $S $T/TinyArchiver.ml
-tiny-cpu|-|$CPU $S $T/TinyCPU.ml
-tiny-prof|-|$S $L $T/TinyProfiler.ml
-tiny-ml|-|$S $TML $T/TinyML.ml
-tiny-machine|-I lib_core/parallel|$CPU $S $M/TinyMachineDevices.ml $T/TinyKernel/KNetwork.ml $BROWSER $M/TinyMachinePeer.ml $T/TinyMachine.ml
-tiny-machine-socket|-|$S $M/TinyMachineSocket.ml
-tiny-machine-fetch|$NET -I lib_graphics/core -I lib_graphics/images|$CPU $S $M/TinyMachineDevices.ml $M/TinyMachineFetch.ml
-tiny-mkfat|-|$S $T/TinyKernel/steps/t6/TinyMkfat.ml
-mkfont|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$S $T/TinyKernel/fonts/Mkfont.ml
-windows|-|$S $T/TinyLibDraw.ml $T/TinyWindows.ml $T/user/windows.ml
-bigmem|-|$S $T/user/bigmem.ml
-square|-|$GUI $T/TinyAppSquare.ml $T/user/square.ml
-tetris|-|$GUI $T/TinyAppTetris.ml $T/user/tetris.ml
-calc|-|$GUI $T/TinyAppCalculator.ml $T/user/calc.ml
-temp|-|$GUI $T/TinyAppTemperature.ml $T/user/temp.ml
-emacs|-|$GUI $T/TinyEditorScreen.ml $T/user/emacs.ml
-office|-|$GUI $OFFICE $T/TinyOffice.ml $T/user/office.ml
-troff|-|$GUI $OFFICE $T/TinyTroff.ml $T/user/troff.ml
-play|-|$GUI $T/TinyPlay.ml $T/user/play.ml
-www|-|$GUI $BROWSER $T/TinyBrowser/Screen.ml $T/TinyBrowser.ml $T/user/www.ml
-trace|-|$S $T/TinyTracer.ml $T/user/trace.ml
-debug|-|$GUI $L $T/TinyDebugger.ml $T/user/debug.ml
+tiny-build|$O -I lib_crypto|$T/TinyBuildSystem.ml
+tiny-shell|$O|$T/TinyShell.ml
+tiny-editor|$O|$T/TinyEditorLine.ml
+tiny-utils|$O|$T/TinyUtilities.ml
+tiny-cc|$O -own $T/TinyC|$T/TinyC.ml
+tiny-db|$O|$T/TinyDatabase.ml
+tiny-vcs|$O -I lib_crypto|$T/TinyVCS.ml
+tiny-as|$O|$T/TinyAssembler.ml
+tiny-ld|$O|$T/TinyLinker.ml
+tiny-ar|$O|$T/TinyArchiver.ml
+tiny-cpu|$O $M|$T/TinyCPU.ml
+tiny-prof|$O|$T/TinyProfiler.ml
+tiny-ml|$O -own $T/TinyML|$T/TinyML.ml
+tiny-machine|$O $M -own $T/TinyKernel -own $T/TinyBrowser -I lib_core/parallel|$T/TinyMachine.ml
+tiny-machine-socket|$O $M|$T/TinyMachine/TinyMachineSocket.ml
+tiny-machine-fetch|$O $M $NET -I lib_graphics/core -I lib_graphics/images|$T/TinyMachine/TinyMachineFetch.ml
+tiny-mkfat|$O|$T/TinyKernel/steps/t6/TinyMkfat.ml
+mkfont|$O -I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$T/TinyKernel/fonts/Mkfont.ml
+windows|$O|$T/user/windows.ml
+bigmem|$O|$T/user/bigmem.ml
+square|$O|$T/user/square.ml
+tetris|$O|$T/user/tetris.ml
+calc|$O|$T/user/calc.ml
+temp|$O|$T/user/temp.ml
+emacs|$O|$T/user/emacs.ml
+office|$O -own $T/TinyOffice|$T/user/office.ml
+troff|$O -own $T/TinyOffice|$T/user/troff.ml
+play|$O|$T/user/play.ml
+www|$O -own $T/TinyBrowser|$T/user/www.ml
+trace|$O|$T/user/trace.ml
+debug|$O|$T/user/debug.ml
 EOF
 }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
 # (the programs at once, the analyses first: seconds, not a minute)
+# (-v: the files each program reads as its own, its "reading" lines, for
+# -dead's "every program that has the file"; the rest of -v left out)
 programs | { while IFS='|' read -r name flags files; do
-  [ "$flags" = - ] && flags=
-  timeout 300 $ANALYZE $flag $flags $files > $W/$name.out 2>&1 &
+  timeout 300 $ANALYZE -v $flag $flags $files > $W/$name.v 2>&1 &
 done; wait; }
 programs | while IFS='|' read -r name flags files; do
+  grep -v '^mini-analyze: \[INFO\]' $W/$name.v > $W/$name.out
+  files=$(sed -n 's/^mini-analyze: \[INFO\] reading \(.*\.ml\)$/\1/p' $W/$name.v)
   n=$(grep -cE "$said" $W/$name.out)
   # (a unit not read: its program's 0 would say nothing)
   unread=$(grep -cE 'unbound (module|value)|not read|syntax error' $W/$name.out)

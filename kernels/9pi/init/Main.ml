@@ -84,7 +84,7 @@ let timed where f =
     let p = Proc.myproc () in
     Proc.charge_entry p;
     f ();
-    Proc.charge p ~user:false)
+    Proc.charge p)
 
 let trap () = timed "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))
 
@@ -92,6 +92,7 @@ let irq () =
   timed "an interrupt" (fun () ->
     let p = Proc.myproc () in
     Machine.doing p.pid p.text "interrupt";
+    Proc.account p Proc.a_interrupt;
     (* (the devices and the clock are the first core's; another core's
      * interrupt is its own timer's, for the slice) *)
     let tick = if Machine.core () = 0 then devices () else Machine.core_tick () in
@@ -111,6 +112,7 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
   timed "a fault" (fun () ->
     let p = Proc.myproc () in
     Machine.doing p.pid p.text "fault";
+    Proc.account p Proc.a_fault;
     (* a breakpoint (5db's BKPT, E1200070: a prefetch abort, or an
      * undefined instruction to an emulator): the note sys: breakpoint,
      * which stops a traced process (Syscall.procctl) and kills another.
@@ -202,6 +204,7 @@ let () =
   Callback.register "irq" irq;
   Callback.register "fault" fault;
   Callback.register "process_start" process_start;
+  Machine.gc_clock_start ();
   Dev.seconds := (fun () -> !Proc.ticks / 100);
   Devproc.read_image := Fault.read_image;
   Devproc.mem_read := Usermem.debug_read;
@@ -284,7 +287,13 @@ let () =
   (let d = !Swconsole.display in
    if d <> 0 && d <> (640 lsl 16) lor 480 then
      Devcons.print (Printf.sprintf "display: %d by %d, the screen %d by %d\n" (d lsr 16) (d land 0xffff) !Swconsole.wid !Swconsole.ht));
-  Proc.idle := (fun () -> Machine.wait_interrupt (); if Machine.core () = 0 then ignore (devices ()));
+  (* (the lock given back during the wait: the scheduler's time before
+   * it, the devices' after, /dev/lockstat) *)
+  Proc.idle := (fun () ->
+    Proc.sched_charge Proc.a_sched;
+    Machine.wait_interrupt ();
+    Proc.sched_start ();
+    if Machine.core () = 0 then begin ignore (devices ()); Proc.sched_charge Proc.a_devices end);
   Machine.timer_arm tick_us;
   Machine.uart_rx_enable ();
   let slash = (Dev.find '/').Dev.attach "" in

@@ -265,6 +265,11 @@ external core_idle : int -> int = "core_idle"
  * Proc.charge_entry, /dev/waits) *)
 external klock_wait : int -> int = "klock_wait"
 external klock_last : unit -> int = "klock_last"
+(* the kernel's collections from gc_clock_start (the boot's): their
+ * time in ms, and how many (mini-ml's; 0 with ocaml-light) *)
+external gc_clock_start : unit -> unit = "gc_clock_start"
+external gc_held : unit -> int = "gc_held"
+external gc_count : unit -> int = "gc_count"
 (* with true, both caches are emptied at each change of process, as
  * principia's 9pi does. It is slower, and it is what to try when
  * programs die with the caches on and not with them off. *)

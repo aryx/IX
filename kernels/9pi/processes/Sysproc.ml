@@ -19,7 +19,7 @@ let exits (p : proc) status =
      | Some q ->
          q.nchild <- q.nchild - 1;
          (* its times, and its children's, are its parent's children's *)
-         Proc.charge p ~user:false;
+         Proc.charge p;
          q.cutime <- q.cutime + p.utime + p.cutime;
          q.cstime <- q.cstime + p.stime + p.cstime;
          if List.length q.waitq < 128 then begin

@@ -10,7 +10,10 @@
 # EMULATOR: the Pi 2's, with its four cores. Then:
 #  1. the top mkfile on the card, mk -k in /src at the console, each
 #     directory's mk timed (BUILD/console.txt, the card's /tmp/self.log
-#     as BUILD/card.log), then tests/self/'s two programs run;
+#     as BUILD/card.log, with the top mk's profile, -p), what the
+#     kernel waited on and what held its lock (/dev/waits and
+#     /dev/lockstat, at the console), then tests/self/'s two programs
+#     run;
 #  2. the card's /src copied out by Xv6test: its sources to BUILD/src,
 #     what the build made to BUILD/card-mk;
 #  3. the same mkfile on Linux in BUILD/src, for the card's machine
@@ -43,8 +46,9 @@ t=; [ -n "${SELF_TIMES:-}" ] && t="'TIMES=time'"
 o=; [ -n "${MLOPT:-}" ] && o="'MLOPT=$MLOPT'"
 cat > "$build/session.cmds" <<EOF
 cd /src
-mk -k 'MK=time mk' $t $o $q > /tmp/self.log >[2=1]
+mk -k -p 'MK=time mk' $t $o $q > /tmp/self.log >[2=1]
 grep '^mk: cd ' /tmp/self.log
+cat /dev/waits /dev/lockstat
 du -s /src/_mk
 cat /dev/osversion
 /src/_mk/5-plan9/kernels/9pi/tests/self/hello-c

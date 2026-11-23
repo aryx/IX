@@ -201,18 +201,27 @@ let fault (p : proc) va =
       let pg = va land lnot (pgsize - 1) in
       (* a mapped page's fault is its rights': a write to a page shared
        * since a fork, or the program's error *)
-      if shared p.pgdir s pg then begin own p.pgdir s pg; Machine.mmu_switch p.pgdir; true end
+      if shared p.pgdir s pg then begin
+        Proc.reaccount p Proc.a_fault_copy;
+        own p.pgdir s pg; Machine.mmu_switch p.pgdir; true end
       (* (a write to a text's page mapped to be read only, a kept
        * text's, or one that was when this process mapped it: the text
        * no longer kept, the page the process's to write as any text's) *)
       else if s.kind = Text && (match Mmu.lookup p.pgdir pg with Some page -> page.perm = Page.User_ro | None -> false) then begin
+        Proc.reaccount p Proc.a_fault_text;
         unkeep s;
         map p.pgdir pg (Hashtbl.find s.pages pg);
         Machine.mmu_switch p.pgdir;
         true
       end
       else if Mmu.mapped p.pgdir pg then false
-      else begin fill p.pgdir s pg; true end
+      else begin
+        (* (/dev/lockstat: a page there, mapped; or one made, read from
+         * the image or zeroed: make's) *)
+        let read = match s.image with Some _ -> pg - s.base < s.flen | None -> false in
+        Proc.reaccount p (if Hashtbl.mem s.pages pg then Proc.a_fault_map
+                          else if read then Proc.a_fault_read else Proc.a_fault_zero);
+        fill p.pgdir s pg; true end
 
 (* (a page shared since a fork is made the process's own here, though
  * the call may only read it: the kernel then writes a user's page

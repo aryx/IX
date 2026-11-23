@@ -60,6 +60,52 @@ let ready p =
   (* a core with nothing to run may take it *)
   Machine.cores_wake ()
 
+(* What the kernel does with its lock held, by account (/dev/lockstat;
+ * Linux's /proc/lock_stat and Solaris's lockstat(1M) say how long each
+ * lock is held, by the lock's class; here one lock, so by what holds
+ * it): a system call's number (Syscall names them), or one of those
+ * below. The time is the processes' kernel time (add_sys, to the
+ * account their slot is on: a call that sleeps is counted before and
+ * after its sleep, not during it), and the schedulers' own
+ * (sched_charge). One core at a time holds the lock, so the sum over
+ * the time since the boot is how full the lock is. *)
+let naccounts = 64
+let a_interrupt = 48
+let a_fault = 49
+let a_fault_zero = 50
+let a_fault_read = 51
+let a_fault_map = 52
+let a_fault_copy = 53
+let a_fault_text = 54
+let a_sched = 55
+let a_devices = 56
+let a_kproc = 57
+let account_names = Array.make naccounts ""
+let () =
+  List.iter (fun (a, s) -> account_names.(a) <- s)
+    [ a_interrupt, "interrupt"; a_fault, "fault"; a_fault_zero, "fault-zero"; a_fault_read, "fault-read";
+      a_fault_map, "fault-map"; a_fault_copy, "fault-copy"; a_fault_text, "fault-text";
+      a_sched, "sched"; a_devices, "idle-devices"; a_kproc, "kproc" ]
+let held_ms = Array.make naccounts 0
+let held_us = Array.make naccounts 0
+let held_n = Array.make naccounts 0
+let accounts = Array.make nproc a_kproc
+let add_held a d = let t = held_us.(a) + d in held_ms.(a) <- held_ms.(a) + (t / 1000); held_us.(a) <- t mod 1000
+(* the process's kernel work from here is the account's (counted once) *)
+let account (p : proc) a = accounts.(p.slot) <- a; held_n.(a) <- held_n.(a) + 1
+(* (the entry's account said more precisely: a fault's kind) *)
+let reaccount (p : proc) a = held_n.(accounts.(p.slot)) <- held_n.(accounts.(p.slot)) - 1; account p a
+
+(* the schedulers' time, each core's since sched_start, or since its
+ * last sched_charge *)
+let sched_since = Array.make 4 0
+let sched_start () = sched_since.(Machine.core ()) <- Machine.timer_now ()
+let sched_charge a =
+  let c = Machine.core () in
+  let now = Machine.timer_now () in
+  add_held a ((now - sched_since.(c)) land 0x3fffffff);
+  sched_since.(c) <- now
+
 (* The time a process runs, in its own code (user) or in the kernel
  * (Plan 9's TUser and TSys; time(1)'s u and s, a wait message's, and
  * /dev/cputime's, which were 0). Counted by the board's clock, in
@@ -72,12 +118,16 @@ let ready p =
  * old: nothing counted; a recipe of 12 s whose tool said 0.4 could not
  * say where the rest went (plan_9pi_self_speed.md, 2026-11-20) *)
 let add_user (p : proc) d = let u = p.uus + d in p.utime <- p.utime + (u / 1000); p.uus <- u mod 1000
-let add_sys (p : proc) d = let s = p.sus + d in p.stime <- p.stime + (s / 1000); p.sus <- s mod 1000
-let charge (p : proc) ~user =
+let add_sys (p : proc) d =
+  let s = p.sus + d in p.stime <- p.stime + (s / 1000); p.sus <- s mod 1000;
+  add_held accounts.(p.slot) d
+(* (the kernel's; the user's is charge_entry's, below. old: ~user, a
+ * label, which ocaml-light does not read, and always false) *)
+let charge (p : proc) =
   let now = Machine.timer_now () in
   let d = (now - p.since) land 0x3fffffff in
   p.since <- now;
-  if user then add_user p d else add_sys p d
+  add_sys p d
 
 (* What the machine waits on, in all (/dev/waits, in ms with the µs
  * not yet one; Linux's pressure files say the same of its own): a
@@ -101,7 +151,7 @@ let charge_entry (p : proc) =
 
 let sched () =
   let p = match procs.(Machine.current ()) with Some p -> Some p | None -> None in
-  Option.iter (fun p -> charge p ~user:false) p;
+  Option.iter (fun p -> charge p) p;
   Machine.swtch scheduler_slot;
   Option.iter (fun (p : proc) -> p.since <- Machine.timer_now ()) p
 
@@ -167,6 +217,7 @@ let preempt_due () = !ticks > schedticks.(Machine.core ()) && !runq <> []
  * loop on a stack of its own, all on the one queue: a process
  * switched from on one core may be taken next by another. *)
 let scheduler () =
+  sched_start ();
   let rec loop () =
     let core = Machine.core () in
     (* the readied process first (its slice going on), or the queue's *)
@@ -185,7 +236,9 @@ let scheduler () =
            if fresh then schedticks.(core) <- !ticks + 10;
            switches.(core) <- switches.(core) + 1;
            Machine.mmu_switch p.pgdir;
+           sched_charge a_sched;
            Machine.swtch p.slot;
+           sched_start ();
            Machine.mmu_switch 0;
            if p.state = Zombie then begin
              Machine.proc_free p.slot;

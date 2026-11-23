@@ -125,9 +125,9 @@ val ready : proc -> unit
 (* [sched ()] goes back to the scheduler. [sleep c] sleeps until a
  * wakeup on the channel c readies the sleepers; the CPU is given up. *)
 val sched : unit -> unit
-(* the time since the process was last counted is its own code's
- * (user) or the kernel's: Types' utime and stime *)
-val charge : Types.proc -> user:bool -> unit
+(* the time since the process was last counted is the kernel's: Types'
+ * stime (and its account's, below) *)
+val charge : Types.proc -> unit
 (* at the kernel's entry from the user: the time since is the user's,
  * less this core's last wait for the kernel's lock *)
 val charge_entry : Types.proc -> unit
@@ -137,6 +137,31 @@ val ready_waited : int ref
 val page_waited : int ref
 val page_us : int ref
 val add_wait : int ref -> int ref -> int -> unit
+(* The kernel's time with its lock held, by account (/dev/lockstat):
+ * a system call's number (below 48: Syscall names them in
+ * account_names), or a_interrupt and the others; held_ms and held_n
+ * the time and the times entered. [account p a]: p's kernel time from
+ * here is a's; [reaccount p a] says it more precisely, entered once.
+ * The schedulers' time: [sched_start ()] on this core, and
+ * [sched_charge a] adds the time since to a. *)
+val naccounts : int
+val a_interrupt : int
+val a_fault : int
+val a_fault_zero : int
+val a_fault_read : int
+val a_fault_map : int
+val a_fault_copy : int
+val a_fault_text : int
+val a_sched : int
+val a_devices : int
+val a_kproc : int
+val account_names : string array
+val held_ms : int array
+val held_n : int array
+val account : Types.proc -> int -> unit
+val reaccount : Types.proc -> int -> unit
+val sched_start : unit -> unit
+val sched_charge : int -> unit
 val sleep : wait_chan -> unit
 
 (* [tsleep ms] sleeps ms milliseconds (rounded up to the next tick,

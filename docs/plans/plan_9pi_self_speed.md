@@ -626,6 +626,38 @@ one: each is twice as long beside the others (games.dir 457 s for 312).
 That, the memory and the kernel's lock, is what is left between 1.6
 times and more.
 
+### 2026-11-23: what holds the kernel's lock
+
+/dev/waits (ecd81d51) said each core spends 46% of the four-core build
+spinning for the kernel's lock. /dev/lockstat now says what the lock
+is held for: the kernel's time of each system call by its name, of
+each page fault by its kind, of interrupts, kernel processes and the
+schedulers, and the kernel's collections (self.sh prints both files
+after the build). The whole make self on four cores at 8708184c, 5 ok,
+86 directories, no page refused: mk 1,735 s on the card, each core
+about 830 s spinning, and with the lock held:
+
+| account | times | seconds |
+|---|---|---|
+| Pread | 1,701,657 | 555 |
+| Pwrite | 955,998 | 260 |
+| fault-zero (a page zeroed) | 10,798,386 | 232 |
+| kproc | | 98 |
+| Open | 474,822 | 68 |
+| Rfork | 12,874 | 47 |
+| fault-read (a page of a program's file) | 242,535 | 37 |
+| Create | 803,995 | 37 |
+| fault-copy (copy on write) | 715,916 | 27 |
+| Exec | 13,268 | 20 |
+| Stat | 54,570 | 19 |
+| the rest | | about 50 |
+
+About 1,450 s of the 1,735: the lock is 84% full. The kernel's
+collections are 41 s of it (87,012). Reads and writes are more than
+half, 0.3 ms a call: next, what in them (the card, the file system,
+pipes). Then the zeroed pages: 42 GB of them, 830 pages for each of
+the 13,000 programs run, 21 µs each.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

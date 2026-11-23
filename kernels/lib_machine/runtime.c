@@ -305,6 +305,28 @@ value core_idle(value vc)
   return Val_long(v & 0x3fffffff);
 }
 
+/* The kernel's collections, their time (ms) and how many
+ * (/dev/lockstat): mini-ml's runtime calls gc_clock around each one
+ * (its ml_gc_clock, set by gc_clock_start at the boot). Always with
+ * the lock held: part of what holds it, whatever the account.
+ * ocaml-light's are not counted. */
+static unsigned gc_t0, gc_n;
+static uvlong gc_us;
+#ifdef MINI_ML
+extern void (*ml_gc_clock)(int);
+static void gc_clock(int begin)
+{
+  unsigned t = Long_val(timer_now(Val_unit));
+  if (begin) gc_t0 = t;
+  else { gc_us += (t - gc_t0) & 0x3fffffff; gc_n++; }
+}
+value gc_clock_start(value unit) { (void)unit; ml_gc_clock = gc_clock; return Val_unit; }
+#else
+value gc_clock_start(value unit) { (void)unit; return Val_unit; }
+#endif
+value gc_held(value unit) { (void)unit; return Val_long((long)(gc_us / 1000)); }
+value gc_count(value unit) { (void)unit; return Val_long(gc_n); }
+
 /* What each core runs (Machine.doing: the process, its program, a
  * system call's name or what entered the kernel), for the watchdog's
  * words below; copied (the collector moves an OCaml string), and cut

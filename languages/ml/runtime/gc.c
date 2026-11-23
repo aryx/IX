@@ -748,27 +748,36 @@ ml_old_end(value u)
 	return u;
 }
 
+/* Called with 1 before each collection and 0 after it, when set: the
+ * kernel's (mini-9pi's /dev/lockstat, the time its collections take
+ * with its lock held); no program sets it. */
+void (*ml_gc_clock)(int);
+
 /* need words, in the young generation (a minor collection, then a major
  * one when the half is past its size), or in the half */
 static void
 gc(value need)
 {
-	if(!young_words){
+	if(ml_gc_clock)
+		ml_gc_clock(1);
+	if(!young_words)
 		major(need);
-		return;
+	else{
+		if(old_reading)
+			old_leave();
+		/* (the half holds the young survivors, at most all of it, as its
+		 * memory goes to MAXHEAP: else a major collection first) */
+		if(old_hp + (ml_hp - young) > from + MAXHEAP)
+			major(0);
+		else
+			minor();
+		if(old_hp + need > from + size)
+			major(need);
+		if(old_reading)
+			old_enter();
 	}
-	if(old_reading)
-		old_leave();
-	/* (the half holds the young survivors, at most all of it, as its
-	 * memory goes to MAXHEAP: else a major collection first) */
-	if(old_hp + (ml_hp - young) > from + MAXHEAP)
-		major(0);
-	else
-		minor();
-	if(old_hp + need > from + size)
-		major(need);
-	if(old_reading)
-		old_enter();
+	if(ml_gc_clock)
+		ml_gc_clock(0);
 }
 
 /* Gc's: a collection, whichever was asked */

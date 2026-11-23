@@ -15,8 +15,9 @@ let files = [ "cons", 0o660; "consctl", 0o220; "bintime", 0o664; "cputime", 0o44
               "kbd", 0o440;
               (* (9pi's is its version's number; here the kernel's stamp) *)
               "osversion", 0o444;
-              (* (not 9pi's: what the machine waited on, Proc's) *)
-              "waits", 0o444 ]
+              (* (not 9pi's: what the machine waited on, Proc's, and
+               * what held the kernel's lock) *)
+              "waits", 0o444; "lockstat", 0o444 ]
 
 let qdir = 0
 let numsize = 12
@@ -241,6 +242,18 @@ let read (c : chan) n off =
       readstr off n (Printf.sprintf "lock %s\nready %d\npage %d\n"
                        (String.concat " " (List.init !cores (fun c -> string_of_int (Machine.klock_wait c))))
                        !Proc.ready_waited !Proc.page_waited)
+  (* what held the kernel's lock, since the boot (Proc's accounts): a
+   * line "gc", the kernel's collections' ms and how many (in the
+   * others' time); then each account entered, its name, how many times
+   * and its ms *)
+  | "lockstat" ->
+      let b = Buffer.create 1024 in
+      Buffer.add_string b (Printf.sprintf "gc %d %d\n" (Machine.gc_held ()) (Machine.gc_count ()));
+      for a = 0 to Proc.naccounts - 1 do
+        if Proc.held_n.(a) > 0 || Proc.held_ms.(a) > 0 then
+          Buffer.add_string b (Printf.sprintf "%s %d %d\n" Proc.account_names.(a) Proc.held_n.(a) Proc.held_ms.(a))
+      done;
+      readstr off n (Buffer.contents b)
   | "cputime" ->
       let ms = (!Proc.ticks - p.start) * 10 in
       readstr off n (String.concat "" (List.map (fun v -> pad numsize (string_of_int v)) [ p.utime; p.stime; ms; p.cutime; p.cstime ]))

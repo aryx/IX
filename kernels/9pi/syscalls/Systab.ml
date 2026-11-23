@@ -23,6 +23,9 @@ let calls = [|
   Segbrk, "Segbrk"; Rendezvous, "Rendez"; Semacquire, "Semacquire"; Semrelease, "Semrelease";
   Tsemacquire, "Tsemacquire"; Fversion, "Fversion"; Fauth, "Fauth"; Errstr, "Errstr" |]
 
+(* (a call's account is its number: /dev/lockstat's names) *)
+let () = Array.iteri (fun i (_, name) -> Proc.account_names.(i) <- name) calls
+
 (* a permission argument: its rwx bits, DMDIR (bit 31, past the Pi1's
  * ints) as the int's sign (P9.perm) *)
 let perm_arg words i =

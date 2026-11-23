@@ -147,7 +147,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     (fun (p : Fpath.t) ->
       Hashtbl.replace own (String.capitalize_ascii (Filename.remove_extension (Filename.basename (Fpath.to_string p)))) ();
       match FS.read_opt caps p with
-      | Some text -> read p text true
+      | Some text -> Logs.info (fun m -> m "reading %s" (Fpath.to_string p)); read p text true
       | None -> errors := ("cannot open " ^ Fpath.to_string p) :: !errors)
     paths;
   while not !alone && not (Queue.is_empty todo) do

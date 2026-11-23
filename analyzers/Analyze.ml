@@ -187,6 +187,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-summaries",
          Arg.String
            (fun (f : string) ->
+             Logs.info (fun m -> m "summaries: %s" f);
              Models.derived_on := true;
              List.iter (fun (s, m) -> Hashtbl.replace Models.derived s m)
                (Summaries.of_text (FS.read caps (Fpath.v f)))),
@@ -259,6 +260,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           List.iter
             (fun (r : string) ->
               let rules = Fpath.append (path !rules) (Fpath.v r) in
+              Logs.info (fun m -> m "rules: %s" (Fpath.to_string rules));
               D.load p ~from:(Fpath.to_string rules) (FS.read caps rules))
             (if !dead || !ambient then
                [ "points_to/instructions.dl"; "points_to/contexts.dl"; "points_to/insensitive.dl"; "dead.dl" ]
@@ -331,7 +333,21 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             Ml_front.own;
         if !only then Console.print caps (Buffer.contents text)
         else begin
-          ignore (Datalog_eval.run ~naive:false p);
+          (* (the engine is mini-datalog's, linked in: no program is run,
+           * and the facts are added to it directly, never written out) *)
+          let relations =
+            List.sort (fun (a : D.relation) (b : D.relation) -> compare (a.name, a.arity) (b.name, b.arity))
+              (Hashtbl.fold (fun _ r acc -> r :: acc) p.relations []) in
+          let count f = List.fold_left (fun n r -> n + f r) 0 relations in
+          Logs.info (fun m ->
+              m "evaluating, in this process (mini-datalog's engine): %d rules, %d facts in %d relations"
+                (List.length p.rule_list) (count (fun r -> r.count)) (List.length relations));
+          let st = Datalog_eval.run ~naive:false p in
+          Logs.info (fun m -> m "evaluated: %d rounds, %d firings, %d tuples derived" st.rounds st.firings st.derived);
+          List.iter
+            (fun (r : D.relation) ->
+              Logs.debug (fun m -> m "%s/%d: %d tuples (%d given), %d rules, stratum %d" r.name r.arity r.count r.given r.rules r.stratum))
+            relations;
           if !ambient then caps_report caps p
           else if !exns then exn_report caps p
           else if !dead then dead_report caps p (ml <> [])

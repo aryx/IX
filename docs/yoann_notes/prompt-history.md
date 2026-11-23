@@ -74931,3 +74931,48 @@ Claude ran the man page's commands on them, writing the options out because zsh 
 The example test passed, so Claude moved on to the next step.
 Claude planned to hook the examples into make test as the next change.
 Claude also planned to update the man page to match the hooked examples.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:11
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed six example analyzer files, the man page change, the `tests/lite.sh` job, and `prompt-history.md` on main.
+Claude left out `tiny/docs/literate/` because it isn't ours, and the commit is not pushed yet.
+Claude warned that `prompt-history.md` was already modified and kept changing, so the commit may include another session's entries.
+Its diff in the commit is 64 lines, up from the 32 lines Claude first saw.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:14
+
+**Yoann:**
+
+> mini-analyze -v is not very verbose. Does mini-analyze run external datalog engine? does it opens files under the datalog/ dirs; -v should show this
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:14
+
+**Yoann:**
+
+> so one can learn what is doing internally mini-analyzer (not too much, but not too few like now)
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:15
+
+**Yoann:**
+
+> usually, read config files should be shown by a -verbose (-v)
+
+**Claude (summary):**
+
+Claude explained that the rule files used by `mini-analyze` now show at `-v` as `rules: ...`, while the generic file-layer `read <file>` line stays at `-debug` to avoid flooding `-v`.
+Claude noted that the `-summaries` config file was still missing from the verbose output.
+Claude said it would add that missing config file to the verbose output next.

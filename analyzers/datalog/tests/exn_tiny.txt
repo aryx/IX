@@ -14,6 +14,8 @@ tiny-db-host: TinyDatabase.ml: the toplevel may let Common.Error escape
 tiny-db-host: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
 tiny-db: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
 tiny-machine-fetch: TinyMachineFetch.ml: the toplevel may let Zlib.Corrupt escape
+tiny-machine: TinyMachine.ml: the toplevel may let Not_found escape, raised in TinyMachine.run
+tiny-machine: TinyMachine.ml: the toplevel may let Unix.Unix_error escape, raised in TinyMachine.run
 tiny-ml-host: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 187, Types:fun at line 386
 tiny-ml: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 187, Types:fun at line 386
 tiny-shell-host: TinyShell.ml: the toplevel may let Not_found escape, raised in TinyShell.protect, TinyShell.run, TinyShell:fun at line 687

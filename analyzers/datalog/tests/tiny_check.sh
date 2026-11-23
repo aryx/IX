@@ -64,16 +64,20 @@ NET="$NET -I lib_crypto -I lib_compression"
 # mkfont, built by OCaml on lib_core), b both (the tools: tiny/dune's and
 # the Buildfile's; and the windows' programs of user/sdl/dune, whose
 # TinyLibSystem includes the host's, read here for it: the analyzer does
-# not read tsdl); its flags beside O's or K's; its main file
+# not read tsdl); its flags beside O's or K's; its main file; its flags
+# on the host alone. A program on tiny-kernel has TinyLibCore and
+# TinyLibSystem, no ix library: one is given (-I) only to what the host
+# builds, as tiny/dune links it (tiny-build's and tiny-vcs's Sha1 is
+# lib_crypto's there, TinyLibCore's on tiny-kernel, the runtime's C)
 programs() {
   cat <<EOF
-tiny-build|b|-I lib_crypto|$T/TinyBuildSystem.ml
+tiny-build|b||$T/TinyBuildSystem.ml|-I lib_crypto
 tiny-shell|b||$T/TinyShell.ml
 tiny-editor|b||$T/TinyEditorLine.ml
 tiny-utils|b||$T/TinyUtilities.ml
 tiny-cc|b|-own $T/TinyC|$T/TinyC.ml
 tiny-db|b||$T/TinyDatabase.ml
-tiny-vcs|b|-I lib_crypto|$T/TinyVCS.ml
+tiny-vcs|b||$T/TinyVCS.ml|-I lib_crypto
 tiny-as|b||$T/TinyAssembler.ml
 tiny-ld|b||$T/TinyLinker.ml
 tiny-ar|b||$T/TinyArchiver.ml
@@ -108,12 +112,12 @@ EOF
 # host, whose externals' capabilities the analyzer knows (tiny-kernel's
 # calls not yet).
 runs() {
-  programs | while IFS='|' read -r name sys flags main; do
-    if [ $flag = -caps ]; then echo "$name|$O $flags|$main"; continue; fi
+  programs | while IFS='|' read -r name sys flags main host; do
+    if [ $flag = -caps ]; then echo "$name|$O $flags $host|$main"; continue; fi
     case $sys in
       k) echo "$name|$K $flags|$main";;
-      h) echo "$name|$O $flags|$main";;
-      b) echo "$name|$K $flags|$main"; echo "$name-host|$O $flags|$main";;
+      h) echo "$name|$O $flags $host|$main";;
+      b) echo "$name|$K $flags|$main"; echo "$name-host|$O $flags $host|$main";;
     esac
   done
 }

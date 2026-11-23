@@ -212,6 +212,16 @@ let ext : string = "ext"
  * from every C call *)
 let raw : string = "raw"
 
+(* Whether a unit has code the facts follow. A unit known by its .mli
+ * alone (lib_core/parallel's Parallel, whose .ml dune makes from a
+ * template) is like a C function with no body: what it is given goes to
+ * raw, where a function may be called from (tiny-machine's cores' loop,
+ * given to Parallel.spawn, was said dead). Ml_front sets it. *)
+let has_body : (string -> bool) ref = ref (fun _ -> true)
+
+let unit_of (sym : string) : string =
+  match String.index_opt sym '.' with Some k -> String.sub sym 0 k | None -> sym
+
 (* what raise gives and a handler catches (old: ext, with the arrays' elements:
  * what any array held, any read of one had, the set that made mini-tiger's
  * Andersen's past 12 GB; 36 s without them) *)
@@ -1004,6 +1014,7 @@ and applied (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
         List.filteri (fun k _ -> k >= n) args
     | _ -> args in
   let n = List.length args in
+  let bodiless = match f.e with Evar (Global g) -> not (!has_body (unit_of g.gsym)) | _ -> false in
   List.iteri
     (fun (k : int) (a : expr) ->
       incr calls;
@@ -1014,7 +1025,9 @@ and applied (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
       key i;
       position i result;
       fact "call_indirect" [ i; !fn ];
-      fact1 "argument" i (operand a);
+      let v = operand a in
+      fact1 "argument" i v;
+      if bodiless then fact "assign" [ global raw !inside; v ];
       (* (a result no one reads, ignore (f x)'s, goes nowhere: one junk of a
        * unit had every such call's results, mini-cc's Cgen 398 calls) *)
       if result <> junk () then fact "call_ret" [ i; result ];

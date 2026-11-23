@@ -33,11 +33,11 @@ tiny/TinyKernel/steps/t6/TinyMkfat.ml:80: int31: in get32, 0xffffffff: not on th
 tiny/TinyLibGUI.ml:137: stack: TinyLibGUI.each calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:139: stack: TinyLibGUI.each calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:181: stack: TinyLibGUI.differ calls itself, not a tail call, over a list
-tiny/TinyLibGUI.ml:332: stack: TinyLibGUI.title_x calls itself, not a tail call, over a list
-tiny/TinyLibGUI.ml:399: stack: titles calls itself, not a tail call, over a list
-tiny/TinyLibGUI.ml:408: stack: rows calls itself, not a tail call, over a list
-tiny/TinyLibGUI.ml:651: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
+tiny/TinyLibGUI.ml:333: stack: TinyLibGUI.title_x calls itself, not a tail call, over a list
+tiny/TinyLibGUI.ml:400: stack: titles calls itself, not a tail call, over a list
+tiny/TinyLibGUI.ml:409: stack: rows calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:652: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
+tiny/TinyLibGUI.ml:653: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
 tiny/TinyLibPlayground.ml:71: stack: pairs calls itself, not a tail call, over a list
 tiny/TinyML.ml:394: evalorder: operands at 394:20 and 394:33, both with an effect: their order the compiler's
 tiny/TinyML.ml:396: evalorder: operands at 396:13 and 397:15, both with an effect: their order the compiler's
@@ -67,6 +67,7 @@ tiny/TinyMachine/TinyMachineDevices.ml:349: int31: in TinyMachineDevices.speaker
 tiny/TinyMachine/TinyMachineDevices.ml:443: int31: in TinyMachineDevices's toplevel, 0x40000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:464: int31: in TinyMachineDevices.tables, x lsl 12, 34 bits: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:496: int31: in TinyMachineDevices.translate, 0x80000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:520: int31: in TinyMachineDevices.idle_until_ipi, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:695: int31: in TinyMachineDevices.create, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:718: int31: in TinyMachineDevices.core, 0xffffffff: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineDevices.ml:734: int31: in TinyMachineDevices.from_now, 0x40000000: not on the Pi 1's 31 bits
@@ -76,7 +77,7 @@ tiny/TinyMachine/TinyMachineDevices.ml:826: int31: in TinyMachineDevices.calm, 0
 tiny/TinyMachine/TinyMachineDevices.ml:852: int31: in TinyMachineDevices.window, 0x80000000: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineSocket.ml:56: swallowed: in TinyMachineSocket.relay, Unix.Unix_error silenced, a constant answered
 tiny/TinyOffice/Drawing.ml:49: stack: take calls itself, not a tail call, over a list
-tiny/TinyOffice/File.ml:78: stack: any calls itself, not a tail call, over a list
+tiny/TinyOffice/File.ml:81: stack: any calls itself, not a tail call, over a list
 tiny/TinyOffice/Model.ml:109: stack: Model.replace calls itself, not a tail call, over a list
 tiny/TinyOffice/Paint.ml:108: stack: rows calls itself, not a tail call, over a list
 tiny/TinyShell.ml:282: evalorder: operands at 282:8 and 282:19, both with an effect: their order the compiler's
@@ -86,7 +87,7 @@ tiny/TinyTracer.ml:130: stack: go calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:131: stack: go calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:132: stack: go calls itself, not a tail call, over a list
 tiny/TinyTracer.ml:133: stack: go calls itself, not a tail call, over a list
-tiny/TinyTroff.ml:586: stack: places calls itself, not a tail call, over a list
+tiny/TinyTroff.ml:587: stack: places calls itself, not a tail call, over a list
 tiny/TinyVCS.ml:490: stack: groups calls itself, not a tail call, over a list
 tiny/TinyVCS.ml:572: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:732, tiny/TinyVCS.ml:794
 tiny/TinyVCS.ml:743: evalorder: operands at 743:12 and 743:38, both with an effect: their order the compiler's

@@ -232,6 +232,17 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   let dirs = program_dirs @ !own_dirs @ dirs in
   (* (tiny/ and ./tiny are one directory) *)
   let mine_dirs = List.map (fun (d : Fpath.t) -> FS.cleanname (Fpath.to_string d)) !own_dirs in
+  (* (a unit's code: a file given, or an .ml in the directories; asked
+   * as a unit's calls are made, before the units it names are found) *)
+  let bodies = Hashtbl.create 16 in
+  Closure_facts.has_body :=
+    (fun (u : string) ->
+      match Hashtbl.find_opt bodies u with
+      | Some b -> b
+      | None ->
+          let b = Hashtbl.mem own u || find caps dirs u [ ".ml" ] <> None in
+          Hashtbl.replace bodies u b;
+          b);
   let read (file : Fpath.t) (text : string) (mine : bool) =
     match unit_ caps dirs file text with
     | Ok named -> List.iter (fun u -> Queue.add u todo) named

@@ -2,4 +2,3 @@ tiny/TinyKernel/KNetwork.ml:293: dead: KNetwork.il_readable, nothing names it
 tiny/TinyLibGUI.ml:656: dead: TinyLibGUI.repaint, nothing names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stderr, nothing live names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:204: dead: TinyLibSystem.box, nothing names it
-tiny/TinyMachine.ml:681: dead: TinyMachine:fun at line 681, nothing names it

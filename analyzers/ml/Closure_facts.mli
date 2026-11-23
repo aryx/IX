@@ -112,5 +112,9 @@ type arg = Sym of string | Num of int
  * its facts given to Datalog as values *)
 val added : (string -> arg list -> unit) ref
 
+(* Whether a unit (by its name) has code the facts follow; true unless
+ * set. What a unit without one is given may be called from there. *)
+val has_body : (string -> bool) ref
+
 (* a unit's facts, a line each: its name, its items resolved *)
 val unit_ : string -> Scope.item list -> string

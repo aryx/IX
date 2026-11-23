@@ -352,6 +352,7 @@ job "mini-analyze: the man page's examples, run as it writes them, its reports" 
 job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
 job "mini-troff, mini-man: a page of ix's own" typesetting/tests/sample.sh
+job "docs/man: the files each page's EXAMPLES name are in ix" docs/man/tests/examples.sh
 job "mini-node: its scripts" browsers/javascript/tests/scripts.sh
 job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
 job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh

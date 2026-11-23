@@ -5,6 +5,7 @@ git – a git repository, made and kept, as git9's
 
 # SYNOPSIS
 **git**
+[ **-v** | **-debug** | **-quiet** ]
 *command*
 [ *arg* ... ]
 
@@ -27,6 +28,12 @@ objects and packs, which Unix's git reads too. The commands:
 
 A command's own options are git9's: `git log -?` writes its usage.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the command,
+     the repository found, and its packs; **-debug** also where each
+     object is read from. They come before the command, whose options
+     are its own.
+
 # EXAMPLES
 ```
 git init repo; cd repo; echo hello > a.txt
@@ -44,7 +51,7 @@ for `git/log`, its scripts made commands. `git/fs` is not mounted:
 `import`, `rebase` nor `hist`.
 
 # SEE ALSO
-\man{diff}{1}, \man{merge3}{1}; Plan 9's *git*(1), for each
+\man{common}{1}, \man{diff}{1}, \man{merge3}{1}; Plan 9's *git*(1), for each
 command's options
 
 # DIAGNOSTICS

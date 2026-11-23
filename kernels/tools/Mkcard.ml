@@ -174,7 +174,8 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     | "-date" :: n :: rest when float_of_string_opt n <> None -> date := float_of_string n; options rest
     | "-fs" :: file :: rest -> fs := Some file; options rest
     | rest -> rest in
-  match options (List.tl (Array.to_list argv)) with
+  (* (common(1)'s -v, -debug, -quiet, anywhere) *)
+  match options (List.filter (fun (a : string) -> not (Logging.set a)) (List.tl (Array.to_list argv))) with
   | args when List.mem "-h" args || List.mem "--help" args -> Console.print caps help; Exit.OK
   | out :: (_ :: _ as pairs) when out <> "" && out.[0] <> '-' -> (
       try
@@ -183,15 +184,19 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
         let files = List.map (fun pair ->
           match String.index_opt pair '=' with
           | None -> failwith (pair ^ ": not name=file")
-          | Some k -> name83 (String.sub pair 0 k), FS.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1)))) pairs in
+          | Some k ->
+              let file = String.sub pair (k + 1) (String.length pair - k - 1) in
+              Logs.info (fun m -> m "FAT partition: %s: %s" (String.sub pair 0 k) file);
+              name83 (String.sub pair 0 k), FS.read caps (Fpath.v file)) pairs in
         let head, datas = fat16 ~sectors:fat_total ~date:!date files in
         let second = first + fat_total in
-        let image = match !fs with Some file -> FS.read caps (Fpath.v file) | None -> "" in
+        let image = match !fs with Some file -> Logs.info (fun m -> m "second partition: %s" file); FS.read caps (Fpath.v file) | None -> "" in
         if String.length image > (total - second) * sector then failwith "-fs's image does not fit in the second partition (-m)";
         let mbr = Bytes.make sector '\000' in
         partition mbr 0 ~boot:true 0x0e first fat_total;        (* a FAT16, its sectors by their numbers (LBA) *)
         partition mbr 1 ~boot:false 0xda second (total - second); (* "data, no file system known" *)
         Binary.set_le16 mbr 510 0xaa55;
+        Logs.info (fun m -> m "writing %s: %d MB, its FAT partition %d MB" out !megabytes !fat_megabytes);
         Fpath.v out |> FS.with_open_out caps (fun (chan : Chan.o) ->
           let oc = chan.oc in
           output_string oc (Bytes.to_string mbr);
@@ -207,4 +212,4 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
       with Sys_error m | Failure m -> Console.eprint caps ("mini-mkcard: " ^ m ^ "\n"); Exit.Err m)
   | _ -> Console.eprint caps "usage: mini-mkcard [-m megabytes] [-fat megabytes] [-date seconds] [-fs image] out name=file...   (-h: how)\n"; Exit.Err "usage"
 
-let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))
+let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-mkcard"; Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))

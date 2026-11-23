@@ -5,6 +5,7 @@ mkcard – an SD card's image for a Raspberry Pi
 
 # SYNOPSIS
 **mkcard**
+[ **-v** | **-debug** | **-quiet** ]
 [ **-m** *megabytes* ]
 [ **-fat** *megabytes* ]
 [ **-date** *seconds* ]
@@ -43,6 +44,11 @@ file system.
 
 It is a program of the host, run when the card is made.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each file
+     put in the FAT partition, the second partition's image, and the
+     card written with its sizes.
+
 # EXAMPLES
 ```
 mkcard card.img bootcode.bin=firmware/pi1/bootcode.bin \
@@ -51,7 +57,7 @@ mkcard -m 128 -fat 64 -fs fs.img card.img ...
 ```
 
 # SEE ALSO
-\man{mkbootdir}{1}, \man{fdisk}{1}, \man{dossrv}{1}, \man{mkfs}{1}
+\man{common}{1}, \man{mkbootdir}{1}, \man{fdisk}{1}, \man{dossrv}{1}, \man{mkfs}{1}
 
 # DIAGNOSTICS
 Said, with no image written: a name not of 8.3 characters or of

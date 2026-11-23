@@ -5,6 +5,7 @@ csc – compile a reduced C# to .NET
 
 # SYNOPSIS
 **csc**
+[ **-v** | **-debug** | **-quiet** ]
 [ **-o** *file*`.dll` ]
 *file*`.cs`
 
@@ -41,6 +42,10 @@ cost, as C#'s rules say (the same type, then a widening or a parent
 class, then a box to `object`): `Console.WriteLine(n + 1)` with `n`
 an `int` calls `WriteLine(int)`.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the file
+     compiled and the assembly written.
+
 # EXAMPLES
 ```
 csc hello.cs; dotnet hello.dll
@@ -49,7 +54,7 @@ csc shapes.cs; dotnet -S shapes.dll
 ```
 
 # SEE ALSO
-\man{dotnet}{1}, \man{tiger}{1}
+\man{common}{1}, \man{dotnet}{1}, \man{tiger}{1}
 
 # DIAGNOSTICS
 An error is said with its file and line, the first one only, and

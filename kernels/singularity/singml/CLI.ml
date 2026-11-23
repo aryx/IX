@@ -57,7 +57,7 @@ let parse (file : string) (text : string) : (Ast.structure, string) result =
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dir = ref "" and files = ref [] and safe = ref false and allow = ref [] and given = ref false and grants = ref false in
-  let options = [
+  let options = Logging.flags @ [
     "-o", Arg.Set_string dir, " dir: where the module is written";
     "-safe", Arg.Set safe, " a program's source: is it safe?";
     "-given", Arg.Set given, " a manifest: the program's module Given";
@@ -71,6 +71,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ Ok file ] -> (
       let source = Fpath.to_string file in
       let name = Fpath.to_string (Fpath.base (Fpath.rem_ext file)) in
+      Logs.info (fun m ->
+          m "reading %s, %s" source
+            (if !grants then "a manifest: the kernel's grants"
+             else if !given then "a manifest: its module Given"
+             else if !safe then "a program: its names checked"
+             else "a contract: its module"));
       match parse source (FS.read caps file) with
       | Error m -> Console.eprint caps (m ^ "\n"); 1
       | exception Sys_error m -> Console.eprint caps (m ^ "\n"); 1
@@ -81,11 +87,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if !grants then Console.print caps (Manifest.grants l ^ "\n")
               else begin
                 let out (f : string) : Fpath.t = Fpath.append (if !dir = "" then Fpath.parent file else Fpath.v !dir) (Fpath.v f) in
+                Logs.info (fun m -> m "writing %a and its .mli" Fpath.pp (out "Given.ml"));
                 FS.write caps (out "Given.ml") (Manifest.ml source l);
                 FS.write caps (out "Given.mli") (Manifest.mli source l)
               end;
               0)
       | Ok tree when !safe ->
+          Logs.info (fun m -> m "the modules a program may name: %s" (String.concat " " (Safe.allowed @ !allow)));
           let refused = Safe.check (Safe.allowed @ !allow) tree in
           List.iter (fun ((l, m) : int * string) -> Console.eprint caps (Printf.sprintf "%s:%d: %s\n" source l m)) refused;
           if refused = [] then 0 else 1

@@ -128,13 +128,16 @@ let commands : (string * (caps -> string list -> int) * string) list = [
 
 let main (caps : < caps; .. >) =
   let caps = (caps :> caps) in
-  match Array.to_list (CapSys.argv caps) with
+  (* common(1)'s -v, -debug, -quiet: before the command, which has its own *)
+  let rec global = function a :: rest when Logging.set a -> global rest | l -> l in
+  match (match Array.to_list (CapSys.argv caps) with p :: rest -> p :: global rest | l -> l) with
   | [ _; ("-h" | "--help") ] ->
       Console.print caps (help ^ "The commands: " ^ String.concat " " (List.map (fun (n, _, _) -> n) commands) ^ "\n"); 0
   | _ :: name :: args -> (
       match List.find_opt (fun (n, _, _) -> n = name) commands with
       | None -> Console.eprint caps (Printf.sprintf "mini-git: unknown command %s\n" name); 1
       | Some (_, f, usage) -> (
+          Logs.info (fun m -> m "command %s" name);
           let die m = Console.eprint caps (Printf.sprintf "git/%s: %s\n" name m); 1 in
           try f caps args with
           | Flags.Usage -> Console.eprint caps (Printf.sprintf "usage: git/%s %s\n" name usage); 1

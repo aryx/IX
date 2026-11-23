@@ -17,3 +17,8 @@ let flags =
   [ ("-v", Arg.Unit (fun () -> Logs.set_level (Some Logs.Info)), " what it does said on the standard error (common(1))");
     ("-debug", Arg.Unit (fun () -> Logs.set_level (Some Logs.Debug)), " -v's and more: the details (common(1))");
     ("-quiet", Arg.Unit (fun () -> Logs.set_level None), " not even the warnings (common(1))") ]
+
+let set (a : string) : bool =
+  match List.find_opt (fun ((n, _, _) : string * Arg.spec * string) -> n = a) flags with
+  | Some (_, Arg.Unit f, _) -> f (); true
+  | _ -> false

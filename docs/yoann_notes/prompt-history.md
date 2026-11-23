@@ -75349,3 +75349,35 @@ Yoann approved that approach with a short "yes", so Claude proceeds with the log
 **Claude (summary):**
 
 Claude committed the languages batch on local main (19 files), with six session commits not yet pushed. Claude recommended fixing the 67-file `self-quick-mix` failure, the one red check, since every toolchain commit has explained it away as a Mac `Marshal` byte difference. Claude proposed finishing the last `-v` batch: about 14 programs set up logging but don't accept the flag, including mini-csc, mini-singml, rc, mini-ed, and the kernel tools. Claude warned that rc and ed may already use `-v` for something else, so each needs checking first. Claude also proposed a `make test` check that man-page EXAMPLES reference existing files, which would catch stale paths like acid's `apps/rio`.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:18
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude verified that amd64 now reads from the Azure mirror, while arm64 still uses ports.ubuntu.com.
+Claude proposed running make test first, since it is the rule before any commit.
+Claude planned to commit the mirror change only once make test had passed.
+Claude then intended to push the commit to the remote repository.
+Claude had not yet run the tests or made any commit at that point.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:18
+
+**Yoann:**
+
+> let's do 2 and 3
+
+**Claude (summary):**
+
+Claude added a man page check, `docs/man/tests/examples.sh`, to `make test`, covering the 41 files the EXAMPLES name.
+Claude gave mini-csc, mini-singml, the card tools and mini-git the shared `-v` and `-debug` flags, with `Logging.set` for hand-parsed arguments.
+Claude moved the playground apps onto `Logging.flags`, which adds `-quiet` and matches the wording used by the other programs.
+Claude updated the ten man pages and common(1), naming ar, mini-chidb and mini-ld as the programs that keep their own `-v`.
+Claude ran `make test` with 161 jobs passing, then left `make check` and `make self-quick-mix` running before committing.

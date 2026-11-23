@@ -200,12 +200,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | a :: rest when String.length a > 2 && String.sub a 0 2 = "-I" -> incs := String.sub a 2 (String.length a - 2) :: !incs; args rest
     | a :: rest when String.length a > 2 && String.sub a 0 2 = "-D" -> defs := String.sub a 2 (String.length a - 2) :: !defs; args rest
     (* common(1)'s -v, -debug, -quiet *)
-    | a :: rest when List.exists (fun ((n, _, _) : string * Arg.spec * string) -> n = a) Logging.flags ->
-        List.iter
-          (fun ((n, spec, _) : string * Arg.spec * string) ->
-            match spec with Arg.Unit f when n = a -> f () | _ -> ())
-          Logging.flags;
-        args rest
+    | a :: rest when Logging.set a -> args rest
     | a :: rest when String.length a > 1 && a.[0] = '-' -> args rest   (* 5c's other flags: -w, -F, -V... *)
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()

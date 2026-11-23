@@ -4,7 +4,7 @@
 netscape – a web browser, in a window
 
 # SYNOPSIS
-**netscape** \[ *address* ] \[ *name*`=`*value* ... ]
+**netscape** \[ **-v** | **-debug** | **-quiet** ] \[ *address* ] \[ *name*`=`*value* ... ]
 
 # DESCRIPTION
 *Netscape* is a browser with Netscape Navigator's window (1994): the
@@ -60,6 +60,11 @@ What it is given is a list of *name*`=`*value*:
      page laid out again at each of its scripts' changes, each line's shapes
      made before it is shown, the view made again at each frame.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says what it
+     reads, writes and fetches; **-debug** more (the playground's
+     flags, as every app's).
+
 # EXAMPLES
 ```
 netscape url=https://en.wikipedia.org/wiki/OCaml
@@ -70,4 +75,4 @@ netscape url=index.html scripts=off profile=off
 `~/.config/mini-netscape`
 
 # SEE ALSO
-\man{lynx}{1}, \man{node}{1}, \man{curl}{1}, \man{pim}{1}
+\man{common}{1}, \man{lynx}{1}, \man{node}{1}, \man{curl}{1}, \man{pim}{1}

@@ -5,6 +5,7 @@ singml – mini-singularity's contracts, and a program checked as safe
 
 # SYNOPSIS
 **singml**
+[ **-v** | **-debug** | **-quiet** ]
 [ **-o** *dir* ]
 *Name*`.contract`
 
@@ -67,6 +68,11 @@ and serve = function
 **-h**
 :    How, by examples.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the file
+     read and what it is taken for (a contract, a program checked, a
+     manifest), the modules a program may name, and the files written.
+
 # EXAMPLES
 ```
 singml -o out contracts/Intro.contract
@@ -75,7 +81,7 @@ singml -given -o out programs/console/Main.manifest
 ```
 
 # SEE ALSO
-\man{ml}{1}
+\man{common}{1}, \man{ml}{1}
 
 # DIAGNOSTICS
 An error names the file and the line, `Intro.contract:3: ...`.

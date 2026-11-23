@@ -12,6 +12,7 @@ let at caps root = { root; rel = 0; cwd = ""; store = Store.open_git caps Fpath.
 let find caps =
   let rec up dir rel below =
     if Sys.file_exists (Filename.concat dir ".git/HEAD") then
+      let () = Logs.info (fun m -> m "repository: %s" dir) in
       { root = Fpath.v dir; rel; cwd = String.concat "/" below; store = Store.open_git caps (Fpath.v (Filename.concat dir ".git")) }
     else if dir = "/" then raise Not_a_repository
     else up (Filename.dirname dir) (rel + 1) (Filename.basename dir :: below)

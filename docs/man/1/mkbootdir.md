@@ -5,6 +5,7 @@ mkbootdir – the files of a kernel's own image, its /boot
 
 # SYNOPSIS
 **mkbootdir**
+[ **-v** | **-debug** | **-quiet** ]
 *out*
 *kerndate*
 *name*`=`*file* ...
@@ -29,6 +30,10 @@ It is a program of the host, run when the kernel is built.
 **-h**
 :    How it is used, on the standard output.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the
+     kernel's date, each file put in, and the file written.
+
 # EXAMPLES
 ```
 mkbootdir bootdir 1757430000 boot=boot.rc rc=mini-rc ed=mini-ed
@@ -36,7 +41,7 @@ mkbootdir bootdir ~/principia boot=boot.rc
 ```
 
 # SEE ALSO
-\man{mkcard}{1}
+\man{common}{1}, \man{mkcard}{1}
 
 # DIAGNOSTICS
 An argument that is not *name*`=`*file*, and a file that cannot be

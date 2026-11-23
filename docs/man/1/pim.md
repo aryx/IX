@@ -4,7 +4,7 @@
 pim – mail, calendar, people, tasks, notes and money, one store
 
 # SYNOPSIS
-**pim** \[ *name*`=`*value* ... ]
+**pim** \[ **-v** | **-debug** | **-quiet** ] \[ *name*`=`*value* ... ]
 
 **pim**
 [ **-s** *host*`:`*port* ]
@@ -272,6 +272,11 @@ the store; `items/` its items, `cache/` the mail's bytes.
 `/etc/localtime`, `/env/timezone`, or `TZ`
 :    The zone the times are in.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says what it
+     reads, writes and fetches; **-debug** more (the playground's
+     flags, as every app's).
+
 # EXAMPLES
 ```
 pim user=you@gmail.com
@@ -288,7 +293,7 @@ a calendar or the contacts only with OAuth, not yet here. A time
 written in another zone (TZID) is read as it is written.
 
 # SEE ALSO
-\man{maild}{1}, \man{office}{1}, \man{curl}{1};
+\man{common}{1}, \man{maild}{1}, \man{office}{1}, \man{curl}{1};
 `apps/pim/README.md`; `docs/plans/done/plan_pim.md`
 
 # DIAGNOSTICS

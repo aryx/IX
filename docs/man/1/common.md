@@ -48,10 +48,13 @@ IX_LOG=debug asm -o a.5 a.s
 \man{dotnet}{1}, \man{analyze}{1}, \man{datalog}{1}, \man{prolog}{1}
 
 # BUGS
-The programs that take them are few yet: mini-dotnet, mini-analyze,
+The programs that take them: mini-dotnet, mini-analyze,
 mini-datalog, mini-prolog, mini-scheme, mini-forth, mini-tiger,
-mini-pascal, mini-smalltalk, mini-ml, mini-cc, mini-asm; mini-mk its
-**-v** and **-quiet**; mini-ld, mini-lex and mini-yacc their **-debug**
-and **-quiet**; the others that log say it with `IX_LOG`. A program whose
-original gave one of these options a meaning of its own keeps it
-(awk's **-v** *var*=*value*): `IX_LOG` is its way.
+mini-pascal, mini-smalltalk, mini-csc, mini-singml, mini-git (before
+its command), mini-ml, mini-cc, mini-asm, mini-mkfs, mini-mkcard,
+mini-mkbootdir, mini-mkpixdata, and the playground's apps (mini-netscape,
+mini-page, mini-pim...); mini-mk its **-v** and **-quiet**; mini-ld,
+mini-lex and mini-yacc their **-debug** and **-quiet**; the others that
+log say it with `IX_LOG`. A program whose original gave one of these
+options a meaning of its own keeps it (ar's **v**, mini-chidb's and
+mini-ld's **-v**; awk's **-v** *var*=*value*): `IX_LOG` is its way.

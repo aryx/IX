@@ -67,7 +67,8 @@ let kerndate_9pi (caps : < Cap.open_in; Cap.clock; .. >) (principia : string) : 
       if !found = 0 then t else !found
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  match List.tl (Array.to_list argv) with
+  (* (common(1)'s -v, -debug, -quiet, anywhere) *)
+  match (List.filter (fun (a : string) -> not (Logging.set a)) (List.tl (Array.to_list argv))) with
   | args when List.mem "-h" args || List.mem "--help" args -> Console.print caps help; 0
   | out :: kerndate :: (_ :: _ as pairs)
     when int_of_string_opt kerndate <> None || Sys.file_exists kerndate -> (
@@ -77,16 +78,20 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         | None -> kerndate_9pi caps kerndate
       in
       let b = Buffer.create (1 lsl 20) in
+      Logs.info (fun m -> m "the kernel's date: %d" kerndate);
       Buffer.add_string b (Printf.sprintf "9pi bootdir %d\n" kerndate);
       try
         List.iter (fun pair ->
           match String.index_opt pair '=' with
           | None -> failwith (pair ^ ": not name=file")
           | Some k ->
-              let data = FS.read caps (Fpath.v (String.sub pair (k + 1) (String.length pair - k - 1))) in
+              let file = String.sub pair (k + 1) (String.length pair - k - 1) in
+              Logs.info (fun m -> m "%s: %s" (String.sub pair 0 k) file);
+              let data = FS.read caps (Fpath.v file) in
               Buffer.add_string b (Printf.sprintf "%s %d\n" (String.sub pair 0 k) (String.length data));
               Buffer.add_string b data) pairs;
         Buffer.add_string b "end\n";
+        Logs.info (fun m -> m "writing %s" out);
         FS.write caps (Fpath.v out) (Buffer.contents b);
         0
       with Sys_error m | Failure m -> Console.eprint caps ("mini-mkbootdir: " ^ m ^ "\n"); 1)

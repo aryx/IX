@@ -5,6 +5,7 @@ mkfs – an image of xv6's file system, with files in it
 
 # SYNOPSIS
 **mkfs**
+[ **-v** | **-debug** | **-quiet** ]
 [ **-m** *megabytes* ]
 [ **-b** *blocksize* ]
 [ **-i** *inodes* ]
@@ -28,6 +29,10 @@ mini-9pi's kernel reads it with.
 **-i** *inodes*
 :    How many files and directories it may hold: 200 otherwise, xv6's.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each file
+     put in the image, and the image written with its sizes.
+
 # EXAMPLES
 ```
 mkfs fs.img readme=README.md bin/hello=hello usr/pad/ tmp/
@@ -40,7 +45,7 @@ described by a proto file into a *kfs* or an archive. This one makes
 an xv6 image from a list of names.
 
 # SEE ALSO
-\man{mkcard}{1}, \man{mkbootdir}{1}; Plan 9's *mkfs*(8)
+\man{common}{1}, \man{mkcard}{1}, \man{mkbootdir}{1}; Plan 9's *mkfs*(8)
 
 # BUGS
 A name is 14 characters at most (xv6's).

@@ -11,6 +11,7 @@ let compile (caps : < caps; .. >) (file : string) (out : string) : (unit, string
   match FS.path file with
   | Error e -> Error e
   | Ok p ->
+      Logs.info (fun m -> m "compiling %s to .NET" file);
       let text = FS.read caps p in
       let at line = Printf.sprintf "%s:%d: " file line in
       match Csc_parser.program text with
@@ -22,12 +23,14 @@ let compile (caps : < caps; .. >) (file : string) (out : string) : (unit, string
           | exception Csc_types.Error (msg, l) -> Error (at l ^ msg)
           | bytes ->
               (match FS.path out, FS.path (Filename.remove_extension out ^ ".runtimeconfig.json") with
-               | Ok o, Ok cfg -> FS.write caps o bytes; FS.write caps cfg Writer.runtime_config; Ok ()
+               | Ok o, Ok cfg ->
+                   Logs.info (fun m -> m "writing %s and its runtimeconfig.json" out);
+                   FS.write caps o bytes; FS.write caps cfg Writer.runtime_config; Ok ()
                | Error e, _ | _, Error e -> Error e)
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let out = ref "" and files = ref [] in
-  let options = [ ("-o", Arg.Set_string out, " the assembly written (file.dll, here, by default)") ] in
+  let options = Logging.flags @ [ ("-o", Arg.Set_string out, " the assembly written (file.dll, here, by default)") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (usage ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1

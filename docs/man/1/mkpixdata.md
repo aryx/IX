@@ -5,6 +5,7 @@ mkpixdata – the pixels' data, from principia's C
 
 # SYNOPSIS
 **mkpixdata**
+[ **-v** | **-debug** | **-quiet** ]
 *principia*
 *dir*
 
@@ -30,6 +31,10 @@ principia. It is run again when principia's C changes.
 **-h**
 :    How it is used, on the standard output.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each
+     file of *principia* read and the module written.
+
 # EXAMPLES
 ```
 mkpixdata ~/principia kernels/9pi/lib_graphics
@@ -37,7 +42,7 @@ mkpixdata -font ~/principia > lib_graphics/Font_default.ml
 ```
 
 # SEE ALSO
-\man{mkbootdir}{1}
+\man{common}{1}, \man{mkbootdir}{1}
 
 # DIAGNOSTICS
 A file that cannot be read, and a colour map with too few numbers,

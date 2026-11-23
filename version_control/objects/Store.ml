@@ -18,15 +18,20 @@ let refresh t = t.packs <- None
 let packs t =
   match t.packs with
   | Some ps -> ps
-  | None -> let ps = List.map (Pack.open_idx t.caps) (Pack.all t.git) in t.packs <- Some ps; ps
+  | None ->
+      let all = Pack.all t.git in
+      Logs.info (fun m -> m "packs: %d in %a/objects/pack" (List.length all) Fpath.pp t.git);
+      let ps = List.map (Pack.open_idx t.caps) all in
+      t.packs <- Some ps;
+      ps
 
 let rec read_raw t h =
   let rec in_packs = function
     | [] -> None
     | p :: rest -> (match Pack.read p ~base:(read_raw t) h with Some o -> Some o | None -> in_packs rest) in
   match in_packs (packs t) with
-  | Some o -> Some o
-  | None -> Loose.read t.caps t.git h
+  | Some o -> Logs.debug (fun m -> m "object %s: a pack's" (Hash.to_hex h)); Some o
+  | None -> Logs.debug (fun m -> m "object %s: loose, or none" (Hash.to_hex h)); Loose.read t.caps t.git h
 
 (* the empty tree exists without being stored, in C git and in git9
  * (emptydir) *)

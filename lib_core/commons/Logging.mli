@@ -12,3 +12,8 @@ val setup : < Cap.env; Cap.stderr; .. > -> name:string -> unit
 (* The Arg options of a program: -v (info), -debug, and -quiet (not even
  * the warnings). Each sets the level as soon as the flag is read. *)
 val flags : (string * Arg.spec * string) list
+
+(* For a program that reads its arguments by hand (mini-cc, mini-mkfs):
+ * if the word is one of [flags], its level is set and true is
+ * returned; otherwise nothing is done and false is returned. *)
+val set : string -> bool

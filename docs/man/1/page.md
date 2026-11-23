@@ -5,6 +5,7 @@ page – a PDF file's pages, or a picture, looked at
 
 # SYNOPSIS
 **page**
+[ **-v** | **-debug** | **-quiet** ]
 *file*
 
 **page**
@@ -47,6 +48,11 @@ The up and down arrows, the wheel
 :    No window: page *n*'s picture written to *out*, a PPM file, a
      pixel a point.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says what it
+     reads and writes; **-debug** more (the playground's flags, as
+     every app's).
+
 # EXAMPLES
 ```
 page /lib/pdf/troff.pdf
@@ -61,7 +67,7 @@ FAX nor typesetter output. No menu of the pages, no options of
 Plan 9's (**-abirPRvVw**, **-p**), no text found or copied.
 
 # SEE ALSO
-\man{troff}{1}, \man{office}{1}, \man{rio}{1}; Plan 9's *page*(1)
+\man{common}{1}, \man{troff}{1}, \man{office}{1}, \man{rio}{1}; Plan 9's *page*(1)
 
 # DIAGNOSTICS
 A file that is no PDF file nor picture is said, and the status is 1.

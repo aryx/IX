@@ -3,8 +3,10 @@
 
 (* See Profiler.mli *)
 
-let usage = {|usage: mini-prof [-n count] [-diff base.prof] [-a name] profile file.map...
-  profile    lines "pc count" (hexadecimal pc): mini-5i -prof, mini-qemu -prof
+let usage = {|usage: mini-prof [-n count] [-diff base.prof] [-a name | -callers name] profile file.map...
+  profile    lines "pc count" (hexadecimal pc): mini-5i -prof, mini-qemu -prof;
+             and mini-5i's "call site target count", each call's arc
+  -callers   the functions that called the one named, with their calls
   file.map   the link's functions: mini-ld -map's "address name" lines, or
              mini-ld -v's listing ("address: word TEXT name+0(SB), $frame")
   -diff      a profile of a shorter run taken off first (the start)
@@ -36,6 +38,19 @@ let read_profile (caps : < Cap.open_in ; .. >) (file : string) : (int, int) Hash
       | _ -> ())
     (String.split_on_char '\n' (FS.read caps (Fpath.v file)));
   counts
+
+(* a profile's calls (mini-5i -prof's "call site target count" lines):
+ * each arc and its count *)
+let read_arcs (caps : < Cap.open_in ; .. >) (file : string) : ((int * int) * int) list =
+  List.filter_map
+    (fun (line : string) ->
+      match String.split_on_char ' ' line with
+      | [ "call"; site; target; n ] -> (
+          match (int_of_string_opt ("0x" ^ site), int_of_string_opt ("0x" ^ target), int_of_string_opt n) with
+          | Some s, Some t, Some n -> Some ((s, t), n)
+          | _ -> None)
+      | _ -> None)
+    (String.split_on_char '\n' (FS.read caps (Fpath.v file)))
 
 (* a map's or a listing's line: the function that starts there *)
 let symbol (line : string) : (int * string) option =
@@ -135,16 +150,37 @@ let annotate (caps : < Cap.open_in ; Cap.stdout ; Cap.stderr ; .. >) (funcs : (i
     funcs;
   if !found = 0 then (Console.eprint caps (Printf.sprintf "mini-prof: no function %s in the maps\n" name); 1) else 0
 
+(* -callers: the functions that called those named, each with its calls
+ * of them, the most first (mini-5i -prof's arcs) *)
+let callers (caps : < Cap.open_in ; Cap.stdout ; Cap.stderr ; .. >) (funcs : (int * string * string) array) (file : string) (name : string) : int =
+  let by : (string, int) Hashtbl.t = Hashtbl.create 64 in
+  List.iter
+    (fun (((site, target), n) : (int * int) * int) ->
+      let f = name_at funcs target in
+      if f = name || short f = name then add by (name_at funcs site) n)
+    (read_arcs caps file);
+  let rows = List.sort (fun ((a, n) : string * int) ((b, m) : string * int) -> if n <> m then compare m n else compare a b)
+      (Hashtbl.fold (fun (f : string) (n : int) (acc : (string * int) list) -> (f, n) :: acc) by []) in
+  if rows = [] then (Console.eprint caps (Printf.sprintf "mini-prof: no call of %s in the profile (mini-5i -prof's arcs)\n" name); 1)
+  else begin
+    Console.print caps (Printf.sprintf "%s's callers\n%12s  function\n" name "calls");
+    List.iter (fun ((f, n) : string * int) -> Console.print caps (Printf.sprintf "%12s  %s\n" (commas n) f)) rows;
+    0
+  end
+
 let main (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.open_in ; .. >) : int =
+  let who = ref None in
   let rec options (top : int) (diff : string option) (fn : string option) (args : string list) =
     match args with
     | "-n" :: n :: rest -> options (int_of_string n) diff fn rest
     | "-diff" :: f :: rest -> options top (Some f) fn rest
     | "-a" :: f :: rest -> options top diff (Some f) rest
+    | "-callers" :: f :: rest -> who := Some f; options top diff fn rest
     | file :: maps when file <> "" && file.[0] <> '-' && maps <> [] -> Some (top, diff, fn, file, maps)
     | _ -> None in
   match options 30 None None (List.tl (Array.to_list (CapSys.argv caps))) with
   | None -> Console.eprint caps (usage ^ "\n"); 2
+  | Some (_, _, _, file, maps) when !who <> None -> callers caps (functions caps maps) file (Option.get !who)
   | Some (top, diff, fn, file, maps) -> (
       let counts = read_profile caps file in
       Option.iter

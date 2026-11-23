@@ -44,12 +44,38 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr;
       let counts : (int, int ref) Hashtbl.t = Hashtbl.create 65536 in
       let count (a : int) : unit =
         match Hashtbl.find_opt counts a with Some n -> incr n | None -> Hashtbl.add counts a (ref 1) in
+      (* And each call's arc, its site and where it went, counted (gprof's
+       * arcs; mini-prof -callers): the instruction after a call, unless
+       * it is the call's next one (a conditional call not taken), is the
+       * callee's first. A call is BL, BLX, or 5l's call through a
+       * register, two instructions (via): ADD LR, PC, #0 (its return,
+       * the site), then the jump (ADD PC, R, #off), passed through: a
+       * closure's call, mini-ml's call of another unit's function.
+       * arm32's. *)
+      let arcs : (int * int, int ref) Hashtbl.t = Hashtbl.create 4096 in
+      let call_at = ref (-1) and via = ref (-1) in
+      let arc (a : int) : unit =
+        if !call_at >= 0 && a <> !via then begin
+          (if a <> !call_at + 4 && a <> !via + 4 then
+             match Hashtbl.find_opt arcs (!call_at, a) with Some n -> incr n | None -> Hashtbl.add arcs (!call_at, a) (ref 1));
+          call_at := -1;
+          via := -1
+        end in
+      let count32 (a : int) (i : Arm32_isa.t) : unit =
+        count a;
+        arc a;
+        match i with
+        | Branch { link = true; _ } | Bx { link = true; _ } -> call_at := a; via := -1
+        | Dp { rd = 14; rn = 15; _ } -> call_at := a; via := a + 4
+        | _ -> () in
       let write_prof () =
         Option.iter
           (fun (f : string) ->
             FS.with_open_out caps
               (fun (chan : Chan.o) ->
-                Hashtbl.iter (fun (pc : int) (n : int ref) -> output_string chan.oc (Printf.sprintf "%x %d\n" pc !n)) counts)
+                Hashtbl.iter (fun (pc : int) (n : int ref) -> output_string chan.oc (Printf.sprintf "%x %d\n" pc !n)) counts;
+                Hashtbl.iter (fun ((site, target) : int * int) (n : int ref) ->
+                    output_string chan.oc (Printf.sprintf "call %x %x %d\n" site target !n)) arcs)
               (Fpath.v f))
           !prof in
       let trace = List.mem "-t" own and stats_on = List.mem "-s" own in
@@ -71,8 +97,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr;
         Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> report (); exit 143));
       let tr =
         match (trace, !prof) with
-        | true, _ -> Some (fun a i -> count a; Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Show_arm32.print ~addr:a i)))
-        | false, Some _ -> Some (fun a (_ : Arm32_isa.t) -> count a)
+        | true, _ -> Some (fun a i -> count32 a i; Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Show_arm32.print ~addr:a i)))
+        | false, Some _ -> Some count32
         | false, None -> None in
       (* a program run; an execve of another restarts here *)
       let rec run prog argv env =

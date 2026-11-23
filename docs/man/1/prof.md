@@ -7,7 +7,7 @@ prof – where a program's instructions went, function by function
 **prof**
 [ **-n** *count* ]
 [ **-diff** *base* ]
-[ **-a** *name* ]
+[ **-a** *name* | **-callers** *name* ]
 *profile*
 *file.map* ...
 
@@ -35,6 +35,12 @@ runtime's (*ml_alloc*, *copy<>*).
 :    One function's instructions instead, each with its count,
      disassembled from the program beside the map: what a compiler's
      change is decided on.
+
+**-callers** *name*
+:    The functions that called *name* instead, each with how many
+     times, the most first: from the profile's **call** lines
+     (\man{5i}{1}'s). Who to look at when a library's function (a
+     hash table's, *compare*) is high in the list.
 
 # EXAMPLES
 Where mini-ml spends its time compiling one of its own units, the

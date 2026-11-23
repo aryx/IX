@@ -7,6 +7,7 @@ ed – the line editor
 **ed**
 [ **-** ]
 [ **-o** ]
+[ **-v** | **-debug** | **-quiet** ]
 [ *file* ]
 
 # DESCRIPTION
@@ -29,6 +30,10 @@ q !`...), and so are the regular expressions, with `|` and `( )`;
 **-h**
 :    A session, by example.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}): **-v** says each file
+     read and written.
+
 # EXAMPLES
 ```
 ed notes
@@ -41,7 +46,7 @@ q
 ```
 
 # SEE ALSO
-\man{sed}{1}, \man{grep}{1}, \man{emacs}{1}; *ed*(1), *regexp*(6)
+\man{common}{1}, \man{sed}{1}, \man{grep}{1}, \man{emacs}{1}; *ed*(1), *regexp*(6)
 
 # DIAGNOSTICS
 An error is a `?`, nothing more. An interrupt prints `?` and goes back

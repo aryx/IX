@@ -139,6 +139,7 @@ let read_file t (fd : Unix.file_descr) : string list =
   end
 
 let read t =
+  Logs.info (fun m -> m "reading %s" t.file);
   let fd =
     try Unix.openfile t.file [ Unix.O_RDONLY; Unix.O_CLOEXEC ] 0
     with Unix.Unix_error _ -> Input.set_lastc (input t) Input.nl; raise (Input.Error t.file)
@@ -152,6 +153,7 @@ let read t =
 
 let write t append =
   let flags = Unix.([ O_WRONLY; O_CREAT; O_CLOEXEC ]) @ if append then [ Unix.O_APPEND ] else [ Unix.O_TRUNC ] in
+  Logs.info (fun m -> m "%s %s" (if append then "appending to" else "writing") t.file);
   let fd = try Unix.openfile t.file flags 0o666 with Unix.Unix_error _ -> raise (Input.Error t.file) in
   let b = Buffer.create 4096 in
   if Text.dol (text t) > 0 then

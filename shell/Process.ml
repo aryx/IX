@@ -29,6 +29,7 @@ let exec caps ~path ~env (argv : string list) =
   let name = List.hd argv in
   let why =
     List.fold_left (fun _ f ->
+      Logs.debug (fun m -> m "exec %s" f);
       try CapUnix.execve caps f (Array.of_list argv) env; ""
       with Unix.Unix_error (e, _, _) -> Unix.error_message e)
       "No such file or directory" (candidates ~path name)

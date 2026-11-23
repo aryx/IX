@@ -65,6 +65,7 @@ let dot t args =
       match found with
       | None -> cant "No such file or directory"
       | Some path -> (
+          Logs.info (fun m -> m ".: reading %s" path);
           match Unix.openfile path [ Unix.O_RDONLY; Unix.O_CLOEXEC ] 0 with
           | exception Unix.Unix_error (e, _, _) -> cant (Unix.error_message e)
           | fd ->

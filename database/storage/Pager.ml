@@ -9,6 +9,7 @@ type page = { npage : int; data : Bytes.t }
 exception Bad_page of int
 
 let open_file (_ : < Cap.open_in; Cap.open_out; .. >) (file : Fpath.t) =
+  Logs.info (fun m -> m "database %a" Fpath.pp file);
   { fd = Unix.openfile (Fpath.to_string file) [ Unix.O_RDWR; Unix.O_CREAT ] 0o666; n_pages = 0; page_size = 0 }
 
 let set_page_size t size =

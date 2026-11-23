@@ -58,6 +58,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         let lib = path lib in
         if String.contains key 't' then begin
           (* (the members as they are in the file: none read as an object) *)
+          Logs.info (fun m -> m "reading %a" Fpath.pp lib);
           let l = Link.read_library caps lib in
           List.iter2 (fun m (_, names) ->
             Console.print caps (name m ^ (if verbose then ": " ^ String.concat " " names else "") ^ "\n")) l (Link.index l)
@@ -69,6 +70,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             List.iter (fun n ->
               Console.print caps (Printf.sprintf "%s - %s\n" (if List.exists (fun o -> name o = name n) old then "r" else "a") (name n))) added;
           (* an older object of the same source goes; the new ones last, in their order *)
+          Logs.info (fun m -> m "writing %a: %d members added or replaced, %d before" Fpath.pp lib (List.length added) (List.length old));
           Link.write_library caps lib (List.filter (fun o -> not (replaced o)) old @ added)
         end;
         0

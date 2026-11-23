@@ -31,6 +31,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let rec flags verbose filter = function
         | "-o" :: rest -> flags false true rest
         | "-" :: rest -> flags false filter rest
+        (* common(1)'s -v, -debug, -quiet: Plan 9's ed has none of them *)
+        | a :: rest when Logging.set a -> flags verbose filter rest
         | rest -> verbose, filter, rest
       in
       let verbose, filter, args = flags true false (List.tl (Array.to_list argv)) in

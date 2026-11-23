@@ -960,8 +960,8 @@ m-IX's libraries and programs, 85 directories, with m-IX's own tools
 (mini-mk, mini-ml, mini-cc, mini-ld...) inside mini-9pi, on a Pi 2
 that QEMU emulates. It then compares each file with the same build's
 on Linux, byte for byte. The first whole build took nearly five hours.
-It now takes 27 minutes, on four cores, with a kernel that m-IX's own
-compiler built.
+It now takes 23 minutes, on four cores, with a kernel that m-IX's own
+compiler built (33 in CI's image, where it took 70 three days before).
 
 This part is a history, not an inventory: it tells which changes moved
 the build's time, in their order, and which did not. The compiler's
@@ -983,6 +983,15 @@ mk's on the card under QEMU on the author's Mac, unless CI is named.
 | 55 to 60 min (about 85 in CI) | 2026-11-15 | 1 | the compiler's optimizations after that (Part 2's C8 to C58) |
 | 48 min | 2026-11-18 | 1 | the kernel's changes below; the Pi 2's kernel built by mini-ml (85 directories) |
 | 27 min | 2026-11-19 | 4 | the four cores, and the memory of a link |
+| 42 min, and 26 on four cores | 2026-11-20 | 1 and 4 | mk's walks, a library's list of its units |
+| 23 min | 2026-11-23 | 4 | the file system's cache a clock |
+
+In CI's image, on GitHub's runner, where QEMU is slower than on the
+author's Mac: 70 minutes on the card on 2026-11-20, 33 on 2026-11-23,
+the job 47 minutes in all where it was 88. A four-core time on the Mac
+moves with the Mac's own load by up to a tenth (1,547 s, then 1,735 s
+for the same build on another day), so a change is compared on the
+same day, or by an account of /dev/lockstat it does not touch.
 
 For comparison: the same build on Linux, by the tools that OCaml
 compiled, takes 90 s with one job. The same build by m-IX's own ARM
@@ -1084,6 +1093,50 @@ The whole build: 27 minutes on four cores against 48 on one, 1.8
 times, all 85 directories built, the 2,919 files Linux's byte for
 byte.
 
+**Late November: mk, the kernel's lock, the file system's cache.** A
+third of the one-core build was in no tool at all, and the kernel's
+own clock said why once it counted each process's time.
+
+- *mk's walks* (228996ad). A node of the graph not ready to be made
+  was walked again through every path to it, at each walk: in
+  editors/emacs/draw, whose units name each other and all wait for
+  the generated ones, 108 walks of 46 million arcs, mk computing all
+  the while its recipe ran on the same core. A node looked at and left
+  is now left alone for the rest of the walk: 954,000 arcs, the
+  directory 78 s where it was 275.
+- *A library's list of its units, written with it* (01084bf6). Each
+  program's link listed a library's members with mini-ar, which read
+  the whole library each time: 388 runs, 250 s. Both together: one
+  core 2,881 s to 2,521, four cores 1,620 s to 1,547.
+- *The kernel's lock, measured* (ecd81d51, 0861f231, c870037a).
+  /dev/waits says how long each core spins for the lock, /dev/lockstat
+  what the lock is held for (each system call by its name and device,
+  each fault by its kind, each kernel process), and self.yml prints
+  both at each run. The four-core build held it 84% of the time, each
+  core spinning half of its: the reads and writes of the card's file
+  system first, 740 s of 1,444.
+- *The file system's cache a clock, up to 128 MB* (38fc7375). Its
+  32 MB were forgotten whole when full, 57 times in a build, and what
+  the build reads again and again (the compilers, lib_core.a) went
+  with the rest. Now one piece is given back at a time, the first not
+  used since the clock's hand passed (Multics' second chance), while
+  the machine keeps 64 MB free: 472,066 reads of the card to 174,498,
+  mk 1,727 s to 1,387, the lock held 1,085 s where it was 1,444.
+- *Writes clustered, reads ahead, inodes and names kept* (b722e43a,
+  BSD's cluster_write and readahead, Linux's dentries). The card's
+  commands went from 174,498 reads to 26,290 and 143,797 writes to
+  11,181, and its time did not move: under QEMU the card costs by the
+  byte, not by the command. Open's time under the lock 40% less,
+  Stat's 45%, the lock held about 5% less. Kept for the boards, where
+  a command waits for the card.
+- *mini-ld's memory, again* (8708184c). With mk faster, more links ran
+  at once, and four mini-ld no longer fitted in the Pi 2's 847 MB: CI
+  failed two nights in games. Of mini-netscape's 1.08 million
+  instructions, 50,223 lists of operands were different and 56
+  opcodes: each is now kept once, and a TEXT's frame and locals moved
+  from every instruction into the TEXT's opcode. Live words at the
+  link's most, 28 million to 16, the same bytes linked.
+
 ## Tried and not kept
 
 The plan records these with their measures. They matter as much as
@@ -1112,15 +1165,30 @@ changed files had been copied with times older than the objects, so
 nothing was built again. The kernel now shows a stamp, the checksum of
 its objects, and tests/self.sh prints it beside each time.
 
+And one of CI's. On 2026-11-23 three runs of self.yml were still going
+after three hours, twice the run that passed before, and looked like a
+build that hangs. Their logs, read once they were cancelled, said the
+build had barely begun: Docker's apt-get had fetched its 388 MB from
+Ubuntu's archive at 70 kB/s, up to 100 minutes of it. The image now
+takes them from Azure's copy of the archive, where GitHub's runners
+are (9a2a1d42). A slow run is read by the image's steps first, then by
+the card.
+
 ## Where it stands
 
 The goals were 25 minutes on one core and under 10 on four. The build
-is at 48 and 27. On four cores the directories' own times add up to
-twice what they add up to on one, and what bounds them now is memory
-more than the kernel's lock: some links wait for pages. The next
-things to cut, by the plan: a link's memory (22 words an instruction),
-and the mini-ml kernel's own speed (make self-quick 26 s on one core
-where ocaml-light's kernel took 21).
+is at 42 and 23. On 2026-11-19 memory bound the four cores more than
+the kernel's lock, some links waiting for pages; mini-ld's memory is
+cut since, and what bounds them now is the lock, measured at each run:
+held 78% of the four-core build, each core spinning 592 s of mk's
+1,387 (and 75% in CI's image). The card's file system is no longer
+first among what holds it. The next things to cut, by /dev/lockstat:
+the pages zeroed for the programs (fault-zero, about 230 s, 42 GB of
+pages for 13,000 programs), the card's transfers, polled with the lock
+held (about 390 s), and the mini-ml kernel's own speed (make
+self-quick 26 s on one core where ocaml-light's kernel took 21). The
+zeroing ahead of time was tried and not kept (above), when a core was
+never idle; zeroing outside the lock is another change.
 
 Against t-IX's history (50 minutes to 6): t-IX gained most from its
 emulator and its compilers, which were simple and slow, and its four

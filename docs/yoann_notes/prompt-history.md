@@ -75478,3 +75478,114 @@ Claude reported that the self run was still going, so no log was available yet.
 Claude recorded the self (tix) job as passed, while the self (mix) job had been running 36 minutes since 12:29 UTC.
 Claude estimated a healthy mix run takes about 1.5 hours and scheduled its next check for 14:29 local.
 Claude said a run still going past 2 hours total would be a regression to investigate.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:29
+
+**Yoann:**
+
+> check self.yml run 45174810549 (9a2a1d42, the Azure apt mirror). If its self (mix) job finished, fetch the raw log with gh api --allow-escape-sequences repos/aryx/IX/actions/jobs/<id>/logs and report: the apt step durations (#7, #14 DONE, "Fetched ... kB/s"), and the "self:" / FAIL / depend.rc lines. If still running past 2 h total, say so (a regression to diagnose)
+
+**Claude (summary):**
+
+Claude reported that the self (mix) job of run 45174810549 was still running, 36 minutes in, so no raw log could be fetched yet.
+Claude noted a healthy mix run takes about 1.5 hours, so 2 hours or more would count as a regression.
+Claude scheduled the next check for 14:29 local (13:29 UTC), about 24 minutes away, when the job should be an hour in.
+Claude said the self (tix) job had already passed.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:40
+
+**Yoann:**
+
+> 47min? That's a big improvement in time too! was it because of the azure speedup or other recent opti in the kernel?
+
+**Claude (summary):**
+
+Claude concluded the 40-minute gain came from ix's own build speedups, not the Azure mirror.
+Claude found apt was already fast on Nov 20, so the mirror only restored normal download speed.
+Claude found the whole job fell from 88 to 47 minutes, with all the saving inside ix's build on mini-9pi.
+Claude credited three commits: 228996ad for mk's repeated path walks, 38fc7375 for the Kfs cache, 01084bf6 for library writes.
+Claude noted CI cannot split the gain across those commits, since all three landed in one run.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:43
+
+**Yoann:**
+
+> excellent progress!
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:43
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:44
+
+**Yoann:**
+
+> can we close this session?
+
+**Claude (summary):**
+
+Claude said the session was safe to close, with three commits pushed: 8708184c, b13a2068, and 9a2a1d42.
+Claude said commit 8708184c made mini-ld use 43% less memory, so the games link on the card again.
+Claude noted this was the only mini-ld change, and the 43% figure came from the commit's own measurements.
+Claude said self run 45174810549 passed, with no check-up scheduled, and other uncommitted checkout changes were left alone.
+Claude also noted a memory note on reading self.yml logs and a fault-zero lock idea for a fresh session.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:46
+
+**Yoann:**
+
+> what was this mini-ld opti? 43% is a lot
+
+**Claude (summary):**
+
+Claude explained that mini-ld's 43% peak came from duplicated operand lists and opcodes across roughly 1.08 million instructions in mini-netscape.
+Claude described three sharing changes: `shared_args` in `linker/Link.ml`, `shared_decode`, and moving `frame`, `leaf` and `autos` into a `Func` opcode in `linker/Program.ml`.
+Claude noted that `Arm.prepare` had undone the sharing by rebuilding every operand list, and now rebuilds only lists holding sign-extended constants.
+Claude reported live words dropping from 28 million to 16 million at the peak, with the heap top falling from 60 million to 41 million words.
+Claude verified output was byte-identical with and without `-g`, plus the linker's symtab and golden tests, with link time unchanged at 1.3 s.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:47
+
+**Yoann:**
+
+> excellent. Are those recent optis that speedup and fixed self.yml recorded in the notes_opti_inventory.md document in the last section about Part 3
+
+**Claude (summary):**
+
+Claude found that Part 3 of notes_opti_inventory.md stops at the Nov 19 four-core build, missing later work.
+Claude offered new rows in the times table for 228996ad, 38fc7375, and 8708184c, with their measured build figures.
+Claude proposed a "Late November" paragraph under "What moved it" covering the Kfs clock-eviction cache and the mini-ld memory cut.
+Claude proposed rewriting "Where it stands," which still names link memory as the bound, though the lock is now the measured bound.
+Claude also flagged the "Tried and not kept" fault-zero entry, which should be read before starting that idea.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:48
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude updated part 3 of `docs/notes/notes_opti_inventory.md` with the 23-minute build and the late-November changes, uncommitted.
+Claude added two timing rows, a CI paragraph, and a "Late November" bullet list covering mk's walks, the lock, Kfs cache, and mini-ld.
+The new bullets name commits 228996ad, 01084bf6, ecd81d51, 0861f231, c870037a, 38fc7375, b722e43a, and 8708184c with their numbers.
+Claude noted the three-hour CI runs were apt-get at 70 kB/s, now fixed by the Azure mirror (9a2a1d42).
+Claude rewrote "Where it stands" to name the lock as the bound and the next targets, then offered to commit after `make test`.

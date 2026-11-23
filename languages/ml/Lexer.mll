@@ -126,6 +126,15 @@ and comment depth = parse
   | "'" [^ '\\' '\'' '\n'] "'" | "'\\" _ "'" | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'" | "'\\x" hex hex "'" { comment depth lexbuf }
   | newline { Lexing.new_line lexbuf; comment depth lexbuf }
   | eof { raise (Error "unterminated comment") }
+  (* opti: a run of the characters no rule above starts with, one token
+   * (the longest match: a rule above still wins where it applies). One
+   * character a token was each a call of the engine, of this rule and
+   * of comment: ix's interfaces are most of them comments, and a compile
+   * of a game's unit of 270 lines, its 2,322 lines of interfaces read,
+   * was 87,658 tokens, the engine 17% of its 328 million instructions
+   * under mini-5i (plan_9pi_self_speed.md, 2026-11-23).
+   * old: _ alone *)
+  | [^ '(' '*' '"' '{' '\'' '\n' '\r']+ { comment depth lexbuf }
   | _ { comment depth lexbuf }
 
 and string = parse
@@ -136,12 +145,15 @@ and string = parse
   | "\\x" hex hex { Buffer.add_char buf (hexa (Lexing.lexeme lexbuf) 2); string lexbuf }
   | newline { Lexing.new_line lexbuf; Buffer.add_string buf (Lexing.lexeme lexbuf); string lexbuf }
   | eof { raise (Error "unterminated string") }
+  (* (opti: a run of plain characters at once, as comment's) *)
+  | [^ '"' '\\' '\n' '\r']+ as s { Buffer.add_string buf s; string lexbuf }
   | _ as c { Buffer.add_char buf c; string lexbuf }
 
 and quoted id = parse
   | "|" (lowercase* as id') "}" { if id' <> id then (Buffer.add_string buf (Lexing.lexeme lexbuf); quoted id lexbuf) }
   | newline { Lexing.new_line lexbuf; Buffer.add_string buf (Lexing.lexeme lexbuf); quoted id lexbuf }
   | eof { raise (Error "unterminated string") }
+  | [^ '|' '\n' '\r']+ as s { Buffer.add_string buf s; quoted id lexbuf }
   | _ as c { Buffer.add_char buf c; quoted id lexbuf }
 
 and attribute depth = parse

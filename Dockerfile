@@ -60,15 +60,18 @@ RUN eval $(opam env) && opam pin add -y -n caps ${CAPS}
 RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler js_of_ocaml ppx_deriving menhir
 
 # For make self (.github/workflows/self.yml, --build-arg SELF=tix or
-# mix): mix wants QEMU's Pi 2, gcc for arm and ocaml-light, mini-9pi's
-# OCaml (built for arm by kernels/ocaml-light.sh, below), and sfdisk
-# (kernels/9pi/tests/self.sh reads the card's partitions)
+# mix): mix wants QEMU's Pi 2, gcc for arm, and sfdisk
+# (kernels/9pi/tests/self.sh reads the card's partitions). mini-9pi is
+# built by ix's own tools, mini-ml and mini-cc (kernels/9pi/Makefile's
+# COMPILER=ix, the Pi 2's default): ix built by ix needs no ocaml-light.
+# (old: ocaml-light cloned here and built for arm by
+# kernels/ocaml-light.sh before make self-mix, for the kernel it built
+# until 2026-11-19)
 ARG SELF=
 # (apt-get update again: the first layer's lists may be an old cache's)
 RUN if [ "$SELF" = mix ]; then apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-arm \
-    gcc-arm-linux-gnueabihf fdisk && \
-  git clone -q https://github.com/aryx/ocaml-light /root/ocaml-light; fi
+    gcc-arm-linux-gnueabihf fdisk; fi
 # tix's make self runs tiny-kernel on four cores, each on an OCaml 5
 # domain (tiny/TinyKernel/Makefile's OCAML5, plan_tiny_self_speed.md's
 # step 7): a second switch, for tiny-machine alone, with the same
@@ -91,7 +94,6 @@ RUN eval $(opam env) && make
 # result (self.sh's ok and FAIL lines, a failed directory's errors)
 ARG TESTS=lite
 RUN eval $(opam env) && \
-  if [ "$SELF" = mix ]; then kernels/ocaml-light.sh arm; fi && \
   if [ -n "$SELF" ]; then \
     make self-$SELF > /src/self.out 2>&1; s=$?; tail -80 /src/self.out; exit $s; \
   else make test-${TESTS}; fi

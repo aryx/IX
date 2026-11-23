@@ -70,15 +70,23 @@ let root (caps : < Cap.readdir; .. >) (file : string) : string option =
   | Some r when String.starts_with ~prefix:(cwd ^ "/") r -> Some (String.sub r (String.length cwd + 1) (String.length r - String.length cwd - 1))
   | Some r -> Some r
 
+(* (each project's index, made once in a run: the library's choice and the
+ * units' share it) *)
+let indexes : (string, index) Hashtbl.t = Hashtbl.create 1
+
 let create (caps : < Cap.readdir; .. >) (file : string) : t =
   let make () : (string * index) option =
     match root caps file with
     | None -> None
-    | Some r ->
-        let idx = { homes = Hashtbl.create 1024; names = Hashtbl.create 256 } in
-        walk caps idx r;
-        Logs.info (fun m -> m "units: the project's at %s, %d names in %d directories" r (Hashtbl.length idx.homes) (Hashtbl.length idx.names));
-        Some (r, idx) in
+    | Some r -> (
+        match Hashtbl.find_opt indexes r with
+        | Some idx -> Some (r, idx)
+        | None ->
+            let idx = { homes = Hashtbl.create 1024; names = Hashtbl.create 256 } in
+            walk caps idx r;
+            Hashtbl.replace indexes r idx;
+            Logs.info (fun m -> m "units: the project's at %s, %d names in %d directories" r (Hashtbl.length idx.homes) (Hashtbl.length idx.names));
+            Some (r, idx)) in
   { first = file; root = "."; index = None; make; needed = Hashtbl.create 64; chosen = Hashtbl.create 16 }
 
 let index (t : t) : index option =
@@ -156,7 +164,40 @@ let choose (t : t) (from : string) (name : string) (exts : string list) : string
                | next :: _ when score next = score best ->
                    Logs.warn (fun m -> m "unit %s (named in %s): %s or %s, a tie; %s taken (-I or -own to choose)" name from best next best)
                | _ -> ());
+              (* (-v: the candidates by their score, when there was a choice) *)
+              let why (d : string) : string =
+                let c, s, n = score d in
+                Printf.sprintf "%s (%s%d of the names used there, %d path parts in common)" d
+                  (if c = 1 then "chosen before, " else "") s n in
               if not (Hashtbl.mem t.chosen best) then
-                Logs.info (fun m -> m "unit %s (named in %s): %s, of %d" name from best (List.length ranked));
+                Logs.info (fun m ->
+                    match rest with
+                    | [] -> m "unit %s (named in %s): %s, the one directory with its file" name from best
+                    | _ -> m "unit %s (named in %s): %s" name from (String.concat ", rather than " (List.map why ranked)));
               Hashtbl.replace t.chosen best ();
               Some best)
+
+(* the standard libraries: each directory with a Stdlib, or the one above
+ * it with a units.txt (lib_core/core's is lib_core's) *)
+let library (caps : < Cap.readdir; .. >) (file : string) : string option =
+  let t = create caps file in
+  match index t with
+  | None -> None
+  | Some idx ->
+      let libs =
+        Hashtbl.fold
+          (fun (d : string) (names : (string, unit) Hashtbl.t) acc ->
+            if not (Hashtbl.mem names "Stdlib") then acc
+            else if CapSys.file_exists caps (Filename.concat (Filename.dirname d) "units.txt") then Filename.dirname d :: acc
+            else d :: acc)
+          idx.names [] in
+      let depth (d : string) : int = List.length (String.split_on_char '/' d) in
+      (* (the nearest, then the shallowest: the more general) *)
+      let score (d : string) : int * int = (near (Filename.dirname file) d, - depth d) in
+      match List.sort (fun (a : string) (b : string) -> compare (score b, a) (score a, b)) (List.sort_uniq compare libs) with
+      | [] -> None
+      | best :: rest ->
+          Logs.info (fun m ->
+              m "library: %s, no -L: the nearest standard library to %s, then the shallowest%s" best file
+                (if rest = [] then "" else ", rather than " ^ String.concat ", " rest));
+          Some best

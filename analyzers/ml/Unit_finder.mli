@@ -34,6 +34,12 @@ val mentions : t -> string -> unit
  * ".ml"); None if the project has none *)
 val choose : t -> string -> string -> string list -> string option
 
+(* [library caps file]: the program's standard library when -L does not
+ * say it, the one nearest [file] in the project, then the shallowest:
+ * tiny/TinyLibCore for tiny/TinyBuildSystem.ml, lib_core elsewhere in ix
+ * (a directory with a Stdlib, or the one above it with a units.txt) *)
+val library : < Cap.readdir; .. > -> string -> string option
+
 (* [own t dir]: whether the units of [dir], a directory chosen, are the
  * program's own, reported on: in the project's top directory of the
  * program's first file (tiny/ for tiny/TinyBuildSystem.ml, its TinyML/

@@ -124,9 +124,13 @@ program's library, lib_core's units it names, is read with it.
      `analyzers/datalog` of the current directory.
 
 **-L** *lib*
-:    lib_core's directory, `lib_core`; *lib*`/stdlib`'s Stdlib
-     must be there. Without its `units.txt` (run elsewhere than ix's
-     root, no **-L**), a warning, and an ML program's units find no
+:    The standard library's directory. Without **-L**, the one nearest
+     the first ML *file* in the project, then the shallowest:
+     `tiny/TinyLibCore` for `tiny/`'s programs, `lib_core` for the rest
+     of ix (a directory with a `Stdlib`, or the one above it with a
+     `units.txt`); outside a project, `lib_core`. For lib_core,
+     *lib*`/stdlib`'s Stdlib must be there. Without its `units.txt`
+     (run elsewhere than ix's root), a warning, and an ML program's units find no
      Stdlib. Or a library in one directory, its own `Stdlib.mli` there
      and no `units.txt`: t-IX's `tiny/TinyLibCore`, read as tiny-ml
      reads it. Its units are looked up before the **-I**'s; what tiny-ml
@@ -163,7 +167,11 @@ program's library, lib_core's units it names, is read with it.
      an interface whose implementations are elsewhere
      (`tiny/TinyLibSystem.mli`) is read as one without code, and
      **-own** chooses a platform's (`tiny/TinyLibSystem/unix`,
-     `tinykernel`). **-v** says each unit found so, and a tie. A
+     `tinykernel`). **-v** says each choice, the library's and a unit's
+     with its candidates and their scores, and where each file read
+     comes from (given, **-own**, the program's directory, **-L** or
+     **-I**, found in the project), a unit read by its interface alone,
+     and a tie as a warning. A
      library's functions that
      this one program does not call are said dead too:
      `analyzers/datalog/tests/tiny_check.sh` gives each t-IX program this

@@ -290,9 +290,18 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     (fun (p : Fpath.t) ->
       Hashtbl.replace own (String.capitalize_ascii (Filename.remove_extension (Filename.basename (Fpath.to_string p)))) ();
       match FS.read_opt caps p with
-      | Some text -> Logs.info (fun m -> m "reading %s" (Fpath.to_string p)); read p text true
+      | Some text -> Logs.info (fun m -> m "reading %s (a file given)" (Fpath.to_string p)); read p text true
       | None -> errors := ("cannot open " ^ Fpath.to_string p) :: !errors)
     paths;
+  (* (-v: where a unit's file was found, and so whether it is the
+   * program's own) *)
+  let whence (d : string) : string =
+    let is (x : Fpath.t) = FS.cleanname (Fpath.to_string x) = d in
+    if List.exists is !own_dirs then "-own"
+    else if List.exists is program_dirs && not (List.exists is library) then "the program's directory"
+    else if List.exists is library then "-L or -I"
+    else if Unit_finder.own finder d then "found in the project, the program's part"
+    else "found in the project, outside the program's part: a library" in
   while not !alone && not (Queue.is_empty todo) do
     let u, from = Queue.pop todo in
     if not (Hashtbl.mem files u) then begin
@@ -302,10 +311,12 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
           (* (a unit of the program's: as a file given, marked before it
            * is read for Tree_facts) *)
           Hashtbl.replace own u ();
-          Logs.info (fun m -> m "reading %s" (Fpath.to_string f));
+          Logs.info (fun m -> m "reading %s (%s)" (Fpath.to_string f) (whence (FS.cleanname (Fpath.to_string (Fpath.parent f)))));
           read f text true
-      | Some (f, text) -> Logs.info (fun m -> m "the library's %s" (Fpath.to_string f)); read f text false
-      | None -> ()
+      | Some (f, text) ->
+          Logs.info (fun m -> m "the library's %s (%s)" (Fpath.to_string f) (whence (FS.cleanname (Fpath.to_string (Fpath.parent f)))));
+          read f text false
+      | None -> Logs.info (fun m -> m "no code for %s (named in %s): its interface alone" u from)
     end
   done;
   (* (a file of the name in a directory whose units name it: the unit

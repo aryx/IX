@@ -223,7 +223,7 @@ let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : strin
   FS.write caps (Fpath.v out) (Buffer.contents b)
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let rules = ref "analyzers/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
+  let rules = ref "analyzers/datalog" and lib = ref "" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false and flow = ref false and answers = ref false in
   let bugs = ref false and start = ref "" and summary_file = ref "" and program = ref "" in
@@ -257,7 +257,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-context", Arg.Set_string context, " the context file of points_to/: C's (call1_heap1), -exn's (call1_rec)");
         ("-library", Arg.Set library, " every function may be called from outside: a runtime, a library");
         ("-fingerprint", Arg.Set fingerprint, " after the report, one number of every answer (Answers, Fingerprint)");
-        ("-L", Arg.Set_string lib, " lib_core's directory, for an ML program's library");
+        ("-L", Arg.Set_string lib, " the standard library's directory, for an ML program (the nearest if not said)");
         ("-I", Arg.String (fun d -> incs := d :: !incs), " a directory of #include's");
         ("-own",
          Arg.String (fun d -> Ml_front.own_dirs := !Ml_front.own_dirs @ [ Fpath.v d ]),
@@ -272,6 +272,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () -> (
+      (* (no -L: the standard library nearest the first ML file, tiny's
+       * TinyLibCore for tiny/'s programs, lib_core for ix's) *)
+      if !lib = "" then
+        lib :=
+          (match List.find_opt (fun (f : string) -> Filename.check_suffix f ".ml") (List.rev !files) with
+           | Some f -> (match Unit_finder.library caps f with Some d -> d | None -> "lib_core")
+           | None -> "lib_core");
       (* (-exn's: a recursive call in its caller's context, else
        * List.fold_left's callers are one: exceptions.dl's design note) *)
       let context = if !context <> "" then !context else if !exns then "call1_rec" else if !bugs then "insensitive" else "call1_heap1" in

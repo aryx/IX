@@ -52,7 +52,7 @@ T=tiny
 # TinyLibSystem. On tiny-kernel (K), as t-IX builds it: on TinyLibCore and
 # tiny-kernel's TinyLibSystem (TinyLibCore's Cap.mli names the
 # capabilities TinyLibSystem.mli takes, which tiny-ml leaves out).
-O="-own $T/TinyLibSystem/unix"
+O="-L lib_core -own $T/TinyLibSystem/unix"
 K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel"
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"

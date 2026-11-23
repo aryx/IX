@@ -35,7 +35,7 @@ $HOST > $W/host.out 2>&1 || { echo "FAIL pages: the run by OCaml"; failures=$((f
 [ -n "${RECORD:-}" ] && cp $W/host.out $T/pages.expected
 if diff $T/pages.expected $W/host.out > $W/host.diff; then echo "ok pages: by OCaml"; else echo "FAIL pages: by OCaml"; head -10 $W/host.diff; failures=$((failures + 1)); fi
 
-# (the runtime's memory, 640 KB, in a file of its own, linked last: a
+# (the runtime's memory, 384 KB, in a file of its own, linked last: a
 # call reaches 128 KB, and the code on either side of it would be too
 # far apart, _start from main or main from the ML code)
 cat > $W/main.c <<END
@@ -43,9 +43,9 @@ cat > $W/main.c <<END
 extern value vstack[];
 extern value space0[];
 extern value space1[];
-void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
+void main(void) { ml_run(vstack, space0, space1, 32768, 64); flush(); exit(0); }
 END
-printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
+printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[32768];\nvalue space1[32768];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.s
 if ml_lib $W/lib && $TC -o $W/main.o $W/main.c && $TC -o $W/data.o $W/data.c \
    && $TML -L $W/lib -o $W/pages.o $ROOT/tiny/TinyLibSystem/teststub/TinySystemTest.ml $ROOT/tiny/TinyLibSystem/teststub/TinyLibSystem.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $OFFICE $ROOT/tiny/TinyOffice.ml $T/Pages.ml \

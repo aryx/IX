@@ -184,11 +184,14 @@ job "tiny-machine: unit tests" tiny/tests/TinyMachine_test.sh
 job "tiny-kernel: its graphics" tiny/tests/KGraphics_test.sh
 job "TinyLibPlayground: unit tests" tiny/tests/TinyLibPlayground_test.sh
 job "tiny-tetris: recorded frames" tiny/tests/TinyAppTetris_test.sh
+job "tiny-orrery: its lines and screen" tiny/tests/TinyAppOrrery_test.sh
 job "TinyLibGUI: unit tests" tiny/tests/TinyLibGUI_test.sh
 job "TinyLibCore: unit tests" tiny/tests/TinyLibCore_test.sh
 job "TinyLibRegex: grep's and ed's patterns, by hand and against Regex" tiny/tests/TinyLibRegex_test.sh
 job "tiny-emacs: recorded screens" tiny/tests/TinyEditorScreen_test.sh
 job "tiny-browser: pages" tiny/tests/TinyBrowser_test.sh
+job "tiny-office: pages, by OCaml and on tiny-cpu" tiny/tests/TinyOffice_test.sh
+job "tiny-troff: printed, by OCaml and on tiny-cpu" tiny/tests/TinyTroff_test.sh
 job "tiny-profiler: profiles" tiny/tests/TinyProfiler_test.sh
 job "tiny-cc: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh

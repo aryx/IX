@@ -76,7 +76,7 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
          if queries <> [||] then Datalog_rt.answers caps p queries
          else if ambient then Caps_report.caps_report caps p
          else if exns then Exn_report.exn_report caps p
-         else if dead then Dead_report.dead_report caps p (ml <> [])
+         else if dead then ignore (Dead_report.dead_report caps p (ml <> []))
          else begin
            if List.exists (fun (f : string) -> Filename.check_suffix f ".c") files then C_report.report caps p;
            if ml <> [] then Ml_report.ml_report caps p

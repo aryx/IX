@@ -182,11 +182,48 @@ let start_facts (fact : string -> C.Facts.arg list -> unit) (start : string)
       List.iter (fun (f : string) -> fact "unit_file" [ sym u; sym f ]) fs)
     Ml_front.homes
 
+(* -summary: what a -dead run says of its program, as facts, so that the
+ * runs of several programs can be merged (datalog/dead_all.dl): the files
+ * it reads (has) and those it reports on (own); an implementation whose
+ * interface is elsewhere (implements); a file outside the project, whose
+ * root is the first directory above the first file given that has a
+ * dune-project (outside); each report, by its file, line and message *)
+let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : string) (prog : string)
+    (given_files : string list) (reports : (string * int * string) list) : unit =
+  let b = Buffer.create 4096 in
+  let add (r : string) (args : C.Facts.arg list) : unit = Buffer.add_string b (line r args ^ "\n") in
+  let sym (s : string) : C.Facts.arg = C.Facts.Sym s in
+  let read = Hashtbl.fold (fun _ (f : string) acc -> if f = "" then acc else f :: acc) Ml_front.files [] in
+  let own = Hashtbl.fold (fun (u : string) () acc -> match Hashtbl.find_opt Ml_front.files u with Some f when f <> "" -> f :: acc | _ -> acc) Ml_front.own [] in
+  let c = List.filter (fun (f : string) -> Filename.check_suffix f ".c") given_files in
+  let has = List.sort_uniq compare (c @ read) and own = List.sort_uniq compare (c @ own) in
+  List.iter (fun (f : string) -> add "has" [ sym prog; sym f ]) has;
+  List.iter (fun (f : string) -> add "own" [ sym prog; sym f ]) own;
+  List.iter
+    (fun (f : string) -> Option.iter (fun (i : string) -> add "implements" [ sym f; sym i ]) (Hashtbl.find_opt Ml_front.interfaces f))
+    has;
+  let cwd = FS.getcwd caps () in
+  let absolute (f : string) : string = FS.cleanname (if Filename.is_relative f then Filename.concat cwd f else f) in
+  let rec root (d : string) : string option =
+    if FS.read_opt caps (Fpath.v (Filename.concat d "dune-project")) <> None then Some d
+    else if Filename.dirname d = d then None
+    else root (Filename.dirname d) in
+  (match given_files with
+   | first :: _ -> (
+       match root (Filename.dirname (absolute first)) with
+       | Some r ->
+           let inside (f : string) : bool = String.starts_with ~prefix:(r ^ "/") (absolute f) in
+           List.iter (fun (f : string) -> if not (inside f) then add "outside" [ sym f ]) has
+       | None -> ())
+   | [] -> ());
+  List.iter (fun ((f, l, m) : string * int * string) -> add "report" [ sym prog; sym f; C.Facts.Num l; sym m ]) reports;
+  FS.write caps (Fpath.v out) (Buffer.contents b)
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "analyzers/datalog" and lib = ref "lib_core" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false and flow = ref false and answers = ref false in
-  let bugs = ref false and start = ref "" in
+  let bugs = ref false and start = ref "" and summary_file = ref "" and program = ref "" in
   let options =
     Logging.flags
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs/");
@@ -205,6 +242,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-flow-answers", Arg.Set answers,
          " the compiler's own liveness and dominators on -flow's facts, as facts");
         ("-dead", Arg.Set dead, " what no run can reach, not the calls and the bugs");
+        ("-summary", Arg.Set_string summary_file,
+         " file: -dead's files and reports as facts, for merging programs (datalog/dead_all.dl)");
+        ("-program", Arg.Set_string program, " name: the program's, in -summary's facts (the first file's if not said)");
         ("-caps", Arg.Set ambient, " whether ML's own functions hold the capabilities they need");
         ("-exn", Arg.Set exns, " the exceptions ML's toplevels may let escape");
         ("-bugs", Arg.Set bugs, " the bugs an ML program may have (plan_bug_analyses.md)");
@@ -371,7 +411,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             relations;
           if !ambient then caps_report caps p
           else if !exns then exn_report caps p
-          else if !dead then dead_report caps p (ml <> [])
+          else if !dead then begin
+            let reports = dead_report caps p (ml <> []) in
+            if !summary_file <> "" then
+              summary caps !summary_file (if !program <> "" then !program else List.hd (List.rev !files))
+                (List.rev !files) reports
+          end
           else if !bugs && c <> [] && ml <> [] then raises_report caps p
           else if !bugs && c = [] then bugs_report caps p
           else begin

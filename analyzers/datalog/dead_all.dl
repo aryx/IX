@@ -1,0 +1,37 @@
+% Dead code over several programs: what mini-analyze -dead says of each,
+% merged. Each program's run writes its facts with -summary:
+%   has(P, F)             the program P reads the file F
+%   own(P, F)             P reports on F (its own files, not a library's)
+%   implements(F, I)      F is an implementation of the interface I, which
+%                         is elsewhere (TinyLibSystem's unix/ and tinykernel/
+%                         of tiny/TinyLibSystem.mli: one unit's platforms)
+%   outside(F)            F is not in the project (no dune-project above it)
+%   report(P, F, L, M)    P says the message M of F's line L (0: none)
+% and these rules, given the facts of all the programs, answer
+%   dead_all(F, L, M)     a report kept: every program that has F, or
+%                         another implementation of its interface, says it
+%
+%   mini-datalog analyzers/datalog/dead_all.dl prog1.dl prog2.dl ...
+%
+% design:
+% One program's dead is not the tree's. A library's function that one
+% program does not call another may; so a report is kept only where every
+% program that reads the file says it, which is a negation: none says
+% otherwise. Implementations of one interface are one file here: the host's
+% TinyLibSystem must define what its interface declares, though only
+% programs on tiny-kernel call it, through tinykernel/'s.
+%
+% A report is matched by its message, the line left out (an edit above a
+% function moves it): a function two programs say dead for two reasons
+% ("nothing names it", "named only by dead code") is not kept.
+
+% a file's group: its interface if it implements one elsewhere, else itself
+group(F, I) :- implements(F, I).
+group(F, F) :- own(_, F), \+ implements(F, _).
+
+said(P, G, M) :- report(P, F, _, M), group(F, G).
+has_group(P, G) :- own(P, F), group(F, G).
+not_everywhere(G, M) :- said(_, G, M), has_group(P, G), \+ said(P, G, M).
+dead_all(F, L, M) :- report(_, F, L, M), group(F, G), \+ not_everywhere(G, M).
+
+?- dead_all(F, L, M).

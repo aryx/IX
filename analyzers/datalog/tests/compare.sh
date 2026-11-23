@@ -8,6 +8,14 @@
 # its notes. Printed: ok, or the new reports whole (where they are now)
 # and those gone (as recorded).
 
+# -dead's lines from analyzers/datalog/dead_all.dl's answers, as
+# mini-analyze prints them: file:line: message, or file: message when the
+# line is 0. The atoms' \' back to '.
+dead_lines() {
+  sed -E -e "s/^dead_all\('(.*)',([0-9]+),'(.*)'\)\.$/\1:\2: \3/" \
+    -e 's/^([^:]*):0: /\1: /' -e "s/\\\\'/'/g"
+}
+
 # -exn's lines: a toplevel's exception, without where it is raised (that
 # list moves with every edit). An exception of lib_core's, which most
 # programs may raise (Not_found, Failure, End_of_file...), is kept when

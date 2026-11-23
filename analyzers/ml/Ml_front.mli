@@ -41,6 +41,12 @@ val files : (string, string) Hashtbl.t
 (* the program's own units, not the library's *)
 val own : (string, unit) Hashtbl.t
 
+(* An implementation's interface found elsewhere, by the .ml's file:
+ * tiny/TinyLibSystem/unix/TinyLibSystem.ml's is tiny/TinyLibSystem.mli,
+ * as is tinykernel/'s. These are one unit's variants, each for its
+ * platform. An .ml with its .mli beside it is not here. *)
+val interfaces : (string, string) Hashtbl.t
+
 (* the printers [@@deriving show] makes in the units read, "Unit.show_x"
  * and "Unit.pp_x" (show and pp for a t): the deriver's code, which
  * -dead does not say dead *)

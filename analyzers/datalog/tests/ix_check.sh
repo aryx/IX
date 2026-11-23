@@ -17,10 +17,11 @@
 # a function moves it). Under a minute each.
 # usage: analyzers/datalog/tests/ix_check.sh -caps|-dead|-bugs|-exn out-file|-check
 #   (dune build, ix built first: its generated parsers, in MK or _mk/7)
-# ANALYZE: the program, if not dune's.
+# ANALYZE, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
 export LC_ALL=C
 export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
+DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
 flag=$1; out=$2; check=
@@ -54,20 +55,19 @@ case $flag in
       n=$(basename $f .out); exn_lines < $f | gen | sed "s|^|$n: |"
     done | sort -u > $out;;
   -dead)
-    # a report a program, by its file; the files a program has: sweep.sh's
-    # name.files; kept where every program that has the file says it
-    for f in $W/sweep/*.out; do
-      n=$(basename $f .out)
-      grep -E ': dead( [a-z]+)?:' $f | gen | sed "s|^|$n\t|"
-    done > $W/said
+    # each program's files and reports as facts (sweep.sh's -summary),
+    # kept where every program that has the file says it: dead_all.dl's.
+    # A program not read is given its files (sweep.sh's name.files) as its
+    # own, saying nothing: what they have is not dead for ix unless it says
+    # so.
     for f in $W/sweep/*.files; do
-      n=$(basename $f .files); tr ' ' '\n' < $f | grep . | sed "s|^|$n\t|"
-    done > $W/has
-    awk -F'\t' 'NR == FNR { has[$2]++; next }
-      { split($2, p, ":"); key = $2; sub(/:[0-9]+:/, ":", key)
-        said[key]++; line[key] = $2; file[key] = p[1] }
-      END { for (k in said) if (said[k] >= has[file[k]]) print line[k] }' \
-      $W/has $W/said | sort -u > $out;;
+      n=$(basename $f .files)
+      [ -s $W/sweep/$n.dl ] || tr ' ' '\n' < $f | grep . | sed "s|.*|own('$n', '&').|" > $W/sweep/$n.dl
+    done
+    # (its warnings, a relation with no fact, said only if it fails)
+    $DATALOG analyzers/datalog/dead_all.dl $W/sweep/*.dl 2> $W/datalog.err > $W/dead_all ||
+      { cat $W/datalog.err; exit 2; }
+    dead_lines < $W/dead_all | grep -E ': dead( [a-z]+)?:' | gen | sort -u > $out;;
 esac
 if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0

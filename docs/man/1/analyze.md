@@ -16,6 +16,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-start** *units* ]
 [ **-context** *file* ]
 [ **-library** ]
+[ **-summary** *file* [ **-program** *name* ] ]
 [ **-alone** ]
 [ **-no-models** ]
 [ **-fingerprint** ]
@@ -173,6 +174,22 @@ program's library, lib_core's units it names, is read with it.
 
 **-library**
 :    Every function may be called from outside, not `main` alone.
+
+**-summary** *file* [ **-program** *name* ]
+:    With **-dead**: the program's files and reports also as facts, in
+     *file*. They say which files the program reads (`has`) and which it
+     reports on (`own`), and give an implementation whose interface is
+     elsewhere (`implements`), a file outside the project (`outside`:
+     no `dune-project` above it), and each report (`report`). *Name*
+     (the first file's if not given) tells the programs apart.
+     `analyzers/datalog/dead_all.dl` merges several programs' facts:
+     a report is kept where every program that has the file, or another
+     implementation of its interface, says it. `tiny_check.sh` and
+     `ix_check.sh` merge their programs so:
+
+         mini-analyze -dead -summary a.dl -program a ... a.ml
+         mini-analyze -dead -summary b.dl -program b ... b.ml
+         mini-datalog analyzers/datalog/dead_all.dl a.dl b.dl
 
 **-alone**
 :    ML: the files' own facts, not their library units'.

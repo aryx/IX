@@ -32,7 +32,9 @@ one() { # a mkfile
   if [ -n "$missing" ]; then printf '%-44s    - NOT READ: no file for %s\n' $dir "$missing"; return; fi
   local t0=$(date +%s)
   # (-start: the units' order, mkprog's, for -bugs's init.dl)
-  (ulimit -v 12000000 2> /dev/null; timeout $limit $ANALYZE ${FLAG:--dead} -L lib_core \
+  # (-dead: its files and reports as facts too, ix_check.sh's merge)
+  local summary=; [ ${FLAG:--dead} = -dead ] && summary="-summary $out/$name.dl -program $name"
+  (ulimit -v 12000000 2> /dev/null; timeout $limit $ANALYZE ${FLAG:--dead} $summary -L lib_core \
      -start "$(start_of $mk)" $flags $files) > $out/$name.out 2> $out/$name.err
   local st=$? t1=$(date +%s)
   if [ $st = 0 ]; then

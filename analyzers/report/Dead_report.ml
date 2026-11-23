@@ -11,7 +11,7 @@ let where = C_report.where
 let ml_function = Ml_report.ml_function
 
 (* -dead: what dead.dl finds, each with where it is written *)
-let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : unit =
+let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * int * string) list =
   let tuples r n = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r n)) in
   let unit_of (f : string) : string =
     let stop c = match String.index_opt f c with Some i -> i | None -> String.length f in
@@ -88,9 +88,10 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : unit =
     by_function "never_built"
       (fun c g -> Printf.sprintf "never built: %s, matched in %s" (match prefix "con:" c with Some x -> x | None -> c) g)
       (fun c -> prefix "con:" c <> None) in
-  let all = functions @ globals @ stmts @ fields @ constructors in
-  List.iter (fun x -> Console.print caps (one x ^ "\n")) (List.sort_uniq compare all);
+  let all = List.sort_uniq compare (functions @ globals @ stmts @ fields @ constructors) in
+  List.iter (fun x -> Console.print caps (one x ^ "\n")) all;
   Console.print caps
     (Printf.sprintf "%d functions dead (%d nothing names), %d only through a pointer; %d globals, %d fields, %d constructors, %d statements\n"
        (List.length dead) (List.length (List.filter (fun f -> is_own f && not (derived f)) unnamed)) (List.length (tuples "through_pointer" 1))
-       (List.length globals) (List.length fields) (List.length constructors) (List.length stmts))
+       (List.length globals) (List.length fields) (List.length constructors) (List.length stmts));
+  all

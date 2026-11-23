@@ -27,9 +27,10 @@
 # out-file, the reports on the standard output. Seconds.
 # usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]
 #   (dune build first)
-# ANALYZE: the program, if not dune's.
+# ANALYZE, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
+DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
 export LC_ALL=C
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
@@ -125,17 +126,15 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
 # (the programs at once, the analyses first: seconds, not a minute)
-# (-v: the files each program reads as its own, its "reading" lines, for
-# -dead's "every program that has the file"; the rest of -v left out)
+# (-dead: each program's files and reports as facts, merged below)
 runs | { while IFS='|' read -r name flags files; do
-  timeout 300 $ANALYZE -v $flag $flags $files > $W/$name.v 2>&1 &
+  summary=; [ $flag = -dead ] && summary="-summary $W/$name.dl -program $name"
+  timeout 300 $ANALYZE $flag $summary $flags $files > $W/$name.out 2>&1 &
 done; wait; }
 # (a unit not read, or the analyzer stopped: its program's 0 would say
 # nothing)
 failed='unbound (module|value|type)|not read|syntax error|Fatal error'
 runs | while IFS='|' read -r name flags files; do
-  grep -v '^mini-analyze: \[INFO\]' $W/$name.v > $W/$name.out
-  files=$(sed -n 's/^mini-analyze: \[INFO\] reading \(.*\.ml\)$/\1/p' $W/$name.v)
   n=$(grep -cE "$said" $W/$name.out)
   unread=$(grep -cE "$failed" $W/$name.out)
   [ -z "$check$show" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E "$failed" $W/$name.out)")"
@@ -146,24 +145,14 @@ runs | while IFS='|' read -r name flags files; do
   else
     grep -E "$said" $W/$name.out | sed 's/^bug? //; s|^|'$name'\t|' >> $W/said
   fi
-  for x in $files; do printf '%s\t%s\n' $name $x; done >> $W/has
 done
 if [ $flag = -dead ]; then
-  # (kept where every program that has the file says it. The
-  # implementations of an interface elsewhere, tiny/X.mli, are one file:
-  # TinyLibSystem's, unix/ and tinykernel/... A value the host's has for
-  # the interface, that only programs on tiny-kernel call, is not dead)
-  for f in $(cut -f2 $W/has | sort -u); do
-    b=$(basename $f .ml); d=$(dirname $f)
-    if [ ! -f $d/$b.mli ] && [ -f $T/$b.mli ] && [ $d != $T ]; then printf '%s\t%s\n' $f $T/$b.mli; fi
-  done > $W/groups
-  awk -F'\t' 'FILENAME == ARGV[1] { group[$1] = $2; next }
-    FILENAME == ARGV[2] { has[($2 in group) ? group[$2] : $2]++; next }
-    { split($2, p, ":"); g = (p[1] in group) ? group[p[1]] : p[1]
-      key = $2; sub(/:[0-9]+:/, ":", key); sub(/^[^:]*:/, g ":", key)
-      n[key]++; lines[key] = lines[key] $2 "\n"; file[key] = g }
-    END { for (k in n) if (n[k] >= has[file[k]]) printf "%s", lines[k] }' \
-    $W/groups $W/has $W/said | sort -u > $out
+  # (kept where every program that has the file, or another
+  # implementation of its interface, says it: dead_all.dl's)
+  # (its warnings, a relation with no fact, said only if it fails)
+  $DATALOG analyzers/datalog/dead_all.dl $W/*.dl 2> $W/datalog.err > $W/dead_all ||
+    { cat $W/datalog.err; exit 2; }
+  dead_lines < $W/dead_all | grep -E "$said" | sort -u > $out
 else
   cut -f2- $W/said 2> /dev/null | sort -u > $out
 fi

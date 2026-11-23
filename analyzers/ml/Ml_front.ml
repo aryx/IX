@@ -5,6 +5,7 @@
 
 let files : (string, string) Hashtbl.t = Hashtbl.create 64
 let own : (string, unit) Hashtbl.t = Hashtbl.create 16
+let interfaces : (string, string) Hashtbl.t = Hashtbl.create 16
 
 (* (a directory, a unit its units name: homes's) *)
 let wanted : (string * string, unit) Hashtbl.t = Hashtbl.create 64
@@ -200,6 +201,11 @@ let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (file 
   let f = Fpath.to_string file in
   let name = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
   Hashtbl.replace files name f;
+  (* (an .ml without its .mli beside it: the unit's interface, if one is
+   * in the directories) *)
+  if Filename.check_suffix f ".ml" && FS.read_opt caps (Fpath.v (f ^ "i")) = None then
+    Option.iter (fun ((m, _) : Fpath.t * string) -> Hashtbl.replace interfaces f (Fpath.to_string m))
+      (find caps dirs name [ ".mli" ]);
   match parsed caps f text with
   | Error m -> Error m
   | Ok (Ast.Signature _, _) -> Ok []

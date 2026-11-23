@@ -3,8 +3,16 @@
  * the facts of a whole program, its own units and those of the library
  * they name, so that a function given to List.iter is seen called *)
 
-(* the directories of lib_core's units (its units.txt's, and commons/) *)
+(* the directories of lib_core's units (its units.txt's, and commons/),
+ * or the one directory of a library that has its own Stdlib there and
+ * no units.txt (tiny/TinyLibCore) *)
 val library : < Cap.open_in; .. > -> string -> Fpath.t list
+
+(* the directories a unit is looked up in after the program's: -I's
+ * then the library's, or for a library in one directory its own first,
+ * the -I's only for what it lacks (t-IX's programs on TinyLibCore, Cap
+ * from lib_core/system) *)
+val search : < Cap.open_in; .. > -> string -> Fpath.t list -> Fpath.t list
 
 (* the program's files read, then each unit they name found in the
  * directories (the files' own first) and read too, until no new one;
@@ -23,6 +31,12 @@ val alone : bool ref
  * main file alone. A unit found in an -I directory or in the library is
  * read too, but is not reported on. *)
 val own_dirs : Fpath.t list ref
+
+(* the directories whose units give the program their interfaces alone
+ * (-types), looked up after all others: their code is never read. For a
+ * unit named only in types, which the program does not link: Cap on
+ * t-IX, named by tiny/TinyLibSystem.mli's types, has no code there. *)
+val types_dirs : Fpath.t list ref
 
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref

@@ -9,7 +9,23 @@ let own : (string, unit) Hashtbl.t = Hashtbl.create 16
 (* (a directory, a unit its units name: homes's) *)
 let wanted : (string * string, unit) Hashtbl.t = Hashtbl.create 64
 
+(* -L's directory when it is a library in one directory (flat): the units
+ * that builtins (below) go before *)
+let flat_dir : string option ref = ref None
+
+(* a library in one directory, its own Stdlib there, no units.txt:
+ * tiny/TinyLibCore *)
+let flat (caps : < Cap.open_in; .. >) (d : string) : bool =
+  FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) = None
+  && FS.read_opt caps (Fpath.v (Filename.concat d "Stdlib.mli")) <> None
+
 let library (caps : < Cap.open_in; .. >) (d : string) : Fpath.t list =
+  if flat caps d then begin
+    Logs.info (fun m -> m "library: %s (one directory, no units.txt)" d);
+    flat_dir := Some (FS.cleanname d);
+    [ Fpath.v d ]
+  end
+  else
   let text =
     match FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) with
     | Some t -> Logs.info (fun m -> m "library: %s (its units.txt's directories, and commons/)" d); t
@@ -21,6 +37,12 @@ let library (caps : < Cap.open_in; .. >) (d : string) : Fpath.t list =
         "" in
   let dirs = List.filter_map (fun u -> if u = "" || u.[0] = '#' then None else Some (Filename.dirname u)) (String.split_on_char '\n' text) in
   List.map (fun x -> Fpath.v (Filename.concat d x)) (List.sort_uniq compare dirs @ [ "commons" ])
+
+(* (a flat library's units first: what the program links, the -I's
+ * only for what it lacks, as tiny/TinyLibSystem.mli's Cap from
+ * lib_core/system, whose Fpath would hide TinyLibCore's) *)
+let search (caps : < Cap.open_in; .. >) (lib : string) (incs : Fpath.t list) : Fpath.t list =
+  if flat caps lib then library caps lib @ incs else incs @ library caps lib
 
 (* CLI's parse_text *)
 let parse (file : string) (text : string) : (Ast.source, string) result =
@@ -68,6 +90,57 @@ let listed (_ : < Cap.readdir; .. >) (d : Fpath.t) (n : string) : bool =
         names in
   Hashtbl.mem names n
 
+(* What tiny-ml takes for granted, having no types: a unit's text read
+ * before a flat library's .mli and .ml of that unit, on their first
+ * line, so that their line numbers stay. Stdlib: what OCaml has
+ * predefined (option, result) or in its Stdlib (ref, the operators that
+ * are syntax in tiny-ml's parser), declared as lib_core's Stdlib.mli
+ * declares them. Printf: the calls tiny-ml expands when their format is
+ * written in the call (TinyML/Formats.ml), declared as lib_core's
+ * Printf.mli declares them, their code a value of any type: no output
+ * the analyses follow, but ksprintf's continuation called, so that a
+ * function given to it is not dead. *)
+let builtins : (string * (string * string)) list =
+  let stdlib =
+    "type 'a ref = { mutable contents : 'a } type 'a option = None | Some of 'a \
+     type ('a, 'b) result = Ok of 'a | Error of 'b \
+     external ( && ) : bool -> bool -> bool = \"%sequand\" \
+     external ( || ) : bool -> bool -> bool = \"%sequor\" \
+     external ( & ) : bool -> bool -> bool = \"%sequand\" \
+     external ( or ) : bool -> bool -> bool = \"%sequor\" " in
+  [ ("Stdlib", (stdlib, stdlib));
+    ("Printf",
+     ("val sprintf : ('a, unit, string) format -> 'a \
+       val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a \
+       val ksprintf : (string -> 'd) -> ('a, unit, string, 'd) format4 -> 'a ",
+      "external any_ : 'a -> 'b = \"%identity\" \
+       let sprintf _ = any_ \"\" let bprintf _ _ = any_ () \
+       let ksprintf k _ = any_ (k \"\") "));
+    (* (int32, int64: OCaml's types, which mini-ml reads as Int32.t,
+     * Int64.t; TinyLibCore's interfaces write them without a t, so in
+     * their own unit, without these, int32 was Int32.t, Int32's own
+     * unit loaded again, forever. Their .ml has its own int32.) *)
+    ("Int32", ("type int32 type t = int32 ", ""));
+    ("Int64", ("type int64 type t = int64 ", "")) ]
+
+(* TinyLibCore's Stdlib.ml declares the exceptions tiny-ml needs, which
+ * mini-ml predefines (Resolve's predef) and its Stdlib.mli does not:
+ * read, they were the library's own Stdlib.Failure..., which a
+ * program's "with Failure _" (the predefined one, by the .mli) never
+ * caught, and every Failure escaped. tiny-ml matches them by name, one
+ * exception: their lines left blank, so that the others' numbers stay. *)
+let predefined_exns =
+  [ "Match_failure"; "Assert_failure"; "Out_of_memory"; "Stack_overflow"; "Invalid_argument";
+    "Failure"; "Not_found"; "Sys_error"; "End_of_file"; "Division_by_zero" ]
+
+let without_predefined_exns (text : string) : string =
+  String.split_on_char '\n' text
+  |> List.map (fun (l : string) ->
+         match String.split_on_char ' ' (String.trim l) with
+         | "exception" :: x :: _ when List.mem x predefined_exns -> ""
+         | _ -> l)
+  |> String.concat "\n"
+
 (* a unit's file in the directories: its .mli for the names, or its .ml *)
 let find (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (name : string) (exts : string list) : (Fpath.t * string) option =
   let names = List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) exts in
@@ -76,7 +149,13 @@ let find (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (name :
       List.find_map
         (fun n ->
           let f = Fpath.(d / n) in
-          if listed caps d n then Option.map (fun t -> (f, t)) (FS.read_opt caps f) else None)
+          let text (t : string) : string =
+            match List.assoc_opt name builtins, !flat_dir with
+            | Some (mli, ml), Some flat when FS.cleanname (Fpath.to_string d) = flat ->
+                if Filename.check_suffix n ".mli" then mli ^ t
+                else ml ^ (if name = "Stdlib" then without_predefined_exns t else t)
+            | _ -> t in
+          if listed caps d n then Option.map (fun t -> (f, text t)) (FS.read_opt caps f) else None)
         names)
     dirs
 
@@ -84,6 +163,9 @@ let find (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (name :
 let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.source * string, string) result =
   match parse f text with
   | Error m -> Error m
+  (* (on a flat library, t-IX's: no mlpp, as tiny-ml, which leaves out
+   * attributes, [@@deriving show] too: TinyShell.ml's show_cmd) *)
+  | Ok tree when !flat_dir <> None -> Ok (tree, text)
   | Ok tree -> rewritten caps f text tree
 
 (* CLI's loader *)
@@ -139,6 +221,7 @@ let unread : string list ref = ref []
 let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 let own_dirs : Fpath.t list ref = ref []
+let types_dirs : Fpath.t list ref = ref []
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
@@ -151,7 +234,9 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   (* (tiny/ and ./tiny are one directory) *)
   let mine_dirs = List.map (fun (d : Fpath.t) -> FS.cleanname (Fpath.to_string d)) !own_dirs in
   let read (file : Fpath.t) (text : string) (mine : bool) =
-    match unit_ caps dirs file text with
+    (* (-types' directories for the names alone: their units' code is
+     * not looked for below, where dirs are) *)
+    match unit_ caps (dirs @ !types_dirs) file text with
     | Ok named -> List.iter (fun u -> Queue.add u todo) named
     | Error m -> if mine then errors := m :: !errors else unread := m :: !unread in
   List.iter

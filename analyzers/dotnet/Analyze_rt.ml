@@ -61,7 +61,7 @@ let main (texts : string array) (queries : string array) (rules : D.t -> unit) :
            files;
          (* an ML program: its units and the library's they name *)
          if ml <> [] then
-           List.iter complain (Ml_front.program caps (incs @ Ml_front.library caps lib) (List.map path ml));
+           List.iter complain (Ml_front.program caps (Ml_front.search caps lib incs) (List.map path ml));
          (* (-caps: the program's own units and their toplevels, as
           * mini-analyze gives them) *)
          if ambient then

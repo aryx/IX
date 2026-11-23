@@ -75589,3 +75589,35 @@ Claude added two timing rows, a CI paragraph, and a "Late November" bullet list 
 The new bullets name commits 228996ad, 01084bf6, ecd81d51, 0861f231, c870037a, 38fc7375, b722e43a, and 8708184c with their numbers.
 Claude noted the three-hour CI runs were apt-get at 70 kB/s, now fixed by the Azure mirror (9a2a1d42).
 Claude rewrote "Where it stands" to name the lock as the bound and the next targets, then offered to commit after `make test`.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:50
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Markdown note as 61a75a95 with prompt-history.md, unpushed on local main.
+Claude reported that make test failed, with 30 of 161 jobs failing.
+Claude attributed the failures to other sessions' uncommitted changes in analyzers, the 9pi kernel, and lib_machine.
+Claude noted that many failures took 0.0 s, suggesting programs were rebuilt mid-run.
+Claude recorded the failure count and that likely cause in the commit message.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 14:03
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude told Yoann the session could be closed, since all of its work is committed.
+Claude noted that the last commit, 61a75a95, the Part 3 inventory update, was still unpushed on local main.
+Claude said the next push from main would carry it along with other sessions' commits.
+Claude confirmed no check-up was scheduled and saved the self.yml log-reading note to memory.
+Claude recorded the fault-zero idea under the note's Where it stands section for a fresh session.

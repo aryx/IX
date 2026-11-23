@@ -266,7 +266,11 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
       fact "call_indirect" [ i; f ];
       fact1 "argument" i x;
       if ret <> junk () then fact "call_ret" [ i; ret ]
-  | "%makemutable" ->
+  (* (tiny-ml's names too, TinyLibCore's externals: %ref, ml_array_get,
+   * ml_array_set, ml_array_make; unknown, a ref or an array was an
+   * object of nothing, what went through it lost: Logs' reporter, said
+   * dead) *)
+  | "%makemutable" | "%ref" ->
       (* (its type's head by its type, Stdlib.ref: old, "ref", that no
        * variable's was, and every ref's content was lost) *)
       ignore (new_block "block");
@@ -279,12 +283,12 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
       fact "assign_store_field" [ arg 1; "fld:contents"; arg 2 ];
       fact "store_in" [ arg 1; "fld:contents"; arg 2; inside 2 ];
       fact "store_site" [ site ]
-  | "%array_safe_get" | "%array_unsafe_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
-  | "%array_safe_set" | "%array_unsafe_set" ->
+  | "%array_safe_get" | "%array_unsafe_get" | "ml_array_get" -> fact "assign_load_field" [ ret; arg 1; elt ]
+  | "%array_safe_set" | "%array_unsafe_set" | "ml_array_set" ->
       fact "assign_store_field" [ arg 1; elt; arg 3 ];
       fact "store_in" [ arg 1; elt; arg 3; inside 3 ];
       fact "store_site" [ site ]
-  | "make_vect" ->
+  | "make_vect" | "ml_array_make" ->
       ignore (new_block "block");
       fact "assign_store_field" [ ret; elt; arg 2 ]
   | "%raise" -> fact "assign" [ global exn (inside 1); arg 1 ]

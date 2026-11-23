@@ -46,18 +46,20 @@ let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
     List.iter (fun t -> Hashtbl.replace h t.(0) t.(1)) (tuples r);
     h in
   let inside = table "raise_in" and fn = table "try_in_function" in
-  let raised = tuples "raised" in
-  (* where e may be raised: Main.ml:11 (Main.first) *)
-  let sites (e : string) : string list =
+  let raised =
+    List.map (fun (t : int array) -> Array.map (name p) t)
+      (D.tuples (D.relation p "raised" 3)) in
+  (* where e, leaving l, may be raised: Main.ml:11 (Main.first) *)
+  let sites (l : string) (e : string) : string list =
     List.sort_uniq compare
       (List.filter_map
          (fun r ->
-           if r.(0) <> e then None
+           if r.(0) <> l || r.(1) <> e then None
            else
-             let g = match Hashtbl.find_opt inside r.(1) with
+             let g = match Hashtbl.find_opt inside r.(2) with
                | Some g -> " (" ^ Ml_report.ml_function g ^ ")"
                | None -> "" in
-             Some (site r.(1) ^ g))
+             Some (site r.(2) ^ g))
          raised) in
   (* who: of a toplevel, a function C calls (trap), a try (Main:try2@67) *)
   let report (rel : string) (who : string -> string -> string -> string) =
@@ -69,7 +71,7 @@ let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
           let file = match Hashtbl.find_opt Ml_front.files u with
             | Some x -> Filename.basename x
             | None -> u in
-          let at = match sites e with
+          let at = match sites f e with
             | [] -> ""
             | l -> ", raised at " ^ String.concat ", " l in
           Console.print caps (who file f (exn e) ^ at ^ "\n")

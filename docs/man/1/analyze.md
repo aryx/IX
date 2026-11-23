@@ -248,8 +248,13 @@ Log.ml:2: Log.shout: no capability, needs Cap.stdout
 Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3
   (Main.first)
 Main.ml: the toplevel may let Invalid_argument escape, raised at
-  Bytes.ml:26 (init), Pervasives.ml:146 (Pervasives.^), ...
+  String.ml:153 (String.map)
 ```
+
+`Invalid_argument` is lib_core's: `Log.shout`'s `String.uppercase_ascii`
+is a `String.map`, whose new string's primitive may refuse its length
+(its `[@@raise]`). Each line names the raises on its own toplevel's way
+out, not those of the library's other units.
 
 One of ix's programs, all its units, in ix's root (a second):
 

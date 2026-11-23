@@ -74976,3 +74976,71 @@ Its diff in the commit is 64 lines, up from the 32 lines Claude first saw.
 Claude explained that the rule files used by `mini-analyze` now show at `-v` as `rules: ...`, while the generic file-layer `read <file>` line stays at `-debug` to avoid flooding `-v`.
 Claude noted that the `-summaries` config file was still missing from the verbose output.
 Claude said it would add that missing config file to the verbose output next.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:16
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `-v` change on main, touching `analyzers/Analyze.ml`, `analyzers/ml/Ml_front.ml`, and `prompt-history.md`.
+The commit is local only and has not been pushed to the remote.
+`make test` passed with 160 jobs, 0 failures, and 7 skipped.
+Claude left out another session's uncommitted kernel and runtime changes under `kernels/9pi/`, `lib_machine`, and `gc.c`.
+Those changes are what made `make test` request `make self-quick-mix`, which Claude did not run.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:30
+
+**Yoann:**
+
+> excellent. What's next?
+
+**Claude (summary):**
+
+Claude recommended starting with the first follow-up: investigating the `-exn` report from the man page example.
+Claude noted that `Log.shout` only calls `String.uppercase_ascii`, yet `-exn` lists `Pervasives.^` and `String.escaped` as possible `Invalid_argument` sources.
+Claude suspected imprecise analysis, likely from closures in lib_core being merged, and pointed to the checked-in one-line reproducer.
+Claude framed it as a small precision bug worth chasing, which would also clean up the man page example.
+The other two follow-ups were giving other man pages examples and checking `-v` in other tools; Claude also flagged an unpushed push.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:09
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude said there was nothing to do until a check fired, and it would report the run's result in about 50 minutes.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:55
+
+**Yoann:**
+
+> check the self.yml run 45143728941 (gh run view 45143728941); if self (mix) failed, read the raw job log via gh api --allow-escape-sequences repos/{owner}/{repo}/actions/jobs/<id>/logs and report the "self:" / FAIL lines
+
+**Claude (summary):**
+
+Claude said it had nothing to act on yet and would report the run's result once a scheduled check fired in about 50 minutes.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 09:38
+
+**Yoann:**
+
+> I like your plan and the 3 points. Let's start with 1 indeed
+
+**Claude (summary):**
+
+Claude's answer was mid-verification, not a finished result, so the summary follows the work-in-progress. Claude checked whether `pool_run` could re-raise an exception its `try` caught, and concluded that these facts let nothing escape, so the new rules were right to drop that path. Claude compared the new walk against the old rules' `raised` output on the same facts, to separate its change from drift since the recording. Claude copied into a fresh directory rather than removing one, and added a triage note to the recording's notes. Three tiny reports disappeared, and Claude began spot-checking that they are caught by tiny's `main` wrapper before re-recording.

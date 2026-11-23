@@ -12,7 +12,8 @@
 %   from_c(F, E)            ... or a function C calls (contexts.dl's c_callback)
 %   ends_in(T, E)           E may come to a try catching all whose handler
 %                           raises E2 (handler_raises(T, E2)): a crash
-%   raised(E, R)            an uncaught E may be raised at R
+%   raised(L, E, R)         E, leaving L (a toplevel, a function C
+%                           calls, a try that ends it), may be raised at R
 % A raised exception is its constructor when written (raise Empty), a
 % handler's variable raised again what that try may arrive at, else the
 % exceptions' blocks its argument may point to (pt, exn_block). Not
@@ -115,11 +116,26 @@ handler_raises(T, E2) :-
 converts(T) :- handler_raises(T, _).
 ends_in(T, E) :- converts(T), arrives(T, _, _, E).
 
-% where an uncaught E may be raised: a raise of E in a context it may
-% leave its function from (not each raise's own way out: one of the
-% function's raises of E may be caught where another is not)
-% (the raises first, the exception checked last: from leaves(F, E), F
-% unused, each of its tuples scanned every raise, 187 s on mini-ml)
-leaving(E) :- leaves(_, E).
-raised(E, R) :-
-  raise_in(R, G), at(R, C1, C2, E), leaving(E), escapes(G, C1, C2, E).
+% Where an E that leaves L may be raised: walked back from L, the sites
+% whose E may come to it, through each call whose callee lets E out, to
+% the raises. Each site by its own way out of its function (one raise of
+% E may be caught where another is not), the contexts merged. By L, so
+% a toplevel is not said to raise what only another one's code does.
+% out(S, F, E): E at the site S may leave the function F;
+% inside(S, T, E): ... may come to the try T, maybe through inner ones.
+inside(S, T, E) :- at(S, _, _, E), in_try(S, T).
+inside(S, T2, E) :- inside(S, T, E), passes(T, _, _, E), try_in_try(T, T2).
+out(S, F, E) :- at(S, _, _, E), in_function(S, F), \+ protected(S).
+out(S, F, E) :- inside(S, T, E), passes(T, _, _, E), try_in_function(T, F), \+ nested(T).
+from(L, S, E) :- uncaught(L, E), out(S, L, E).
+from(L, S, E) :- from_c(L, E), out(S, L, E).
+from(T, S, E) :- ends_in(T, E), inside(S, T, E).
+% (a call: what its callee lets out; ksprintf's: what its continuation
+% does; a raise of what a try caught: what came to that try)
+from(L, S2, E) :- from(L, S, E), callee(S, _, _, G, _, _), \+ modeled(G), out(S2, G, E).
+from(L, S2, E) :- from(L, J, E), continuation(K, J, _, _), out(S2, K, E).
+from(L, S2, E) :- from(L, R, E), reraises(R, T), inside(S2, T, E).
+from(L, S2, E) :-
+  from(L, R, E), raise_in(R, _), \+ is_reraise(R), argument(R, 1, V),
+  pt(V, _, _, T, _, _), inside(S2, T, E).
+raised(L, E, R) :- from(L, R, E), raise_in(R, _).

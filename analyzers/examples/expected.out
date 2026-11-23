@@ -18,7 +18,7 @@ Log.ml:2: Log.shout: no capability, needs Cap.stdout (Pervasives.print_string)
 1 functions with no capability, 0 with the wrong one, 0 with one they may not need, 0 with all of them, 0 naming a system call themselves, 0 wrappers of an untyped capability; missing: Cap.stdout 1
 % mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -exn Log.ml Main.ml
 Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3 (Main.first)
-Main.ml: the toplevel may let Invalid_argument escape, raised at Bytes.ml:26 (init), Pervasives.ml:146 (Pervasives.^), String.ml:115 (String.escaped), String.ml:153 (String.map)
+Main.ml: the toplevel may let Invalid_argument escape, raised at String.ml:153 (String.map)
 % mini-analyze -facts calc.c > calc.dl
 % P=$IX/analyzers/datalog/points_to
 % mini-datalog -q 'reaches(main, F)' $P/instructions.dl $P/contexts.dl $P/insensitive.dl calc.dl graph.dl 2> /dev/null

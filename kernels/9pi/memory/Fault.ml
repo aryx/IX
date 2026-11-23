@@ -97,14 +97,19 @@ let page () =
     | None -> raise (Error enovmem) in
   go page_wait !Mmu.freed
 
-(* a page of s made: zeroed, or read from the image; recorded, mapped *)
+(* a page of s made: zeroed, or read from the image; recorded, mapped
+ * (the time to get a zeroed one counted: /dev/lockstat's "in zeroing",
+ * of the faults' and the calls' time) *)
+let zeroing_part = Proc.part "zeroing"
 let make pgdir s pg =
   (* the image read first: a read may sleep, another sharer make it *)
   let data = match s.image with
     | Some c when pg - s.base < s.flen -> Some (read_image c (s.fstart + pg - s.base) (min pgsize (s.flen - (pg - s.base))))
     | _ -> None in
   if not (Hashtbl.mem s.pages pg) then begin
+    let t0 = Machine.timer_now () in
     let pa = page () in
+    if data = None then Proc.part_add zeroing_part ((Machine.timer_now () - t0) land 0x3fffffff);
     (* (made by a sharer while this one waited for a page: given back) *)
     if Hashtbl.mem s.pages pg then Mmu.kfree pa
     else begin

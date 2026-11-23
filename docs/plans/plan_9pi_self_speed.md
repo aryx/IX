@@ -674,6 +674,7 @@ run's page (its summary). Each whole four-core run measured goes here:
 | + writes clustered, reads ahead (the Mac busy) | 1,524 s | 1,198 s (78%) | 690 s | fault-zero 254, Pwrite x 247, Pread x 180 |
 | + names and inodes kept (the Mac busy, load 20) | 1,510 s | 1,171 s (77%) | 670 s | fault-zero 260, Pwrite x 252, Pread x 204 |
 | + the card's transfers out of the lock | 1,456 s | 806 s (55%) | 590 s | Pwrite x 269, fault-zero 249, Pread x 187 |
+| + a fault's registers as integers, no breakpoint look on a data abort (the Mac quieter, load 5) | 1,106 s | 617 s (56%) | 400 s | Pwrite x 244, Pread x 178, fault-zero 150 |
 
 The reads and writes were the card's (x, the card's file system;
 c870037a's run): its commands, polled with the lock held, 740 s of the
@@ -725,6 +726,22 @@ the card, which counts once those are cheaper. Also seen: a
 directory's recipe said after another job's line not yet ended,
 counted out (85 of 86 directories); self.sh counts each directory
 once, anywhere in a line.
+
+Then the page faults: 10.8 million in the build, 22 µs each, most of
+it not the page's zeroing. runtime.c's user_fault gives mini-9pi the
+fault's registers as integers ("fault_ints"; xv6, whose sessions print
+them whole, the strings still), where they were three strings of 18
+characters read back by Main's hex; and a data abort, which a
+breakpoint is not, no longer walks the tables twice looking for one.
+Fault's make counts the time to get a zeroed page ("in zeroing"). The
+whole build: fault-zero 150 s where it was 249, of it 62 s getting
+the 10.9 million zeroed pages (6 µs each); mk 1,106 s, the lock held
+617 s, each core waiting 400 s, on a quieter Mac (what this does not
+touch, Exec and fault-read, 10 to 15% less too; fault-zero 40%).
+That run also showed a lost line of the build's log: two writes on
+one channel (mk and its recipes into one file) at one offset, a write
+now able to sleep under the storage qlock before moving it. Sysfile's
+write takes its bytes' place first, as Plan 9's sysfile.c.
 
 ## The gate
 

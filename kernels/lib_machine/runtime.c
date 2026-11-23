@@ -596,17 +596,30 @@ void irq(void)
  * with the exception class (arm64's ESR_EL1.EC, which the Pi1's board
  * says too) and xv6's %p of the syndrome, the pc and the fault's
  * address, formatted here: the values are a machine word, and Int64
- * is not reliable in ocaml-light for arm32 (bugs/ocaml_light.md) */
+ * is not reliable in ocaml-light for arm32 (bugs/ocaml_light.md).
+ * Or, to a kernel that registers "fault_ints" (mini-9pi), the three
+ * as integers, each its 30 low bits (the Pi1's ints; a user's address
+ * is below 1 GB, and of the syndrome mini-9pi reads bit 6, a write).
+ * opti: the integers, where mini-9pi read the strings back (its hex)
+ * at each of the four-core build's 11 million faults; xv6 prints them
+ * whole, as its recorded sessions say them. */
 void user_fault(int ec, uintptr esr, uintptr elr, uintptr far)
 {
   CAMLparam0();
   CAMLlocal2(regs, s);
-  static value *handler = NULL;
+  static value *handler = NULL, *ints = NULL;
+  static int looked = 0;
   uintptr v[3];
   char b[24];
   int k, d;
+  if (!looked) { ints = caml_named_value("fault_ints"); if (ints == NULL) handler = caml_named_value("fault"); looked = 1; }
   v[0] = esr; v[1] = elr; v[2] = far;
   regs = alloc_tuple(3);
+  if (ints != NULL) {
+    for (k = 0; k < 3; k++) Field(regs, k) = Val_long((long)(v[k] & 0x3fffffff));
+    callback2(*ints, Val_int(ec), regs);
+    CAMLreturn0;
+  }
   for (k = 0; k < 3; k++) Field(regs, k) = Val_unit;
   for (k = 0; k < 3; k++) {
     /* "0x%016lx" (by hand: the two builds' C libraries print differently) */
@@ -615,7 +628,6 @@ void user_fault(int ec, uintptr esr, uintptr elr, uintptr far)
     s = copy_string(b);
     Store_field(regs, k, s);
   }
-  if (handler == NULL) handler = caml_named_value("fault");
   callback2(*handler, Val_int(ec), regs);
   CAMLreturn0;
 }

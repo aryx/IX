@@ -99,16 +99,13 @@ let irq () =
     if tick && Proc.preempt_due () then Proc.preempt ();
     Syscall.notify p 0x12)
 
-(* a hex string's value (C's "0x%016lx"): its last 8 digits, the top
- * two bits dropped (the Pi1's ints; a user's address is below 1GB) *)
-let hex s =
-  let t = String.sub s (String.length s - 8) 8 in
-  int_of_string ("0x" ^ t) land 0x3fffffff
-
 (* a user's trap (runtime.c's user_fault: the class, the syndrome, the
- * pc, the address): a page fault resolved (Fault), or the note 9pi's
- * trap posts, which kills it (trap.c, faultarm) *)
-let fault ec ((esr : string), (pc : string), (addr : string)) =
+ * pc, the address, each its 30 low bits): a page fault resolved
+ * (Fault), or the note 9pi's trap posts, which kills it (trap.c,
+ * faultarm).
+ * old: the three as hex strings, C's "0x%016lx", read back by
+ * let hex s = int_of_string ("0x" ^ its last 8 digits) land 0x3fffffff *)
+let fault ec ((esr : int), (pc : int), (addr : int)) =
   timed "a fault" (fun () ->
     let p = Proc.myproc () in
     Machine.doing p.pid p.text "fault";
@@ -118,10 +115,13 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
      * which stops a traced process (Syscall.procctl) and kills another.
      * By bytes: the word does not fit the Pi1's 31-bit ints. Read only
      * where the page is there (a debugger wrote it): a page faulted in
-     * here would make the fault below a fault of rights *)
-    let pc_ = hex pc in
+     * here would make the fault below a fault of rights.
+     * opti: not for a data abort (0x24), which a breakpoint is not: the
+     * build's faults are mostly those, each was two walks of the
+     * tables more *)
+    let pc_ = pc in
     let pg = pc_ land lnot (Mmu.pgsize - 1) in
-    let bkpt = Mmu.mapped p.pgdir pg
+    let bkpt = ec <> 0x24 && Mmu.mapped p.pgdir pg
       && (match Mmu.lookup p.pgdir pg with
           | Some page -> Machine.Phys.read (page.pa + (pc_ - pg)) 4 = "\x70\x00\x20\xe1"
           | None -> false) in
@@ -140,15 +140,15 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
     let refused = ref "" in
     let resolved =
       (ec = 0x24 || ec = 0x20)
-      && (try Fault.fault p (hex addr) with
+      && (try Fault.fault p addr with
           | Error e when e = Proc.eintr -> true
           | Error e -> refused := e; false) in
     if resolved then Syscall.notify p typ
-    else if !refused <> "" then Syscall.trap p (Printf.sprintf "sys: trap: fault: %s va=0x%x" !refused (hex addr)) typ
+    else if !refused <> "" then Syscall.trap p (Printf.sprintf "sys: trap: fault: %s va=0x%x" !refused addr) typ
     else
-      Syscall.trap p (if ec = 0 then Printf.sprintf "undefined instruction: pc 0x%x\n" (hex pc)
+      Syscall.trap p (if ec = 0 then Printf.sprintf "undefined instruction: pc 0x%x\n" pc
                       else Printf.sprintf "sys: trap: fault %s va=0x%x"
-                             (if ec = 0x24 && hex esr land 0x40 <> 0 then "write" else "read") (hex addr)) typ)
+                             (if ec = 0x24 && esr land 0x40 <> 0 then "write" else "read") addr) typ)
 
 (* a new process's first run: the boot process's initcode, then user
  * mode *)
@@ -202,7 +202,7 @@ let () =
   Machine.caches_careful careful;
   Callback.register "trap" trap;
   Callback.register "irq" irq;
-  Callback.register "fault" fault;
+  Callback.register "fault_ints" fault;
   Callback.register "process_start" process_start;
   Machine.gc_clock_start ();
   Dev.seconds := (fun () -> !Proc.ticks / 100);

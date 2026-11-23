@@ -6,6 +6,9 @@
 # failed", opened or commented on (GitHub's own mail of a failed
 # scheduled run goes to whoever last edited the cron line). The runs'
 # times are the Actions tab's: a slower self build is a regression too.
+# Each run's page (its summary) has the build's "self:" lines: the time
+# on the card, and for mix how long the kernel's lock was held and
+# waited for, and what held it.
 
 name: self
 
@@ -51,7 +54,16 @@ jobs:
         system: [tix, mix]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --progress=plain --build-arg SELF=${{matrix.system}} .
+      - run: |
+          set -o pipefail
+          docker build --progress=plain --build-arg SELF=${{matrix.system}} . 2>&1 | tee build.log
+      # the build's "self:" lines (its time, the kernel's lock held and
+      # waited for, what held it: numbers to bring down) on the run's
+      # page, passed or failed
+      - if: always()
+        run: |
+          { echo "### make self-${{matrix.system}}"; echo '```';
+            grep -a -o 'self: .*' build.log || echo "(no self: line)"; echo '```'; } >> $GITHUB_STEP_SUMMARY
       - if: failure()
         env:
           GH_TOKEN: ${{ github.token }}

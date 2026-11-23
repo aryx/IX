@@ -145,4 +145,19 @@ awk '/^cd [^ ]+ && time mk /{d=$2} /r \t mk /{for(i=1;i<=NF;i++) if($i ~ /r$/){s
 # that two runs compared are seen to be two kernels, or the same one)
 stamp=$(grep -a -A1 '^% cat /dev/osversion' "$build/console.txt" | tail -1 | tr -d '\r')
 echo "self: $(awk '{s+=$2} END{printf "%d", s}' "$build/times.txt") s of mk on the card (BUILD/times.txt), kernel $stamp"
+# The kernel's lock, the bound of the four cores (plan_9pi_self_speed.md,
+# 2026-11-23, a number to bring down): how long it was held during the
+# build, of the top mk's time (mk -p's first line), and how long each
+# core waited for it; then what held it most (/dev/lockstat's accounts,
+# a name, times, ms; its "in" lines are parts of those)
+tr -d '\r' < "$build/console.txt" | sed -n '/^% cat \/dev\/waits/,/^% /p' > "$build/lock.txt"
+mk_s=$(grep -a -m1 '^mk: [0-9.]* s:' "$build/card.log" | awk '{print $2}')
+awk -v mk="${mk_s:-0}" '
+  /^lock / { for (i = 2; i <= NF; i++) w += $i; nc = NF - 1 }
+  /^[^%]/ && !/^(in|lock|ready|page) / && $NF ~ /^[0-9]+$/ && $(NF-1) ~ /^[0-9]+$/ { held += $NF }
+  END { if (nc) printf "self: the kernel'"'"'s lock held %d s of mk'"'"'s %d (%d%%), each core waited %d s for it (BUILD/lock.txt)\n",
+          held / 1000, mk, (mk > 0 ? held / 10 / mk : 0), w / 1000 / nc }' "$build/lock.txt"
+awk '/^[^%]/ && !/^(in|lock|ready|page) / && $NF ~ /^[0-9]+$/ && $(NF-1) ~ /^[0-9]+$/ {
+       ms = $NF; $(NF-1) = ""; $NF = ""; sub(/ +$/, ""); printf "%d %s\n", ms, $0 }' "$build/lock.txt" \
+  | sort -rn | head -6 | awk '{ms = $1; $1 = ""; l = l sprintf("%s%s %d s", sep, substr($0, 2), ms / 1000); sep = ", "} END { if (l != "") print "self: what held it most: " l }'
 exit $status

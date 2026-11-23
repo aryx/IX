@@ -160,6 +160,17 @@ val held_ms : int array
 val held_n : int array
 val account : Types.proc -> int -> unit
 val reaccount : Types.proc -> int -> unit
+(* [named_account s]: the account named s, made at its first use *)
+val named_account : string -> int
+(* Parts of the accounts' time, timed apart whatever the account:
+ * [part name] makes one (at a module's start), [part_add i us] adds a
+ * time; nparts_used of them, their names, ms and times *)
+val part : string -> int
+val part_add : int -> int -> unit
+val nparts_used : int ref
+val part_names : string array
+val part_ms : int array
+val part_n : int array
 val sched_start : unit -> unit
 val sched_charge : int -> unit
 val sleep : wait_chan -> unit

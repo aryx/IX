@@ -25,9 +25,19 @@ let sysclose (p : proc) fd =
   Kchan.close c;
   0
 
+(* a read's or a write's account by its device (/dev/lockstat: "Pread
+ * M"), made at its first use *)
+let dev_accounts = Array.make 512 (-1)
+let by_dev (p : proc) w (c : chan) =
+  let i = (w * 256) + Char.code c.dev in
+  if dev_accounts.(i) < 0 then
+    dev_accounts.(i) <- Proc.named_account ((if w = 0 then "Pread " else "Pwrite ") ^ String.make 1 c.dev);
+  Proc.reaccount p dev_accounts.(i)
+
 let syspread (p : proc) fd buf n off =
   if n < 0 then raise (Error ebadarg);
   let c = Kchan.fdtochan p fd (Some Oread) in
+  by_dev p 0 c;
   if c.qid.typ = Qt_dir then begin
     (match off with Some o when o <> c.offset -> raise (Error edirseek) | _ -> ());
     (* a directory is read in several reads, by position. #p's entries
@@ -56,6 +66,7 @@ let syspwrite (p : proc) fd buf n off =
   if n < 0 then raise (Error ebadarg);
   let s = user_read p buf n in
   let c = Kchan.fdtochan p fd (Some Owrite) in
+  by_dev p 1 c;
   if c.qid.typ = Qt_dir then raise (Error eisdir);
   let m = (Dev.find c.dev).Dev.write c s (match off with Some o -> o | None -> c.offset) in
   if off = None then c.offset <- c.offset + m;

@@ -242,13 +242,16 @@ let read (c : chan) n off =
       readstr off n (Printf.sprintf "lock %s\nready %d\npage %d\n"
                        (String.concat " " (List.init !cores (fun c -> string_of_int (Machine.klock_wait c))))
                        !Proc.ready_waited !Proc.page_waited)
-  (* what held the kernel's lock, since the boot (Proc's accounts): a
-   * line "gc", the kernel's collections' ms and how many (in the
-   * others' time); then each account entered, its name, how many times
-   * and its ms *)
+  (* what held the kernel's lock, since the boot (Proc's accounts):
+   * each account entered, its name, how many times and its ms; first
+   * the parts of their time timed apart, "in" and the same (the
+   * kernel's collections, gc; the card's transfers) *)
   | "lockstat" ->
       let b = Buffer.create 1024 in
-      Buffer.add_string b (Printf.sprintf "gc %d %d\n" (Machine.gc_held ()) (Machine.gc_count ()));
+      Buffer.add_string b (Printf.sprintf "in gc %d %d\n" (Machine.gc_count ()) (Machine.gc_held ()));
+      for i = 0 to !Proc.nparts_used - 1 do
+        Buffer.add_string b (Printf.sprintf "in %s %d %d\n" Proc.part_names.(i) Proc.part_n.(i) Proc.part_ms.(i))
+      done;
       for a = 0 to Proc.naccounts - 1 do
         if Proc.held_n.(a) > 0 || Proc.held_ms.(a) > 0 then
           Buffer.add_string b (Printf.sprintf "%s %d %d\n" Proc.account_names.(a) Proc.held_n.(a) Proc.held_ms.(a))

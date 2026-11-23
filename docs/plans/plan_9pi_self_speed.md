@@ -658,6 +658,18 @@ half, 0.3 ms a call: next, what in them (the card, the file system,
 pipes). Then the zeroed pages: 42 GB of them, 830 pages for each of
 the 13,000 programs run, 21 µs each.
 
+The number to bring down, whatever the change (the kernel, the
+toolchain, the mkfiles; the author: "We should track this number and
+work towards lower it as we improve things in the kernel or toolchain
+or mkfile or other", "in this self.yml job"): tests/self.sh's lines
+"self: the kernel's lock held N s of mk's M (P%), each core waited W
+s" and "self: what held it most: ...", which self.yml copies to each
+run's page (its summary). Each whole four-core run measured goes here:
+
+| run | mk on the card | lock held | each core waited | most held by |
+|---|---|---|---|---|
+| 2026-11-23, 8708184c | 1,735 s | about 1,450 s (84%) | 833 s | Pread 555, Pwrite 260, fault-zero 232 |
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

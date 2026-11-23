@@ -69,7 +69,7 @@ let ready p =
  * after its sleep, not during it), and the schedulers' own
  * (sched_charge). One core at a time holds the lock, so the sum over
  * the time since the boot is how full the lock is. *)
-let naccounts = 64
+let naccounts = 128
 let a_interrupt = 48
 let a_fault = 49
 let a_fault_zero = 50
@@ -95,6 +95,32 @@ let add_held a d = let t = held_us.(a) + d in held_ms.(a) <- held_ms.(a) + (t / 
 let account (p : proc) a = accounts.(p.slot) <- a; held_n.(a) <- held_n.(a) + 1
 (* (the entry's account said more precisely: a fault's kind) *)
 let reaccount (p : proc) a = held_n.(accounts.(p.slot)) <- held_n.(accounts.(p.slot)) - 1; account p a
+(* an account by its name, made at its first use (from 64: a read's by
+ * its device, a kernel process's by its name); the last one for all
+ * past the table *)
+let named = Hashtbl.create 31
+let next_named = ref 64
+let named_account s =
+  try Hashtbl.find named s
+  with Not_found ->
+    let a = !next_named in
+    if a < naccounts - 1 then incr next_named;
+    account_names.(a) <- (if a = naccounts - 1 then "others" else s);
+    Hashtbl.add named s a;
+    a
+
+(* Parts of what the accounts count, timed apart whatever the account
+ * (the card's transfers: Emmc; the kernel's collections are runtime.c's) *)
+let nparts = 8
+let part_names = Array.make nparts ""
+let part_ms = Array.make nparts 0
+let part_us = Array.make nparts 0
+let part_n = Array.make nparts 0
+let nparts_used = ref 0
+let part name = let i = !nparts_used in part_names.(i) <- name; incr nparts_used; i
+let part_add i d =
+  let t = part_us.(i) + d in
+  part_ms.(i) <- part_ms.(i) + (t / 1000); part_us.(i) <- t mod 1000; part_n.(i) <- part_n.(i) + 1
 
 (* the schedulers' time, each core's since sched_start, or since its
  * last sched_charge *)

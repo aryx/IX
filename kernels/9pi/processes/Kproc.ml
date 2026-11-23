@@ -25,5 +25,5 @@ let start (p : proc) name work =
       Machine.tf_init slot;
       Machine.proc_context slot;
       Proc.procs.(slot) <- Some k;
-      Proc.account k Proc.a_kproc;
+      Proc.account k (Proc.named_account ("kproc " ^ name));
       Proc.ready k

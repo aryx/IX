@@ -318,7 +318,7 @@ let dma_move write n =
     false
   end
 
-let rec bio c write buf bno nb =
+let rec bio_ c write buf bno nb =
   let len = c.secsize in
   wr blksizecnt ((nb lsl 16) lor len);
   let r = Buffer.create (if write then 0 else nb * len) in
@@ -363,11 +363,21 @@ let rec bio c write buf bno nb =
     (try ignore (cmd 12 0) with Error _ -> ());
     (* (the DMA controller gave up in this transfer: all of it again) *)
     if by_dma && not !use_dma then again := true else raise e);
-  if !again then bio c write buf bno nb
+  if !again then bio_ c write buf bno nb
   else begin
     ignore (cmd 12 0);
     Buffer.contents r
   end
+
+(* (each transfer timed: the kernel's lock is held while it polls,
+ * /dev/lockstat's card) *)
+let card_part = Proc.part "card"
+let bio c write buf bno nb =
+  let t0 = Machine.timer_now () in
+  let fin () = Proc.part_add card_part ((Machine.timer_now () - t0) land 0x3fffffff) in
+  let r = try bio_ c write buf bno nb with e -> fin (); raise e in
+  fin ();
+  r
 
 (* %8.8ux of a register's bytes, the highest first *)
 let hex b =

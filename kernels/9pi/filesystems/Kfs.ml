@@ -178,9 +178,14 @@ let add k bytes =
  * KB), in one read of the device, a command to the card (Linux's
  * readahead, BSD's cluster_read; there the window grows and shrinks).
  * old: add k (device (k * piece) piece) *)
+(* (each piece asked counted, found or not: /dev/lockstat's "in
+ * kfs-hit" and "in kfs-miss", tests/self.sh's line of the card) *)
+let hit_part = Proc.part "kfs-hit"
+let miss_part = Proc.part "kfs-miss"
 let piece_of (device : int -> int -> string) k =
-  try let e = Hashtbl.find pieces k in used.(e.slot) <- true; e
+  try let e = Hashtbl.find pieces k in used.(e.slot) <- true; Proc.part_add hit_part 0; e
   with Not_found ->
+    Proc.part_add miss_part 0;
     let ahead = if Hashtbl.mem pieces (k - 1) then 8 else 1 in
     let rec count n = if n < ahead && not (Hashtbl.mem pieces (k + n)) then count (n + 1) else n in
     let n = count 1 in

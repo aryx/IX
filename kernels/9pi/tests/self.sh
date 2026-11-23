@@ -49,6 +49,7 @@ cd /src
 mk -k -p 'MK=time mk' $t $o $q > /tmp/self.log >[2=1]
 grep '^mk: cd ' /tmp/self.log
 cat /dev/waits /dev/lockstat
+grep '^io ' '#S/sdM0/ctl'
 du -s /src/_mk
 cat /dev/osversion
 /src/_mk/5-plan9/kernels/9pi/tests/self/hello-c
@@ -165,4 +166,14 @@ awk -v mk="${mk_s:-0}" '
 awk '/^[^%]/ && !/^(in|lock|ready|page) / && $NF ~ /^[0-9]+$/ && $(NF-1) ~ /^[0-9]+$/ {
        ms = $NF; $(NF-1) = ""; $NF = ""; sub(/ +$/, ""); printf "%d %s\n", ms, $0 }' "$build/lock.txt" \
   | sort -rn | head -6 | awk '{ms = $1; $1 = ""; l = l sprintf("%s%s %d s", sep, substr($0, 2), ms / 1000); sep = ", "} END { if (l != "") print "self: what held it most: " l }'
+# The card's bytes read and written in the build (Devsd's ctl, its io
+# line), its time reading and writing (lockstat's card-read and
+# card-write), and how often Kfs found a piece in its cache (kfs-hit,
+# kfs-miss): under QEMU the card costs by the byte
+io=$(tr -d '\r' < "$build/console.txt" | grep -a '^io [0-9]* [0-9]*$' | tail -1)
+[ -n "$io" ] && awk -v io="$io" 'BEGIN { split(io, f, " ") }
+  /^in card-read / { rs = $NF / 1000 } /^in card-write / { ws = $NF / 1000 }
+  /^in kfs-hit / { h = $3 } /^in kfs-miss / { m = $3 }
+  END { printf "self: the card: %d MB read in %d s, %d MB written in %d s; Kfs'"'"'s cache %d%% of %d pieces asked\n",
+          f[2] / 1048576, rs, f[3] / 1048576, ws, (h + m > 0 ? 100 * h / (h + m) : 0), h + m }' "$build/lock.txt"
 exit $status

@@ -111,7 +111,7 @@ let named_account s =
 
 (* Parts of what the accounts count, timed apart whatever the account
  * (the card's transfers: Emmc; the kernel's collections are runtime.c's) *)
-let nparts = 8
+let nparts = 16
 let part_names = Array.make nparts ""
 let part_ms = Array.make nparts 0
 let part_us = Array.make nparts 0

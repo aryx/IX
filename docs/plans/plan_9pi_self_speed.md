@@ -671,6 +671,8 @@ run's page (its summary). Each whole four-core run measured goes here:
 | 2026-11-23, 8708184c | 1,735 s | about 1,450 s (84%) | 833 s | Pread 555, Pwrite 260, fault-zero 232 |
 | c870037a, the card's reads and writes counted | 1,727 s | 1,444 s (83%) | 830 s | Pread x 499, Pwrite x 255, fault-zero 225 |
 | Kfs's cache a clock, 128 MB | 1,387 s | 1,085 s (78%) | 592 s | Pwrite x 257, fault-zero 228, Pread x 164 |
+| + writes clustered, reads ahead (the Mac busy) | 1,524 s | 1,198 s (78%) | 690 s | fault-zero 254, Pwrite x 247, Pread x 180 |
+| + names and inodes kept (the Mac busy, load 20) | 1,510 s | 1,171 s (77%) | 670 s | fault-zero 260, Pwrite x 252, Pread x 204 |
 
 The reads and writes were the card's (x, the card's file system;
 c870037a's run): its commands, polled with the lock held, 740 s of the
@@ -681,6 +683,26 @@ back at a time, a used one let off once) and up to 128 MB while the
 machine has 64 MB free: 174,498 reads, 206 s where they were 563, mk
 20% faster, the files Linux's. What is left of the card is mostly its
 writes (167 s), each changed piece written by itself.
+
+Then classic file system work (the author: "are there general, classic
+OS opti relevant here?", "that ideally also are simple to implement
+with few LOC"). Kfs writes each run of neighbouring changed pieces in
+one command (BSD's cluster_write) and reads up to 8 pieces ahead when
+the one before is kept (readahead): the card's commands 174,498 reads
+to 26,290 and 143,797 writes to 11,181, and its time the same, 206 s
+and 167 s. Under QEMU the card costs by the byte, about 3.5 MB/s
+(its DMA and SD emulated), not by the command; on a board, where a
+command waits for the card, the commands are what count. Xv6fs keeps
+the blocks its numbers are read from (inodes, blocks of numbers, the
+bitmap; written through) and the names looked for, found or not
+(Linux's dentries, negative ones too). Both runs were on a Mac busy
+with other work, every account slower, fault-zero too, which none of
+this touches (228 s, then 254 and 260): against it, Open 40% less,
+Stat 45%, Pwrite x 14%, the lock held about 5%. Create is rc's /env
+(804,119, with Pwrite e's 798,211), not the card's. What is left of
+the card's file system is the card: about 390 s of transfers, polled
+with the lock held. A run's time moves with the Mac's load: compare
+accounts against one a change does not touch.
 
 ## The gate
 

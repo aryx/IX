@@ -84,9 +84,26 @@ let npieces = ref 0
 let dirty : (int * (int -> string -> unit)) list ref = ref []
 let ndirty = ref 0
 
+(* opti: the pieces in order, each run of neighbours of a device (up to
+ * 64, 256 KB) one write: a command to the card costs about the same
+ * whatever its size, and the build wrote 143,797 pieces one by one,
+ * 167 s with the kernel's lock held (BSD's cluster_write, Linux's
+ * merged requests).
+ * old: List.iter (fun (k, write) -> write (k * piece) (its bytes)) (List.rev !dirty) *)
 let flush () =
-  List.iter (fun (k, write) -> let e = Hashtbl.find pieces k in write (k * piece) (Machine.Phys.read e.pa e.len))
-    (List.rev !dirty);
+  let bytes k = let e = Hashtbl.find pieces k in Machine.Phys.read e.pa e.len in
+  let rec go l =
+    match l with
+    | [] -> ()
+    | (k, write) :: rest ->
+        let rec run last n acc l =
+          match l with
+          | (k2, w) :: r when k2 = last + 1 && w == write && n < 64 -> run k2 (n + 1) (bytes k2 :: acc) r
+          | _ -> String.concat "" (List.rev acc), l in
+        let s, rest = run k 1 [ bytes k ] rest in
+        write (k * piece) s;
+        go rest in
+  go (List.sort (fun (a, _) (b, _) -> compare a b) !dirty);
   dirty := [];
   ndirty := 0
 
@@ -137,25 +154,42 @@ let () =
   let next = !Mmu.on_empty in
   Mmu.on_empty := (fun () -> for i = 1 to 1024 do ignore i; evict () done; next ())
 
-(* piece [k], read from the device when it is not here; the cache full,
- * or the machine short of pages, one given back for it *)
+(* piece [k]'s bytes kept; the cache full, or the machine short of
+ * pages, one given back for it *)
+let add k bytes =
+  if !npieces >= max_pieces || Mmu.nfree () < low_pages then evict ();
+  (* (all changed, none given back: written, and one again) *)
+  if !npieces >= max_pieces then begin flush (); evict () end;
+  let pa = match Mmu.kalloc () with
+    | Some pa -> pa
+    | None -> flush (); evict (); (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem)) in
+  Machine.Phys.write pa bytes;
+  let s = take_slot () in
+  slots.(s) <- k;
+  used.(s) <- true;
+  let e = { pa = pa; len = String.length bytes; slot = s } in
+  Hashtbl.replace pieces k e;
+  incr npieces;
+  e
+
+(* piece [k], read from the device when it is not here.
+ * opti: read ahead, when the piece before is here (a file read in
+ * order, a program loaded): the next ones not here too, up to 8 (32
+ * KB), in one read of the device, a command to the card (Linux's
+ * readahead, BSD's cluster_read; there the window grows and shrinks).
+ * old: add k (device (k * piece) piece) *)
 let piece_of (device : int -> int -> string) k =
   try let e = Hashtbl.find pieces k in used.(e.slot) <- true; e
   with Not_found ->
-    let bytes = device (k * piece) piece in
-    if !npieces >= max_pieces || Mmu.nfree () < low_pages then evict ();
-    (* (all changed, none given back: written, and one again) *)
-    if !npieces >= max_pieces then begin flush (); evict () end;
-    let pa = match Mmu.kalloc () with
-      | Some pa -> pa
-      | None -> flush (); evict (); (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem)) in
-    Machine.Phys.write pa bytes;
-    let s = take_slot () in
-    slots.(s) <- k;
-    used.(s) <- true;
-    let e = { pa = pa; len = String.length bytes; slot = s } in
-    Hashtbl.replace pieces k e;
-    incr npieces;
+    let ahead = if Hashtbl.mem pieces (k - 1) then 8 else 1 in
+    let rec count n = if n < ahead && not (Hashtbl.mem pieces (k + n)) then count (n + 1) else n in
+    let n = count 1 in
+    let bytes = device (k * piece) (n * piece) in
+    let e = add k (String.sub bytes 0 (min piece (String.length bytes))) in
+    for i = 1 to n - 1 do
+      if i * piece < String.length bytes then
+        ignore (add (k + i) (String.sub bytes (i * piece) (min piece (String.length bytes - (i * piece)))))
+    done;
     e
 
 let cache_read (device : int -> int -> string) at n =

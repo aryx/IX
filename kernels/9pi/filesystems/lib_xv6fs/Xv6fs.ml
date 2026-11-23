@@ -13,6 +13,10 @@ type t = {
   bmapstart : int;
   mutable hint : int;           (* where to look for a free block *)
   mutable ihint : int;          (* and for a free inode: none is free below *)
+  (* the blocks whose numbers were read (inodes, blocks of numbers, the
+   * bitmap), and the names looked for in directories: below *)
+  numbers : (int, Bytes.t) Hashtbl.t;
+  names : (int * string, int option) Hashtbl.t;
 }
 
 type kind = Dir | File | Device
@@ -34,7 +38,36 @@ let dirent = 64               (* ix's extension *)
 let dirsiz = dirent - 2
 
 let pread (t : t) at n = let s = t.pread at n in if String.length s < n then failwith "i/o error" else s
-let pwrite (t : t) at s = match t.pwrite with Some w -> w at s | None -> failwith "read only file system"
+
+(* The blocks numbers are read from, kept (Unix's inodes in core, xv6's
+ * icache, and its buffers of blocks of numbers): a file's read of a
+ * block read its size and the block's number from the disk again,
+ * each a read of 4 bytes through the device's cache, a string made
+ * (mini-9pi's Kfs: plan_9pi_self_speed.md, 2026-11-23). Kept as they
+ * are on the disk: every write goes through pwrite, which changes a
+ * kept block too, so none is ever stale. Up to 4,096 blocks (4 MB of
+ * 1 KB ones), then all forgotten.
+ * old: get16 t at = le16 (pread t at 2) 0, get32 likewise, a byte of
+ * the bitmap by pread t at 1 *)
+let max_numbers = 4096
+let block_of (t : t) b =
+  try Hashtbl.find t.numbers b
+  with Not_found ->
+    if Hashtbl.length t.numbers >= max_numbers then Hashtbl.reset t.numbers;
+    let s = Bytes.of_string (pread t (b * t.bsize) t.bsize) in
+    Hashtbl.add t.numbers b s;
+    s
+
+let pwrite (t : t) at s =
+  (match t.pwrite with Some w -> w at s | None -> failwith "read only file system");
+  let n = String.length s in
+  for b = at / t.bsize to (at + n - 1) / t.bsize do
+    match Hashtbl.find_opt t.numbers b with
+    | Some kept ->
+        let from = max at (b * t.bsize) and upto = min (at + n) ((b + 1) * t.bsize) in
+        Bytes.blit_string s (from - at) kept (from - (b * t.bsize)) (upto - from)
+    | None -> ()
+  done
 
 let le16 s o = Char.code s.[o] lor (Char.code s.[o + 1] lsl 8)
 let le32 s o = le16 s o lor (le16 s (o + 2) lsl 16)
@@ -42,9 +75,12 @@ let b8 v = String.make 1 (Char.chr (v land 0xff))
 let b16 v = b8 v ^ b8 (v lsr 8)
 let b32 v = b16 v ^ b16 (v lsr 16)
 
-(* a number of 16 or 32 bits of the disk, at a byte: read, written *)
-let get16 t at = le16 (pread t at 2) 0
-let get32 t at = le32 (pread t at 4) 0
+(* a number of 8, 16 or 32 bits of the disk, at a byte: read (from its
+ * block, kept), written. (A number is never across two blocks: they
+ * are at even places, 4 for 32 bits) *)
+let get8 t at = Char.code (Bytes.get (block_of t (at / t.bsize)) (at mod t.bsize))
+let get16 t at = get8 t at lor (get8 t (at + 1) lsl 8)
+let get32 t at = get16 t at lor (get16 t (at + 2) lsl 16)
 let set16 t at v = pwrite t at (b16 v)
 let set32 t at v = pwrite t at (b32 v)
 
@@ -58,7 +94,8 @@ let make read_at write_at =
     | None, Some s -> 1024, s
     | None, None -> failwith "not an xv6 file system" in
   { pread = read_at; pwrite = write_at; bsize = bsize; blocks = le32 sb 4; ninodes = le32 sb 12;
-    inodestart = le32 sb 24; bmapstart = le32 sb 28; hint = 0; ihint = 1 }
+    inodestart = le32 sb 24; bmapstart = le32 sb 28; hint = 0; ihint = 1;
+    numbers = Hashtbl.create 1021; names = Hashtbl.create 1021 }
 
 (*****************************************************************************)
 (* Blocks *)
@@ -66,8 +103,8 @@ let make read_at write_at =
 
 (* a block's bit in the bitmap: the byte's place, the bit *)
 let bit (t : t) b = (t.bmapstart * t.bsize) + (b / 8), 1 lsl (b mod 8)
-let taken t b = let at, m = bit t b in Char.code (pread t at 1).[0] land m <> 0
-let mark t b on = let at, m = bit t b in let v = Char.code (pread t at 1).[0] in pwrite t at (b8 (if on then v lor m else v land lnot m))
+let taken t b = let at, m = bit t b in get8 t at land m <> 0
+let mark t b on = let at, m = bit t b in let v = get8 t at in pwrite t at (b8 (if on then v lor m else v land lnot m))
 
 (* a free block taken, zeroed *)
 let balloc (t : t) =
@@ -200,7 +237,7 @@ let bytes_of (t : t) dir =
   if kind t dir <> Dir then failwith "not a directory";
   read t dir 0 (size t dir)
 
-let lookup t dir name =
+let lookup_ t dir name =
   let s = bytes_of t dir and n = String.length name in
   let rec same o j = if j = n then n = dirsiz || s.[o + 2 + n] = '\000' else s.[o + 2 + j] = name.[j] && same o (j + 1) in
   let rec go o =
@@ -209,12 +246,31 @@ let lookup t dir name =
     else go (o + dirent) in
   go 0
 
+(* The names looked for, found or not (Linux's dentries, negative ones
+ * too; BSD's namei cache): an open walks each directory of its path,
+ * and the build's opens are mostly the same paths, many of them a
+ * name that is not there (a compiler looking for a unit in each of its
+ * directories, rc for a command along its path). A name changes only
+ * by link, remove and rename, below, which set it here. Up to 8,192,
+ * then all forgotten.
+ * old: lookup_ alone, the directory's bytes read at each *)
+let max_names = 8192
+let lookup t dir name =
+  try Hashtbl.find t.names (dir, name)
+  with Not_found ->
+    let r = lookup_ t dir name in
+    if Hashtbl.length t.names >= max_names then Hashtbl.reset t.names;
+    Hashtbl.replace t.names (dir, name) r;
+    r
+let named (t : t) dir name r = Hashtbl.replace t.names (dir, name) r
+
 (* a name for an inode, in a directory's first free entry, or at its end *)
 let link (t : t) dir name i =
   let s = bytes_of t dir in
   let rec free o = if o + dirent > String.length s then size t dir else if le16 s o = 0 then o else free (o + dirent) in
   let at = free 0 in
   write t dir at (b16 i ^ name ^ String.make (dirsiz - String.length name) '\000');
+  named t dir name (Some i);
   set16 t (dinode t i + 6) (nlink t i + 1)
 
 (* a name a directory may take: well made, and not there *)
@@ -240,12 +296,15 @@ let remove (t : t) dir name =
       let is_dir = kind t i = Dir in
       if is_dir && entries t i <> [] then failwith "directory not empty";
       write t dir o (String.make dirent '\000');
+      named t dir name None;
       (* (a directory's own two names are not counted against it) *)
       let left = nlink t i - 1 in
       if left <= 0 || (is_dir && left <= 1) then begin
         if is_dir then set16 t (dinode t dir + 6) (nlink t dir - 1);
         truncate t i;
         set16 t (dinode t i) 0;
+        (* (a directory gone: its own two names too, its number another's later) *)
+        if is_dir then begin named t i "." None; named t i ".." None end;
         if i < t.ihint then t.ihint <- i
       end
       else set16 t (dinode t i + 6) left
@@ -254,10 +313,12 @@ let remove (t : t) dir name =
 let rename (t : t) dir name new_name =
   match List.filter (fun (_, i, n) -> i <> 0 && n = name) (slots t dir) with
   | [] -> failwith "file does not exist"
-  | (o, _, _) :: _ ->
+  | (o, i, _) :: _ ->
       if name = "." || name = ".." then failwith "permission denied";
       fresh t dir new_name;
-      write t dir (o + 2) (new_name ^ String.make (dirsiz - String.length new_name) '\000')
+      write t dir (o + 2) (new_name ^ String.make (dirsiz - String.length new_name) '\000');
+      named t dir name None;
+      named t dir new_name (Some i)
 
 (*****************************************************************************)
 (* A new one *)

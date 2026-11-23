@@ -25,7 +25,7 @@
  * Hashtbl, every function of an interface whose type is abstract, none of
  * its cells seen by a caller; for List, a type not abstract, the model
  * reads and writes its real cells, and what is not modeled (partition,
- * split, map2) stays as written; Pervasives' @ too, alone of its unit.
+ * split, map2) stays as written; Stdlib's @ too, alone of its unit.
  * dynamic.sh does not check what the models replace: List's and Hashtbl's
  * functions, and a function whose closure is a model's (model:...,
  * written where the real one is).
@@ -49,7 +49,7 @@ type op =
   | Call of v * v * v           (* dst, the function, its argument *)
   | Raise of string             (* the exception's symbol, caml_exn_Not_found *)
   | Global of v * string        (* holds what the global does (a derived
-                                   summary's: List.hd's Pervasives.failwith) *)
+                                   summary's: List.hd's Stdlib.failwith) *)
 
 (* false: no model, the library's code read as written (mini-analyze
  * -no-models: to compare, Models.ml's numbers, tests/models/) *)

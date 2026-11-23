@@ -222,14 +222,14 @@ let overlay (a : assembly) (from : string) (onto : string) : unit =
   List.iter (fun ((s, v) : string * (string * int * Scope.ty)) -> Hashtbl.replace a.env.externals s v) (moved pre onto a.env.externals)
 
 (* the entry point, <Program>.Main: each unit's init, in order; with
- * Pervasives compiled, its do_at_exit after them, in a finally (the
+ * Stdlib compiled, its do_at_exit after them, in a finally (the
  * channels flushed, even when an exception ends the program, as
  * OCaml's runtime does at its exit) *)
 let finish (a : assembly) : string =
   let cls = W.type_def a.w "" "<Program>" 0x00100181 a.obj in
   let main = W.method_def a.w cls "Main" 0x0096 (static [] S.Void) in
   let calls = List.rev_map (fun (i : int) -> Il.Call i) a.inits in
-  (match Hashtbl.find_opt a.env.by_sym "Pervasives.do_at_exit" with
+  (match Hashtbl.find_opt a.env.by_sym "Stdlib.do_at_exit" with
    | None -> W.set_body a.w main [] (Array.of_list (calls @ [ Il.Ret ])) []
    | Some f ->
        let n = List.length calls in

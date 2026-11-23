@@ -95,9 +95,9 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   | Evar (Global g) -> (
       match Hashtbl.find_opt env.fields g.gsym, g.gsym with
       | Some (f, ty), _ -> if ty <> S.Void then emit k (Il.Ldsfld f)
-      | None, "Pervasives.nan" -> emit k (Il.Ldc_r nan)
-      | None, "Pervasives.infinity" -> emit k (Il.Ldc_r infinity)
-      | None, "Pervasives.neg_infinity" -> emit k (Il.Ldc_r neg_infinity)
+      | None, "Stdlib.nan" -> emit k (Il.Ldc_r nan)
+      | None, "Stdlib.infinity" -> emit k (Il.Ldc_r infinity)
+      | None, "Stdlib.neg_infinity" -> emit k (Il.Ldc_r neg_infinity)
       | None, _ -> (
           match type_of e with
           | Tarrow _ -> refuse e.loc (g.gsym ^ ", a function as a value") "1c"
@@ -127,8 +127,8 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
   (* (Printf's functions with a literal format: compiled, Il_printf) *)
   | Eapply ({ e = Evar (Global g); _ }, args) when Il_printf.applies g.gsym args ->
       Il_printf.compile c env k (expr c env k) e g.gsym args
-  (* (^ String.Concat, Pervasives' own or not: its ML copies twice) *)
-  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym && g.gsym <> "Pervasives.^" ->
+  (* (^ String.Concat, Stdlib's own or not: its ML copies twice) *)
+  | Eapply (({ e = Evar (Global g); _ } as fe), args) when Hashtbl.mem env.by_sym g.gsym && g.gsym <> "Stdlib.^" ->
       call c env k e fe (Hashtbl.find env.by_sym g.gsym) args
   | Eapply (({ e = Evar (Local v); _ } as fe), args) when Hashtbl.mem env.by_var v.vid -> call c env k e fe (Hashtbl.find env.by_var v.vid) args
   | Eapply (({ e = Evar (Global g); _ } as f), args) when Hashtbl.mem env.fields g.gsym -> apply c env k f args
@@ -137,7 +137,7 @@ let rec expr (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       | Some ops ->
           operands c env k args;
           List.iter (emit k) ops
-      | None when String.length g.gsym > 11 && String.sub g.gsym 0 11 = "Pervasives." -> refuse e.loc (g.gsym ^ ", of the library") "3"
+      | None when String.length g.gsym > 7 && String.sub g.gsym 0 7 = "Stdlib." -> refuse e.loc (g.gsym ^ ", of the library") "3"
       | None -> refuse e.loc (g.gsym ^ ", of another unit") "1e")
   | Eapply (f, args) -> apply c env k f args
   | Eseq (a, b) ->
@@ -302,9 +302,9 @@ and expr2 (c : c) (env : env) (k : code) (e : Scope.expr) : unit =
       emit k (Il.Ldc_i8 (Int64.of_int e.loc));
       emit k (Il.Ldc_i8 0L);
       emit k (Il.Newobj (tuple_ctor c e.loc ty));
-      (* (Pervasives' Assert_failure, which a handler names, when it is
+      (* (Stdlib's Assert_failure, which a handler names, when it is
        * in the assembly) *)
-      let sym = if Hashtbl.mem c.memo "unit Pervasives" then "Pervasives.Assert_failure" else "caml_exn_Assert_failure" in
+      let sym = if Hashtbl.mem c.memo "unit Stdlib" then "Stdlib.Assert_failure" else "caml_exn_Assert_failure" in
       let _, ctor, _ = exn c e.loc sym [ ty ] in
       emit k (Il.Newobj ctor);
       emit k Il.Throw;

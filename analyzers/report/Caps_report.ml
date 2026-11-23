@@ -28,7 +28,7 @@ let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
   let held (o : string) : string list =
     List.sort_uniq compare
       (List.filter_map (fun t -> if t.(0) = o then Some ("Cap." ^ t.(1)) else None) (tuples "declared_by" 2)) in
-  (* one function's needs, each with the ways: Cap.stdout (Pervasives.print_string) *)
+  (* one function's needs, each with the ways: Cap.stdout (Stdlib.print_string) *)
   let needs (r : string array list) (o : string) : string =
     let mine = List.filter (fun t -> t.(0) = o) r in
     let by_need =

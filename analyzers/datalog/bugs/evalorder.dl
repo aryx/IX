@@ -70,13 +70,13 @@
 % tuple read their lines in the compiler's order; of a global channel,
 % stdin, since every open_in's is one object: two files read beside each
 % other are not)
-source('Pervasives.input_line'). source('Pervasives.input_char').
-source('Pervasives.input'). source('Pervasives.really_input_string').
-source('Pervasives.input_byte').
+source('Stdlib.input_line'). source('Stdlib.input_char').
+source('Stdlib.input'). source('Stdlib.really_input_string').
+source('Stdlib.input_byte').
 
 made_in(O, F) :- new_block(V, O), var_in(V, F).
 io_call(I) :- target(I, G), sink(G).
-io_call(I) :- target(I, 'Pervasives.read_line').
+io_call(I) :- target(I, 'Stdlib.read_line').
 io_call(I) :- target(I, G), source(G), argument(I, 1, C), global_var(C).
 io_call(I) :- target(I, G), buffer_add(G), argument(I, 1, B), global_var(B).
 % (a library function given a function of the program's: what it writes)

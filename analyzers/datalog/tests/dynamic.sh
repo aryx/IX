@@ -94,7 +94,7 @@ compare() { # ran, facts, reached names
       seen = 0; model = 0
       for (i = 1; i <= n[u]; i++) if (lines[u, i] == best) {
         if (names[u, i] in ok) seen = 1
-        # (a function the models replace, Pervasives.@: model:Pervasives.@)
+        # (a function the models replace, Stdlib.@: model:Stdlib.@)
         if (names[u, i] ~ /^model:/) model = 1
       }
       if (model) print "modeled", $0

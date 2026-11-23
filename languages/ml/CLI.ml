@@ -203,7 +203,7 @@ let preprocess (caps : < caps; .. >) dirs file text =
  * unit's own (Lower.imports). A summary of another text, or none,
  * nothing inlined from that unit. (Every directory's: mini-doom's frame
  * 0.994, mini-ml 6% larger. lib_core's read too, tried 2026-10-27:
- * tiny-machine 0.93 but mini-ml compiling 1.03; Pervasives' few small
+ * tiny-machine 0.93 but mini-ml compiling 1.03; Stdlib's few small
  * functions externals instead, plan_ml_speed.md's 4c.) A summary of
  * another directory, found in an -I's (mkconfig's STDSUM: lib_core's
  * build), its constants alone (Fold's), as ocamlopt's .cmx found by
@@ -294,11 +294,11 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file ~acid text =
 (* -depend's way when a unit's names do not resolve: those it names
  * from its tokens, as ocamldep, a capitalized name before a dot
  * (Unit.x, Unit.(e)), after open, a module's alias (module M = Unit),
- * and Pervasives, opened in every unit: the types' too, more than the
+ * and Stdlib, opened in every unit: the types' too, more than the
  * values whose summaries it reads (a lexer's error: the names before) *)
 let named_units text =
   let lexbuf = Lexing.from_string text in
-  let us = ref [ "Pervasives" ] in
+  let us = ref [ "Stdlib" ] in
   let add u = if not (List.mem u !us) then us := u :: !us in
   let rec go (p3 : Parser.token) (p2 : Parser.token) (p1 : Parser.token) =
     match Lexer.token lexbuf with
@@ -334,7 +334,7 @@ let named_words text =
       go !j (if named then String.sub text i (!j - i) :: acc else acc)
     end else go (i + 1) acc
   [@@tailrec] in
-  go 0 [ "Pervasives" ]
+  go 0 [ "Stdlib" ]
 
 (* -depend obj Unit...: a directory's .depend (mkfiles/depend.rc), mk's
  * line for each unit and each other of those given whose values it
@@ -462,7 +462,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let ext = match Gen.arch !mach with _ when !gas -> ".s" | Arm -> ".5" | Arm64 -> ".7" in
   let outfile file = if !out <> "" then path !out else Fpath.set_ext ext (Fpath.base file) in
   let fail m = eprint caps (m ^ "\n"); 1 in
-  (* -L: the directories of its units.txt's lines, core/Pervasives, and
+  (* -L: the directories of its units.txt's lines, core/Stdlib, and
    * commons; the directory from here or from one above (dune names it
    * from the workspace, and merlin runs -pp in the source's directory) *)
   let root d =
@@ -494,7 +494,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   (* -dotnet: the units, in order, into one assembly (named after -o,
    * else the last unit) *)
   | (_ :: _ as units), incs when !dotnet -> (
-      (* (-L's dotnet/Runtime.ml first: Pervasives' externals of C, in ML
+      (* (-L's dotnet/Runtime.ml first: Stdlib's externals of C, in ML
        * over .NET, which an external's call calls by its name) *)
       let runtime = List.map (fun (d : string) -> Filename.concat (root d) "dotnet/Runtime.ml") (List.rev !libs) in
       let name (f : string) = String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
@@ -516,7 +516,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         order [] all in
       (* (-L's units the program names, and those they name, in
        * units.txt's order, before its own: the stdlib compiled with it,
-       * as .NET has no library of ML's; Pervasives always) *)
+       * as .NET has no library of ML's; Stdlib always) *)
       let lib_units =
         List.concat_map
           (fun (d : string) ->
@@ -554,7 +554,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               | Some o when not (List.exists (fun (u : string) -> Fpath.to_string (path u) = Fpath.to_string (path o)) units) -> [ f; o ]
               | _ -> [ f ])
           lib_units in
-      (* (the runtime first, given or not: Pervasives' externals call it) *)
+      (* (the runtime first, given or not: Stdlib's externals call it) *)
       let runtime = List.filter (fun (f : string) -> FS.read_opt caps (path f) <> None) runtime in
       let is_runtime (u : string) = List.exists (fun (f : string) -> Fpath.to_string (path u) = Fpath.to_string (path f)) runtime in
       let units = runtime @ lib @ List.filter (fun (u : string) -> not (is_runtime u)) units in

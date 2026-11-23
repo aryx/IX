@@ -1,5 +1,5 @@
-(* the runtime unit's channels (lib_core/dotnet/Runtime.ml): Pervasives'
- * externals of C, named here as Pervasives names them: the console's
+(* the runtime unit's channels (lib_core/dotnet/Runtime.ml): Stdlib'
+ * externals of C, named here as Stdlib names them: the console's
  * streams, a file written, read, sought, appended to, sys_open's
  * errors; bytes, a byte[]; sys_exit *)
 
@@ -35,7 +35,7 @@ let output_string (oc : out_channel) (s : string) = unsafe_output oc s 0 (String
 let say (s : string) = output_string out s; output_char out '\n'
 let say_int (n : int) = say (string_of_int n)
 
-(* Pervasives' input_line, over scan_line and input *)
+(* Stdlib's input_line, over scan_line and input *)
 let rec input_line (ic : in_channel) : string =
   let n = scan_line_or ic in
   if n = 0 then raise End_of_file

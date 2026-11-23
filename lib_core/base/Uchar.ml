@@ -44,7 +44,7 @@ let to_char u =
 
 
 let equal : t -> t -> bool = ( = )
-let compare : t -> t -> int = Pervasives.compare
+let compare : t -> t -> int = Stdlib.compare
 
 
 (* ix: OCaml's later functions, those ix's programs use *)

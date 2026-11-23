@@ -72,10 +72,10 @@ let rec expanded t = match repr t with Con (d, args) -> (match expand d args wit
 
 let current = ref ""
 
-(* the unit's own types, and Pervasives's, by their names *)
+(* the unit's own types, and Stdlib's, by their names *)
 let path (d : Scope.tdecl) =
   let strip p s = if String.starts_with ~prefix:(p ^ ".") s then String.sub s (String.length p + 1) (String.length s - String.length p - 1) else s in
-  strip "Pervasives" (strip !current d.tpath)
+  strip "Stdlib" (strip !current d.tpath)
 
 let show_with names t =
   let name r =
@@ -429,7 +429,7 @@ let typed_prims =
 let typed : (Ast.span * t * int) list ref = ref []
 (* min and max, and the unit's globals that are them (let min =
  * Int.min, mini-doom's renderer's): each with the one it is *)
-let min_max_base = [ "Pervasives.min"; "Pervasives.max"; "Int.min"; "Int.max" ]
+let min_max_base = [ "Stdlib.min"; "Stdlib.max"; "Int.min"; "Int.max" ]
 let min_max : (string, string) Hashtbl.t = Hashtbl.create 8
 
 let rec infer env (e : Scope.expr) : t =

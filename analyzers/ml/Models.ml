@@ -276,7 +276,7 @@ let pervasives : (string * (int * op list)) list =
   [ ("@", (2, elements (Arg 1) 1 @ made (Tmp 1) @ [ Assign (Ret, Arg 2) ])) ]
 
 let units : (string * (string * (int * op list)) list) list =
-  [ ("Hashtbl", hashtbl); ("List", list); ("Pervasives", pervasives) ]
+  [ ("Hashtbl", hashtbl); ("List", list); ("Stdlib", pervasives) ]
 
 let on : bool ref = ref true
 let derived : (string, int * op list) Hashtbl.t = Hashtbl.create 256

@@ -15,7 +15,7 @@
 
 (* ported from ocaml 4.00 *)
 
-(* (externals: Pervasives.mli) old: let ( @@ ) f x = f x
+(* (externals: Stdlib.mli) old: let ( @@ ) f x = f x
  * let (|>) o f = f o *)
 external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
 external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"

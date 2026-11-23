@@ -161,7 +161,7 @@ value int64_format(value fmt, value a) { return format_num(fmt, Int64_val(a), 64
 value int64_of_string(value s) { return copy_int64(parse_int(s, "Int64.of_string")); }
 
 /* A float's bits as an int64 and back: the block's 8 bytes, no float's
- * instruction (so on arm too: Pervasives' infinity and nan are made of
+ * instruction (so on arm too: Stdlib's infinity and nan are made of
  * their bits when a program starts). An int32's are the single's that
  * the double rounds to. */
 value int64_bits_of_float(value a) { return copy_int64(Int64_val(a)); }

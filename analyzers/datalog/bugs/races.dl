@@ -26,7 +26,7 @@
 % design:
 % The roots: what Sys.signal is given in Signal_handle, and what
 % Thread.create (Thread.make) is given; the program's code is what the
-% entries and the callbacks run, not through a root (Pervasives runs the
+% entries and the callbacks run, not through a root (Stdlib runs the
 % handlers where the program waits, Thread.make's function is C's).
 % A handler's write races one of the program's to the same object's
 % field, an object the program made (one the handler makes is a new one
@@ -83,7 +83,7 @@ made_by_program(H, R) :-
 
 % (a handler that ends the program, exit: what it writes the program
 % never reads after; ed's hangup, which saves the buffer)
-ends_program(R) :- in_function(I, R), target(I, 'Pervasives.exit').
+ends_program(R) :- in_function(I, R), target(I, 'Stdlib.exit').
 raced(H, Fld, F1, R, F2) :-
   root_kind(R, handler), \+ ends_program(R), runs_in(F1, R),
   writes_field(F1, H, Fld), made_by_program(H, R), program_runs(F2),

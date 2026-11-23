@@ -107,7 +107,7 @@ examples:V: install
 # on the card, where all of lib_core.a takes six.
 self-quick:V:
 	l=../_mk/$O-$OS/lib_core
-	cd lib_core && $MK $ARGS $l/libc.a $l/runtime.$O $l/std_exit.$O $l/Pervasives.$O $l/List.$O $l/Printf.$O
+	cd lib_core && $MK $ARGS $l/libc.a $l/runtime.$O $l/std_exit.$O $l/Stdlib.$O $l/List.$O $l/Printf.$O
 	cd ../kernels/9pi/tests/self && $MK $ARGS
 
 # depend makes every directory's .depend (mkfiles/mkdepend) again, in

@@ -9,7 +9,7 @@ local skeletons = import '../skeletons.libsonnet';
     skeletons.parts('lib_core: two builds, one set of names', [
       ['commons/', "ix's own (ix_core): FS, Console, Exit, Procs"],
       ['system/', 'Cap, Unix by system calls, Sys, Fpath, Logs'],
-      ['core/', 'Pervasives, Obj, Marshal: what a unit has'],
+      ['core/', 'Stdlib, Obj, Marshal: what a unit has'],
       ['base/', 'numbers, strings, bytes'],
       ['collections/', 'lists, arrays, tables, queues'],
       ['printing/', 'Printf, Format, Printexc'],
@@ -25,7 +25,7 @@ local skeletons = import '../skeletons.libsonnet';
       ['printing/', 'base/', 'strings and buffers'],
       ['concurrency/', 'collections/', 'the ready Queue'],
       ['core/', 'libc/', "the runtime's C, linked over it"],
-      ['dotnet/', 'core/', "Pervasives' externals, in ML"],
+      ['dotnet/', 'core/', "Stdlib's externals, in ML"],
     ]),
     // claude: the chain every program's Main.ml makes (mini-mk's as an
     // example), down to the system call

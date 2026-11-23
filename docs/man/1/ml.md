@@ -93,7 +93,7 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
      unit's function of its name (-L's `dotnet/Runtime.ml`, compiled
      first: the math, the numbers read and written, the channels over
      .NET's Streams; `bytes` a byte[]). With **-L**, the library's units
-     the program names are compiled with it, in their order (Pervasives
+     the program names are compiled with it, in their order (Stdlib
      always, List, String, Hashtbl, Printf...); a format is a function
      of where its text goes, a literal's compiled (Printf's and
      Format's functions over it: *-L*'s `dotnet/Printf_dotnet.ml`, in

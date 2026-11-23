@@ -1,11 +1,11 @@
-(* The runtime of mini-ml -dotnet: Pervasives' externals of C, the
+(* The runtime of mini-ml -dotnet: Stdlib's externals of C, the
  * native runtime's (languages/ml/runtime/*.c), written in ML over .NET's
  * members (the plan_dotnet_languages.md's stage 3b, its decision 7's
  * externals). mini-ml -dotnet -L lib_core compiles it first, into the
  * program's assembly, and a call of an external of C is a call of the
  * function here of its name:
  *
- *   Pervasives.mli   external sqrt : float -> float = "sqrt_float" ...
+ *   Stdlib.mli   external sqrt : float -> float = "sqrt_float" ...
  *   program.ml       sqrt 2.0
  *   assembly         call float64 Runtime::sqrt_float(float64)
  *   Runtime.ml       let sqrt_float x = m_sqrt x
@@ -31,7 +31,7 @@
  * or a file's (File's OpenRead, OpenWrite, Create, no enum to name);
  * the descriptors numbers in a table of them, as sys_open returns one.
  *
- *   Pervasives      stdout = open_descriptor_out 1
+ *   Stdlib      stdout = open_descriptor_out 1
  *                     |  external ... = "caml_open_descriptor"
  *   Runtime         { stream = Console.OpenStandardOutput(); buf; ... }
  *                     |  output_string: caml_output, a byte at a time

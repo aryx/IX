@@ -14,7 +14,7 @@
 (**************************************************************************)
 
 (** Result values: either a value [Ok v] or an error [Error e]. The type
-    itself is Pervasives's [result], so that [Ok] and [Error] need no
+    itself is Stdlib's [result], so that [Ok] and [Error] need no
     module's name. *)
 
 type ('a, 'e) t = ('a, 'e) result = Ok of 'a | Error of 'e

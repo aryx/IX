@@ -8,7 +8,7 @@
  *         Ldstr " is "; Concat
  *         Ldstr "%5d"; Ldloc n; call Runtime::format_int; Concat
  *         Ldstr "\n"; Concat
- *         call Pervasives::print_string
+ *         call Stdlib::print_string
  *
  * lib_core's Printf interprets the format at run time, a string, and
  * builds its result's closures with Obj.magic: untyped, what .NET's

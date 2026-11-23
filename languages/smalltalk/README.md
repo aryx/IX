@@ -41,7 +41,7 @@ runs it (323 lines are not the playground's):
   and `run_until`, `evaluate` and `evaluate_with`; `call`'s budget);
 - polymorphic variants made one variant (`St_primitives`'s
   arithmetic), `Option.value` written out, `Float`'s functions by
-  Pervasives' names, a `String.fold_left` a loop;
+  Stdlib's names, a `String.fold_left` a loop;
 - SmallIntegers of 30 bits on every host (`St_lexer`'s bounds), where
   they were 31: an OCaml int of an arm has 31;
 - `St_bitblt`, `St_colorblt`: what a copy is asked with is a record

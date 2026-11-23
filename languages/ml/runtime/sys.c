@@ -290,7 +290,7 @@ sys_system_command(value cmd)
 /* Signals. A handler is OCaml's (Sys.signal's function), and C can't
  * call it: here a signal is only noted, and the stdlib runs the
  * handlers of those noted where a program waits, when a read or a
- * system call comes back interrupted (Pervasives' run_signals). So a
+ * system call comes back interrupted (Stdlib's run_signals). So a
  * handler runs between two instructions of OCaml's, never in the
  * middle of the collector; and not in a computation that asks nothing
  * of the system, where OCaml would run it at an allocation. */

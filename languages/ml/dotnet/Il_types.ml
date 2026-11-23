@@ -476,7 +476,7 @@ let unit_class (c : c) (name : string) : int option =
 
 (* a type's class made: of the unit, nested in the unit's (F#'s modules:
  * so C# names it Unit.t, and no namespace has the unit's class's name);
- * of Pervasives (ref, option), in the namespace Stdlib of this assembly
+ * of Stdlib (ref, option), in the namespace Stdlib of this assembly
  * (until several units: stage 1e); another unit's, not yet. Generic,
  * t`1 as .NET names it, its parameters T0... [flags]: its own, the
  * visibility added *)
@@ -489,7 +489,7 @@ let make_class (c : c) (loc : int) (path : string) (arity : int) (flags : int) (
         let cls = W.type_def c.w "" name (flags lor 0x2) parent in
         W.nest c.w cls outer;
         cls
-    | None when ns = "Pervasives" -> W.type_def c.w "Stdlib" name (flags lor 0x1) parent
+    | None when ns = "Stdlib" -> W.type_def c.w "Stdlib" name (flags lor 0x1) parent
     | None -> refuse loc ("the type " ^ path ^ ", of a unit not compiled with it") "1e" in
   for i = 0 to arity - 1 do
     W.generic_param c.w cls i (Printf.sprintf "T%d" i)
@@ -555,7 +555,7 @@ let rec cts (c : c) (loc : int) (t : Scope.ty) : S.t =
    * in this assembly: that definition) *)
   | Tconstr (d, args) when d.tabbrev = None && (match Hashtbl.find_opt implementations d.tpath with Some d' -> d' != d | None -> false) ->
       cts c loc (Tconstr (Hashtbl.find implementations d.tpath, args))
-  (* (a unit's abstract type, Pervasives' in_channel: an object, which
+  (* (a unit's abstract type, Stdlib's in_channel: an object, which
    * the runtime unit casts to what it is) *)
   | Tconstr (d, _) when d.tabbrev = None && String.contains d.tpath '.' -> S.Object
   | Tconstr (d, _) -> refuse loc ("a value of type " ^ d.tpath) "1d"
@@ -604,7 +604,7 @@ and tuple (c : c) (loc : int) (n : int) : tclass =
   match Hashtbl.find_opt classes key with
   | Some t -> t
   | None ->
-      let t = { tok = make_class c loc "Pervasives.tuple" n 0x00100100 (sys c "Object"); arity = n; fields = []; ftoks = []; ctor = 0 } in
+      let t = { tok = make_class c loc "Stdlib.tuple" n 0x00100100 (sys c "Object"); arity = n; fields = []; ftoks = []; ctor = 0 } in
       Hashtbl.replace classes key t;
       t.fields <- List.init n (fun (i : int) -> (Printf.sprintf "Item%d" (i + 1), S.Var i));
       t.ftoks <- List.map (fun ((f, ty) : string * S.t) -> W.field_def c.w t.tok f 0x0006 ty) t.fields;
@@ -625,7 +625,7 @@ and variant (c : c) (loc : int) (d : Scope.tdecl) : tclass =
       (* (OCaml's list, a variant of the language's: Stdlib's too, its
        * constructors' classes Nil and Cons, names that C# can say) *)
       let predefined = d == Resolve.list_d in
-      let path = if predefined then "Pervasives." ^ d.tpath else d.tpath in
+      let path = if predefined then "Stdlib." ^ d.tpath else d.tpath in
       let t = { tok = make_class c loc path arity 0x00100080 (sys c "Object"); arity; fields = []; ftoks = []; ctor = 0 } in
       Hashtbl.replace classes key t;
       constructor c t (object_ctor c);
@@ -774,23 +774,23 @@ let exn (c : c) (loc : int) (sym : string) (args : Scope.ty list) : int * int * 
     (Hashtbl.find c.memo key, Hashtbl.find c.memo (key ^ " ctor"), fun (i : int) -> Hashtbl.find c.memo (Printf.sprintf "%s.%d" key i))
   end
 
-(* the calls of Pervasives this stage has, as .NET's library's *)
+(* the calls of Stdlib this stage has, as .NET's library's *)
 let builtin (c : c) (sym : string) : Il.op list option =
   let write (t : S.t) = Il.Call (lib c "Console" "Write" (static [ t ] S.Void)) in
   let throw (name : string) =
     let _, ctor, _ = exn c 0 ("caml_exn_" ^ name) [ Resolve.string_t ] in
     [ Il.Newobj ctor; Il.Throw ] in
   match sym with
-  | "Pervasives.print_int" -> Some [ write S.I8 ]
-  | "Pervasives.print_string" -> Some [ write S.String ]
-  | "Pervasives.print_char" -> Some [ Il.Conv (Il.K_u2, false, false); write S.Char ]
-  | "Pervasives.print_endline" -> Some [ Il.Call (lib c "Console" "WriteLine" (static [ S.String ] S.Void)) ]
-  | "Pervasives.print_newline" -> Some [ Il.Call (lib c "Console" "WriteLine" (static [] S.Void)) ]
-  | "Pervasives.^" -> Some [ Il.Call (lib c "String" "Concat" (static [ S.String; S.String ] S.String)) ]
+  | "Stdlib.print_int" -> Some [ write S.I8 ]
+  | "Stdlib.print_string" -> Some [ write S.String ]
+  | "Stdlib.print_char" -> Some [ Il.Conv (Il.K_u2, false, false); write S.Char ]
+  | "Stdlib.print_endline" -> Some [ Il.Call (lib c "Console" "WriteLine" (static [ S.String ] S.Void)) ]
+  | "Stdlib.print_newline" -> Some [ Il.Call (lib c "Console" "WriteLine" (static [] S.Void)) ]
+  | "Stdlib.^" -> Some [ Il.Call (lib c "String" "Concat" (static [ S.String; S.String ] S.String)) ]
   (* (an int64 boxed, its ToString: Int64's own, by the object's class) *)
-  | "Pervasives.string_of_int" -> Some [ Il.Box (sys c "Int64"); Il.Callvirt (lib c "Object" "ToString" (instance [] S.String)) ]
-  | "Pervasives.failwith" -> Some (throw "Failure")
-  | "Pervasives.invalid_arg" -> Some (throw "Invalid_argument")
+  | "Stdlib.string_of_int" -> Some [ Il.Box (sys c "Int64"); Il.Callvirt (lib c "Object" "ToString" (instance [] S.String)) ]
+  | "Stdlib.failwith" -> Some (throw "Failure")
+  | "Stdlib.invalid_arg" -> Some (throw "Invalid_argument")
   | _ -> None
 
 let type_of (e : Scope.expr) : Scope.ty =

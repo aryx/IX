@@ -17,7 +17,7 @@ type ('a,'b) result = Ok of 'a | Error of 'b
 
 (* ix: these are externals, as in OCaml since 4.01. f @@ x and x |> f
  * become the call f x (in mini-ml's Lower), and x |> f a becomes the
- * call f a x, instead of a call to a function of Pervasives that then
+ * call f a x, instead of a call to a function of Stdlib that then
  * applies the closure of f.
  * old: val ( @@ ) : ('a -> 'b) -> 'a -> 'b, and |>'s *)
 external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
@@ -39,7 +39,7 @@ type ('a, 'b, 'c) format = ('a, 'b, 'c, 'c) format4
 *)
 
 
-(* Module [Pervasives]: the initially opened module *)
+(* Module [Stdlib]: the initially opened module *)
 
 (* This module provides the built-in types (numbers, booleans,
    strings, exceptions, references, lists, arrays, input-output channels, ...)
@@ -47,7 +47,7 @@ type ('a, 'b, 'c) format = ('a, 'b, 'c, 'c) format4
 
    This module is automatically opened at the beginning of each compilation.
    All components of this module can therefore be referred by their short
-   name, without prefixing them by [Pervasives]. *)
+   name, without prefixing them by [Stdlib]. *)
 
 (*** Predefined types *)
 

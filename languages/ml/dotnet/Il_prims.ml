@@ -89,7 +89,7 @@ and dotnet (c : c) (k : code) (cx : compiler) (e : Scope.expr) (p : string) (pty
   else Il_externals.convert c k m.ret m.ml_ret
 
 and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : string) (args : Scope.expr list) : unit =
-  (* (Pervasives' string_length and bytes_length: the native compiler's
+  (* (Stdlib's string_length and bytes_length: the native compiler's
    * builtin, of either type, as %string_length is) *)
   let p = if p = "ml_string_length" then "%string_length" else p in
   let all () = cx.operands args in
@@ -295,7 +295,7 @@ and prim (c : c) (env : env) (k : code) (cx : compiler) (e : Scope.expr) (p : st
       emit k (Il.Conv (Il.K_i4, false, false));
       emit k (Il.Callvirt (lib c "String" "get_Chars" (instance [ S.I4 ] S.Char)));
       emit k (Il.Conv (Il.K_i4, false, false))
-  (* ref, !, :=, incr, decr: Pervasives' 'a ref, a record *)
+  (* ref, !, :=, incr, decr: Stdlib's 'a ref, a record *)
   | "%makemutable", _ -> cx.values args; emit k (Il.Newobj (record_ctor c e.loc (type_of e)))
   (* (fst and snd: a tuple's Item1 and Item2) *)
   | ("%field0" | "%field1"), [ r ] when (match unabbrev (type_of r) with Ttuple _ -> true | _ -> false) ->

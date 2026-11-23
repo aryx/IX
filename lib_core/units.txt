@@ -2,7 +2,7 @@
 # (ocaml-light's stdlib/Makefile's; std_exit, the last, is apart).
 # From ocaml-light f397c6bf (2026-09-16), its stdlib/, the files'
 # names capitalized and split in directories as xix's lib_core.
-core/Pervasives
+core/Stdlib
 base/Int32
 base/Int64
 collections/Seq

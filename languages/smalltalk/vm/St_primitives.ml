@@ -5,7 +5,7 @@
 (* After the playground's (languages/smalltalk there), made what mini-ml
  * takes (docs/plans/plan_system_squeak.md): the arithmetic primitives
  * answer a variant of their own, not polymorphic ones; Float's functions
- * by Pervasives' names; Bytes.init a loop; SmallInteger's bounds are
+ * by Stdlib's names; Bytes.init a loop; SmallInteger's bounds are
  * St_lexer's, 30 bits. *)
 
 module M = St_memory

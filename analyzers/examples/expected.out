@@ -14,7 +14,7 @@ never reached: Log.unused (Log.ml:3)
 Log.ml:3: dead: Log.unused, nothing names it
 1 functions dead (1 nothing names), 0 only through a pointer; 0 globals, 0 fields, 0 constructors, 0 statements
 % mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -caps Log.ml Main.ml
-Log.ml:2: Log.shout: no capability, needs Cap.stdout (Pervasives.print_string)
+Log.ml:2: Log.shout: no capability, needs Cap.stdout (Stdlib.print_string)
 1 functions with no capability, 0 with the wrong one, 0 with one they may not need, 0 with all of them, 0 naming a system call themselves, 0 wrappers of an untyped capability; missing: Cap.stdout 1
 % mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -exn Log.ml Main.ml
 Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3 (Main.first)

@@ -15,17 +15,17 @@
 
 external neg : float -> float = "%negfloat"
 external abs : float -> float = "%absfloat"
-let infinity = Pervasives.infinity
-let neg_infinity = Pervasives.neg_infinity
-let nan = Pervasives.nan
-let max_float = Pervasives.max_float
-let min_float = Pervasives.min_float
-let epsilon_float = Pervasives.epsilon_float
+let infinity = Stdlib.infinity
+let neg_infinity = Stdlib.neg_infinity
+let nan = Stdlib.nan
+let max_float = Stdlib.max_float
+let min_float = Stdlib.min_float
+let epsilon_float = Stdlib.epsilon_float
 
 external of_int : int -> float = "%floatofint"
 external to_int : float -> int = "%intoffloat"
 external of_string : string -> float = "float_of_string" [@@raise Failure]
-let to_string = Pervasives.string_of_float
+let to_string = Stdlib.string_of_float
 
 external pow : float -> float -> float = "power_float" "pow"
   (*[@@unboxed] [@@noalloc]*)
@@ -44,7 +44,7 @@ external ceil : float -> float = "ceil_float" "ceil"
   (*[@@unboxed] [@@noalloc]*)
 external floor : float -> float = "floor_float" "floor"
   (*[@@unboxed] [@@noalloc]*)
-let frexp = Pervasives.frexp
+let frexp = Stdlib.frexp
 type t = float
 let compare : t -> t -> int = compare
 let equal x y = compare x y = 0
@@ -59,7 +59,7 @@ let pi = 3.14159265358979312
 (* (not C's hypot: x *. x overflows where the length itself would not) *)
 let hypot (x : float) (y : float) = sqrt ((x *. x) +. (y *. y))
 
-let rem = Pervasives.mod_float
+let rem = Stdlib.mod_float
 
 (* to an integer, toward zero; to the nearest, a half away from zero
  * (x -. t is exact) *)

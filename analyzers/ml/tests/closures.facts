@@ -617,11 +617,11 @@ global_var('Kit.handlers').
 var_in('Kit.handlers', 'Kit:init').
 assign('Kit.handlers', 'Kit:handlers/31').
 var_in('Kit:current/32', 'Kit:init').
-vtype('Kit:current/32', 'Pervasives.ref').
-vfull('Kit:current/32', '(int -> int) Pervasives.ref').
+vtype('Kit:current/32', 'Stdlib.ref').
+vfull('Kit:current/32', '(int -> int) Stdlib.ref').
 var_in('Kit:t22', 'Kit:init').
 vtype('Kit:t22', '->').
-vfull('Kit:t22', '((int -> int) -> (int -> int) Pervasives.ref)').
+vfull('Kit:t22', '((int -> int) -> (int -> int) Stdlib.ref)').
 htype('prim:%makemutable', '->').
 parameter('prim:%makemutable', 1, 'prim:%makemutable:arg1').
 var_in('prim:%makemutable:arg1', 'prim:%makemutable').
@@ -629,14 +629,14 @@ return('prim:%makemutable', 'prim:%makemutable:ret').
 var_in('prim:%makemutable:ret', 'prim:%makemutable').
 scalar('prim:%makemutable:ret').
 new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
-htype('prim:%makemutable:block', 'Pervasives.ref').
+htype('prim:%makemutable:block', 'Stdlib.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Kit:t22', 'prim:%makemutable').
 site_key('Kit:29:c20', 'Kit:1078-1081').
 scalar('Kit:current/32').
 new_block('Kit:current/32', 'Kit:29:c20:block').
-htype('Kit:29:c20:block', 'Pervasives.ref').
-hfull('Kit:29:c20:block', '(int -> int) Pervasives.ref').
+htype('Kit:29:c20:block', 'Stdlib.ref').
+hfull('Kit:29:c20:block', '(int -> int) Stdlib.ref').
 alloc_in('Kit:29:c20:block', 'Kit').
 assign_store_field('Kit:current/32', 'fld:contents', 'Kit.negate').
 global_def('Kit.current', 'Kit:init').
@@ -1027,11 +1027,11 @@ child('Kit:e103', 0, 'Kit:e104').
 child('Kit:e102', 0, 'Kit:e103').
 init('Use:init').
 var_in('Use:total/1', 'Use:init').
-vtype('Use:total/1', 'Pervasives.ref').
-vfull('Use:total/1', 'int Pervasives.ref').
+vtype('Use:total/1', 'Stdlib.ref').
+vfull('Use:total/1', 'int Stdlib.ref').
 var_in('Use:t1', 'Use:init').
 vtype('Use:t1', '->').
-vfull('Use:t1', '(int -> int Pervasives.ref)').
+vfull('Use:t1', '(int -> int Stdlib.ref)').
 htype('prim:%makemutable', '->').
 parameter('prim:%makemutable', 1, 'prim:%makemutable:arg1').
 var_in('prim:%makemutable:arg1', 'prim:%makemutable').
@@ -1040,7 +1040,7 @@ var_in('prim:%makemutable:ret', 'prim:%makemutable').
 scalar('ext').
 scalar('prim:%makemutable:ret').
 new_block('prim:%makemutable:ret', 'prim:%makemutable:block').
-htype('prim:%makemutable:block', 'Pervasives.ref').
+htype('prim:%makemutable:block', 'Stdlib.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Use:t1', 'prim:%makemutable').
 site_key('Use:2:c1', 'Use:79-82').
@@ -1049,8 +1049,8 @@ var_in('Use:const', 'Use:init').
 scalar('Use:const').
 scalar('Use:total/1').
 new_block('Use:total/1', 'Use:2:c1:block').
-htype('Use:2:c1:block', 'Pervasives.ref').
-hfull('Use:2:c1:block', 'int Pervasives.ref').
+htype('Use:2:c1:block', 'Stdlib.ref').
+hfull('Use:2:c1:block', 'int Stdlib.ref').
 alloc_in('Use:2:c1:block', 'Use').
 assign_store_field('Use:total/1', 'fld:contents', 'Use:const').
 global_def('Use.total', 'Use:init').
@@ -1112,7 +1112,7 @@ bound_var('Use:go/3', 'Use:rest/6').
 assign_load_field('Use:rest/6', 'Use:hs/4', 'con:::.1').
 var_in('Use:t2', 'Use:go/3').
 vtype('Use:t2', '->').
-vfull('Use:t2', '(int Pervasives.ref -> (int -> unit))').
+vfull('Use:t2', '(int Stdlib.ref -> (int -> unit))').
 htype('prim:%setfield0', '->').
 parameter('prim:%setfield0', 1, 'prim:%setfield0:arg1').
 var_in('prim:%setfield0:arg1', 'prim:%setfield0').
@@ -1158,7 +1158,7 @@ vtype('Use:t5', 'int').
 vfull('Use:t5', 'int').
 var_in('Use:t6', 'Use:go/3').
 vtype('Use:t6', '->').
-vfull('Use:t6', '(int Pervasives.ref -> int)').
+vfull('Use:t6', '(int Stdlib.ref -> int)').
 htype('prim:%field0', '->').
 parameter('prim:%field0', 1, 'prim:%field0:arg1').
 var_in('prim:%field0:arg1', 'prim:%field0').
@@ -1248,7 +1248,7 @@ bound_var('Use:fun1@11', 'Use:x/10').
 assign('Use:x/10', 'Use:fun1@11:arg').
 var_in('Use:t12', 'Use:fun1@11').
 vtype('Use:t12', '->').
-vfull('Use:t12', '(int Pervasives.ref -> (int -> unit))').
+vfull('Use:t12', '(int Stdlib.ref -> (int -> unit))').
 assign_address('Use:t12', 'prim:%setfield0').
 site_key('Use:11:c10', 'Use:319-321').
 var_in('Use.total', 'Use:fun1@11').
@@ -1265,7 +1265,7 @@ vtype('Use:t15', 'int').
 vfull('Use:t15', 'int').
 var_in('Use:t16', 'Use:fun1@11').
 vtype('Use:t16', '->').
-vfull('Use:t16', '(int Pervasives.ref -> int)').
+vfull('Use:t16', '(int Stdlib.ref -> int)').
 assign_address('Use:t16', 'prim:%field0').
 site_key('Use:11:c12', 'Use:322-328').
 scalar('Use:t15').
@@ -1279,7 +1279,7 @@ vtype('Use:t18', '->').
 vfull('Use:t18', '(int -> int)').
 var_in('Use:t19', 'Use:fun1@11').
 vtype('Use:t19', '->').
-vfull('Use:t19', '((int -> int) Pervasives.ref -> (int -> int))').
+vfull('Use:t19', '((int -> int) Stdlib.ref -> (int -> int))').
 assign_address('Use:t19', 'prim:%field0').
 site_key('Use:11:c13', 'Use:331-343').
 global_var('Kit.current').
@@ -1328,7 +1328,7 @@ assign_store_field('Use:t20', 'con:::.1', 'Use:t21').
 argument('Use:11:c15', 1, 'Use:t20').
 var_in('Use:t23', 'Use:init').
 vtype('Use:t23', '->').
-vfull('Use:t23', '(int Pervasives.ref -> (int -> unit))').
+vfull('Use:t23', '(int Stdlib.ref -> (int -> unit))').
 assign_address('Use:t23', 'prim:%setfield0').
 site_key('Use:12:c16', 'Use:365-367').
 var_in('Use:t24', 'Use:init').
@@ -1353,7 +1353,7 @@ vtype('Use:t27', 'int').
 vfull('Use:t27', 'int').
 var_in('Use:t28', 'Use:init').
 vtype('Use:t28', '->').
-vfull('Use:t28', '(int Pervasives.ref -> int)').
+vfull('Use:t28', '(int Stdlib.ref -> int)').
 assign_address('Use:t28', 'prim:%field0').
 site_key('Use:12:c19', 'Use:385-391').
 scalar('Use:t27').
@@ -1444,7 +1444,7 @@ bound_var('Use:init', 'Use:f/9').
 assign_load_field('Use:f/9', 'exn', 'con:Stop.0').
 var_in('Use:t35', 'Use:init').
 vtype('Use:t35', '->').
-vfull('Use:t35', '(int Pervasives.ref -> (int -> unit))').
+vfull('Use:t35', '(int Stdlib.ref -> (int -> unit))').
 assign_address('Use:t35', 'prim:%setfield0').
 site_key('Use:15:c25', 'Use:510-512').
 var_in('Use:t36', 'Use:init').
@@ -1460,7 +1460,7 @@ vtype('Use:t37', 'int').
 vfull('Use:t37', 'int').
 var_in('Use:t38', 'Use:init').
 vtype('Use:t38', '->').
-vfull('Use:t38', '(int Pervasives.ref -> int)').
+vfull('Use:t38', '(int Stdlib.ref -> int)').
 assign_address('Use:t38', 'prim:%field0').
 site_key('Use:15:c27', 'Use:515-521').
 scalar('Use:t37').
@@ -1471,19 +1471,19 @@ call_ret('Use:15:c26', 'Use:t36').
 assign_store_field('Use.total', 'fld:contents', 'Use:t36').
 store_in('Use.total', 'fld:contents', 'Use:t36', 'Use:init').
 store_site('Use:15:c25').
-vtype('Pervasives.print_int', '->').
-vfull('Pervasives.print_int', '(int -> unit)').
-global_var('Pervasives.print_int').
-var_in('Pervasives.print_int', 'Use:init').
+vtype('Stdlib.print_int', '->').
+vfull('Stdlib.print_int', '(int -> unit)').
+global_var('Stdlib.print_int').
+var_in('Stdlib.print_int', 'Use:init').
 in_function('Use:16:c28', 'Use:init').
 site_key('Use:16:c28', 'Use:526-535').
-call_indirect('Use:16:c28', 'Pervasives.print_int').
+call_indirect('Use:16:c28', 'Stdlib.print_int').
 var_in('Use:t39', 'Use:init').
 vtype('Use:t39', 'int').
 vfull('Use:t39', 'int').
 var_in('Use:t40', 'Use:init').
 vtype('Use:t40', '->').
-vfull('Use:t40', '(int Pervasives.ref -> int)').
+vfull('Use:t40', '(int Stdlib.ref -> int)').
 assign_address('Use:t40', 'prim:%field0').
 site_key('Use:16:c29', 'Use:536-542').
 scalar('Use:t39').

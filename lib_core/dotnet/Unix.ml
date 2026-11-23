@@ -8,7 +8,7 @@
  * .NET program has by Sys are Sys's (getcwd, chdir, unlink, rename,
  * mkdir). So the units over Unix compile (commons/'s FS, Console,
  * Procs...), and what of them a program uses without Unix runs: FS's
- * files by channels, Console's by Pervasives'. Its types those of
+ * files by channels, Console's by Stdlib's. Its types those of
  * system/Unix.mli, which is its interface; a descriptor an int.
  * Generated from Unix.mli, then edited by hand. *)
 

@@ -481,9 +481,9 @@ let rec constant (e : Scope.expr) : bool =
 
 (* OPTIMIZATION (min_max): min and max on ints or floats (their place
  * in immediates or float_cmps): the comparison and the choice here,
- * not Pervasives' function, a call, and in it compare's (mini-doom's
+ * not Stdlib's function, a call, and in it compare's (mini-doom's
  * columns and spans clamped, 2% of a frame) *)
-let min_max = [ "Pervasives.min", Le; "Pervasives.max", Ge; "Int.min", Le; "Int.max", Ge ]
+let min_max = [ "Stdlib.min", Le; "Stdlib.max", Ge; "Int.min", Le; "Int.max", Ge ]
 (* the globals that are one of them (Typing.min_max_globals) *)
 let min_max_aliases : (string, string) Hashtbl.t = Hashtbl.create 8
 
@@ -920,7 +920,7 @@ and app env (f : Scope.expr) args tl =
       if tl then (control env e true; true) else (value env e; false)
   (* x |> f, f @@ x: f x, and x |> g a the call g a x (OCaml's
    * translcore and simplif): a known g's code called with both, not a
-   * closure applied to x. (Pervasives' externals since 2026-10-27; a
+   * closure applied to x. (Stdlib's externals since 2026-10-27; a
    * function each before, called, then its argument's closure) *)
   | Evar (Prim (("%revapply" | "%apply") as p, _, _)), _, a :: b :: more ->
       let g, x = if p = "%revapply" then b, a else a, b in
@@ -930,7 +930,7 @@ and app env (f : Scope.expr) args tl =
     when Hashtbl.mem min_max_aliases g.gsym
          && (Hashtbl.mem immediates f.span
              || (Hashtbl.mem float_cmps f.span && !floats_in_place)) ->
-      (* if a <= b then a else b (Pervasives'), b computed first *)
+      (* if a <= b then a else b (Stdlib's), b computed first *)
       let sb = to_slot env b in
       let sa = to_slot env a in
       let r = List.assoc (Hashtbl.find min_max_aliases g.gsym) min_max in

@@ -1,6 +1,6 @@
-(* the runtime unit (lib_core/dotnet/Runtime.ml): Pervasives'
+(* the runtime unit (lib_core/dotnet/Runtime.ml): Stdlib'
  * externals of C in ML over .NET; format_float and format_int named
- * here as Pervasives names them, Printf's and string_of_float's *)
+ * here as Stdlib names them, Printf's and string_of_float's *)
 
 external format_float : string -> float -> string = "format_float"
 external format_int : string -> int -> string = "format_int"

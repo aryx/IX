@@ -12,4 +12,4 @@ let with_open openfile file f =
 let with_open_bin file f = with_open open_out_bin file f
 let with_open_gen flags perm file f = with_open (open_out_gen flags perm) file f
 
-let output_string = Pervasives.output_string
+let output_string = Stdlib.output_string

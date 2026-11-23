@@ -207,10 +207,10 @@ let rec unit_modl name =
       m
 
 (* a unit's scope before its first item: the predefined, and
- * Pervasives's names, but in Pervasives *)
+ * Stdlib's names, but in Stdlib *)
 and base name =
-  if name = "Pervasives" then predef
-  else match unit_modl "Pervasives" with Some md -> add (force md.menv) predef | None -> error 0 "no Pervasives (-I the stdlib)"
+  if name = "Stdlib" then predef
+  else match unit_modl "Stdlib" with Some md -> add (force md.menv) predef | None -> error 0 "no Stdlib (-I the stdlib)"
 
 (* what an interface exports; its types resolved in its scope *)
 and sig_env path scope (items : Ast.signature) =

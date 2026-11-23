@@ -1,5 +1,5 @@
 (* types of parameters: generic classes, tree`1, used at types,
-   tree`1<long>, tree`1<string>; Pervasives' ref and option, Stdlib's;
+   tree`1<long>, tree`1<string>; Stdlib's ref and option, in .NET's namespace Stdlib;
    functions over them generic methods *)
 type 'a tree = Leaf | Node of 'a tree * 'a * 'a tree
 type ('k, 'v) entry = { key : 'k; mutable value : 'v }

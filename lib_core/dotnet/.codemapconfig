@@ -7,14 +7,14 @@ local skeletons = import '../../skeletons.libsonnet';
   summary: "mini-ml -dotnet's runtime: the C primitives written in ML over .NET, and the units .NET replaces.",
   files: {
     'Runtime.mli': { digest: '47865797d2ec',
-      summary: "Pervasives' C externals as ML over .NET members: floats, numbers read and written, channels on Streams.",
+      summary: "Stdlib's C externals as ML over .NET members: floats, numbers read and written, channels on Streams.",
       important: [
         { at: 'comment:"call float64 Runtime::sqrt_float(float64)"', say: 'an external of C, a call here', weight: 3 },
         { at: "comment:\"with the microsoft's dotnet and runtime\"", say: 'the assembly runs on real .NET too', weight: 2 },
         { at: 'comment:"Differences with the native runtime"', say: 'int64 ints, no signals', weight: 2 },
         { at: 'def:caml_open_descriptor', weight: 1 },
       ],
-      related: ['Runtime.ml', '../core/Pervasives.mli'],
+      related: ['Runtime.ml', '../core/Stdlib.mli'],
     },
     'Runtime.ml': { digest: 'd5cca2d073ba',
       summary: "The primitives made: System.Math for libm, strtod and printf's %e %f %g by hand, a channel a 4 KB buffer.",

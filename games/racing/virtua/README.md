@@ -206,7 +206,7 @@ numbers are `scripts/playground_copies.sh games/racing/virtua`'s
 - `Track3d.of_road` and the coast left out (stage 3 and after); Bay
   Bridge and Acropolis too, and their landmarks.
 - `Float.infinity` is `infinity`, `Stdlib.max` `Float.max`
-  (`lib_core`'s Float, mini-ml's Pervasives).
+  (`lib_core`'s Float, mini-ml's Stdlib).
 
 ### What is ix's own
 

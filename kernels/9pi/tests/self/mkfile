@@ -1,7 +1,7 @@
 # The programs of make self-quick (the top mkfile's self-quick). Each is built and
 # linked on the card as on Linux, as t-ix's self-quick links ping. One
 # is in C, over lib_core's C library. The other is in OCaml, started
-# with Pervasives alone rather than all of lib_core.a (which
+# with Stdlib alone rather than all of lib_core.a (which
 # mkfiles/mkprog links, and which takes 6 minutes on the card). They
 # are linked with the objects that self-quick makes of lib_core.
 #   hello-c    hello.c, compiled by mini-cc
@@ -26,8 +26,8 @@ $D/hello-c: $D/hello-c.$O $L/libc.a
 $D/Hello.$O: Hello.ml
 	$ML $STDI -o $target Hello.ml
 $D/hello-ml.start.$O: mkfile
-	$ML -start Pervasives Hello Std_exit -o $target
-$D/hello-ml: $D/hello-ml.start.$O $L/Pervasives.$O $D/Hello.$O $STDEND
+	$ML -start Stdlib Hello Std_exit -o $target
+$D/hello-ml: $D/hello-ml.start.$O $L/Stdlib.$O $D/Hello.$O $STDEND
 	$LD $LDH -nofollow -o $target $prereq
 
 clean:V:

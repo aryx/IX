@@ -144,7 +144,7 @@ val immediates : unit -> Ast.span list
 val strings : unit -> Ast.span list
 (* the comparisons on floats: Lower's float_cmps *)
 val floats : unit -> Ast.span list
-(* min and max (Pervasives' and Int's) and the unit's globals that are
+(* min and max (Stdlib's and Int's) and the unit's globals that are
  * one of them, each with the one it is: Lower's min_max_aliases *)
 val min_max_globals : unit -> (string * string) list
 

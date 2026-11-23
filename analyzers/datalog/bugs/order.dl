@@ -59,7 +59,7 @@ in_order('List.filteri'). in_order('List.find_all').
 in_order('List.filter_map'). in_order('List.concat_map').
 in_order('List.fold_left'). in_order('List.fold_right').
 in_order('List.iter2'). in_order('List.concat'). in_order('List.flatten').
-in_order('Pervasives.@').
+in_order('Stdlib.@').
 
 % the walk at S follows the order of the table walked at S0
 order_of(S, S) :- table_walk(S).
@@ -79,11 +79,11 @@ ordered(H, S0) :-
   fpts(H, 'con:::.1', H).
 ordered(H, S0) :- order_of(S, S0), model_new(S, H).
 
-sink('Pervasives.output_string'). sink('Pervasives.output_substring').
-sink('Pervasives.output'). sink('Pervasives.output_char').
-sink('Pervasives.output_bytes'). sink('Pervasives.print_string').
-sink('Pervasives.print_char'). sink('Pervasives.print_int').
-sink('Pervasives.print_endline'). sink('Pervasives.print_float').
+sink('Stdlib.output_string'). sink('Stdlib.output_substring').
+sink('Stdlib.output'). sink('Stdlib.output_char').
+sink('Stdlib.output_bytes'). sink('Stdlib.print_string').
+sink('Stdlib.print_char'). sink('Stdlib.print_int').
+sink('Stdlib.print_endline'). sink('Stdlib.print_float').
 sink('Console.print'). sink('Printf.printf'). sink('Printf.fprintf').
 sink('FS.write').
 buffer_add('Buffer.add_char'). buffer_add('Buffer.add_string').

@@ -73,19 +73,19 @@
 
 % ---- what needs what
 
-requires('Pervasives.stdin', stdin).
-requires('Pervasives.stdout', stdout).
-requires('Pervasives.stderr', stderr).
+requires('Stdlib.stdin', stdin).
+requires('Stdlib.stdout', stdout).
+requires('Stdlib.stderr', stderr).
 requires('Unix.stdin', stdin).
 requires('Unix.stdout', stdout).
 requires('Unix.stderr', stderr).
 
-requires('Pervasives.open_in', open_in).
-requires('Pervasives.open_in_bin', open_in).
-requires('Pervasives.open_in_gen', open_in).
-requires('Pervasives.open_out', open_out).
-requires('Pervasives.open_out_bin', open_out).
-requires('Pervasives.open_out_gen', open_out).
+requires('Stdlib.open_in', open_in).
+requires('Stdlib.open_in_bin', open_in).
+requires('Stdlib.open_in_gen', open_in).
+requires('Stdlib.open_out', open_out).
+requires('Stdlib.open_out_bin', open_out).
+requires('Stdlib.open_out_gen', open_out).
 requires('prim:sys_open', open_in).
 requires('prim:sys_open', open_out).
 requires('Unix.openfile', open_in).
@@ -121,7 +121,7 @@ requires('Sys_plan9.dirread', readdir).
 requires('prim:sys_chdir', chdir).
 requires('Unix.chdir', chdir).
 requires('prim:sys_exit', exit).
-requires('Pervasives.exit', exit).
+requires('Stdlib.exit', exit).
 requires('Unix._exit', exit).
 requires('Sys_plan9.exits', exit).
 % (a forked child's way out: not a capability of its own to ask for)
@@ -285,7 +285,7 @@ own(O) :- own_init(O).
 library_function(R) :- closure(R, _, _), root(R, R), \+ own(R).
 
 % what the library does for its caller, with no capability of its own asked for;
-% (an authority itself, as Pervasives.open_in, is said by its name, not gone into)
+% (an authority itself, as Stdlib.open_in, is said by its name, not gone into)
 open_library(R) :- library_function(R), \+ gate(R), \+ authority(R).
 in_library(R, S) :- open_library(R), uses(R, S).
 in_library(R, S) :- open_library(R), names_function(R, G), in_library(G, S).
@@ -384,12 +384,12 @@ system_unit('TinyLibSystem').
 in_system(O) :- closure(O, U, _), system_unit(U).
 in_system(O) :- unit_init(U, O), system_unit(U).
 % (the name written: a primitive, or the library's function that reaches
-% one asking for no capability, as Sys.set_signal, Pervasives.print_string)
+% one asking for no capability, as Sys.set_signal, Stdlib.print_string)
 named_raw(O, S) :- own(O), uses(O, S), \+ in_system(O).
 named_raw(O, Via) :-
   own(O), names_function(O, Via), in_library(Via, _), \+ in_system(O).
 % (said once: no_cap and wrong_cap name the call already, "needs Cap.stdout
-% (Pervasives.print_string)"; around is what they do not say, the call made
+% (Stdlib.print_string)"; around is what they do not say, the call made
 % with the capability held, or in code nothing reaches)
 said_raw(O, S) :- no_cap(O, S, itself).
 said_raw(O, S) :- wrong_cap(O, S, itself).

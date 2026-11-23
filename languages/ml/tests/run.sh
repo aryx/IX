@@ -112,7 +112,7 @@ for ml in "$@"; do
     own+=($W/$b.$u.$E); mods+=(${u^})
   done
   [ $ok = 1 ] || { echo "FAIL $b: mini-ml"; failures=$((failures + 1)); continue; }
-  names=$(needs Pervasives $(for src in ${srcs[@]}; do $ML -M $S $src; done))
+  names=$(needs Stdlib $(for src in ${srcs[@]}; do $ML -M $S $src; done))
   $ML -m $O $FLAGS -start $names ${mods[@]} Std_exit -o $W/$b.start.$E
   objs=$(for u in $names; do echo -n "$W/std/$u.$E "; done)
   if [ -n "$GAS" ]; then

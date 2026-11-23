@@ -67,7 +67,7 @@
  *                                 tree`1<!0>); int tree tree`1<long>,
  *                                 its fields and constructor MemberRefs
  *                                 of that instance, as C#'s
- *     'a ref, 'a option           Pervasives' types: Stdlib.ref`1,
+ *     'a ref, 'a option           Stdlib's types: Stdlib.ref`1,
  *                                 Stdlib.option`1 in the assembly
  *     ref x, !r, r := v, incr r   newobj, ldfld, stfld contents
  *     a unit field, argument      an object, null (as in a Func)

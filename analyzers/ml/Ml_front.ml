@@ -15,7 +15,7 @@ let library (caps : < Cap.open_in; .. >) (d : string) : Fpath.t list =
     | Some t -> Logs.info (fun m -> m "library: %s (its units.txt's directories, and commons/)" d); t
     | None ->
         (* (-L's default is lib_core of the current directory: elsewhere
-         * nothing is read, and the units say only that Pervasives is
+         * nothing is read, and the units say only that Stdlib is
          * missing) *)
         Logs.warn (fun m -> m "-L %s: no units.txt there, no library read (-L: ix's lib_core)" d);
         "" in

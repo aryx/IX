@@ -5,7 +5,7 @@
  * of parameters a generic class, tree`1 (its constructors' classes of
  * the same parameters, their parent tree`1<!0>); a use of it at types
  * its instance, int tree a tree`1<long>, its fields and constructor
- * MemberRefs of that, as C# makes them. Pervasives' ref and option,
+ * MemberRefs of that, as C# makes them. Stdlib's ref and option,
  * until units are several (stage 1e), Stdlib's in each assembly. *)
 
 (* a class made for a type or by the lowering: its TypeDef, its generic
@@ -110,9 +110,9 @@ val case : Il_code.c -> int -> Scope.cons -> Scope.ty -> int * int * (int -> int
 (* an exception by its symbol, of these arguments: the same *)
 val exn : Il_code.c -> int -> string -> Scope.ty list -> int * int * (int -> int)
 
-(* the calls of Pervasives' functions mapped to .NET's library (print_*,
+(* the calls of Stdlib's functions mapped to .NET's library (print_*,
  * ^, string_of_int, failwith, invalid_arg): their IL after the
- * arguments, when Pervasives itself is not compiled with the program *)
+ * arguments, when Stdlib itself is not compiled with the program *)
 val builtin : Il_code.c -> string -> Il.op list option
 
 (* an expression's type, as Typing kept it; its .NET type (a raise's:

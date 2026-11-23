@@ -59,7 +59,7 @@ DEPDIRS=concurrency $UNIXDIR $P9DIR $STDDIRS
 # (concurrency comes first, because Source is its file, not commons's,
 # which is P9DIR on Linux. With concurrency after it, Source would not
 # be made after the Printf it names.)
-# (std_exit is there too, because Pervasives' do_at_exit is inlined.)
+# (std_exit is there too, because Stdlib's do_at_exit is inlined.)
 DEPUNITS=$STD $COMMONS std_exit
 <$TOP/mkfiles/mkdepend
 

@@ -181,7 +181,7 @@ test-vs-goken: all
 # (Moretest/io.ml and patmatch.ml are left out, because there mini-ml
 # follows OCaml 4.14 and no longer ocaml-light: an index out of bounds
 # is an exception, and \b and \r are allowed in an escaped string;
-# tests/modern/stdlib.ml checks those.)
+# tests/modern/later_stdlib.ml checks those.)
 OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/letstar.ml Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
 test-vs-ocaml-light: all
 	mkdir -p $(GOKEN_W)/tinyml && ./tiny/tests/TinyML_fuzz.py $(GOKEN_W)/tinyml 100

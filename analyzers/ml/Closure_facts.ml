@@ -267,7 +267,7 @@ let prim_body (name : string) (arity : int) (res : ty) ~(arg : int -> string)
       fact1 "argument" i x;
       if ret <> junk () then fact "call_ret" [ i; ret ]
   | "%makemutable" ->
-      (* (its type's head by its type, Pervasives.ref: old, "ref", that no
+      (* (its type's head by its type, Stdlib.ref: old, "ref", that no
        * variable's was, and every ref's content was lost) *)
       ignore (new_block "block");
       fact "assign_store_field" [ ret; "fld:contents"; arg 1 ]

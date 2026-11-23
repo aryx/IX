@@ -50,7 +50,7 @@ external of_string: string -> t = "int64_of_string" [@@raise Failure]
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-let compare (a : t) (b : t) = Pervasives.compare a b
+let compare (a : t) (b : t) = Stdlib.compare a b
 let of_string_opt s = try Some (of_string s) with Failure _ -> None
 
 (* without a sign: the order is the signed one of the two moved by 2^63;

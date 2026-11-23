@@ -46,7 +46,7 @@ the code in phase 8. Where the code differs from what follows:
   `raise` returns there again with the exception (§10's "handler's
   code" is that return address).
 - The commands: `mini-ml -m 5 -I stdlib x.ml` makes `x.5`; `mini-ml -m 5
-  -start Pervasives ... X Std_exit` the start object, which initializes
+  -start Stdlib ... X Std_exit` the start object, which initializes
   the units in their order; `mini-ld -m 5 -H7` links them with
   `runtime/runtime.c` (by mini-cc) and goken's libc. `languages/ml/tests/
   run.sh` does all of it for a program.

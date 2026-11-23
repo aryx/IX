@@ -4,7 +4,7 @@
 (* See Safe.mli *)
 
 let allowed = [
-  "Pervasives"; "List"; "Array"; "String"; "Bytes"; "Char"; "Uchar"; "Buffer"; "Printf"; "Format"; "Printexc";
+  "Stdlib"; "List"; "Array"; "String"; "Bytes"; "Char"; "Uchar"; "Buffer"; "Printf"; "Format"; "Printexc";
   "Hashtbl"; "Queue"; "Stack"; "Seq"; "Option"; "Result"; "Either"; "Int"; "Int32"; "Int64"; "Bool"; "Float";
   "Fun"; "Random"; "Digest"; "Lexing"; "Parsing"; "Filename";
   "Sip"; "Contract";

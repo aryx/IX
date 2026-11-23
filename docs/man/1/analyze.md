@@ -123,10 +123,10 @@ program's library, lib_core's units it names, is read with it.
      `analyzers/datalog` of the current directory.
 
 **-L** *lib*
-:    lib_core's directory, `lib_core`; *lib*`/stdlib`'s Pervasives
+:    lib_core's directory, `lib_core`; *lib*`/stdlib`'s Stdlib
      must be there. Without its `units.txt` (run elsewhere than ix's
      root, no **-L**), a warning, and an ML program's units find no
-     Pervasives.
+     Stdlib.
 
 **-I**, **-D**
 :    As \man{cc}{1}'s. For ML, an **-I** directory's units that the
@@ -272,7 +272,7 @@ never reached: Log.unused (Log.ml:3)
 Log.ml:3: dead: Log.unused, nothing names it
 % mini-analyze ... -caps Log.ml Main.ml
 Log.ml:2: Log.shout: no capability, needs Cap.stdout
-  (Pervasives.print_string)
+  (Stdlib.print_string)
 % mini-analyze ... -exn Log.ml Main.ml
 Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3
   (Main.first)

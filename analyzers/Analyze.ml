@@ -34,7 +34,7 @@ program's functions that its toplevel never reaches (calls.dl):
   dead.c:31: dead code: in main, after a return
 -caps: instead, whether ML's own functions hold the capabilities they need
 (capabilities.dl), from their types' < Cap.x; .. > and what they reach:
-  Log.ml:5: Log.log: no capability, needs Cap.stdout (Pervasives.print_string)
+  Log.ml:5: Log.log: no capability, needs Cap.stdout (Stdlib.print_string)
   Fs.ml:9: Fs.get: has < Cap.stdout >, needs Cap.open_in|Cap.open_out (Unix.openfile)
   Run.ml:3: Run.go: has < Cap.fork; Cap.stdout >, may not need Cap.fork
 -exn: instead, the exceptions an ML program's toplevels may let escape

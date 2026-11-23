@@ -75463,3 +75463,18 @@ Claude made mini-analyze's man page examples real files in `analyzers/examples/`
 Claude changed `mini-analyze -exn` to list only the raises reachable from each toplevel, and updated the ix and tiny recordings.
 Claude made `-v`, `-debug` and `-quiet` work in most ix programs, leaving rc, ar, mini-chidb, mini-ld, lex and yacc unchanged.
 Claude made `make test` check that man page EXAMPLES files exist, which fixed acid's stale path and prolog's missing files.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 13:05
+
+**Yoann:**
+
+> check the self run
+
+**Claude (summary):**
+
+Claude reported that the self run was still going, so no log was available yet.
+Claude recorded the self (tix) job as passed, while the self (mix) job had been running 36 minutes since 12:29 UTC.
+Claude estimated a healthy mix run takes about 1.5 hours and scheduled its next check for 14:29 local.
+Claude said a run still going past 2 hours total would be a regression to investigate.

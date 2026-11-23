@@ -96,7 +96,7 @@ lists them, and makes `libc.a` with mini-cc, mini-asm and mini-ar.
 **The math functions** (11 files of `port/`, 592 lines) are all called
 (looked at on 2026-10-08, to trim them): the runtime's `floats.c` asks
 `exp`, `log`, `log10`, `sin`, `cos`, `asin`, `acos`, `atan`, `atan2`,
-`pow`, `floor`, `ceil`, `frexp`, `ldexp` and `modf` for `Pervasives`'
+`pow`, `floor`, `ceil`, `frexp`, `ldexp` and `modf` for `Stdlib`'
 and `Float`'s functions of those names, and `fabs` and `sqrt` are
 called by the others (`frexp.c`; `asin.c`, `pow.c`). What the runtime
 could write itself it already does (`tan`, `sinh`, `cosh`, `tanh`,

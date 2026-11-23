@@ -171,9 +171,9 @@ caml_input_char(value ch)
 	return Val_int(b);
 }
 
-/* The three a program waits in (Pervasives' input_char, input and
+/* The three a program waits in (Stdlib's input_char, input and
  * input_line): interrupted by a signal, they say so (-2, -1, and
- * Scan_interrupted), for Pervasives to run the signal's handler, which
+ * Scan_interrupted), for Stdlib to run the signal's handler, which
  * is OCaml's, and ask again. Interrupted too, without reading, when a
  * signal came before (signalled[0]: one is noted). */
 

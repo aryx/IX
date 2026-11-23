@@ -159,7 +159,7 @@ val fma : float -> float -> float -> float
 
 (* ix: no program of ix called these, so they are left out (they can be
  * restored from OCaml 4.14's float.ml): add, sub, mul, div (the
- * operators are Pervasives's), log10, acos, asin, cosh, sinh, tanh.
+ * operators are Stdlib's), log10, acos, asin, cosh, sinh, tanh.
  * These others were already left out, because ocaml-light's compiler
  * did not have them: copysign, modf, ldexp, expm1, log1p,
  * classify_float (and its type, fpclass), of_string_opt. *)

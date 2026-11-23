@@ -10,11 +10,11 @@
 #  - a mini-9pi for the Pi 2 with those in its bootdir;
 #  - a small card: the toolchain (ml, cc, asm, ld) and cmp, lib_core's
 #    sources and tests/self/'s in /src, the host's objects in /host.
-# Then under QEMU, on the card: Pervasives.ml by ml and libc's pow.c by
+# Then under QEMU, on the card: Stdlib.ml by ml and libc's pow.c by
 # cc, as lib_core's mkfile compiles them; hello.c and Hello.ml as
 # tests/self/mkfile, compiled, linked over the host's libc.a and runtime,
 # and run. Each object and program the host's, byte for byte (cmp), and
-# Pervasives' summary (X.inline, what ml -O3 inlines from).
+# Stdlib's summary (X.inline, what ml -O3 inlines from).
 # QEMU's Pi 2: mini-qemu's is 6 times slower here, a minute and a half,
 # and its own checks are the kernels' (make check-ix).
 # usage: kernels/9pi/tests/smoke.sh dir
@@ -61,7 +61,7 @@ make -s -j4 -C kernels/9pi BOARD=pi2 COMPILER=light B=$D/k IMAGE=$D/kernel.img \
 # on the card, as mk's commands: the objects in /tmp/lib and /tmp/self,
 # as mk's directories (ml reads a unit's summary, X.inline, beside the
 # object it writes, and inlines from it with -O3: Hello.ml's object is
-# another when Pervasives.inline is beside it); a script on the card,
+# another when Stdlib.inline is beside it); a script on the card,
 # one line typed (old: its 24 lines typed, each after a second of quiet
 # at the prompt, 20 s of the session's 42)
 cat > $D/smoke.rc <<'END'
@@ -69,9 +69,9 @@ l=/tmp/lib; s=/tmp/self; h=/host; L=/src/lib_core
 I=(); for(d in system/plan9 core base collections printing parsing system concurrency commons) I=($I -I $L/$d)
 C=(-I$L/libc/include -I$L/libc/include/utf -I$L/libc -I$L/libc/include/arch/arm -Darm -Dplan9)
 cd $L
-ml -m 5 -O3 $I -o $l/Pervasives.5 core/Pervasives.ml
-cmp $l/Pervasives.5 $h/Pervasives.5 && echo Pervasives: the host
-cmp $l/Pervasives.inline $h/Pervasives.inline && echo Pervasives.inline: the host
+ml -m 5 -O3 $I -o $l/Stdlib.5 core/Stdlib.ml
+cmp $l/Stdlib.5 $h/Stdlib.5 && echo Stdlib: the host
+cmp $l/Stdlib.inline $h/Stdlib.inline && echo Stdlib.inline: the host
 # (-O3: as lib_core's mkfile builds the libc)
 cc -m 5 -O3 $C -o $l/pow.5 libc/port/pow.c
 cmp $l/pow.5 $h/pow.5 && echo pow: the host
@@ -80,11 +80,11 @@ cc -m 5 $C -o $s/hello.5 hello.c
 ld -m 5 -H2 -nofollow -o $s/hello-c $s/hello.5 $h/libc.a
 $s/hello-c
 cmp $s/hello-c $h/hello-c && echo hello-c: the host
-ml -m 5 -O3 -start Pervasives Hello Std_exit -o $s/start.5
+ml -m 5 -O3 -start Stdlib Hello Std_exit -o $s/start.5
 cmp $s/start.5 $h/start.5 && echo start: the host
 ml -m 5 -O3 $I -o $s/Hello.5 Hello.ml
 cmp $s/Hello.5 $h/Hello.5 && echo Hello: the host
-ld -m 5 -H2 -nofollow -o $s/hello-ml $s/start.5 $l/Pervasives.5 $s/Hello.5 $h/std_exit.5 $h/runtime.5 $h/libc.a
+ld -m 5 -H2 -nofollow -o $s/hello-ml $s/start.5 $l/Stdlib.5 $s/Hello.5 $h/std_exit.5 $h/runtime.5 $h/libc.a
 $s/hello-ml
 cmp $s/hello-ml $h/hello-ml && echo hello-ml: the host
 END
@@ -100,7 +100,7 @@ files=(progs/toolchain/ml=$X/languages/ml/mini-ml progs/toolchain/cc=$X/language
   progs/misc/cmp=$U/compare/mini-cmp lib/namespace=$D/namespace
   src/self/hello.c=kernels/9pi/tests/self/hello.c
   src/self/Hello.ml=kernels/9pi/tests/self/Hello.ml
-  host/Pervasives.5=$L/Pervasives.5 host/Pervasives.inline=$L/Pervasives.inline
+  host/Stdlib.5=$L/Stdlib.5 host/Stdlib.inline=$L/Stdlib.inline
   host/pow.5=$L/libc/port/pow.5
   host/libc.a=$L/libc.a host/runtime.5=$L/runtime.5 host/std_exit.5=$L/std_exit.5
   host/start.5=$S/hello-ml.start.5 host/Hello.5=$S/Hello.5
@@ -117,9 +117,9 @@ kernels/lib_machine/session.py --prompt "% " --timeout 120 --out $D/session.txt 
   "rc /src/smoke.rc" -- qemu-system-arm $B -nographic \
   -drive file=$D/card.img,if=sd,format=raw,snapshot=on > /dev/null ||
   { echo "the session did not end:"; tail -5 $D/session.txt; exit 1; }
-for l in 'Pervasives: the host' 'Pervasives.inline: the host' 'pow: the host' \
+for l in 'Stdlib: the host' 'Stdlib.inline: the host' 'pow: the host' \
     'hello from C' 'hello-c: the host' \
     'start: the host' 'Hello: the host' 'hello from OCaml' 'hello-ml: the host'; do
   grep -q "^$l" $D/session.txt || { echo "no \"$l\":"; tail -20 $D/session.txt; exit 1; }
 done
-echo "ok m-ix built in mini-9pi: Pervasives.ml, pow.c, hello.c and Hello.ml, the host's"
+echo "ok m-ix built in mini-9pi: Stdlib.ml, pow.c, hello.c and Hello.ml, the host's"

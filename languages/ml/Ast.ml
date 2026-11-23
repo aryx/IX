@@ -26,7 +26,7 @@
  *             Eapply (Eident ["+"], [ Eident ["x"]; Eident ["y"] ]) ] ] ])
  *
  * There is no node for an addition: + is a name like another,
- * applied, which Resolve finds in Pervasives to be the primitive
+ * applied, which Resolve finds in Stdlib to be the primitive
  * %addint, and Lower makes an instruction. So the tree is small: it
  * has 22 kinds of expression, not counting mlpp's three.
  *

@@ -19,7 +19,7 @@
  *
  * Another unit's names come from its .mli, read as source when the unit
  * is first named (its .ml when it has none): Resolve's header says
- * what others read instead. Pervasives is opened first.
+ * what others read instead. Stdlib is opened first.
  *
  * Here is a definition of a unit Ex, as mini-ml -dscope prints its
  * names (Ast's header shows the tree before this pass):
@@ -29,7 +29,7 @@
  *     sum/1 l/2 x/3 r/4    locals: the name and a number, no two alike
  *     []#0                 a constant constructor: the integer 0
  *     ::[0]                a constructor with arguments: a block, tag 0
- *     +                    Prim ("%addint", 2, _): Pervasives' external
+ *     +                    Prim ("%addint", 2, _): Stdlib's external
  *     sum, in a later definition:   Global Ex.sum, the linker's symbol
  *
  * After this pass no name is looked up again. The questions of what

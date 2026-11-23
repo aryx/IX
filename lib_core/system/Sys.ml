@@ -48,7 +48,7 @@ type signal_behavior =
   | Signal_handle of (int -> unit)
 
 (* ix: OCaml's signals (negative, the same on every system) as Linux's;
- * a signal's behavior kept here, its handler given to Pervasives, which
+ * a signal's behavior kept here, its handler given to Stdlib, which
  * runs it where the program waits; the runtime told to note the
  * signal, to ignore it or to leave it to the system. As OCaml's, the
  * behavior before is the result. *)

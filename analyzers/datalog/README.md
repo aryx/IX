@@ -198,7 +198,7 @@ a fixpoint over the call graph, with `requires(S, C)`, the table of what needs w
 ```
 editors/ed/CLI.ml:27: CLI.main: has < Cap.argv; ...; Cap.wait >, needs Cap.signal (Sys.set_signal), Cap.stdin (Unix.stdin)
 utilities/calc/dc/Dc.ml:610: Dc.flush_out: has < Cap.exec; ...; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.open_in, Cap.stdin, Cap.wait
-shell/Eval.ml:31: Eval.print: no capability, needs Cap.stdout (Pervasives.print_string, Pervasives.stdout)
+shell/Eval.ml:31: Eval.print: no capability, needs Cap.stdout (Stdlib.print_string, Stdlib.stdout)
 ```
 
 A function a line: what it holds, what is missing and by what, what it may hold for
@@ -346,7 +346,7 @@ known, 0 mismatches.
 | found by it | |
 |---|---|
 | `Regex`'s `caps`, its groups' places, was taken as a capability | the name was the rule; now `Typing`'s type, the name only where the type says nothing |
-| `needs` went inside `Thread.create`: `Source.reader` needed `Pervasives.exit` | an authority is said by its name, not gone into |
+| `needs` went inside `Thread.create`: `Source.reader` needed `Stdlib.exit` | an authority is said by its name, not gone into |
 | `Unix._exit` in a forked child asked `Cap.exit` | `Cap.fork` allows it too |
 
 What it says it cannot see: 216 of the 422, mostly a callee whose type names
@@ -354,7 +354,7 @@ nothing (`CapUnix`'s `< .. >`), or a caller whose capability has no written type
 as `Cap.main (fun caps -> ...)`; one in a field; and the calls in code no call
 reaches, each counted. Where the callee names nothing, `by_need` asks what it needs
 by `requires`: 21 reports, not mistakes of the analysis but wrappers doing more than
-they say (`Source.reader`'s `Unix.kill`, `Procs.spawn`'s `Pervasives.stderr`): OCaml
+they say (`Source.reader`'s `Unix.kill`, `Procs.spawn`'s `Stdlib.stderr`): OCaml
 does not see these, so this is not a count that must be 0.
 
 ## The big programs: types, not `ext` (2026-11-02)
@@ -381,7 +381,7 @@ same, or one is not known (`andersen.dl`'s design note): OCaml's types, a static
 analysis already done, as Doop filters by Java's declared types.
 
 Checked by real runs (`tests/dynamic.sh`): the first filter lost 96 of mini-forth's
-223 functions that ran, `Pervasives.ref` written `ref` for `%makemutable`'s object,
+223 functions that ran, `Stdlib.ref` written `ref` for `%makemutable`'s object,
 so every ref's content was lost; the heads from the external's own type, 0 missed
 on all five programs (mini-forth 818 reached, mini-datalog 1,626, mini-rc 1,206,
 mini-prolog 1,458, mini-dc 748).

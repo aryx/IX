@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* Pervasives' externals (Lower's %revapply, %apply, %ignore, %lnot):
+(* Stdlib's externals (Lower's %revapply, %apply, %ignore, %lnot):
  * x |> f and f @@ x the call f x, x |> g a the call g a x; a known
  * function, a closure, a primitive, more arguments than the function
  * takes, a chain; each as a value too (List.map's function); the

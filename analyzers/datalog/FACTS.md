@@ -281,7 +281,7 @@ assign_address('Toy:t35', 'prim:sys_getenv').
 for a pair. The analyses keep an object out of a variable whose type's head is
 another (`andersen.dl`'s design note: mini-tiger's Andersen's, past 200 s and
 8.5 GB, 5.9 s and 250 MB). None for a type variable or `Obj.t`, nor for a type
-with no constructor, field, or built-in name (an abstract `Pervasives.out_channel`,
+with no constructor, field, or built-in name (an abstract `Stdlib.out_channel`,
 `Tui_turbo.mli`'s `type model`, inside `Turbo_model.model`: two names for one
 type, which would keep apart what is one), and none from
 mini-ml's own Closure_facts until 2026-11-02 (`mini-ml -facts`), which did not

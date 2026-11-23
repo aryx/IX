@@ -133,17 +133,17 @@ let compile (c : c) (env : env) (k : code) (expr : Scope.expr -> unit) (e : Scop
   match sym with
   | "Printf.sprintf" | "Format.asprintf" | "Format.sprintf" -> ()
   | "Printf.printf" ->
-      call env k "Pervasives.print_string";
-      if flushes then (channel "Pervasives.stdout"; call env k "Runtime.caml_flush")
+      call env k "Stdlib.print_string";
+      if flushes then (channel "Stdlib.stdout"; call env k "Runtime.caml_flush")
   | "Printf.eprintf" ->
-      call env k "Pervasives.prerr_string";
-      if flushes then (channel "Pervasives.stderr"; call env k "Runtime.caml_flush")
+      call env k "Stdlib.prerr_string";
+      if flushes then (channel "Stdlib.stderr"; call env k "Runtime.caml_flush")
   | "Printf.fprintf" | "Printf.bprintf" ->
       let s = local k S.String in
       emit k (Il.Stloc s);
       load target;
       emit k (Il.Ldloc s);
-      call env k (if sym = "Printf.fprintf" then "Pervasives.output_string" else "Buffer.add_string");
+      call env k (if sym = "Printf.fprintf" then "Stdlib.output_string" else "Buffer.add_string");
       if flushes && sym = "Printf.fprintf" then (load target; call env k "Runtime.caml_flush")
   | _ ->
       (* ksprintf: k's Invoke of the string, its result the call's *)

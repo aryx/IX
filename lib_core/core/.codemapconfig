@@ -4,19 +4,19 @@
 local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "The stdlib's core for mini-ml: Pervasives (opened by every unit), Obj, Gc, Callback, and Marshal in OCaml.",
+  summary: "The stdlib's core for mini-ml: Stdlib (opened by every unit), Obj, Gc, Callback, and Marshal in OCaml.",
   files: {
-    'Pervasives.mli': { digest: 'a0316917caa1',
+    'Stdlib.mli': { digest: 'a0316917caa1',
       summary: "What every mini-ml unit has open: exceptions, arithmetic, strings, channels, exit; OCaml 1.07's, grown.",
       important: [
         { at: 'def:compare', weight: 2 },
         { at: 'def:raise', weight: 1 },
         { at: 'def:failwith', weight: 1 },
       ],
-      related: ['Pervasives.ml'],
+      related: ['Stdlib.ml'],
     },
-    'Pervasives.ml': { digest: '2d622eb85b86',
-      summary: "Pervasives made over the runtime's primitives: channels in C, signals run where a read is interrupted.",
+    'Stdlib.ml': { digest: '2d622eb85b86',
+      summary: "Stdlib made over the runtime's primitives: channels in C, signals run where a read is interrupted.",
       capitals: [
         { at: 'def:at_exit', say: 'the exit functions chained: std_exit runs them' },
       ],
@@ -52,7 +52,7 @@ local skeletons = import '../../skeletons.libsonnet';
   },
   skeletons: [
     skeletons.parts("The core: what a unit has, what the runtime gives", [
-      ['Pervasives.ml', 'opened by every unit'],
+      ['Stdlib.ml', 'opened by every unit'],
       ['Obj.ml', 'a value as a block'],
       ['Marshal.ml', 'values to bytes and back'],
       ['Callback.ml', 'OCaml named for C'],
@@ -60,8 +60,8 @@ local skeletons = import '../../skeletons.libsonnet';
       ['std_exit.ml', 'the last unit: at_exit run'],
     ], [
       ['Obj.ml', 'Marshal.ml', 'the blocks walked'],
-      ['Pervasives.ml', 'std_exit.ml', 'exit_function'],
-      ['Pervasives.ml', 'Marshal.ml', 'channels'],
+      ['Stdlib.ml', 'std_exit.ml', 'exit_function'],
+      ['Stdlib.ml', 'Marshal.ml', 'channels'],
     ]),
     skeletons.module('Marshal.ml', 'A value written depth first, read back', [
       ['number', 'a block numbered as seen', ''],
@@ -71,7 +71,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ['item', 'one code read back', 'the bytes'],
       ['from_string', 'entry: a value rebuilt', 'the value'],
     ]),
-    skeletons.module('Pervasives.ml', 'Pervasives: errors, channels, the end', [
+    skeletons.module('Stdlib.ml', 'Stdlib: errors, channels, the end', [
       ['raise', 'a primitive', ''],
       ['failwith', 'Failure raised', 'raised'],
       ['open_in', 'a channel on a file', 'on a failure'],

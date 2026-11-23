@@ -534,7 +534,7 @@ polymorphic types is context-sensitive the way CFL-reachability is
 
 ```
 let log s = print_string s
-    Use.log: no capability, needs Cap.stdout (Pervasives.print_string)
+    Use.log: no capability, needs Cap.stdout (Stdlib.print_string)
 let wrong (_ : < Cap.stdout; .. >) f = Unix.openfile f [ Unix.O_RDONLY ] 0
     Use.wrong: has < Cap.stdout >, needs Cap.open_in|Cap.open_out
     (Unix.openfile); may not need Cap.stdout

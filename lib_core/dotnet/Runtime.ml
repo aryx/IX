@@ -473,7 +473,7 @@ type channel = {
   mutable written : bool;       (* an output channel's (flush writes) *)
 }
 
-(* (Pervasives' in_channel and out_channel are abstract: objects, each
+(* (Stdlib's in_channel and out_channel are abstract: objects, each
  * a channel; out_channel says both here) *)
 external chan : out_channel -> channel = "%identity"
 external of_chan : channel -> out_channel = "%identity"
@@ -838,7 +838,7 @@ external type_name : dotnet_type -> string = "dotnet:instance System.Type::get_N
 
 (* an exception as OCaml prints it: the predefined ones with their
  * arguments (Failure("..."), Sys_error, Invalid_argument); another,
- * Pervasives' too (Exit, Assert_failure: a unit after this one), its
+ * Stdlib's too (Exit, Assert_failure: a unit after this one), its
  * class's name, its arguments not (no reflection of them here) *)
 let ml_exn_string (e : exn) : string =
   (* (not escaped: String's escaped is a unit after this one) *)

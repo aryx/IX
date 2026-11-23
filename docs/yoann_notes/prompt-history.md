@@ -75621,3 +75621,22 @@ Claude noted that the last commit, 61a75a95, the Part 3 inventory update, was st
 Claude said the next push from main would carry it along with other sessions' commits.
 Claude confirmed no check-up was scheduled and saved the self.yml log-reading note to memory.
 Claude recorded the fault-zero idea under the note's Where it stands section for a fresh session.
+
+**Yoann:**
+
+> mini-analyze -dead -L tiny/TinyLibCore -types lib_core/system -I tiny/TinyLibSystem/tinykernel -I tiny tiny/user/temp.ml tiny/TinyAppTemperature.ml   is still a long command to type. Do we need the -types part?
+
+> can we add Cap.mli to TinyLibCore ? or a symlink to one?
+
+> if that's the only thing needed from lib_core/system/
+
+> ok what's the updated command then for temp.ml?
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found -types needed (TinyLibSystem.mli names Cap in its types) but -I tiny not (the given files' directories are searched).
+Claude added a one-line tiny/TinyLibCore/Cap.mli instead of a symlink, which would bring lib_core's essay and break t-IX's self-containment.
+Claude removed -types, now unused, and gave the command: mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml.
+Claude traced make test's two failures to mini-acid's flaky case (passing alone) and ix built by ix, with another session editing the mkfiles.

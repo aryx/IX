@@ -221,7 +221,6 @@ let unread : string list ref = ref []
 let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 let own_dirs : Fpath.t list ref = ref []
-let types_dirs : Fpath.t list ref = ref []
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
@@ -234,9 +233,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   (* (tiny/ and ./tiny are one directory) *)
   let mine_dirs = List.map (fun (d : Fpath.t) -> FS.cleanname (Fpath.to_string d)) !own_dirs in
   let read (file : Fpath.t) (text : string) (mine : bool) =
-    (* (-types' directories for the names alone: their units' code is
-     * not looked for below, where dirs are) *)
-    match unit_ caps (dirs @ !types_dirs) file text with
+    match unit_ caps dirs file text with
     | Ok named -> List.iter (fun u -> Queue.add u todo) named
     | Error m -> if mine then errors := m :: !errors else unread := m :: !unread in
   List.iter

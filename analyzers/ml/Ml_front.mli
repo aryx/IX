@@ -32,12 +32,6 @@ val alone : bool ref
  * read too, but is not reported on. *)
 val own_dirs : Fpath.t list ref
 
-(* the directories whose units give the program their interfaces alone
- * (-types), looked up after all others: their code is never read. For a
- * unit named only in types, which the program does not link: Cap on
- * t-IX, named by tiny/TinyLibSystem.mli's types, has no code there. *)
-val types_dirs : Fpath.t list ref
-
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref
 

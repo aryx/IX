@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-types dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-types dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -67,14 +67,13 @@ program's functions that its toplevel never reaches (calls.dl):
 -I, -D: as mini-cc's; -L: lib_core's directory (lib_core), or a library in
   one directory with its own Stdlib, no units.txt (t-IX's tiny/TinyLibCore:
   read as tiny-ml reads it, searched before the -I's)
--types dir: ML: its units' interfaces alone, never their code (t-IX's Cap)
 -own dir: ML: the units the program names found in dir are its own, reported
   on as the files given: a program given by its main file alone; its
   libraries' functions it does not call said dead too (tiny_check.sh keeps
   what every build says). One file of a program: it and the main file
   given, the libraries by -I, read but not reported on; a t-IX program as
   tiny-kernel runs it:
-  mini-analyze -dead -L tiny/TinyLibCore -types lib_core/system -I tiny/TinyLibSystem/tinykernel -I tiny tiny/user/temp.ml tiny/TinyAppTemperature.ml
+  mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml
 -facts, -flow, -flow-answers: facts printed, nothing analyzed. -facts: the
 facts the analyses load, not the analysis; -alone: an ML file's own facts, without those of the
 library units it names; -no-models: List's, Hashtbl's and @'s code read as
@@ -217,9 +216,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-fingerprint", Arg.Set fingerprint, " after the report, one number of every answer (Answers, Fingerprint)");
         ("-L", Arg.Set_string lib, " lib_core's directory, for an ML program's library");
         ("-I", Arg.String (fun d -> incs := d :: !incs), " a directory of #include's");
-        ("-types",
-         Arg.String (fun d -> Ml_front.types_dirs := !Ml_front.types_dirs @ [ Fpath.v d ]),
-         " dir: ML: its units' interfaces alone, never their code (t-IX's Cap: -types lib_core/system)");
         ("-own",
          Arg.String (fun d -> Ml_front.own_dirs := !Ml_front.own_dirs @ [ Fpath.v d ]),
          " dir: ML: the units the program names found there are its own, reported on as the files given");
@@ -243,7 +239,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         if !flow || !answers then begin
           let mls = List.filter (fun f -> not (Filename.check_suffix f ".c")) !files in
           let own_dirs = List.sort_uniq compare (List.map (fun f -> Fpath.parent (path f)) mls) in
-          let dirs = own_dirs @ (if mls = [] then incs else Ml_front.search caps !lib incs @ !Ml_front.types_dirs) in
+          let dirs = own_dirs @ (if mls = [] then incs else Ml_front.search caps !lib incs) in
           List.fold_left
             (fun status (f : string) ->
               let c own =
@@ -326,7 +322,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           (* (the units it names in each of the program's directories,
            * _mk's generated parsers, a subfolder's) *)
           let own_dirs = List.sort_uniq compare (List.map (fun f -> Fpath.parent (path f)) ml) in
-          let dirs = own_dirs @ Ml_front.search caps !lib incs @ !Ml_front.types_dirs in
+          let dirs = own_dirs @ Ml_front.search caps !lib incs in
           List.iter
             (fun (f : string) ->
               let unit_name = unit_of_file f in

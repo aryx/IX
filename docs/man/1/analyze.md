@@ -11,7 +11,6 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-L** *lib* ]
 [ **-I** *dir* ] ...
 [ **-own** *dir* ] ...
-[ **-types** *dir* ] ...
 [ **-D** *name*`=`*value* ] ...
 [ **-root** *f* ] ...
 [ **-start** *units* ]
@@ -136,12 +135,6 @@ program's library, lib_core's units it names, is read with it.
      no mlpp, `[@@deriving]` left out; its primitives' names (`%ref`,
      `ml_array_get`...) known as mini-ml's.
 
-**-types** *dir*
-:    ML: the interfaces of *dir*'s units, never their code: for a unit
-     named only in types, which the program does not link. t-IX's
-     `TinyLibSystem.mli` names `Cap`'s types, which tiny-ml leaves out:
-     **-types lib_core/system**.
-
 **-I**, **-D**
 :    As \man{cc}{1}'s. For ML, an **-I** directory's units that the
      program names are read with it, but as a library: nothing is said
@@ -158,7 +151,7 @@ program's library, lib_core's units it names, is read with it.
      way and keeps what every build that has the file says. For one
      file of a program, give it and the main file, the libraries by
      **-I**; for a t-IX program as tiny-kernel runs it:
-     `mini-analyze -dead -L tiny/TinyLibCore -types lib_core/system -I tiny/TinyLibSystem/tinykernel -I tiny tiny/user/temp.ml tiny/TinyAppTemperature.ml`
+     `mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml`
      says only what is dead in `temp.ml` and `TinyAppTemperature.ml`.
      **-v** says each file read: `reading` for the program's own,
      `the library's` for the others.

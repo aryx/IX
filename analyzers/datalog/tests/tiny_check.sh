@@ -47,12 +47,12 @@ T=tiny
 # units are -own (the analyzer reads the units a program names from
 # there, and reports on them as on the program's own files), the host's
 # TinyLibSystem first so that it is the one found. On tiny-kernel (K), as
-# t-IX builds it: on TinyLibCore and tiny-kernel's TinyLibSystem, Cap's
-# types alone from lib_core (TinyLibSystem.mli names them, tiny-ml has no
-# types). TinyML/ and TinyC/ have units of the same names (Lexer,
-# Types...), so each is given only to its own program.
+# t-IX builds it: on TinyLibCore and tiny-kernel's TinyLibSystem
+# (TinyLibCore's Cap.mli names the capabilities TinyLibSystem.mli takes,
+# which tiny-ml leaves out). TinyML/ and TinyC/ have units of the same
+# names (Lexer, Types...), so each is given only to its own program.
 O="-own $T/TinyLibSystem/unix -own $T"
-K="-L $T/TinyLibCore -types lib_core/system -own $T/TinyLibSystem/tinykernel -own $T"
+K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel -own $T"
 M="-own $T/TinyMachine"
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"

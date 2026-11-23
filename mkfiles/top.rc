@@ -5,12 +5,11 @@
 # libraries' mkfiles, as mk text for mk's <| (read by rc's ., as
 # mkfiles/config.rc). mk's variables are the environment.
 # usage: <|. mkfiles/top.rc
-# DIRS: the directories of programs the system builds; MORE: the games
-# again on Plan 9, for its software platform.
-if(~ $OS plan9) echo 'DIRS=$BOTH $PLAN9
-MORE=games-software'
-if not echo 'DIRS=$BOTH $LINUX
-MORE='
+# DIRS: the directories of programs the system builds.
+# (old: and MORE=games-software on Plan 9, the games again for its
+# software platform: games/mkfile's own now)
+if(~ $OS plan9) echo 'DIRS=$BOTH $PLAN9'
+if not echo 'DIRS=$BOTH $LINUX'
 # each library after the ones its mkfile needs: NEEDS=lib_core lib_mime
 # in lib_x/mkfile gives lib_x.dir:V: lib_core.dir lib_mime.dir
 # (and each after lib_core, which a NEEDS does not name, every mkfile

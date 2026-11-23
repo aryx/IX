@@ -55,7 +55,7 @@ all:V: libs programs
 
 libs:V: ${LIBS:%=%.dir}
 
-programs:V: assembler.dir ${DIRS:%=%.dir} $MORE examples
+programs:V: assembler.dir ${DIRS:%=%.dir} examples
 
 # A directory is built by its own mk.
 %.dir:V:
@@ -70,8 +70,6 @@ linker/tools.dir:V: linker.dir
 utilities/calc/bc.dir:V: utilities/calc/dc.dir
 editors/drscheme.dir lib_gui/examples.dir apps/office.dir:V: games.dir
 languages/smalltalk/hosts/draw.dir:V: languages/smalltalk.dir
-games-software:V: games.dir
-	cd games && $MK $ARGS 'PLATFORM=software'
 
 # install copies what a program links, the C library with its headers
 # and each library of ML's with its units' interfaces, from where they

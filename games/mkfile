@@ -18,15 +18,36 @@ CATEGORIES=puzzle fps fps/doom fps/quake racing/virtua arcade shmup
 # once with NPROC jobs each would run seven of the games' compiles at
 # once on the card (NPROC 1 under QEMU, 864 MB), where ml is killed out
 # of memory, in self-mix's games.)
+# On Plan 9 each directory again with the software platform (SOFT:
+# mkgames' PLATFORM=software, made beside, games/puzzle-soft), after
+# that directory's draw one (the two share the units of WITH, made in
+# lib_playground's directories) and the software platform's library.
+# opti: each directory and platform a target of this mk, which runs
+# them as they become ready, NPROC at once, as the top mkfile runs its
+# directories: the four-core build of ix on the card ran the seven by
+# fours, each four waiting for its slowest, and the software
+# platform's seven after all of them (the top mkfile's games-software),
+# 326 s then 191, most of its critical path of 735 s
+# (plan_9pi_self_speed.md, 2026-11-23).
+# old: directories:V: libs, an rc loop of each $d's mk, NPROC at once,
+# each NPROC waited for; and the top mkfile's games-software:V:
+# games.dir, cd games && $MK $ARGS 'PLATFORM=software'
 all:V: directories
-directories:V: libs
+<mkgames
+# (after mkgames, whose mkconfig says OS when the caller did not; the
+# names made by rc, an empty list on Linux: mk's ${SOFT:%=%.soft} of an
+# empty SOFT is the word SOFT, as Plan 9's mk's varsub.c)
+SOFT=`{if(~ $OS plan9) for(c in $CATEGORIES) echo $c.soft}
+directories:V: ${CATEGORIES:%=%.games} $SOFT
+%.games:V: libs
 	b=(); if(~ $B /*) b='B='^$B
 	j=`{echo $#CATEGORIES $NPROC | awk '{j = int($2 / $1); if(j < 1) j = 1; print j}'}
-	pids=()
-	for(d in $CATEGORIES){
-		@{cd $d && $MK 'O='$O 'OS='$OS 'PLATFORM='$PLATFORM 'NPROC='$j $b} & pids=($pids $apid)
-		if(~ $#pids $NPROC){ for(p in $pids){ wait $p; ~ $status '' || exit 1 }; pids=() }
-	}
-	for(p in $pids){ wait $p; ~ $status '' || exit 1 }
-<mkgames
+	cd $stem && $MK 'O='$O 'OS='$OS 'PLATFORM='$PLATFORM 'NPROC='$j $b
+%.soft:V: %.games soft-libs
+	b=(); if(~ $B /*) b='B='^$B
+	j=`{echo $#CATEGORIES $NPROC | awk '{j = int($2 / $1); if(j < 1) j = 1; print j}'}
+	cd $stem && $MK 'O='$O 'OS='$OS 'PLATFORM=software' 'NPROC='$j $b
+soft-libs:V: libs
+	b=(); if(~ $B /*) b='B='^$B
+	$MK 'O='$O 'OS='$OS 'PLATFORM=software' $b libs
 

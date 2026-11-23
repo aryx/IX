@@ -6,7 +6,9 @@
 %                         is elsewhere (TinyLibSystem's unix/ and tinykernel/
 %                         of tiny/TinyLibSystem.mli: one unit's platforms)
 %   outside(F)            F is not in the project (no dune-project above it)
-%   report(P, F, L, M)    P says the message M of F's line L (0: none)
+%   report(P, F, L, W, M) P says W is dead (its kind and name: dead
+%                         Http.asked, never built Leaf), at F's line L (0:
+%                         none), with the message M
 % and these rules, given the facts of all the programs, answer
 %   dead_all(F, L, M)     a report kept: every program that has F, or
 %                         another implementation of its interface, says it
@@ -21,17 +23,17 @@
 % TinyLibSystem must define what its interface declares, though only
 % programs on tiny-kernel call it, through tinykernel/'s.
 %
-% A report is matched by its message, the line left out (an edit above a
-% function moves it): a function two programs say dead for two reasons
-% ("nothing names it", "named only by dead code") is not kept.
+% A report is matched by what is dead, not by its message: a function one
+% program says nothing names, and another named only by its dead code, is
+% dead in both, each line kept.
 
 % a file's group: its interface if it implements one elsewhere, else itself
 group(F, I) :- implements(F, I).
 group(F, F) :- own(_, F), \+ implements(F, _).
 
-said(P, G, M) :- report(P, F, _, M), group(F, G).
+said(P, G, W) :- report(P, F, _, W, _), group(F, G).
 has_group(P, G) :- own(P, F), group(F, G).
-not_everywhere(G, M) :- said(_, G, M), has_group(P, G), \+ said(P, G, M).
-dead_all(F, L, M) :- report(_, F, L, M), group(F, G), \+ not_everywhere(G, M).
+not_everywhere(G, W) :- said(_, G, W), has_group(P, G), \+ said(P, G, W).
+dead_all(F, L, M) :- report(_, F, L, W, M), group(F, G), \+ not_everywhere(G, W).
 
 ?- dead_all(F, L, M).

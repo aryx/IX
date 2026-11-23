@@ -11,7 +11,7 @@ let where = C_report.where
 let ml_function = Ml_report.ml_function
 
 (* -dead: what dead.dl finds, each with where it is written *)
-let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * int * string) list =
+let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * int * string * string) list =
   let tuples r n = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r n)) in
   let unit_of (f : string) : string =
     let stop c = match String.index_opt f c with Some i -> i | None -> String.length f in
@@ -30,7 +30,7 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * in
     match Hashtbl.find_opt lines f with
     | Some w -> w
     | None -> ((if ml then file_of (unit_of f) else match Hashtbl.find_opt C_front.owner f with Some x -> x | None -> "?"), 0) in
-  let one (f, l, msg) =
+  let one (f, l, _, msg) =
     if f = "?" then msg else if l > 0 then Printf.sprintf "%s:%d: %s" f l msg else Printf.sprintf "%s: %s" f msg in
   let names r n f = List.sort_uniq compare (List.filter_map (fun t -> if t.(0) = f then Some (shown t.(1)) else None) (tuples r n)) in
   let unnamed = List.map (fun t -> t.(0)) (tuples "never_named" 1) in
@@ -50,7 +50,7 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * in
           else match names "named_in_live" 2 f with
             | [] -> "named only by dead code: " ^ String.concat ", " (names "named_in_dead" 2 f)
             | g -> "in " ^ String.concat ", " g ^ " but no call goes through the pointer" in
-        (file, l, Printf.sprintf "dead: %s, %s" (shown f) why))
+        (file, l, "dead " ^ shown f, Printf.sprintf "dead: %s, %s" (shown f) why))
       dead in
   let globals =
     List.filter_map
@@ -58,35 +58,38 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * in
         let g = t.(0) in
         if not (is_own g) then None else
         let file, l = at g in
-        Some (file, l, Printf.sprintf "dead global: %s, nothing live names it" (shown g)))
+        Some (file, l, "dead global " ^ shown g, Printf.sprintf "dead global: %s, nothing live names it" (shown g)))
       (tuples "dead_global" 1) in
   let stmts =
     List.map
       (fun t ->
         let file, l = where t.(0) (int_of_string t.(1)) in
-        (file, l, Printf.sprintf "dead code: in %s, after a jump" t.(0)))
+        (file, l, Printf.sprintf "dead code %s:%d" file l, Printf.sprintf "dead code: in %s, after a jump" t.(0)))
       (tuples "dead_stmt" 2) in
   let field (f : string) : string option =
     match prefix "_fld__" f, prefix "fld:" f with Some x, _ | _, Some x -> Some x | None, None -> None in
   (* a field or a constructor once, at its first place *)
-  let by_function (r : string) (msg : string -> string -> string) keep =
+  let by_function (r : string) (what : string -> string) (msg : string -> string -> string) keep =
     let seen = Hashtbl.create 17 in
     List.filter_map
       (fun t ->
         if is_own t.(1) && keep t.(0) && not (Hashtbl.mem seen t.(0)) then begin
           Hashtbl.add seen t.(0) ();
           let file, l = at t.(1) in
-          Some (file, l, msg t.(0) (shown t.(1)))
+          Some (file, l, what t.(0), msg t.(0) (shown t.(1)))
         end
         else None)
       (List.sort compare (tuples r 2)) in
   let fields =
     by_function "dead_field"
+      (fun f -> "dead field " ^ Option.get (field f))
       (fun f g -> Printf.sprintf "dead field: %s stored in %s, nothing live reads it" (Option.get (field f)) g)
       (fun f -> field f <> None) in
+  let constructor (c : string) : string = match prefix "con:" c with Some x -> x | None -> c in
   let constructors =
     by_function "never_built"
-      (fun c g -> Printf.sprintf "never built: %s, matched in %s" (match prefix "con:" c with Some x -> x | None -> c) g)
+      (fun c -> "never built " ^ constructor c)
+      (fun c g -> Printf.sprintf "never built: %s, matched in %s" (constructor c) g)
       (fun c -> prefix "con:" c <> None) in
   let all = List.sort_uniq compare (functions @ globals @ stmts @ fields @ constructors) in
   List.iter (fun x -> Console.print caps (one x ^ "\n")) all;

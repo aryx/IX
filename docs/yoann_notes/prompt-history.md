@@ -75088,3 +75088,51 @@ Claude offered to start the roughly hour-long local run alongside CI's attempt 2
 **Claude (summary):**
 
 Claude committed the `-exn` fix on main with seven files, unpushed, sitting on top of another session's commit `0861f231`. Claude laid out two remaining items: finding man pages in `docs/man/` whose examples exist only as text, and checking `-v` output in mini-datalog, mini-mk, and the compilers. Yoann chose item 2 to start, with item 3 folded in as the examples are worked through. Claude would now go through the `docs/man/` pages, give the worthwhile ones an `examples/` directory with a test, and check whether `-v` output is enough as they go.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:29
+
+**Yoann:**
+
+> let's do 2 (and maybe 3 at the same time, as we go through examples and use -v and check if it's enough)
+
+**Claude (summary):**
+
+Claude recommended giving mini-datalog the common logging flags, following the mini-analyze convention.
+Claude added `-v` logging so mini-datalog reports the files it reads, writes, and evaluates.
+Claude ran `mini-datalog -v` and confirmed the verbose output works as intended.
+Claude read common(1) to confirm the flag convention before changing mini-datalog's options.
+Claude also reworded mini-prolog's `-wam` description to match the option's own wording.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:37
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed the `-v` flags for mini-datalog and mini-prolog plus the man page fixes on main, without pushing.
+Claude left the other session's kernel, `self.yml` and `mkfiles/depend.rc` changes out of that commit.
+Claude proposed the next `-v` batch for the toolchain: mini-ml, mini-cc, mini-asm, mini-ld and mini-mk.
+For those, `-v` would report the interfaces and libraries found through `-I`/`-L`, objects written, and mkfiles read.
+Claude said these are compiler changes, so it would run `make check` and `make self-quick-mix` before committing, then asked to start.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:28
+
+**Yoann:**
+
+> hmm, let's use CI instead for now and see if we can debug things that way with just the CI logs
+
+**Claude (summary):**
+
+Claude recommended keeping debugging in CI and making `mkfiles/depend.rc` report failures instead of giving up silently.
+Claude added messages to `depend.rc` so each of the four `mini-ml -depend` parts reports its status when it fails.
+Claude switched the one-core branch to `if`/`if not` form so `$status` reflects mini-ml's exit code, not the negation's.
+Claude gave the two branches separate conditions to avoid a nested `if` confusing rc's `if not`, then tested both with a fake `ML`.
+Claude also checked that `self.sh`'s only change is its own, since other sessions have uncommitted work in the checkout.

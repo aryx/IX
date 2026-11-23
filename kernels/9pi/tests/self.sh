@@ -114,7 +114,7 @@ for l in card linux; do
     # (Linux builds four directories at once, so a failed one's lines
     # there are among the others')
     awk '/^cd [^ ]+ && (time )?(mini-)?mk /{n=0; e=0} {s[n++%5]=$0}
-      !/^((time )?(mini-)?(ml|ld|cc|asm|ar|mk) [^0-9]|mkdir|cp|mv|rm|touch|for\(|f=|b=|a=|if\(|echo|cd |[0-9.]+u )/ &&
+      !/^((time )?(mini-)?(ml|ld|cc|asm|ar|mk) [^0-9]|mkdir|cp|mv|rm|touch|for\(|f=|b=|a=|if\(|echo|cd |[0-9.]+u |[ \t]*#)/ &&
         e < 40 {err[e++]=substr($0, 1, 200)}
       /^mk: cd /{print "  " $3 ":"; for(i=0;i<e;i++) print "    " err[i]
         print "    ..."; for(i=n-5;i<n;i++) if(i>=0) print "    " substr(s[i%5], 1, 200)}' \

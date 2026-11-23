@@ -64,19 +64,33 @@ if(! ~ $#force 0 || ! ~ $newest $file){
 	# old: one, whatever the cores)
 	n=1
 	if(! ~ $#NPROC 0) n=$NPROC
-	if(~ $n 1) $ML -depend $obj $idirs $INCLUDES $* > /tmp/depend.$pid || exit 1
-	if not {
+	# (a part that fails says so, with mini-ml's status, a killed one's
+	# signal too: mk says only "bad include program status", and
+	# self.yml's run of 2026-11-23 stopped at lib_mime's with nothing
+	# else in its log)
+	# (two ifs, not if and if not: an if not follows the last if run,
+	# which may be one inside the first block)
+	if(~ $n 1){
+		$ML -depend $obj $idirs $INCLUDES $* > /tmp/depend.$pid ||
+			{ echo depend.rc: $file: mini-ml -depend: $status >[1=2]; exit 1 }
+	}
+	if(! ~ $n 1){
 		parts=`{seq 1 $n}
 		# (the & in the loop's body: after the loop, it is the loop that
 		# goes on beside, its turns one after the other)
 		for(k in $parts) {
-			{ $ML -depend $obj -part $k/$n $idirs $INCLUDES $* > /tmp/depend.$pid.$k && echo > /tmp/depend.$pid.$k.ok } &
+			{ if($ML -depend $obj -part $k/$n $idirs $INCLUDES $* > /tmp/depend.$pid.$k) echo > /tmp/depend.$pid.$k.ok
+			  if not echo depend.rc: $file: mini-ml -depend -part $k/$n: $status >[1=2] } &
 		}
 		wait
 		oks=`{ls /tmp/depend.$pid.*.ok >[2]/dev/null}
 		cat /tmp/depend.$pid.^$parts > /tmp/depend.$pid
 		rm -f /tmp/depend.$pid.^$parts /tmp/depend.$pid.^$parts^.ok
-		if(! ~ $#oks $n){ rm -f /tmp/depend.$pid; exit 1 }
+		if(! ~ $#oks $n){
+			echo depend.rc: $file: $#oks of $n parts made >[1=2]
+			rm -f /tmp/depend.$pid
+			exit 1
+		}
 	}
 	cat /tmp/depend.$pid > $file
 	rm -f /tmp/depend.$pid

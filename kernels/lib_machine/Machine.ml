@@ -115,6 +115,7 @@ external font_base : unit -> int = "font_base"
  * halves (a word is past the Pi1's ints) *)
 external io_get16 : int -> bool -> int = "io_get16"
 external io_set32 : int -> int -> int -> unit = "io_set32"
+external io_run : int -> int -> int -> int -> int -> int = "io_run"
 (* a data port read [n] bytes' worth (32-bit loads), or written
  * a string's words *)
 external io_read_fifo : int -> int -> string = "io_read_fifo"

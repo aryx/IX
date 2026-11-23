@@ -288,6 +288,17 @@ let dma_ready () =
   end;
   !use_dma
 
+(* What reaches the card, one process at a time: the card's transfers
+ * go on without the kernel's lock (dma_move), so whatever reads or
+ * writes it (Devsd's partitions, the file systems on them: Kdos, Kfs,
+ * and Kfs's writer) holds this, each of their calls whole (Devsd's
+ * serialized), a file system's state never seen half changed by
+ * another call. *)
+let storage = Proc.qlock_new ()
+(* (the time out of the kernel's lock: /dev/lockstat's "in unlocked
+ * card", not held, tests/self.sh) *)
+let unlocked_part = Proc.part "unlocked card"
+
 (* [n] bytes between the card and the second page; false when the
  * controller did not end them (Cs: active 1, end 2, error 0x100) *)
 let dma_move write n =
@@ -306,9 +317,14 @@ let dma_move write n =
   Machine.io_set32 dma_cs 0 0;
   Machine.io_set32 dma_conblk (alias lor (cb lsr 16)) (cb land 0xffff);
   Machine.io_set32 dma_cs 0 6;
-  Machine.io_set32 dma_cs 0 1;
+  (* opti: started and waited for with the kernel's lock given back
+   * (runtime.c's io_run): other cores run what is not the card's
+   * meanwhile; the card is the storage qlock's (below).
+   * old: Machine.io_set32 dma_cs 0 1; ignore (poll (fun () -> cs () <> 1)) *)
+  let t0 = Machine.timer_now () in
+  ignore (Machine.io_run dma_cs 0 1 0x103 1);
+  Proc.part_add unlocked_part ((Machine.timer_now () - t0) land 0x3fffffff);
   let cs () = Machine.io_get16 dma_cs false land 0x103 in
-  ignore (poll (fun () -> cs () <> 1));
   if cs () = 2 then begin Machine.io_set32 dma_cs 0 6; true end
   else begin
     Devcons.print (Printf.sprintf "emmc: dma: cs %x, the words one by one from now on\n" (Machine.io_get16 dma_cs false));

@@ -77,7 +77,8 @@ let now () =
 let init () =
   Fat.clock := now;
   let d = Dev.default 'F' "fat" in
-  Dev.register { d with
+  (* (each call whole: the card's transfers give up the kernel's lock) *)
+  Dev.register (Devsd.serialized { d with
     Dev.attach = (fun spec ->
       let part = if spec = "" then "dos" else spec in
       ignore (fat part);
@@ -141,4 +142,4 @@ let init () =
         c.qid <- qid_of e'
       end);
     Dev.close = (fun _ -> ());
-  }
+  })

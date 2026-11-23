@@ -100,7 +100,10 @@ done
 for l in card linux; do
   # (the top mkfile's recipe for a directory, as mk says it before it
   # runs it, and mk's word when it failed: mk: cd DIR && ... : exit status)
-  n=$(grep -c -E '^cd [^ ]+ && (time )?(mini-)?mk ' "$build/$l.log")
+  # (anywhere in a line, each directory once: four jobs write the log,
+  # and a recipe was once said after another's line not yet ended,
+  # languages/smalltalk counted out of 86)
+  n=$(grep -a -o -E 'cd [^ ]+ && (time )?(mini-)?mk ' "$build/$l.log" | sort -u | wc -l | tr -d ' ')
   f=$(sed -n 's/^mk: cd \([^ ]*\) && .*/\1/p' "$build/$l.log" | tr '\n' ' ')
   if [ -z "$f" ]; then echo "ok self: $n directories built on $l"
   else echo "FAIL self: on $l, of $n directories: $f"; status=1
@@ -149,11 +152,13 @@ echo "self: $(awk '{s+=$2} END{printf "%d", s}' "$build/times.txt") s of mk on t
 # 2026-11-23, a number to bring down): how long it was held during the
 # build, of the top mk's time (mk -p's first line), and how long each
 # core waited for it; then what held it most (/dev/lockstat's accounts,
-# a name, times, ms; its "in" lines are parts of those)
+# a name, times, ms; its "in" lines are parts of those, and "in
+# unlocked" ones their time out of the lock, not held)
 tr -d '\r' < "$build/console.txt" | sed -n '/^% cat \/dev\/waits/,/^% /p' > "$build/lock.txt"
 mk_s=$(grep -a -m1 '^mk: [0-9.]* s:' "$build/card.log" | awk '{print $2}')
 awk -v mk="${mk_s:-0}" '
   /^lock / { for (i = 2; i <= NF; i++) w += $i; nc = NF - 1 }
+  /^in unlocked / { held -= $NF }
   /^[^%]/ && !/^(in|lock|ready|page) / && $NF ~ /^[0-9]+$/ && $(NF-1) ~ /^[0-9]+$/ { held += $NF }
   END { if (nc) printf "self: the kernel'"'"'s lock held %d s of mk'"'"'s %d (%d%%), each core waited %d s for it (BUILD/lock.txt)\n",
           held / 1000, mk, (mk > 0 ? held / 10 / mk : 0), w / 1000 / nc }' "$build/lock.txt"

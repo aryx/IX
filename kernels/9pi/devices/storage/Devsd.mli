@@ -38,3 +38,8 @@
 
 (* resets the controller (sdreset) and registers the device *)
 val init : unit -> unit
+
+(* [serialized d]: d's calls each whole under Emmc's storage qlock (the
+ * card's transfers give up the kernel's lock); for a file system on
+ * the card's partitions (Kdos, Kfs) *)
+val serialized : Dev.t -> Dev.t

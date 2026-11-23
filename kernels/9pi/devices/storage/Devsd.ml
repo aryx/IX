@@ -128,11 +128,32 @@ let bio (c : chan) write s len off =
 (* a control message's words *)
 let words s = List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.map (fun c -> if c = '\n' || c = '\t' then ' ' else c) s))
 
+(* A device whose calls reach the card, each call whole under the
+ * storage qlock (Emmc's: the card's transfers give up the kernel's
+ * lock): Devsd's own, and the file systems on its partitions, Kdos's
+ * and Kfs's *)
+let serialized (d : Dev.t) =
+  let q f = Proc.with_qlock Emmc.storage f in
+  { d with
+    Dev.attach = (fun s -> q (fun () -> d.Dev.attach s));
+    Dev.walk = (fun c nc n -> q (fun () -> d.Dev.walk c nc n));
+    Dev.clone = (fun c nc -> q (fun () -> d.Dev.clone c nc));
+    Dev.clunk = (fun c -> q (fun () -> d.Dev.clunk c));
+    Dev.stat = (fun c -> q (fun () -> d.Dev.stat c));
+    Dev.dirs = (fun c -> q (fun () -> d.Dev.dirs c));
+    Dev.open_ = (fun c m -> q (fun () -> d.Dev.open_ c m));
+    Dev.create = (fun c n m p -> q (fun () -> d.Dev.create c n m p));
+    Dev.read = (fun c n off -> q (fun () -> d.Dev.read c n off));
+    Dev.write = (fun c s off -> q (fun () -> d.Dev.write c s off));
+    Dev.remove = (fun c -> q (fun () -> d.Dev.remove c));
+    Dev.wstat = (fun c dir -> q (fun () -> d.Dev.wstat c dir));
+    Dev.close = (fun c -> q (fun () -> d.Dev.close c)) }
+
 let init () =
   Emmc.init ();
   Emmc.enable ();
   let d = Dev.default 'S' "sd" in
-  Dev.register { d with
+  Dev.register (serialized { d with
     Dev.attach = (fun spec ->
       if spec <> "" then raise (Error "bad attach specifier");
       Dev.attach 'S' 0 (dirqid (qid 0 0 0 qtopdir)));
@@ -186,4 +207,4 @@ let init () =
       end
       else if t = qpart then snd (bio c true s (String.length s) off)
       else raise (Error eperm));
-  }
+  })

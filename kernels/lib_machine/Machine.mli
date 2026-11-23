@@ -443,6 +443,12 @@ external io_probe : int -> bool = "io_probe"
  * reading one may change the device. *)
 external io_get16 : int -> bool -> int = "io_get16"
 external io_set32 : int -> int -> int -> unit = "io_set32"
+(* [io_run off hi lo mask busy]: a transfer started by writing [hi lo]
+ * at [off], waited for (the low half read until its bits [mask] are
+ * not [busy], a second at most) with the kernel's lock given back
+ * (runtime.c): the last read. The caller keeps other processes off
+ * the device, and its bytes go where OCaml's heap is not. *)
+external io_run : int -> int -> int -> int -> int -> int = "io_run"
 (* a data port is a register that gives the next word of a block at
  * each read, and takes one at each write. [io_read_fifo] reads [n]
  * bytes' worth from it (by 32-bit loads), and [io_write_fifo] writes a

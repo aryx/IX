@@ -753,6 +753,28 @@ void imag_back(void)
   if (cores_running) kernel_enter();
 #endif
 }
+/* A device's transfer with the kernel's lock given back (mini-9pi's
+ * card, Emmc's DMA: an emulator moves its bytes in the write that
+ * starts it, 3.5 MB/s under QEMU, 390 s of the lock in the four-core
+ * build of ix, plan_9pi_self_speed.md, 2026-11-23; a board, while the
+ * card works). The word [hi lo] written at [off] starts it; then the
+ * low half of that word is read until its bits [mask] are no longer
+ * [busy], or a second: the last read. As imag_out's copies, nothing of
+ * OCaml's is touched meanwhile, and the caller holds what keeps
+ * another process off the device (Emmc's storage qlock). */
+value io_run(value off, value hi, value lo, value mask, value busy)
+{
+  volatile unsigned *r = (volatile unsigned *)(IO_BASE + Long_val(off));
+  unsigned v, t0;
+  imag_out();
+  *r = ((unsigned)Long_val(hi) << 16) | ((unsigned)Long_val(lo) & 0xffff);
+  t0 = Long_val(timer_now(Val_unit));
+  do v = *r & 0xffff;
+  while ((v & Long_val(mask)) == (unsigned)Long_val(busy) && ((Long_val(timer_now(Val_unit)) - t0) & 0x3fffffff) < 1000000);
+  imag_back();
+  return Val_long(v);
+}
+
 /* (worth the lock's two exchanges: some pages of pixels) */
 #define IMAG_WORTH 16384
 /* which copies give the lock back: 1 a copy, 2 a fill's rows, 4 a

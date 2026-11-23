@@ -186,6 +186,15 @@ val wakeup : wait_chan -> unit
 (* the clock's wakeup, at each tick: it readies the sleepers on Ticks,
  * and those on Until t once the ticks reach t *)
 val wakeup_ticks : unit -> unit
+
+(* A lock held across sleeps (Plan 9's QLock): [qlock q] waits, asleep,
+ * while another process holds it; its holder takes it again (counted);
+ * [with_qlock q f] holds it while f runs, an exception too *)
+type qlock
+val qlock_new : unit -> qlock
+val qlock : qlock -> unit
+val qunlock : qlock -> unit
+val with_qlock : qlock -> (unit -> 'a) -> 'a
 val yield : unit -> unit
 
 (* [preempt_due ()] tells whether a tick should preempt: the running

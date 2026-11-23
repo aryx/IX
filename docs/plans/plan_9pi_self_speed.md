@@ -673,6 +673,7 @@ run's page (its summary). Each whole four-core run measured goes here:
 | Kfs's cache a clock, 128 MB | 1,387 s | 1,085 s (78%) | 592 s | Pwrite x 257, fault-zero 228, Pread x 164 |
 | + writes clustered, reads ahead (the Mac busy) | 1,524 s | 1,198 s (78%) | 690 s | fault-zero 254, Pwrite x 247, Pread x 180 |
 | + names and inodes kept (the Mac busy, load 20) | 1,510 s | 1,171 s (77%) | 670 s | fault-zero 260, Pwrite x 252, Pread x 204 |
+| + the card's transfers out of the lock | 1,456 s | 806 s (55%) | 590 s | Pwrite x 269, fault-zero 249, Pread x 187 |
 
 The reads and writes were the card's (x, the card's file system;
 c870037a's run): its commands, polled with the lock held, 740 s of the
@@ -703,6 +704,27 @@ Stat 45%, Pwrite x 14%, the lock held about 5%. Create is rc's /env
 the card's file system is the card: about 390 s of transfers, polled
 with the lock held. A run's time moves with the Mac's load: compare
 accounts against one a change does not touch.
+
+Then the card's transfers without the kernel's lock (the classic
+remedy: a driver that does not hold the big lock while its device
+works; FreeBSD's drivers out of Giant, Linux's out of the BKL).
+runtime.c's io_run starts the card's DMA and waits for its end with
+the lock given back, as the screen's copies are (Emmc's dma_move).
+What is left must not be entered half way: a sleeping lock, Proc's
+qlock (Plan 9's QLock, taken again by its holder, a note not ending
+the wait), and one of them, Emmc.storage, held by every call that
+reaches the card, Devsd's own and the file systems' on it (Kdos, Kfs:
+Devsd.serialized wraps each of a device's calls) and Kfs's writer.
+386 s of transfers out of the lock ("in unlocked card", not counted
+held by self.sh): the lock held 806 s (55%) where it was 1,171, mk
+1,456 s (the Mac's load lower; fault-zero 249). mk only a little
+faster: the card is still one at a time, the processes that want it
+now asleep instead of spinning. What it gives is the lock's room:
+the other cores' faults, forks, pipes and /env no longer wait behind
+the card, which counts once those are cheaper. Also seen: a
+directory's recipe said after another job's line not yet ended,
+counted out (85 of 86 directories); self.sh counts each directory
+once, anywhere in a line.
 
 ## The gate
 

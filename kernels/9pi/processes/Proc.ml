@@ -211,6 +211,32 @@ let wakeup ch =
     | Some p -> (match p.state with Sleeping c when c = ch -> ready p | _ -> ())
     | None -> ()) procs
 
+(* A lock held across sleeps, by one process at a time (Plan 9's
+ * QLock): the kernel's own lock is given up while its holder sleeps,
+ * or while a device works without it (Emmc), and what the qlock keeps
+ * must not be entered meanwhile by another process. Taken again by its
+ * holder (a count: a file system's call within another). A note does
+ * not end the wait, as Plan 9's qlock. *)
+type qlock = { id : int; mutable owner : int; mutable depth : int }
+let qlocks = ref 0
+let qlock_new () = incr qlocks; { id = !qlocks; owner = -1; depth = 0 }
+let qlock (q : qlock) =
+  let p = myproc () in
+  if q.owner = p.pid then q.depth <- q.depth + 1
+  else begin
+    while q.owner >= 0 do p.state <- Sleeping (Qlock q.id); sched () done;
+    q.owner <- p.pid;
+    q.depth <- 1
+  end
+let qunlock (q : qlock) =
+  q.depth <- q.depth - 1;
+  if q.depth = 0 then begin q.owner <- -1; wakeup (Qlock q.id) end
+let with_qlock q f =
+  qlock q;
+  let x = try f () with e -> qunlock q; raise e in
+  qunlock q;
+  x
+
 (* a tick's: those waiting for any tick (Syssema's), and those whose
  * tick has come (tsleep's) *)
 let wakeup_ticks () =

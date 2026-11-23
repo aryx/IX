@@ -169,11 +169,12 @@ type segment = {
  * mount's 9P reply (its number), a rendezvous's partner (the process's
  * pid), a semaphore (its physical address), the mouse's next state, a
  * draw client's refresh (its id), a frame for an ether connection (its
- * number), an IP connection's data or state (its key) *)
+ * number), an IP connection's data or state (its key), a sleeping
+ * lock (its number: Proc.qlock) *)
 type wait_chan =
   | Console_input | Kbd_input | Child_exit of int | Pipe_data of int | Pipe_room of int | Ticks | Until of int | Mnt_reply of int
   | Rendez of int | Semaphore of int | Mouse_change | Draw_refresh of int | Ether_data of int | Ip_conv of int
-  | Stopped of int | Stop_wait of int
+  | Stopped of int | Stop_wait of int | Qlock of int
 
 (* a note's kind: sent by a process (NUser), one that ends the process
  * (NExit: a kill), a trap's (NDebug) *)

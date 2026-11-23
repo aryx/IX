@@ -269,7 +269,7 @@ let start_writer () =
     Kproc.start (Proc.myproc ()) "kfs" (fun () ->
       while true do
         (try Proc.tsleep 1000 with Error _ -> ());
-        (try if !dirty <> [] then flush () with Error _ | Failure _ -> ())
+        (try if !dirty <> [] then Proc.with_qlock Emmc.storage flush with Error _ | Failure _ -> ())
       done)
   end
 
@@ -307,7 +307,8 @@ let fs part =
 
 let init () =
   let d = Dev.default 'x' "xv6fs" in
-  Dev.register { d with
+  (* (each call whole: the card's transfers give up the kernel's lock) *)
+  Dev.register (Devsd.serialized { d with
     Dev.attach = (fun spec ->
       let part = if spec = "" then "other" else spec in
       ignore (fs part);
@@ -364,4 +365,4 @@ let init () =
         Hashtbl.replace seen (c.devno, c.qid.path) (d.d_name, parent)
       end);
     Dev.close = (fun _ -> ());
-  }
+  })

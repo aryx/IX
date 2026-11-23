@@ -86,8 +86,12 @@ val online : unit -> card
 
 (* [bio c write buf bno nb] reads or writes nb blocks from block bno, as
  * mmcbio's multiblock transfers do. A read (buf is "") returns them as
- * a string; a write writes buf's blocks. It raises Error eio. *)
+ * a string; a write writes buf's blocks. It raises Error eio. Its
+ * transfers give up the kernel's lock: the caller holds [storage]. *)
 val bio : card -> bool -> string -> int -> int -> string
+
+(* what reaches the card, one process at a time (Devsd.serialized) *)
+val storage : Proc.qlock
 
 (* the controller's part of the unit's ctl (mmcrctl): "rca ... ocr ...
  * cid ... csd ...\ngeometry ...\n" *)

@@ -52,13 +52,21 @@ let perm_of fs i = if is_dir fs i then 0o777 else 0o666
  * [cached] false: every read and write is the device's, as it was. *)
 let cached = ref true
 let piece = 4096
-(* 8192 pieces, 32 MB, then all forgotten: simple, and what a build
- * reads again and again fits (mini-ml 2.7 MB, mini-mk, mini-rc,
- * mini-ld, lib_core.a 5.6 MB, the sources). 2 MB was less than
- * mini-ml: each compile read it from the card again, 40% of a
- * compile's time under QEMU (plan_self_hosting.md).
- * old: 512 pieces, 2 MB *)
-let max_pieces = 8192
+(* 32768 pieces at most, 128 MB, while the machine has pages to spare
+ * (low_pages free, 64 MB; below, a piece is taken from the cache's
+ * own), and one given back at a time, by a clock (below). 2 MB was
+ * less than mini-ml: each compile read it from the card again, 40% of
+ * a compile's time under QEMU (plan_self_hosting.md).
+ * opti: the four-core build of ix on the card read and wrote 619,487
+ * pieces with 32 MB all forgotten when full: the card's commands held
+ * the kernel's lock 1,089 s of the build's 2,960
+ * (plan_9pi_self_speed.md, 2026-11-23); what a build reads again and
+ * again (mini-ml 2.7 MB, mini-mk, mini-rc, mini-ld, lib_core.a 5.6 MB,
+ * the sources, four compiles' at once) was forgotten with the rest.
+ * old: 512 pieces, 2 MB; then let max_pieces = 8192, and forget ()
+ * when full: flush (), every page given back, the table cleared *)
+let max_pieces = 32768
+let low_pages = 16384
 (* Each piece in a page of the processes' memory (Mmu.kalloc), with
  * its length (the device's last is shorter), not a string of the
  * kernel's heap: the kernel's malloc never takes back what it gave
@@ -66,7 +74,8 @@ let max_pieces = 8192
  * card is read and written, took its heap from 15 MB to its 96 in
  * twenty minutes of a build, the kernel then stopped (out of memory).
  * old: let pieces : (int, string) Hashtbl.t = Hashtbl.create 512 *)
-let pieces : (int, int * int) Hashtbl.t = Hashtbl.create max_pieces
+type entry = { pa : int; len : int; slot : int }
+let pieces : (int, entry) Hashtbl.t = Hashtbl.create max_pieces
 (* how many (ocaml-light's Hashtbl.length counts them, its buckets
  * all looked at) *)
 let npieces = ref 0
@@ -75,34 +84,76 @@ let npieces = ref 0
 let dirty : (int * (int -> string -> unit)) list ref = ref []
 let ndirty = ref 0
 
-let bytes_of (pa, len) = Machine.Phys.read pa len
-
 let flush () =
-  List.iter (fun (k, write) -> write (k * piece) (bytes_of (Hashtbl.find pieces k)))
+  List.iter (fun (k, write) -> let e = Hashtbl.find pieces k in write (k * piece) (Machine.Phys.read e.pa e.len))
     (List.rev !dirty);
   dirty := [];
   ndirty := 0
 
-(* all forgotten, what was changed written first, their pages given back *)
-let forget () =
-  flush ();
-  Hashtbl.iter (fun _ (pa, _) -> Mmu.kfree pa) pieces;
-  Hashtbl.clear pieces;
-  npieces := 0
+(* The clock (the second chance: Multics' page replacement, and what
+ * Plan 9's image cache and Linux's page cache do in their own ways):
+ * each piece has a slot, with the piece's number and whether it was
+ * used since the hand last passed. To give one back, the hand goes
+ * round: a used one is let off once (no longer used), a changed one
+ * not yet written is kept, the first other one given back. Two turns
+ * without one: none to give. *)
+let slots = Array.make max_pieces (-1)
+let used = Array.make max_pieces false
+let hand = ref 0
+(* the slots given back, and the first never used *)
+let free_slots = ref []
+let fresh_slot = ref 0
+let take_slot () =
+  match !free_slots with
+  | s :: rest -> free_slots := rest; s
+  | [] -> let s = !fresh_slot in incr fresh_slot; s
 
-(* piece [k], read from the device when it is not here *)
+(* (each given back counted: /dev/lockstat's "in kfs-evict") *)
+let evict_part = Proc.part "kfs-evict"
+let evict () =
+  let t0 = Machine.timer_now () in
+  let rec go tries =
+    if tries > 0 && !npieces > 0 then begin
+      let s = !hand in
+      hand := (s + 1) mod max_pieces;
+      let k = slots.(s) in
+      if k < 0 then go (tries - 1)
+      else if used.(s) then begin used.(s) <- false; go (tries - 1) end
+      else if List.mem_assoc k !dirty then go (tries - 1)
+      else begin
+        Mmu.kfree (Hashtbl.find pieces k).pa;
+        Hashtbl.remove pieces k;
+        decr npieces;
+        slots.(s) <- -1;
+        free_slots := s :: !free_slots;
+        Proc.part_add evict_part ((Machine.timer_now () - t0) land 0x3fffffff)
+      end
+    end in
+  go (2 * max_pieces)
+
+(* pages for the processes, when none is left (Mmu.on_empty, Fault's
+ * too): a thousand pieces given back, those not changed *)
+let () =
+  let next = !Mmu.on_empty in
+  Mmu.on_empty := (fun () -> for i = 1 to 1024 do ignore i; evict () done; next ())
+
+(* piece [k], read from the device when it is not here; the cache full,
+ * or the machine short of pages, one given back for it *)
 let piece_of (device : int -> int -> string) k =
-  try Hashtbl.find pieces k
+  try let e = Hashtbl.find pieces k in used.(e.slot) <- true; e
   with Not_found ->
     let bytes = device (k * piece) piece in
-    if !npieces >= max_pieces then forget ();
+    if !npieces >= max_pieces || Mmu.nfree () < low_pages then evict ();
+    (* (all changed, none given back: written, and one again) *)
+    if !npieces >= max_pieces then begin flush (); evict () end;
     let pa = match Mmu.kalloc () with
       | Some pa -> pa
-      | None ->
-          forget ();
-          (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem)) in
+      | None -> flush (); evict (); (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem)) in
     Machine.Phys.write pa bytes;
-    let e = (pa, String.length bytes) in
+    let s = take_slot () in
+    slots.(s) <- k;
+    used.(s) <- true;
+    let e = { pa = pa; len = String.length bytes; slot = s } in
     Hashtbl.replace pieces k e;
     incr npieces;
     e
@@ -114,7 +165,8 @@ let cache_read (device : int -> int -> string) at n =
     while Buffer.length b < n do
       let pos = at + Buffer.length b in
       let k = pos / piece in
-      let pa, len = piece_of device k in
+      let e = piece_of device k in
+      let pa = e.pa and len = e.len in
       let o = pos - (k * piece) in
       (* (the device's end: a piece shorter than asked) *)
       if o >= len then Buffer.add_string b (String.make (n - Buffer.length b) '\000')
@@ -135,7 +187,8 @@ let cache_write (device : int -> int -> string) (write : int -> string -> unit) 
   if not !cached then write at s
   else
     for k = at / piece to (at + String.length s - 1) / piece do
-      let pa, len = piece_of device k in
+      let e = piece_of device k in
+      let pa = e.pa and len = e.len in
       (* the part of s in this piece, and where *)
       let from = max at (k * piece)
       and upto = min (at + String.length s) ((k * piece) + len) in

@@ -371,10 +371,11 @@ let rec bio_ c write buf bno nb =
 
 (* (each transfer timed: the kernel's lock is held while it polls,
  * /dev/lockstat's card) *)
-let card_part = Proc.part "card"
+let read_part = Proc.part "card-read"
+let write_part = Proc.part "card-write"
 let bio c write buf bno nb =
   let t0 = Machine.timer_now () in
-  let fin () = Proc.part_add card_part ((Machine.timer_now () - t0) land 0x3fffffff) in
+  let fin () = Proc.part_add (if write then write_part else read_part) ((Machine.timer_now () - t0) land 0x3fffffff) in
   let r = try bio_ c write buf bno nb with e -> fin (); raise e in
   fin ();
   r

@@ -266,7 +266,9 @@ let text pgdir base top (c : chan) flen =
       end;
       s
 
-let () = Mmu.on_empty := unkeep_all
+(* (and what was hooked before: Kfs's cache gives back some too.
+ * old: Mmu.on_empty := unkeep_all) *)
+let () = let next = !Mmu.on_empty in Mmu.on_empty := (fun () -> unkeep_all (); next ())
 
 let dup s from pgdir share =
   if share then begin

@@ -669,6 +669,18 @@ run's page (its summary). Each whole four-core run measured goes here:
 | run | mk on the card | lock held | each core waited | most held by |
 |---|---|---|---|---|
 | 2026-11-23, 8708184c | 1,735 s | about 1,450 s (84%) | 833 s | Pread 555, Pwrite 260, fault-zero 232 |
+| c870037a, the card's reads and writes counted | 1,727 s | 1,444 s (83%) | 830 s | Pread x 499, Pwrite x 255, fault-zero 225 |
+| Kfs's cache a clock, 128 MB | 1,387 s | 1,085 s (78%) | 592 s | Pwrite x 257, fault-zero 228, Pread x 164 |
+
+The reads and writes were the card's (x, the card's file system;
+c870037a's run): its commands, polled with the lock held, 740 s of the
+1,444, 472,066 reads of 4 KB and 144,709 writes. Kfs's cache of 32 MB
+was forgotten whole when full, 57 times in the build: what a build
+reads again and again went with the rest. A clock (one piece given
+back at a time, a used one let off once) and up to 128 MB while the
+machine has 64 MB free: 174,498 reads, 206 s where they were 563, mk
+20% faster, the files Linux's. What is left of the card is mostly its
+writes (167 s), each changed piece written by itself.
 
 ## The gate
 

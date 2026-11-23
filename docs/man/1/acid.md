@@ -136,7 +136,7 @@ acid: mlvars()
 
 An ML function's name is its symbol's: *f2_down* is the second
 function of its unit. **ml -g** says a unit's file by its path in ix
-(*apps/rio/Rio.ml*): **src** finds it in **srcpath**'s directories,
+(*windows/rio/Rio.ml*): **src** finds it in **srcpath**'s directories,
 *./* and */src/* (the card's); on the host, ix's directory added:
 
 ```

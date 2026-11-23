@@ -45,9 +45,10 @@ IX_LOG=debug asm -o a.5 a.s
 ```
 
 # SEE ALSO
-\man{dotnet}{1}
+\man{dotnet}{1}, \man{analyze}{1}, \man{datalog}{1}, \man{prolog}{1}
 
 # BUGS
-The programs that take them are few yet: mini-dotnet. A program whose
+The programs that take them are few yet: mini-dotnet, mini-analyze,
+mini-datalog, mini-prolog; the others that log say it with `IX_LOG`. A program whose
 original gave one of these options a meaning of its own keeps it
 (awk's **-v** *var*=*value*): `IX_LOG` is its way.

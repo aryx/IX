@@ -53,11 +53,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let goals : string list ref = ref [] and files : string list ref = ref [] in
   let trace = ref false and stats = ref false and wam = ref false and code = ref false in
   let options =
-    [ ("-g", Arg.String (fun (g : string) -> goals := g :: !goals), " a goal to run after the files (several: in order)");
-      ("-wam", Arg.Set wam, " run by Warren's machine: the clauses compiled");
-      ("-S", Arg.Set code, " that machine's instructions for the files' predicates, nothing run");
-      ("-trace", Arg.Set trace, " each call's ports: Call, Exit, Redo, Fail");
-      ("-s", Arg.Set stats, " the machine's steps, at the end") ] in
+    Logging.flags
+    @ [ ("-g", Arg.String (fun (g : string) -> goals := g :: !goals), " a goal to run after the files (several: in order)");
+        ("-wam", Arg.Set wam, " run by Warren's machine: the clauses compiled");
+        ("-S", Arg.Set code, " that machine's instructions for the files' predicates, nothing run");
+        ("-trace", Arg.Set trace, " each call's ports: Call, Exit, Redo, Fail");
+        ("-s", Arg.Set stats, " the machine's steps, at the end") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -82,7 +83,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         (fun (f : string) ->
           match FS.path f with
           | Error msg -> failwith msg
-          | Ok p -> ( try FS.read caps p with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg)));
+          | Ok p -> (
+              Logs.info (fun l -> l "reading %s" f);
+              try FS.read caps p with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg)));
       let ok = ref true in
       let complain (what : string) : unit =
         ok := false;
@@ -100,6 +103,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       try
         if !trace && (!wam || !code) then failwith "-trace is the first machine's: not with -wam";
         let w : Wam_machine.t option = if !wam || !code then Some (Wam_machine.install m) else None in
+        Logs.info (fun l ->
+            l "run by %s" (if w <> None then "Warren's machine, the clauses compiled" else "the interpreter"));
         (* the prelude's predicates: not the files' *)
         let before : (string, unit) Hashtbl.t = Hashtbl.create 255 in
         Hashtbl.iter (fun (k : string) (_ : M.proc) -> Hashtbl.replace before k ()) m.procs;
@@ -109,6 +114,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             | _ -> ()
             | exception M.Throw ball -> complain (Prolog_builtins.message m ball))
           (List.rev !files);
+        Logs.info (fun l ->
+            l "the files' predicates: %d, the prelude's: %d"
+              (Hashtbl.length m.procs - Hashtbl.length before) (Hashtbl.length before));
         m.trace <- !trace;
         (match w with
          | Some w when !code ->
@@ -132,6 +140,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             match read (g ^ " .") with
             | None -> ()
             | Some (goal, _) -> (
+                Logs.info (fun l -> l "goal: %s" g);
                 match M.solve m goal with
                 | true -> ()
                 | false -> complain ("the goal failed: " ^ g)

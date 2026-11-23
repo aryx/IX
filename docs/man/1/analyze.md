@@ -18,6 +18,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-alone** ]
 [ **-no-models** ]
 [ **-fingerprint** ]
+[ **-v** | **-debug** | **-quiet** ]
 *file*`.c` ... | *file*`.ml` ...
 
 # DESCRIPTION
@@ -156,6 +157,13 @@ program's library, lib_core's units it names, is read with it.
 **-fingerprint**
 :    After the report, one number of every answer: two runs of the
      analysis, native or on .NET, agree if their numbers do.
+
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each rules
+     file read, the summaries, the program's files and the library's
+     units, and the evaluation (by \man{datalog}{1}'s engine, in this
+     process): its rules and facts, then its rounds and tuples
+     derived; **-debug** also each relation's size.
 
 # EXAMPLES
 In ix's root, `bin/` first on the path; elsewhere **-r** and **-L**
@@ -325,7 +333,8 @@ across_call('main:s/-8','main:7').
      reports.
 
 # SEE ALSO
-\man{datalog}{1}, \man{cc}{1}, \man{ml}{1}, \man{dotnet}{1}
+\man{datalog}{1}, \man{cc}{1}, \man{ml}{1}, \man{dotnet}{1},
+\man{common}{1}
 
 # BUGS
 Built by dune only, not by ix. A C function of the same name in two

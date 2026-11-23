@@ -10,6 +10,7 @@ prolog – the Prolog language
 [ **-S** ]
 [ **-trace** ]
 [ **-s** ]
+[ **-v** | **-debug** | **-quiet** ]
 [ *file*`.pl` ... ]
 
 # DESCRIPTION
@@ -39,6 +40,11 @@ Enter asks for it, Enter alone stops.
 **-s**
 :    At the end, the machine's steps.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the machine
+     that runs, each file read (by **consult** too), the files'
+     predicates, and each **-g** goal.
+
 **-h**
 :    How, by examples.
 
@@ -46,12 +52,15 @@ Enter asks for it, Enter alone stops.
 ```
 prolog -g 'X is 6 * 7, write(X), nl'
 prolog -g 'append(X, Y, [a,b]), write(X-Y), nl, fail'
-prolog queens.pl -g 'queens(8, Qs), print(Qs), nl'
-prolog -trace family.pl -g 'grandparent(tom, X)'
+prolog classics.pl -g 'queens(8, Qs), print(Qs), nl'
+prolog -trace classics.pl -g 'grandparent(tom, X)'
 ```
 
+`classics.pl` is `languages/prolog/tests/classics.pl`: a family's
+relations, the eight queens, the zebra puzzle, and more.
+
 # SEE ALSO
-\man{datalog}{1}, \man{scheme}{1}
+\man{datalog}{1}, \man{scheme}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 A goal of **-g** that fails or throws is said, and the status is 1.

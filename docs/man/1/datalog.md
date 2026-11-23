@@ -12,6 +12,7 @@ datalog – facts, and rules run until nothing new is found
 [ **-btree** *name*`/`*arity* ] ...
 [ **-s** ]
 [ **-profile** ]
+[ **-v** | **-debug** | **-quiet** ]
 *file*`.dl` ...
 
 # DESCRIPTION
@@ -64,6 +65,11 @@ it, and a negation through a recursion is refused. `=`, `\=`, `<`,
 :    Each rule's firings, new facts, lookups and seconds, the
      costliest first.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the files
+     read, the rules and facts evaluated, the rounds and tuples
+     derived, and with **-dotnet** the assembly written.
+
 # EXAMPLES
 ```
 datalog graph.dl
@@ -73,4 +79,5 @@ mini-analyze -facts hello.c > hello.dl
 ```
 
 # SEE ALSO
-\man{analyze}{1}, \man{prolog}{1}, \man{cc}{1}, \man{ml}{1}
+\man{analyze}{1}, \man{prolog}{1}, \man{cc}{1}, \man{ml}{1},
+\man{common}{1}

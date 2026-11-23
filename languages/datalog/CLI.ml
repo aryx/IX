@@ -49,17 +49,18 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let sorted : string list ref = ref [] in
   let dotnet = ref false and out = ref "" and runtime = ref "datalog_rt" and entry = ref "Datalog_rt" in
   let options =
-    [ ("-q", Arg.String (fun (q : string) -> queries := q :: !queries), " a query: the tuples that match it");
-      ("-all", Arg.Set all, " every tuple of every relation that has a rule");
-      ("-naive", Arg.Set naive, " every rule on every tuple, each round");
-      ("-j", Arg.Set_int Datalog_eval.jobs, " n domains share a rule's new tuples (OCaml 5's build)");
-      ("-btree", Arg.String (fun (r : string) -> sorted := r :: !sorted), " name/arity: that relation sorted, in B-trees (all: every one)");
-      ("-s", Arg.Set stats, " the relations' sizes, the rounds, the firings");
-      ("-profile", Arg.Set profile, " each rule's firings, new tuples, lookups and seconds, the costliest first");
-      ("-dotnet", Arg.Set dotnet, " the rules compiled to a .NET assembly, its facts given when it runs");
-      ("-o", Arg.Set_string out, " -dotnet's assembly (the last file's name.dll)");
-      ("-runtime", Arg.Set_string runtime, " -dotnet's runtime assembly (datalog_rt; mini-analyze's: analyze_rt)");
-      ("-entry", Arg.Set_string entry, " -dotnet's entry, its runtime's class whose main runs it (Datalog_rt)") ] in
+    Logging.flags
+    @ [ ("-q", Arg.String (fun (q : string) -> queries := q :: !queries), " a query: the tuples that match it");
+        ("-all", Arg.Set all, " every tuple of every relation that has a rule");
+        ("-naive", Arg.Set naive, " every rule on every tuple, each round");
+        ("-j", Arg.Set_int Datalog_eval.jobs, " n domains share a rule's new tuples (OCaml 5's build)");
+        ("-btree", Arg.String (fun (r : string) -> sorted := r :: !sorted), " name/arity: that relation sorted, in B-trees (all: every one)");
+        ("-s", Arg.Set stats, " the relations' sizes, the rounds, the firings");
+        ("-profile", Arg.Set profile, " each rule's firings, new tuples, lookups and seconds, the costliest first");
+        ("-dotnet", Arg.Set dotnet, " the rules compiled to a .NET assembly, its facts given when it runs");
+        ("-o", Arg.Set_string out, " -dotnet's assembly (the last file's name.dll)");
+        ("-runtime", Arg.Set_string runtime, " -dotnet's runtime assembly (datalog_rt; mini-analyze's: analyze_rt)");
+        ("-entry", Arg.Set_string entry, " -dotnet's entry, its runtime's class whose main runs it (Datalog_rt)") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -74,6 +75,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             let path : Fpath.t = match FS.path f with Ok path -> path | Error msg -> failwith msg in
             (* (Plan 9's error is the file's name alone) *)
             let text = try FS.read caps path with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg) in
+            Logs.info (fun m -> m "reading %s" f);
             D.load p ~from:f text)
           (List.rev !files);
         let asked = List.map (D.query p) (List.rev !queries) in
@@ -82,6 +84,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           let out = if !out <> "" then path !out else Fpath.set_ext ".dll" (Fpath.base (path (List.hd !files))) in
           let name = Fpath.to_string (Fpath.rem_ext (Fpath.base out)) in
           let texts = List.map (fun (f : string) -> (f, FS.read caps (path f))) (List.rev !files) in
+          Logs.info (fun m -> m "writing %s and its runtimeconfig.json" (Fpath.to_string out));
           FS.write caps out (Compile_il.assembly (!runtime, !entry) name p texts (List.rev !queries));
           FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;
           raise Exit
@@ -92,7 +95,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             if r.rules = 0 && r.given = 0 then
               Console.eprint caps (Printf.sprintf "warning: %s/%d has no fact and no rule\n" r.name r.arity))
           p.relations;
+        Logs.info (fun m ->
+            m "evaluating %s: %d rules, %d facts in %d relations"
+              (if !naive then "naively" else "semi-naively") (List.length p.rule_list)
+              (Hashtbl.fold (fun _ (r : D.relation) n -> n + r.count) p.relations 0)
+              (Hashtbl.length p.relations));
         let st = Datalog_eval.run ~naive:!naive p in
+        Logs.info (fun m -> m "evaluated: %d rounds, %d firings, %d tuples derived" st.rounds st.firings st.derived);
         let relations : D.relation list =
           List.sort
             (fun (a : D.relation) (b : D.relation) -> compare (a.name, a.arity) (b.name, b.arity))

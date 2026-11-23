@@ -75044,3 +75044,47 @@ Claude said it had nothing to act on yet and would report the run's result once 
 **Claude (summary):**
 
 Claude's answer was mid-verification, not a finished result, so the summary follows the work-in-progress. Claude checked whether `pool_run` could re-raise an exception its `try` caught, and concluded that these facts let nothing escape, so the new rules were right to drop that path. Claude compared the new walk against the old rules' `raised` output on the same facts, to separate its change from drift since the recording. Claude copied into a fresh directory rather than removing one, and added a triage note to the recording's notes. Three tiny reports disappeared, and Claude began spot-checking that they are caught by tiny's `main` wrapper before re-recording.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:21
+
+**Yoann:**
+
+> yes rerun it. What is the fix then for this self workflow failure?
+
+**Claude (summary):**
+
+Claude restarted the failed mix job as attempt 2 of run 45143728941, expected to take about an hour.
+Claude attributed the original Nov 21 and 22 failure to out-of-memory links in games/, fixed by commit 8708184c.
+Claude found the new lib_mime failure: one of four parallel mini-ml -depend runs died silently, with no exception logged.
+Claude ruled out the linker, since the 100 relinked card programs came out byte-identical, so the cause is still unknown.
+Claude proposed making mkfiles/depend.rc report the failing part's exit status and stderr so CI logs can show why.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:26
+
+**Yoann:**
+
+> is it possible to run things locally too, in docker? to try to reproduce the self.yml failure in CI also locally?
+
+**Claude (summary):**
+
+Claude explained that the local Docker run would reproduce the CI self.yml failure, using the recipe in `docs/plans/plan_9pi_self_speed.md` and the existing `ix-mix-base` image.
+Claude laid out the three steps: copy the committed tree with `git archive`, build from the Dockerfile cut before its test step, then run `make self-mix` with output mounted to `/out`.
+Claude noted that a local run keeps the full build folder, including `console.txt` and `card.log`, while CI keeps only the last 80 lines.
+Claude flagged limits: arm64 Mac versus amd64 CI changes timing, and Docker disk use (about 6 GB image, 1 GB card) needs watching.
+Claude offered to start the roughly hour-long local run alongside CI's attempt 2.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:23
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the `-exn` fix on main with seven files, unpushed, sitting on top of another session's commit `0861f231`. Claude laid out two remaining items: finding man pages in `docs/man/` whose examples exist only as text, and checking `-v` output in mini-datalog, mini-mk, and the compilers. Yoann chose item 2 to start, with item 3 folded in as the examples are worked through. Claude would now go through the `docs/man/` pages, give the worthwhile ones an `examples/` directory with a test, and check whether `-v` output is enough as they go.

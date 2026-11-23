@@ -91,9 +91,17 @@ RUN eval $(opam env) && make
 # and only its last lines to the log: BuildKit keeps 2 MB of a step's
 # log, which mix's kernel and card builds fill in its first minutes, so
 # GitHub's log of the nightly job stopped there, 85 minutes before the
-# result (self.sh's ok and FAIL lines, a failed directory's errors)
+# result (self.sh's ok and FAIL lines, a failed directory's errors).
+# Each of those last lines cut to 300 characters, and self.sh's own
+# lines first: one of the last 80 was the card's image's command, its
+# thousands of files on one line, past the 2 MB, and the log of the
+# runs of 2026-11-23 stopped before it, without the self: lines (the
+# card's time, the kernel's lock) that self.yml puts on the run's page.
+# old: tail -80 /src/self.out
 ARG TESTS=lite
 RUN eval $(opam env) && \
   if [ -n "$SELF" ]; then \
-    make self-$SELF > /src/self.out 2>&1; s=$?; tail -80 /src/self.out; exit $s; \
+    make self-$SELF > /src/self.out 2>&1; s=$?; \
+    grep -a '^self: \|^ok \|^FAIL' /src/self.out | cut -c1-300; \
+    tail -80 /src/self.out | cut -c1-300; exit $s; \
   else make test-${TESTS}; fi

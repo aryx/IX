@@ -6,7 +6,7 @@ smalltalk – Smalltalk-80, on a terminal
 # SYNOPSIS
 **smalltalk** \[ **-k** *system* ] \[ **-i** *image* ] \[ **-e**
 *expression* ... ] \[ **-world** *n* ] \[ **-size** *w*`x`*h* ] \[
-**-o** *image* ] \[ **-ppm** *file* ] \[ **-s** ] \[ *file.st* ... ]
+**-o** *image* ] \[ **-ppm** *file* ] \[ **-s** ] \[ **-v** | **-debug** | **-quiet** ] \[ *file.st* ... ]
 
 # DESCRIPTION
 *Smalltalk* is Smalltalk-80 as the Blue Book describes it (Goldberg and
@@ -52,6 +52,11 @@ the standard input is an expression, its answer written.
 There is no window: what is drawn is seen with **-ppm**; \man{squeak}{1} is
 the window.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says how the
+     system comes up (a kernel booted, an image, a world cycled), each
+     file filed in, and the image or the Display written.
+
 # EXAMPLES
 ```
 smalltalk -e '3 + 4' -e '100 factorial printString size'
@@ -61,7 +66,7 @@ smalltalk -i squeak.image -world 3 -ppm screen.ppm
 ```
 
 # SEE ALSO
-\man{squeak}{1}
+\man{squeak}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 An error is said, and the status is 1.

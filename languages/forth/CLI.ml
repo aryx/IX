@@ -39,9 +39,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   (* the texts, in order: where each is from, and it (a file's is read later) *)
   let texts : (string * string) list ref = ref [] in
   let options =
-    [ ("-e", Arg.String (fun (e : string) -> texts := ("-e", e) :: !texts), " a text to interpret (several: in order)");
-      ("-trace", Arg.Set trace, " each word run, the stack before it");
-      ("-s", Arg.Set stats, " the words run, at the end") ] in
+    Logging.flags
+    @ [ ("-e", Arg.String (fun (e : string) -> texts := ("-e", e) :: !texts), " a text to interpret (several: in order)");
+        ("-trace", Arg.Set trace, " each word run, the stack before it");
+        ("-s", Arg.Set stats, " the words run, at the end") ] in
   match Arg.parse_argv argv options (fun (f : string) -> texts := (f, "") :: !texts) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -57,7 +58,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let read (f : string) : string =
         match FS.path f with
         | Error msg -> failwith msg
-        | Ok p -> ( try FS.read caps p with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg)) in
+        | Ok p -> (
+            Logs.info (fun l -> l "reading %s" f);
+            try FS.read caps p with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg)) in
       (* a text's lines, to the first mistake *)
       let run (from : string) (text : string) : unit =
         let rec go (n : int) (lines : string list) : unit =

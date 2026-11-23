@@ -8,6 +8,7 @@ forth – the Forth language
 [ **-e** *text* ] ...
 [ **-trace** ]
 [ **-s** ]
+[ **-v** | **-debug** | **-quiet** ]
 [ *file*`.fs` ... ]
 
 # DESCRIPTION
@@ -34,6 +35,10 @@ ends.
 A cell has 63 bits; an address counts cells, and a character takes
 one (`C@` is `@`).
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each file
+     read.
+
 # EXAMPLES
 ```
 forth -e '2 3 + .'
@@ -43,7 +48,7 @@ forth sieve.fs
 ```
 
 # SEE ALSO
-\man{pascal}{1}, \man{scheme}{1}, \man{prolog}{1}
+\man{pascal}{1}, \man{scheme}{1}, \man{prolog}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 A mistake is said with its file and line, the word then `?`; the

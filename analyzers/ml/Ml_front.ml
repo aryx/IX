@@ -10,7 +10,15 @@ let own : (string, unit) Hashtbl.t = Hashtbl.create 16
 let wanted : (string * string, unit) Hashtbl.t = Hashtbl.create 64
 
 let library (caps : < Cap.open_in; .. >) (d : string) : Fpath.t list =
-  let text = match FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) with Some t -> t | None -> "" in
+  let text =
+    match FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) with
+    | Some t -> Logs.info (fun m -> m "library: %s (its units.txt's directories, and commons/)" d); t
+    | None ->
+        (* (-L's default is lib_core of the current directory: elsewhere
+         * nothing is read, and the units say only that Pervasives is
+         * missing) *)
+        Logs.warn (fun m -> m "-L %s: no units.txt there, no library read (-L: ix's lib_core)" d);
+        "" in
   let dirs = List.filter_map (fun u -> if u = "" || u.[0] = '#' then None else Some (Filename.dirname u)) (String.split_on_char '\n' text) in
   List.map (fun x -> Fpath.v (Filename.concat d x)) (List.sort_uniq compare dirs @ [ "commons" ])
 

@@ -75200,3 +75200,125 @@ Claude confirmed no `make` or emulator processes from it were still running, tho
 The load average was still about 138 and would take a few minutes to drop, while Docker's VM from another session kept running.
 Claude said the uncommitted `-v` toolchain batch had passed `make test` but not `make check` or `make self-quick-mix`.
 Claude offered to rerun both checks once the machine was quieter, then commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:42
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude said it would check back in about 55 minutes, when the self.yml runs should be finished.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 11:19
+
+**Yoann:**
+
+> ok rerun make check and self-quick-mix now
+
+**Claude (summary):**
+
+Claude ran make check and then make self-quick-mix one after the other to keep the load down.
+Claude restored the -exn recording and confirmed that mini-cc -v still works after the fixes.
+Since code changed after the last run, Claude reran make test before committing.
+Everything passed except the known 67-file failure, so Claude committed the changes as agreed.
+Claude's reply stopped at the commit, with no further tasks named yet for ix.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:05
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing the 67-file `self-quick-mix` failure first, since the Mac's OCaml 5.5.1 `Marshal` output keeps breaking the Linux checks.
+Claude listed finishing `-v` flag support for the remaining programs as the second candidate, after that fix.
+Claude named mini-scheme, mini-forth, mini-tiger, mini-pascal, mini-smalltalk, mini-lex, and mini-yacc as the next batch.
+Claude also proposed a `make test` script to catch stale man page EXAMPLES paths, and pushing five local commits.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:06
+
+**Yoann:**
+
+> let's do 2
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:06
+
+**Yoann:**
+
+> in the mean time, I tried ~/ix/bin/mini-analyze -v -r ~/ix/analyzers/datalog/ -I ~/ix/tiny/TinyLibCore/ -dead TinyAppTemperature.ml but didn't get the report in the dead_tiny.txt
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:06
+
+**Yoann:**
+
+> I used the wrong command?
+
+------------------------------------------------------------------------
+
+## 2026-11-23 11:38
+
+**Yoann:**
+
+> check the three self.yml runs: 45143728941 (attempt 2, 8708184c), 45154182636 (schedule, 8708184c), 45158501802 (dispatch, b13a2068). For each finished self (mix) job, fetch the raw log with gh api --allow-escape-sequences repos/{owner}/{repo}/actions/jobs/<id>/logs and report the "self:" / FAIL / depend.rc lines
+
+**Claude (summary):**
+
+Claude reported that none of the three self (mix) jobs had finished, so no logs could be read yet.
+Claude listed the runs: 45143728941 (attempt 2, 8708184c, about 77 min), 45154182636 (scheduled, 8708184c, about 84 min), and 45158501802 (dispatched, b13a2068, about 56 min).
+Claude noted the earlier 8708184c attempt failed at the lib_mime depend step, and the Nov 20 passing run took about 90 minutes.
+Claude said it would re-check around 13:14 and then pull the "self:", FAIL and depend.rc lines from each raw log.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:09
+
+**Yoann:**
+
+> check the self runs
+
+**Claude (summary):**
+
+Claude reported that none of the three self (mix) runs had finished, since GitHub returns a 404 for logs of unfinished jobs. Claude listed them: 45154182636 and 45143728941 on commit 8708184c, and 45158501802 on b13a2068. Claude reasoned that lib_mime probably passed this time, since those runs had outlived the earlier lib_mime failure at 77 minutes. Claude flagged that the Nov 18–19 runs hit GitHub's 6-hour limit, so these may hang too. Claude planned to recheck around 14:00 and suggested a build-level time limit if they were still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:14
+
+**Yoann:**
+
+> check the three self.yml runs: 45143728941 (attempt 2, 8708184c, mix job 137626830720), 45154182636 (schedule, 8708184c, mix job 137622922547), 45158501802 (dispatch, b13a2068, mix job 137637572133). For each finished self (mix) job, fetch the raw log with gh api --allow-escape-sequences repos/{owner}/{repo}/actions/jobs/<id>/logs and report the "self:" / FAIL / depend.rc lines
+
+**Claude (summary):**
+
+Claude reported that none of the three self (mix) jobs had finished, so the logs returned 404 and nothing could be read yet. Claude listed the three runs with their commits and elapsed times, noting they had run 2.5 to 3 hours. Claude said the earlier lib_mime failure probably didn't recur and the games links were likely passing. Claude also flagged that the last passing run took 1 h 29 min, and proposed checking again around 14:00 and adding an in-card time limit if they were still hung.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 12:07
+
+**Yoann:**
+
+> what is the command I need to run locally to reproduce the error in the .txt?
+
+**Claude (summary):**
+
+Claude recommended separate Logs.info calls per format, since the callback's m stays monomorphic across the three branches.
+Claude kept lex and yacc's own -v flag, adding common(1) -debug and -quiet plus IX_LOG=info logging.
+Claude confirmed all seven tools build, then started man pages with synopsis, flags, and SEE ALSO sections.
+Claude planned to finish smalltalk, lex, yacc and common(1) man pages, and update analyze.md's -L entry.
+Claude reported make test passing, with make check and self-quick-mix next, since lex and yacc build parsers.

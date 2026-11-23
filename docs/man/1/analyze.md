@@ -123,7 +123,9 @@ program's library, lib_core's units it names, is read with it.
 
 **-L** *lib*
 :    lib_core's directory, `lib_core`; *lib*`/stdlib`'s Pervasives
-     must be there.
+     must be there. Without its `units.txt` (run elsewhere than ix's
+     root, no **-L**), a warning, and an ML program's units find no
+     Pervasives.
 
 **-I**, **-D**
 :    As \man{cc}{1}'s.

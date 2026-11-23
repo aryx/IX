@@ -11,6 +11,7 @@ Student
 [ **-secd** ]
 [ **-e** *expression* ] ...
 [ **-s** ]
+[ **-v** | **-debug** | **-quiet** ]
 [ *file*`.scm` ... ]
 
 # DESCRIPTION
@@ -45,6 +46,11 @@ expression is run when its last parenthesis closes.
 **-h**
 :    How, by examples.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says what runs
+     (the evaluator, the SECD machine, or the stepper) and each file
+     read.
+
 # EXAMPLES
 ```
 scheme -e '(+ 1 2 3)'
@@ -54,7 +60,7 @@ scheme queens.scm
 ```
 
 # SEE ALSO
-\man{drscheme}{1}, \man{prolog}{1}, \man{forth}{1}
+\man{drscheme}{1}, \man{prolog}{1}, \man{forth}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 An error is said with its line, the rest of that text is left, and

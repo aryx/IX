@@ -7,6 +7,7 @@ yacc – a grammar made a parser, in OCaml
 **yacc**
 [ **-b** *prefix* ]
 [ **-v** ]
+[ **-debug** | **-quiet** ]
 *file*`.mly`
 
 # DESCRIPTION
@@ -32,6 +33,11 @@ warned of.
 **-h**
 :    The grammar, by example.
 
+**-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}); **-v** is the
+     automaton's listing above, so the info level is `IX_LOG=info`'s:
+     the grammar read and the files written.
+
 # EXAMPLES
 ```
 yacc Parser.mly
@@ -44,7 +50,7 @@ OCaml's grammars and actions. Not read: the `error` token, an action
 in the middle of a rule, the rest of menhir's.
 
 # SEE ALSO
-\man{lex}{1}, \man{ml}{1}; Plan 9's *yacc*(1); OCaml's manual, its
+\man{lex}{1}, \man{ml}{1}, \man{common}{1}; Plan 9's *yacc*(1); OCaml's manual, its
 chapter on *ocamlyacc*
 
 # DIAGNOSTICS

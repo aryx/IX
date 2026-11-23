@@ -32,7 +32,9 @@ let usage = "usage: mini-lex [-o out.ml] [-v] file.mll   (-h: how)"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let out = ref "" and verbose = ref false and files = ref [] in
-  let options = [
+  (* common(1)'s -debug and -quiet; -v is each rule's states here, so the info
+   * level is IX_LOG=info's *)
+  let options = List.filter (fun ((n, _, _) : string * Arg.spec * string) -> n <> "-v") Logging.flags @ [
     "-o", Arg.Set_string out, " out.ml: the lexer's name";
     "-v", Arg.Set verbose, " each rule's states and clauses";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
@@ -41,10 +43,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Help _ -> Console.print caps help; 0
   | exception Arg.Bad m -> Console.eprint caps m; 1
   | [ Ok file ] -> (
+      Logs.info (fun m -> m "reading %a" Fpath.pp file);
       match Lex.read (FS.read caps file) with
       | lex ->
           let dfa = Dfa.make lex.rules in
           let out = if !out <> "" then Fpath.v !out else Fpath.set_ext ".ml" file in
+          Logs.info (fun m -> m "writing %a" Fpath.pp out);
           FS.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) lex dfa);
           Console.print caps (Printf.sprintf "%s: %d states\n" (Fpath.to_string out) (Array.length dfa.trans));
           if !verbose then

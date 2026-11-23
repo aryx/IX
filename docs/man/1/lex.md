@@ -7,6 +7,7 @@ lex – a lexer's description made a lexer, in OCaml
 **lex**
 [ **-o** *out*`.ml` ]
 [ **-v** ]
+[ **-debug** | **-quiet** ]
 *file*`.mll`
 
 # DESCRIPTION
@@ -35,6 +36,11 @@ A rule may have parameters.
 **-h**
 :    The description, by example.
 
+**-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}); **-v** is the rules'
+     states above, so the info level is `IX_LOG=info`'s: the file
+     read and the lexer written.
+
 # EXAMPLES
 ```
 lex Lexer.mll
@@ -46,7 +52,7 @@ This is *ocamllex*'s twin, OCaml's descriptions and actions, as ix's
 compilers are written. Not read: `r1 # r2`, `shortest`, refill.
 
 # SEE ALSO
-\man{yacc}{1}, \man{ml}{1}; Plan 9's *lex*(1); OCaml's manual, its
+\man{yacc}{1}, \man{ml}{1}, \man{common}{1}; Plan 9's *lex*(1); OCaml's manual, its
 chapter on *ocamllex*
 
 # DIAGNOSTICS

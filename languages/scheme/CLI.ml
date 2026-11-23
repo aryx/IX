@@ -116,16 +116,18 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     List.iter (fun (s : Scheme_step.step) -> Console.print caps (Printf.sprintf "%s\n=> %s\n\n" s.before s.after)) all;
     match err with Some message -> error from text { message; at = None } | None -> () in
   let options =
-    [ ("-student", Arg.Set student, " Beginning Student's printing: (list 1 2), true");
-      ("-step", Arg.Set step, " the stepper's steps, nothing run");
-      ("-secd", Arg.Set secd, " run by Landin's SECD machine");
-      ("-trace", Arg.Set trace, " with -secd: the four registers before each step");
-      ("-landin", Arg.Set landin, " with -secd: a call in tail position saves on the dump too");
-      ("-e", Arg.String (fun (e : string) -> texts := ("-e", e) :: !texts), " an expression (or several) to evaluate");
-      ("-s", Arg.Set stats, " the machine's steps, at the end") ] in
+    Logging.flags
+    @ [ ("-student", Arg.Set student, " Beginning Student's printing: (list 1 2), true");
+        ("-step", Arg.Set step, " the stepper's steps, nothing run");
+        ("-secd", Arg.Set secd, " run by Landin's SECD machine");
+        ("-trace", Arg.Set trace, " with -secd: the four registers before each step");
+        ("-landin", Arg.Set landin, " with -secd: a call in tail position saves on the dump too");
+        ("-e", Arg.String (fun (e : string) -> texts := ("-e", e) :: !texts), " an expression (or several) to evaluate");
+        ("-s", Arg.Set stats, " the machine's steps, at the end") ] in
   let path (f : string) : Fpath.t = match FS.path f with Ok p -> p | Error msg -> failwith msg in
   (* (Plan 9's error is the file's name alone) *)
   let read (f : string) : string =
+    Logs.info (fun m -> m "reading %s" f);
     try FS.read caps (path f) with Sys_error msg -> failwith (if msg = f then f ^ ": cannot be read" else msg) in
   match Arg.parse_argv argv options (fun (f : string) -> texts := (f, "") :: !texts) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
@@ -133,6 +135,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | () -> (
       try
         if !secd then machine := Some (Scheme_secd.create ~tail:(not !landin));
+        Logs.info (fun m ->
+            m "%s"
+              (if !step then "the stepper: each step shown, nothing run"
+               else if !secd then "run by Landin's SECD machine" ^ (if !landin then ", Landin's calls in tail position" else "")
+               else "run by the evaluator"));
         let texts = List.map (fun ((from, text) : string * string) -> if from = "-e" then (from, text) else (from, read from)) (List.rev !texts) in
         List.iter (fun ((from, text) : string * string) -> if !step then steps from text else run from text) texts;
         if texts = [] then begin

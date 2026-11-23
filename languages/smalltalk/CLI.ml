@@ -87,7 +87,7 @@ let ppm (vm : I.vm) : string =
 let main (caps : < caps; .. >) (argv : string array) : int =
   let kernel = ref "blue" and image = ref "" and save = ref "" and picture = ref "" in
   let exprs = ref [] and files = ref [] and stats = ref false and world = ref (-1) and size = ref "" in
-  let options = [
+  let options = Logging.flags @ [
     "-k", Arg.Set_string kernel, " blue|squeak|quiet|mini: the system brought up";
     "-i", Arg.Set_string image, " image: the system is this image's";
     "-o", Arg.Set_string save, " image: the system saved, at the end";
@@ -118,6 +118,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () -> (
       try
+        if !image <> "" then
+          Logs.info (fun m -> m "the system: the image %s%s" !image (if !world >= 0 then ", its world cycled" else ""))
+        else if !world >= 0 then
+          Logs.info (fun m -> m "the system: kernel %s's world, started and cycled %d times" !kernel !world)
+        else Logs.info (fun m -> m "the system: kernel %s, booted" !kernel);
         let vm =
           if !image <> "" && !world < 0 then St_image.load_vm host (FS.read caps (path !image))
           else if !world >= 0 then begin
@@ -144,7 +149,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                | "squeak" | "quiet" -> St_kernel.squeak
                | "mini" -> St_kernel.mini_morphic
                | k -> failwith ("-k " ^ k ^ ": blue, squeak, quiet or mini")) in
-        List.iter (fun (f : string) -> file_in vm f (FS.read caps (path f))) (List.rev !files);
+        List.iter (fun (f : string) -> Logs.info (fun m -> m "filing in %s" f); file_in vm f (FS.read caps (path f))) (List.rev !files);
         let ok = ref true in
         List.iter (fun (e : string) -> if not (print vm e) then ok := false) (List.rev !exprs);
         if !exprs = [] && !files = [] && !save = "" && !picture = "" && !world < 0 then begin
@@ -156,6 +161,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             done
           with End_of_file -> ()
         end;
+        if !picture <> "" then Logs.info (fun m -> m "writing the Display to %s" !picture);
+        if !save <> "" then Logs.info (fun m -> m "writing the image %s" !save);
         if !picture <> "" then FS.write caps (path !picture) (ppm vm);
         if !save <> "" then FS.write caps (path !save) (St_image.save (I.memory vm));
         if !stats then Console.eprint caps (Printf.sprintf "%d bytecodes\n" (I.bytecodes_run vm));

@@ -227,7 +227,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         if !flow || !answers then begin
           let mls = List.filter (fun f -> not (Filename.check_suffix f ".c")) !files in
           let own_dirs = List.sort_uniq compare (List.map (fun f -> Fpath.parent (path f)) mls) in
-          let dirs = own_dirs @ incs @ Ml_front.library caps !lib in
+          let dirs = own_dirs @ incs @ (if mls = [] then [] else Ml_front.library caps !lib) in
           List.fold_left
             (fun status (f : string) ->
               let c own =

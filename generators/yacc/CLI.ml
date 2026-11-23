@@ -45,7 +45,9 @@ let usage = "usage: mini-yacc [-b prefix] [-v] file.mly   (-h: how)"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let prefix = ref "" and verbose = ref false and files = ref [] in
-  let options = [
+  (* common(1)'s -debug and -quiet; -v is the automaton's listing here, so the info
+   * level is IX_LOG=info's *)
+  let options = List.filter (fun ((n, _, _) : string * Arg.spec * string) -> n <> "-v") Logging.flags @ [
     "-b", Arg.Set_string prefix, " prefix: prefix.ml and prefix.mli";
     "-v", Arg.Set verbose, " the automaton, in prefix.output";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
@@ -55,10 +57,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Bad m -> Console.eprint caps m; 1
   | [ Ok file ] -> (
       match
+        Logs.info (fun m -> m "reading %a" Fpath.pp file);
         let g = Yacc.read (FS.read caps file) in
         let a = Lalr.make g in
         let base = if !prefix <> "" then Fpath.v !prefix else Fpath.rem_ext file in
         let out = Fpath.set_ext ".ml" base in
+        Logs.info (fun m -> m "writing %a and its .mli%s" Fpath.pp out (if !verbose then " and .output" else ""));
         FS.write caps out (Output.ocaml ~file:(Fpath.to_string file) ~out:(Fpath.to_string out) g a);
         FS.write caps (Fpath.set_ext ".mli" base) (Output.interface g);
         if !verbose then FS.write caps (Fpath.set_ext ".output" base) (Output.listing a);

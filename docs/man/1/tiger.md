@@ -6,6 +6,7 @@ tiger – compile Tiger to .NET
 # SYNOPSIS
 **tiger**
 [ **-o** *file*`.dll` ]
+[ **-v** | **-debug** | **-quiet** ]
 *file*`.tig`
 
 # DESCRIPTION
@@ -20,6 +21,10 @@ program's value, if an integer, is its status.
 The library: `print`, `printi`, `flush`, `getchar`, `ord`, `chr`,
 `size`, `sizea`, `substring`, `concat`, `not`, `exit`.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the file
+     compiled and the assembly written.
+
 # EXAMPLES
 ```
 tiger /lib/tiger/queens.tig; dotnet queens.dll
@@ -27,7 +32,7 @@ tiger -o /tmp/q.dll /lib/tiger/queens.tig
 ```
 
 # SEE ALSO
-\man{dotnet}{1}, \man{csc}{1}
+\man{dotnet}{1}, \man{csc}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 An error is said with its file, line and column, and nothing is

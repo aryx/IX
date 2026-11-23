@@ -9,6 +9,7 @@ pascal – the Pascal language, compiled to P-code and run
 [ **-disk** ]
 [ **-seed** *n* ]
 [ **-s** ]
+[ **-v** | **-debug** | **-quiet** ]
 *file*`.pas` ...
 
 # DESCRIPTION
@@ -41,6 +42,10 @@ line typed) and `random`.
 **-h**
 :    How, by examples.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each
+     program read, a file here or the disk's.
+
 # EXAMPLES
 ```
 pascal hello.pas
@@ -50,7 +55,7 @@ pascal -seed 7 GUESS.PAS
 ```
 
 # SEE ALSO
-\man{turbopascal}{1}, \man{forth}{1}
+\man{turbopascal}{1}, \man{forth}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 An error of the compiler is said with its line and column, and

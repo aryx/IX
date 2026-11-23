@@ -64,15 +64,16 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let listing = ref false and disk = ref false and stats = ref false and seed = ref 1 in
   let files : string list ref = ref [] in
   let options =
-    [ ("-S", Arg.Set listing, " the P-code listed, nothing run");
-      ("-disk", Arg.Set disk, " the names of the programs that come with it");
-      ("-seed", Arg.Int (fun (n : int) -> seed := n), " random's seed (1)");
-      ("-s", Arg.Set stats, " the instructions run, at the end") ] in
+    Logging.flags
+    @ [ ("-S", Arg.Set listing, " the P-code listed, nothing run");
+        ("-disk", Arg.Set disk, " the names of the programs that come with it");
+        ("-seed", Arg.Int (fun (n : int) -> seed := n), " random's seed (1)");
+        ("-s", Arg.Set stats, " the instructions run, at the end") ] in
   (* a file here, or else one of the disk's *)
   let text (f : string) : string =
     match (match FS.path f with Ok p -> FS.read caps p | Error msg -> raise (Sys_error msg)) with
-    | t -> t
-    | exception Sys_error msg -> (match List.assoc_opt f Pascal_disk.files with Some t -> t | None -> failwith (msg ^ " (and not on the disk: -disk)")) in
+    | t -> Logs.info (fun m -> m "reading %s" f); t
+    | exception Sys_error msg -> (match List.assoc_opt f Pascal_disk.files with Some t -> Logs.info (fun m -> m "%s: the disk's, not a file here" f); t | None -> failwith (msg ^ " (and not on the disk: -disk)")) in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1

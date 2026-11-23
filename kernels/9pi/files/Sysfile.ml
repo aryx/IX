@@ -68,9 +68,25 @@ let syspwrite (p : proc) fd buf n off =
   let c = Kchan.fdtochan p fd (Some Owrite) in
   by_dev p 1 c;
   if c.qid.typ = Qt_dir then raise (Error eisdir);
-  let m = (Dev.find c.dev).Dev.write c s (match off with Some o -> o | None -> c.offset) in
-  if off = None then c.offset <- c.offset + m;
-  m
+  (* The bytes' place taken before the write, what was not written given
+   * back after (Plan 9's sysfile.c: c->offset += n under the chan's
+   * lock): a write may sleep (Kfs under the storage qlock, its card's
+   * transfers without the kernel's lock), and another write on the same
+   * channel (mk and its recipes into one log) took the offset not yet
+   * moved, the two at one place: a line of the build's log lost.
+   * A write that fails keeps its place taken (Plan 9 gives it back, in
+   * its waserror; here a handler would re-raise, and mini-ml's trace of
+   * the exception would then start at it, not where it was raised:
+   * tests/panic.sh).
+   * old: write at c.offset, then c.offset <- c.offset + m *)
+  match off with
+  | Some o -> (Dev.find c.dev).Dev.write c s o
+  | None ->
+      let o = c.offset in
+      c.offset <- o + String.length s;
+      let m = (Dev.find c.dev).Dev.write c s o in
+      c.offset <- c.offset - (String.length s - m);
+      m
 
 let sysseek (p : proc) ret fd lo hi typ =
   let c = Kchan.fdtochan p fd None in

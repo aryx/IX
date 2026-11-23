@@ -1,12 +1,7 @@
-tiny/TinyBrowser.ml:294: dead field: init stored in TinyBrowser.toolbar, nothing live reads it
-tiny/TinyBrowser.ml:294: dead field: view stored in TinyBrowser.toolbar, nothing live reads it
-tiny/TinyBrowser.ml:295: dead: TinyBrowser:fun at line 295, nothing names it
 tiny/TinyKernel/KNetwork.ml:293: dead: KNetwork.il_readable, nothing names it
-tiny/TinyLibGUI.ml:655: dead: TinyLibGUI.repaint, nothing names it
+tiny/TinyLibGUI.ml:656: dead: TinyLibGUI.repaint, nothing names it
 tiny/TinyLibPlayground.ml: dead global: TinyLibPlayground.bold, nothing live names it
 tiny/TinyLibPlayground.ml: dead global: TinyLibPlayground.underlined, nothing live names it
-tiny/TinyLibPlayground.ml:114: dead: TinyLibPlayground.sin, in init but no call goes through the pointer
-tiny/TinyLibPlayground.ml:127: dead: TinyLibPlayground.cos, in init but no call goes through the pointer
 tiny/TinyLibPlayground.ml:132: dead: TinyLibPlayground.regular, nothing names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stderr, nothing live names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:204: dead: TinyLibSystem.box, nothing names it

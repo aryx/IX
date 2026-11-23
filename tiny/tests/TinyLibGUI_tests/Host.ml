@@ -21,7 +21,7 @@ let text (m : model) =
 let boxes g m = snd (TinyLibGUI.laid g m)
 let typed s =
   String.fold_left (fun m c ->
-      TinyLibGUI.key g (boxes g m) m TinyLibGUI.up
+      TinyLibGUI.key g.update g.key (boxes g m) m TinyLibGUI.up
         (TinyLibPlayground.key_of_byte c))
     g.init s
 
@@ -36,8 +36,8 @@ let middle m msg =
 (* a click: the mouse there with its button down, then up *)
 let click (m, ms) msg =
   let x, y = middle m msg in
-  let m, ms = TinyLibGUI.mouse g (boxes g m) m ms x y 1 in
-  TinyLibGUI.mouse g (boxes g m) m ms x y 0
+  let m, ms = TinyLibGUI.mouse g.update (boxes g m) m ms x y 1 in
+  TinyLibGUI.mouse g.update (boxes g m) m ms x y 0
 
 let written () = Buffer.length TinySystemTest.drawn
 
@@ -49,10 +49,10 @@ let convert script =
     let b = boxes t m in
     if c = 'C' || c = 'F' then begin
       let ((x, y, _, _), _) = List.nth b (if c = 'C' then 0 else 1) in
-      let m, ms = TinyLibGUI.mouse t b m ms (x + 2) (y + 2) 1 in
-      TinyLibGUI.mouse t b m ms (x + 2) (y + 2) 0
+      let m, ms = TinyLibGUI.mouse t.update b m ms (x + 2) (y + 2) 1 in
+      TinyLibGUI.mouse t.update b m ms (x + 2) (y + 2) 0
     end
-    else TinyLibGUI.key t b m ms
+    else TinyLibGUI.key t.update t.key b m ms
         (TinyLibPlayground.key_of_byte (if c = '<' then '\b' else c)), ms in
   let (m : TinyAppTemperature.model), ms =
     String.fold_left step (t.init, TinyLibGUI.up) script in
@@ -73,19 +73,19 @@ let () =
   (* a press taken back: down in a button, up outside it; down outside, up in it *)
   let b = boxes g g.init in
   let x, y = middle g.init (Digit 7) in
-  let m, ms = TinyLibGUI.mouse g b g.init TinyLibGUI.up x y 1 in
+  let m, ms = TinyLibGUI.mouse g.update b g.init TinyLibGUI.up x y 1 in
   Printf.printf "down in 7: %d over\n" (List.length (TinyLibGUI.over b ms));
-  let m, ms = TinyLibGUI.mouse g b m ms 0 0 1 in
+  let m, ms = TinyLibGUI.mouse g.update b m ms 0 0 1 in
   Printf.printf "and out of it: %d over\n" (List.length (TinyLibGUI.over b ms));
-  let m, ms = TinyLibGUI.mouse g b m ms 0 0 0 in
+  let m, ms = TinyLibGUI.mouse g.update b m ms 0 0 0 in
   Printf.printf "down in 7, up outside: %s\n" (text m);
-  let m, ms = TinyLibGUI.mouse g b m ms 0 0 1 in
-  let m, ms = TinyLibGUI.mouse g b m ms x y 1 in
-  let m, ms = TinyLibGUI.mouse g b m ms x y 0 in
+  let m, ms = TinyLibGUI.mouse g.update b m ms 0 0 1 in
+  let m, ms = TinyLibGUI.mouse g.update b m ms x y 1 in
+  let m, ms = TinyLibGUI.mouse g.update b m ms x y 0 in
   Printf.printf "down outside, up in 7: %s\n" (text m);
   (* a mouse that moves with its button up is the same mouse *)
   Printf.printf "moved, the button up: the same mouse %b\n"
-    (snd (TinyLibGUI.mouse g b m ms 50 50 0) == ms);
+    (snd (TinyLibGUI.mouse g.update b m ms 50 50 0) == ms);
   (* the converter: keys with no field clicked go nowhere; a field's text and
    * the other's answer *)
   List.iter convert
@@ -98,7 +98,7 @@ let () =
   let shown, b = TinyLibGUI.laid g m in
   TinyLibGUI.redraw [] [] shown [];
   let all = written () in
-  let _, ms = TinyLibGUI.mouse g b m TinyLibGUI.up x y 1 in
+  let _, ms = TinyLibGUI.mouse g.update b m TinyLibGUI.up x y 1 in
   TinyLibGUI.redraw shown [] shown (TinyLibGUI.over b ms);
   Printf.printf
     "%d shapes; a press draws none of them: %d bytes of messages for %d\n"

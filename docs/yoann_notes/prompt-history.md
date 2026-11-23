@@ -75655,3 +75655,28 @@ Claude traced the false dead callback (line 53's fun s -> Fahrenheit s) with min
 The 2nd to 4th widgets of the list literal were typed widget list: mini-ml's mklist gave each inner cons cell its element's span, and Typing keeps types by (span, kind), so a constructor element's type was overwritten by its cell's.
 mini-analyze's points-to rules filter values by type, so those widgets never reached place, and the second input's callback was never called.
 Claude gave each cell the span from its element to the list's end, as OCaml does: temp has nothing dead, no other recording changed.
+
+**Yoann:**
+
+> I'm going through dead_tiny.txt. The dead field init and view may be false positive too? Looks like Gui widget that are manipulated by the gui widget loop no?
+
+> btw, when I run ./bin/mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel -own tiny/TinyBrowser tiny/user/www.ml tiny/TinyBrowser.ml I get more dead warnings than the one in dead_tiny.txt
+
+> and what if I want to check if functions in a library are dead?
+
+> for 1 what is the command that takes into account all programs? Can we add the orrery and other programs to remove some possible dead code false positives called from those programs
+
+> I tried ./analyzers/datalog/tests/tiny_check.sh -dead expecting report on stdout (or stderr) but got ./analyzers/datalog/tests/tiny_check.sh: line 151: $out: ambiguous redirect
+
+> ok back to our TinyBrowser FPs. Why G.mouse and G.key do not use those fields? Any alternative?
+
+> let's do 1
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude found TinyBrowser's toolbar init and view true positives: G.mouse and G.key read only update and key, the record's other fields filler.
+Claude explained -own reports a directory's units as the program's (Http.ml's functions unused by www), -I reads them unreported, and tiny_check.sh keeps what every program having the file says.
+Claude added orrery and tiny-mkfs to tiny_check.sh (the C programs and js_of_ocaml's tiny-machine-web left out), and made it print the reports on stdout with no out-file.
+Claude made G.mouse and G.key take a gui's update (and key) rather than the record, TinyBrowser's toolbar its update alone: dead_tiny.txt from 13 lines to 8.

@@ -289,12 +289,10 @@ let act caps (sc : Screen.screen) (a : Screen.act) =
    | Typed t -> sc.sc_tools.tb_field <- t);
   a <> Quit
 
-(* the toolbar as a TinyLibGUI program: its model the field's text, its
- * messages our actions (only its mouse and its keys are TinyLibGUI's) *)
-let toolbar caps (sc : Screen.screen) : (string, Screen.act) G.gui =
-  { init = ""; view = (fun _ -> G.Label "");
-    update = (fun a _ -> ignore (act caps sc a); sc.sc_tools.tb_field);
-    key = (fun _ -> []) }
+(* the toolbar's update for TinyLibGUI's mouse and keys: its model the
+ * field's text, its messages our actions *)
+let toolbar caps (sc : Screen.screen) (a : Screen.act) (_ : string) : string =
+  ignore (act caps sc a); sc.sc_tools.tb_field
 
 (* The mouse: the menus' first, then the toolbar's; over a link it is a
  * hand; the left button pressed on a link follows it; the wheel (the
@@ -347,8 +345,8 @@ let on_key caps (sc : Screen.screen) (k : P.key) : bool =
          Screen.focus sc false; sc.sc_tools.tb_field <- sc.sc_nav.nv_address
      | _ ->
          sc.sc_tools.tb_field <-
-           G.key (toolbar caps sc) (snd (Screen.laid_tools sc)) sc.sc_tools.tb_field
-             sc.sc_tools.tb_mouse k);
+           G.key (toolbar caps sc) (fun _ -> []) (snd (Screen.laid_tools sc))
+             sc.sc_tools.tb_field sc.sc_tools.tb_mouse k);
     Screen.draw_tools sc;
     true
   end

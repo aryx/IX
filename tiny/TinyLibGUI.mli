@@ -207,13 +207,19 @@ val place :
 (* the edges of a held button and the caret of the focused field *)
 val over : 'msg boxes -> mouse -> (box * TinyLibPlayground.shape) list
 
-(* [mouse g boxes model m x y buttons] handles the mouse after it moves
- * to (x, y), and gives the new model and mouse state. *)
+(* [mouse update boxes model m x y buttons] handles the mouse after it
+ * moves to (x, y), and gives the new model and mouse state. [key update
+ * keys boxes model m k] gives the model after a key, [keys] the
+ * program's messages for a key no field takes. They are run's steps,
+ * for a program that lays out its own boxes, like the browser's
+ * toolbar: they take a gui's update and key alone, such a program
+ * having no init or view. *)
 val mouse :
-  ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> int -> int -> int ->
+  ('msg -> 'm -> 'm) -> 'msg boxes -> 'm -> mouse -> int -> int -> int ->
   'm * mouse
 val key :
-  ('m, 'msg) gui -> 'msg boxes -> 'm -> mouse -> TinyLibPlayground.key -> 'm
+  ('msg -> 'm -> 'm) -> (TinyLibPlayground.key -> 'msg list) ->
+  'msg boxes -> 'm -> mouse -> TinyLibPlayground.key -> 'm
 
 (* [redraw shown was now is] draws only where the new shapes and what is
  * over them differ from the old ones. The tests draw on image 0. *)

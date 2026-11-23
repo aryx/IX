@@ -223,7 +223,7 @@ let redraw shown was now is =
  * sends its message (so a press is taken back by leaving the button).
  * A mouse that moves with its button up is the same mouse, the same
  * value. *)
-let mouse (g : ('m, 'msg) gui) (boxes : 'msg boxes) model (m : mouse) x y b =
+let mouse (update : 'msg -> 'm -> 'm) (boxes : 'msg boxes) model (m : mouse) x y b =
   if b land 1 = 1 then
     model,
     (match m.m_down with
@@ -236,7 +236,7 @@ let mouse (g : ('m, 'msg) gui) (boxes : 'msg boxes) model (m : mouse) x y b =
         List.fold_left (fun model (box, action) ->
           match action with
           | Send msg when inside_at m.m_down box && inside x y box ->
-              g.update msg model
+              update msg model
           | _ -> model) model boxes,
         { m with m_down = None; m_at = (x, y) }
 
@@ -251,15 +251,16 @@ let editing boxes m =
 (* A key: the field that has the keys sends its text with the
  * character more, or one less at a backspace; with no such field, the
  * program's messages for the key, one after the other *)
-let key (g : ('m, 'msg) gui) (boxes : 'msg boxes) model m (k : P.key) =
+let key (update : 'msg -> 'm -> 'm) (keys : P.key -> 'msg list) (boxes : 'msg boxes) model m
+    (k : P.key) =
   match editing boxes m, k with
   | (_, Edit (s, f)) :: _, P.Backspace ->
       if s = "" then model
-      else g.update (f (String.sub s 0 (String.length s - 1))) model
+      else update (f (String.sub s 0 (String.length s - 1))) model
   | (_, Edit (s, f)) :: _, P.Char c when c >= ' ' && c < '\127' ->
-      g.update (f (s ^ String.make 1 c)) model
+      update (f (s ^ String.make 1 c)) model
   | (_, Edit _) :: _, _ -> model
-  | _ -> List.fold_left (fun model msg -> g.update msg model) model (g.key k)
+  | _ -> List.fold_left (fun model msg -> update msg model) model (keys k)
 
 (*****************************************************************************)
 (* The loop *)
@@ -290,7 +291,7 @@ let run (g : ('m, 'msg) gui) =
             match editing (snd view) m with [] -> true | _ -> false in
           if s.[i] = '\027' || (s.[i] = 'q' && no_field) then Exit.OK
           else
-            let model' = key g (snd view) model m (P.key_of_byte s.[i]) in
+            let model' = key g.update g.key (snd view) model m (P.key_of_byte s.[i]) in
             typed (i + 1) model'
               (if model' != model then laid g model' else view)
       in
@@ -300,7 +301,7 @@ let run (g : ('m, 'msg) gui) =
       match D.mouse_event (TSys.read TSys.fd_mouse 12) with
       | None -> Exit.OK
       | Some e ->
-          let (model', m') = mouse g boxes model m e.mo_x e.mo_y e.mo_buttons in
+          let (model', m') = mouse g.update boxes model m e.mo_x e.mo_y e.mo_buttons in
           let view' = if model' != model then laid g model' else view in
           loop model' m' view' now is
   in

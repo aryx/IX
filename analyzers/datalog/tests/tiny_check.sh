@@ -13,8 +13,9 @@
 # each on the host alone: the analyzer does not know tiny-kernel's calls'
 # capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
 # does not read: tiny-machine-window, user/sdl/'s own TinyLibSystem,
-# stood for by the host's, whose code it includes) and the kernel (its
-# calls are the machine's, not a library's).
+# stood for by the host's, whose code it includes), js_of_ocaml
+# (tiny-machine-web) and the kernel (its calls are the machine's, not a
+# library's).
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every build that has the
@@ -22,8 +23,9 @@
 # not dead), -exn exn_tiny.txt (a build's toplevel exceptions, a tool's
 # two builds each named, the host's name-host, but lib_core's every
 # program may raise). -check (make test's): the answer against the recording,
-# without line numbers (an edit above a function moves it). Seconds.
-# usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs|-exn out-file|-check
+# without line numbers (an edit above a function moves it). With no
+# out-file, the reports on the standard output. Seconds.
+# usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]
 #   (dune build first)
 # ANALYZE: the program, if not dune's.
 cd "$(dirname "$0")/../../.."
@@ -31,16 +33,17 @@ ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 export LC_ALL=C
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
-flag=$1; out=$2; check=
+flag=$1; out=$2; check=; show=
 case $flag in
   -caps) expected=caps_tiny.txt; said=': (no capability|has <|names .* itself)';;
   -bugs) expected=bugs_tiny.txt; said='^bug\? ';;
   -dead) expected=dead_tiny.txt; said=': dead( [a-z]+)?:';;
   -exn) expected=exn_tiny.txt; said='the toplevel may let ';;
-  *) echo "usage: tiny_check.sh -caps|-dead|-bugs|-exn out-file|-check"; exit 2;;
+  *) echo "usage: tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]"; exit 2;;
 esac
 expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
+if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 T=tiny
 # How each program is read. On the host (O), as OCaml builds it, on
 # lib_core and the host's TinyLibSystem: the directories of tiny/'s
@@ -81,11 +84,13 @@ tiny-machine|h|$M -own $T/TinyKernel -own $T/TinyBrowser -I lib_core/parallel|$T
 tiny-machine-socket|h|$M|$T/TinyMachine/TinyMachineSocket.ml
 tiny-machine-fetch|h|$M $NET -I lib_graphics/core -I lib_graphics/images|$T/TinyMachine/TinyMachineFetch.ml
 tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml
+tiny-mkfs|h|$M -I $T/TinyKernel/host -I $T/TinyKernel|$T/TinyKernel/host/TinyMkfs.ml
 mkfont|h|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$T/TinyKernel/fonts/Mkfont.ml
 windows|k||$T/user/windows.ml
 bigmem|k||$T/user/bigmem.ml
 square|k||$T/user/square.ml
 tetris|b||$T/user/tetris.ml
+orrery|b||$T/user/orrery.ml
 calc|b||$T/user/calc.ml
 temp|k||$T/user/temp.ml
 emacs|b||$T/user/emacs.ml
@@ -129,7 +134,7 @@ runs | while IFS='|' read -r name flags files; do
   files=$(sed -n 's/^mini-analyze: \[INFO\] reading \(.*\.ml\)$/\1/p' $W/$name.v)
   n=$(grep -cE "$said" $W/$name.out)
   unread=$(grep -cE "$failed" $W/$name.out)
-  [ -z "$check" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E "$failed" $W/$name.out)")"
+  [ -z "$check$show" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E "$failed" $W/$name.out)")"
   [ $unread -gt 0 ] && echo "$name NOT READ" >> $W/unread
   if [ $flag = -exn ]; then
     # (a program's name first: its exceptions, not a file's)
@@ -150,6 +155,7 @@ else
   cut -f2- $W/said 2> /dev/null | sort -u > $out
 fi
 [ -s $W/unread ] && { cat $W/unread; }
+if [ -n "$show" ]; then cat $out; rm -f $out; exit 0; fi
 if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0
 fi

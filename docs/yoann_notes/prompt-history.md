@@ -75136,3 +75136,67 @@ Claude added messages to `depend.rc` so each of the four `mini-ml -depend` parts
 Claude switched the one-core branch to `if`/`if not` form so `$status` reflects mini-ml's exit code, not the negation's.
 Claude gave the two branches separate conditions to avoid a nested `if` confusing rc's `if not`, then tested both with a fake `ML`.
 Claude also checked that `self.sh`'s only change is its own, since other sessions have uncommitted work in the checkout.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:41
+
+**Yoann:**
+
+> ok let's commit, push, and trigger a new self job
+
+**Claude (summary):**
+
+Claude committed the diagnostics as b13a2068, covering depend.rc, the self.sh filter, and prompt-history.md.
+Claude pushed it, which also carried three other sessions' commits: 0861f231, 27bd5773, and 89c747ad.
+Claude noted that 0861f231 adds /dev/lockstat to the kernel, so a changed result could come from it too.
+Claude left the other session's uncommitted lock-report change to self.sh in the checkout untouched.
+Claude started self run 45158501802 on b13a2068, joining two earlier runs on 8708184c.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:37
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude started make check and make self-quick-mix in the background, slowed by sharing the machine.
+Claude said it would wait for both to finish before reporting their results.
+Claude noted both were still running and gave no results for either one yet.
+Claude had already reported make test passing: 160 jobs, 0 failures, 7 skipped.
+Earlier, Claude added verbose logging to mini-ml, mini-cc, mini-asm, mini-ld, and mini-mk, fixing one mk SEE ALSO line.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 10:58
+
+**Yoann:**
+
+> the machine looks very slow, what is going on?
+
+**Claude (summary):**
+
+Claude found the machine overloaded, with load near 150 and memory still fine, so it was CPU contention.
+Claude offered to stop its own two jobs, `make check` and `make self-quick-mix`, and rerun them later.
+Claude said both jobs had started 13 minutes earlier and were competing with a second `make check` run.
+Claude said it would leave the Terminal `make check` (pid 74383) and the Docker container alone, since neither was its own.
+Claude asked for the go-ahead before stopping anything, rather than killing jobs on its own.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 11:00
+
+**Yoann:**
+
+> yes stop yours
+
+**Claude (summary):**
+
+Claude stopped its own `make check` and `make self-quick-mix` runs, plus the reminder it had set to check them.
+Claude confirmed no `make` or emulator processes from it were still running, though the Terminal `make check` had already finished or stopped.
+The load average was still about 138 and would take a few minutes to drop, while Docker's VM from another session kept running.
+Claude said the uncommitted `-v` toolchain batch had passed `make test` but not `make check` or `make self-quick-mix`.
+Claude offered to rerun both checks once the machine was quieter, then commit.

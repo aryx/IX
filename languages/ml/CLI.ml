@@ -128,6 +128,7 @@ let loader (caps : < caps; .. >) dirs : Scope.loader =
   match List.find_opt (fun f -> exists caps f && FS.read_opt caps f <> None) candidates with
   | None -> None
   | Some f -> (
+      Logs.info (fun m -> m "unit %s: %s" name (Fpath.to_string f));
       match parse caps f with
       | Ok (_, src) -> Some src
       | Error m -> raise (Resolve.Error (0, m)))
@@ -222,6 +223,7 @@ let summaries (caps : < caps; .. >) objdir dirs name items =
         | Some s when current s src -> Fold.import s.constants; []
         | _ -> [])
     | Some s, Some src when current s src ->
+        Logs.info (fun m -> m "unit %s: its summary, to inline" u);
         let b = !base in
         base := b + String.length src + 1;
         let sh ((x, y) : Ast.span) : Ast.span = (-(x + b) - 1, -(y + b) - 1) in
@@ -244,7 +246,9 @@ let write_summary (caps : < caps; .. >) out file name items =
     min_max = Typing.min_max_globals ();
     constants = Fold.exports ();
   } in
-  FS.write caps Fpath.(parent out / summary_file name) (Summary.to_string s)
+  let f = Fpath.(parent out / summary_file name) in
+  Logs.info (fun m -> m "writing %s" (Fpath.to_string f));
+  FS.write caps f (Summary.to_string s)
 
 (* a typed unit as Lower's stack machine, before Opti: Fold's constants
  * at the machine's width, Typing's hints (none when unsafe), the
@@ -284,6 +288,7 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file ~acid text =
     let name = if !debug then Lines_ml.source caps file else Fpath.to_string file in
     let acid = if !debug then acid @ [ Acid_ml.source name (Digest.to_hex (Digest.string (FS.read caps file))) ] else acid in
     let obj = { (Lines_ml.add caps file name text obj) with acid } in
+    Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
     if !gas then FS.write caps out (Gas.obj obj) else Asm.save caps out obj
 
 (* -depend's way when a unit's names do not resolve: those it names
@@ -397,7 +402,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let show_types = ref false and unsafe = ref false and pp = ref false and depends = ref "" and part = ref "1/1" in
   let dotnet = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
-  let options = [
+  let options = Logging.flags @ [
     "-m", Arg.String (function "5" -> mach := Gen.arm | "7" -> mach := Gen.arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
     "-o", Arg.Set_string out, " out: the object's name";
     "-I", Arg.String (fun d -> incs := d :: !incs), " dir: where the other units' interfaces are";
@@ -467,6 +472,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     let d = root d in
     let units = String.split_on_char '\n' (match FS.read_opt caps (path (Filename.concat d "units.txt")) with Some t -> t | None -> "") in
     let dirs = List.filter_map (fun u -> if u = "" || u.[0] = '#' then None else Some (Filename.dirname u)) units in
+    Logs.info (fun m -> m "-L %s: %s/units.txt's directories, and commons/" d d);
     List.map (Filename.concat d) (List.sort_uniq compare dirs @ [ "commons" ])
   in
   match List.rev !files, List.map path (List.rev !incs @ List.concat_map lib (List.rev !libs)) with
@@ -558,6 +564,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let rec go (seen : string list) (units : string list) : int =
         match units with
         | [] ->
+            Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
             FS.write caps out (Lower_il.finish a);
             FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config;
             0
@@ -567,6 +574,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (* (a class of each: two of one name, the runtime's included,
              * an assembly .NET refuses) *)
             if List.mem name seen then fail (f ^ ": a unit " ^ name ^ " already given (lib_core/dotnet/ has the runtime's)") else
+            let () = Logs.info (fun m -> m "compiling %s to .NET" f) in
             match parse caps file with
             | Error m -> fail m
             | Ok (_, Ast.Signature _) -> fail (f ^ ": an interface, not a unit")
@@ -593,6 +601,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | Some text -> (match preprocess caps (Fpath.parent (path f) :: path "." :: incs) f text with Ok t -> print caps t; 0 | Error m -> fail m))
   | [ f ], incs -> (
       let file = path f in
+      Logs.info (fun m ->
+          m "compiling %s for %s, %s%s" f
+            (match Gen.arch !mach with _ when !gas -> "gcc" | Arm -> "arm" | Arm64 -> "arm64")
+            (if !ssa then "from the SSA form" else "from the stack machine's code")
+            (if !opti = [] then "" else ", opti/'s " ^ String.concat " " (List.rev !opti)));
       match parse caps file with
       | Error m -> fail m
       | Ok (_, Ast.Signature items) ->

@@ -7,6 +7,7 @@ asm – the assembler, for arm and arm64
 **asm**
 [ **-m** *arch* ]
 [ **-o** *out* ]
+[ **-v** | **-debug** | **-quiet** ]
 *file*`.s`
 
 # DESCRIPTION
@@ -38,6 +39,11 @@ GLOBL msg(SB), $13
 DATA msg+0(SB)/8, $"Hello, w"
 ```
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the file
+     assembled, each `#include`, each **-data** file, and the object
+     written.
+
 # EXAMPLES
 ```
 asm -m 5 hello.s
@@ -46,7 +52,8 @@ ld -m 5 -E _start -o hello hello.5
 ```
 
 # SEE ALSO
-\man{ld}{1}, \man{cc}{1}, \man{5i}{1}, \man{8a}{1}
+\man{ld}{1}, \man{cc}{1}, \man{5i}{1}, \man{8a}{1},
+\man{common}{1}
 
 # DIAGNOSTICS
 An error names the file and the line, *file*`.s:3: ...`, and the

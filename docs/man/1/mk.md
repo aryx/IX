@@ -9,6 +9,7 @@ mk – files made from others, by the rules of a mkfile
 [ **-aeiknstuH** ]
 [ **-d**[**egp**] ]
 [ **-w** *file* ]
+[ **-v** | **-quiet** ]
 [ *var*`=`*value* ... ]
 [ *target* ... ]
 
@@ -64,9 +65,16 @@ hello: hello.o
 **-H** is ix's. **-i** is taken: a missing intermediate is always
 made. `$MKSHELL` is `sh` by default on another system than Plan 9's.
 
+**-v**, **-quiet**
+:    As every ix program's (\man{common}{1}), and given to the mk's
+     its recipes run (`MKFLAGS`). **-v** says the mkfile read, each
+     file it includes (`<`) and each program whose output it includes
+     (`<|`), and the targets. **-d** is mk's own: the debug level is
+     `IX_LOG=debug`'s.
+
 # SEE ALSO
-\man{rc}{1}, \man{ar}{1}; Plan 9's *mk*(1), the language whole, and
-Andrew Hume's paper, "Mk: a Successor to Make"
+\man{rc}{1}, \man{ar}{1}, \man{common}{1}; Plan 9's *mk*(1), the language
+whole, and Andrew Hume's paper, "Mk: a Successor to Make"
 
 # DIAGNOSTICS
 A target with no rule, a cycle, a recipe that failed are said; the

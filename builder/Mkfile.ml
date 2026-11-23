@@ -271,6 +271,7 @@ let rec read_input ~override io t inp : unit =
             | '<' when i + 1 < n && text.[i + 1] = '|' ->
                 let cmd = String.concat " " (words (rest (i + 2))) in
                 if cmd = "" then error inp line "missing include program name";
+                Logs.info (fun m -> m "include of a program's output: %s" cmd);
                 let out, ok = io.output t ~shell:inp.shell ~stdin:false cmd in
                 include_text ~override io t ~file:cmd out;
                 if not ok then error inp line "bad include program status"
@@ -281,7 +282,9 @@ let rec read_input ~override io t inp : unit =
                 | None ->
                     io.warn (Printf.sprintf
                       "warning: skipping missing include file %s: No such file or directory" file)
-                | Some text -> include_text ~override io t ~file text)
+                | Some text ->
+                    Logs.info (fun m -> m "include %s" file);
+                    include_text ~override io t ~file text)
             | '=' ->
                 let from = i + 1 in
                 let unexport, from =

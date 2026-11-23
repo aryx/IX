@@ -238,10 +238,14 @@ let load caps t ~decode ~needs files =
   let libs = ref [] in
   List.iter (fun f ->
     if Fpath.has_ext ".a" f then begin
+      Logs.info (fun m -> m "library %a" Fpath.pp f);
       (* ar's index lists the objects last first *)
       libs := !libs @ [ Array.of_list (List.rev (read_members caps f)) ]
     end
-    else add_object t (next ()) (Asm.load caps f)) files;
+    else begin
+      Logs.info (fun m -> m "object %a" Fpath.pp f);
+      add_object t (next ()) (Asm.load caps f)
+    end) files;
   (* 5l's loadlib: take the members that define an undefined name, until
    * no library adds one *)
   (* opti: a member taken leaves its library, its bytes let go once

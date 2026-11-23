@@ -55,6 +55,7 @@ let preprocess caps (dir : Fpath.t) (text : string) : string =
         let f = String.trim (String.sub t 8 (String.length t - 8)) in
         let f = String.sub f 1 (String.length f - 2) in
         let path = Fpath.append dir (Fpath.v f) in
+        Logs.info (fun m -> m "#include %s: %s" f (Fpath.to_string path));
         lines (Fpath.parent path) (FS.read caps path)
       end
       else if String.length t > 7 && String.sub t 0 7 = "#define" then begin

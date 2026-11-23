@@ -117,6 +117,7 @@ let link (m : _ machine) caps arch format entry out files =
       | Program.Func _, Asm.Mem { name = Some n; _ } :: _ ->
           Buffer.add_string b (Printf.sprintf "%08x %s%s\n" p.pc n.sym (if n.static then "<>" else ""))
       | _ -> ()) t.progs;
+    Logs.info (fun m -> m "writing %s.map" (Fpath.to_string out));
     FS.write_perm caps 0o644 (Fpath.v (Fpath.to_string out ^ ".map")) (Buffer.contents b)
   end;
   let data = Link.data_bytes t in
@@ -128,6 +129,7 @@ let link (m : _ machine) caps arch format entry out files =
   let exe : Exe.image =
     { text; data; bss = t.bss_size; text_start = t.text_start; data_start = t.data_start; entry = Link.entry t entry;
       pointers = Link.pointers t; round = t.data_round; syms; lines; elf_syms } in
+  Logs.info (fun m -> m "writing %a: text %d bytes, data %d, bss %d" Fpath.pp out (Bytes.length text) (Bytes.length data) t.bss_size);
   Exe.write caps format arch out exe;
   (* -g of an image without a header (arm's kernel): the same link again
    * as Plan 9's a.out with its tables, out.aout, at the image's
@@ -155,6 +157,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-s" :: rest -> symbols := false; args rest
     | "-g" :: rest -> symbols := true; args rest
     | "-v" :: rest -> verbose := true; args rest
+    (* (common(1)'s others; -v is the listing here, IX_LOG=info the log) *)
+    | "-debug" :: rest -> Logs.set_level (Some Logs.Debug); args rest
+    | "-quiet" :: rest -> Logs.set_level None; args rest
     | "-map" :: rest -> map := true; args rest
     | "-nofollow" :: rest -> follow := false; args rest
     | f :: rest -> files := f :: !files; args rest

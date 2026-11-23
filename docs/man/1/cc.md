@@ -12,6 +12,7 @@ cc – the C compiler, for arm and arm64
 [ **-o** *out* ]
 [ **-I** *dir* ]
 [ **-D** *name*[=*value*] ]
+[ **-v** | **-debug** | **-quiet** ]
 *file*`.c`
 
 # DESCRIPTION
@@ -60,6 +61,11 @@ nothing.
 **-h**
 :    How, by examples.
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the file
+     compiled, for which machine and by which back end, each
+     `#include` and the file found for it, and the object written.
+
 # EXAMPLES
 ```
 cc -m 5 -I/sys/include -I/arm/include hello.c
@@ -69,7 +75,8 @@ ld -m 5 -o hello hello.5 libc.a
 
 # SEE ALSO
 \man{asm}{1}, \man{ld}{1}, \man{5i}{1}, \man{acid}{1}, \man{analyze}{1},
-\man{8c}{1}
+\man{8c}{1},
+\man{common}{1}
 
 # DIAGNOSTICS
 An error names the file and the line, `hello.c:5: syntax error`,

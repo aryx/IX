@@ -32,6 +32,7 @@ let usage = "usage: mini-asm [-m 5|7] [-o out] [-data name=file]... [file.s]   (
  * linker copies it as it does a DATA's $"text"), and their GLOBL *)
 let data_items (caps : < caps; .. >) (datas : (string * string) list) : (Asm.item * int) list =
   List.concat_map (fun (name, file) ->
+    Logs.info (fun m -> m "-data %s: %s" name file);
     let bytes = FS.read caps (Fpath.v file) in
     let n : Asm.name = { sym = name; static = false } in
     let size = String.length bytes in
@@ -44,7 +45,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     match String.index_opt s '=' with
     | Some i -> datas := (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1)) :: !datas
     | None -> raise (Arg.Bad ("-data " ^ s ^ ": name=file")) in
-  let options = [
+  let options = Logging.flags @ [
     "-m", Arg.String (function "5" -> arch := Asm.Arm | "7" -> arch := Asm.Arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
     "-o", Arg.Set_string out, " out: the object's name";
     "-data", Arg.String data, " name=file: the file's bytes as name's data";
@@ -56,15 +57,19 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [] when !datas <> [] && !out <> "" ->
       let obj : Asm.obj = { arch = !arch; file = Fpath.v !out; items = [||]; history = []; acid = [] } in
       (match data_items caps (List.rev !datas) with
-       | items -> Asm.save caps (Fpath.v !out) { obj with items = Array.of_list items }; 0
+       | items ->
+           Logs.info (fun m -> m "writing %s" !out);
+           Asm.save caps (Fpath.v !out) { obj with items = Array.of_list items }; 0
        | exception Sys_error m -> eprint caps (m ^ "\n"); 1)
   | [ Ok file ] -> (
+      Logs.info (fun m -> m "assembling %s for %s" (Fpath.to_string file) (match !arch with Asm.Arm -> "arm" | Asm.Arm64 -> "arm64"));
       match Parser_asm.parse caps !arch file (FS.read caps file) with
       | obj ->
           let ext = match !arch with Asm.Arm -> ".5" | Asm.Arm64 -> ".7" in
           let out = if !out <> "" then Fpath.v !out else Fpath.set_ext ext (Fpath.base file) in
           (* (after the file's: a branch's Target is an index of its items) *)
           let items = Array.append obj.items (Array.of_list (data_items caps (List.rev !datas))) in
+          Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
           Asm.save caps out { obj with items };
           0
       | exception Parser_asm.Error (l, m) -> eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1

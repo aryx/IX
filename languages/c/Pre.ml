@@ -283,7 +283,14 @@ let macinc () =
   if getcom () <> '\n' then error_at !lineno "syntax in #include";
   let f = Buffer.contents b in
   let dirs = List.filteri (fun i _ -> not (i = 0 && close = '>')) !includes in
-  let text = List.find_map (fun d -> !read_file (Fpath.append d (Fpath.v f))) dirs in
+  let text =
+    List.find_map
+      (fun d ->
+        let p = Fpath.append d (Fpath.v f) in
+        match !read_file p with
+        | Some t -> Logs.info (fun m -> m "#include %s: %s" f (Fpath.to_string p)); Some t
+        | None -> None)
+      dirs in
   (* in the history by its name as written, not the path found (5c's):
    * an object the same whatever the -I's directories, the card's and the
    * host's (kernels/9pi/tests/smoke.sh compares them) *)

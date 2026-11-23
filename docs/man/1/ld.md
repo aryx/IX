@@ -9,6 +9,7 @@ ld – the linker, for arm and arm64
 [ **-H2** | **-H6** | **-H7** | **-H0** **-T** *address* [ **-R** *n* ] ]
 [ **-nofollow** ]
 [ **-v** ]
+[ **-debug** | **-quiet** ]
 [ **-map** ]
 [ **-g** | **-s** ]
 [ **-E** *entry* ]
@@ -72,6 +73,12 @@ the library that it uses.
 **-h**
 :    How, by examples.
 
+**-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}); **-v** is the listing
+     above, so the info level is `IX_LOG=info`'s: each object and
+     library read, each member taken from a library and for which
+     names, the files written and the program's sizes.
+
 # EXAMPLES
 ```
 asm -m 5 hello_linux_arm.s
@@ -83,7 +90,8 @@ ld -m 5 -o hello my.a libc.a
 
 # SEE ALSO
 \man{asm}{1}, \man{cc}{1}, \man{ml}{1}, \man{5i}{1}, \man{acid}{1}, \man{ar}{1},
-\man{8l}{1}
+\man{8l}{1},
+\man{common}{1}
 
 # DIAGNOSTICS
 A name defined nowhere is said with the file and the line that use

@@ -110,6 +110,7 @@ let dotnet_backend (caps : < caps; .. >) ~(out : Fpath.t) : backend =
       Lower_cil.start (Fpath.to_string (Fpath.rem_ext (Fpath.base out))));
     codgen = Lower_cil.func;
     finish = (fun () ->
+      Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
       FS.write caps out (Lower_cil.finish ());
       FS.write caps (Fpath.set_ext ".runtimeconfig.json" out) Writer.runtime_config);
     listing = (fun () -> "");
@@ -158,7 +159,10 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
            match be.finish () with
            | () ->
                if listing then print caps (be.listing ());
-               if be.saved then Asm.save caps out (be.obj file);
+               if be.saved then begin
+                 Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
+                 Asm.save caps out (be.obj file)
+               end;
                Ok ()
            | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m))
        | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m)
@@ -195,6 +199,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-D" :: d :: rest -> defs := d :: !defs; args rest
     | a :: rest when String.length a > 2 && String.sub a 0 2 = "-I" -> incs := String.sub a 2 (String.length a - 2) :: !incs; args rest
     | a :: rest when String.length a > 2 && String.sub a 0 2 = "-D" -> defs := String.sub a 2 (String.length a - 2) :: !defs; args rest
+    (* common(1)'s -v, -debug, -quiet *)
+    | a :: rest when List.exists (fun ((n, _, _) : string * Arg.spec * string) -> n = a) Logging.flags ->
+        List.iter
+          (fun ((n, spec, _) : string * Arg.spec * string) ->
+            match spec with Arg.Unit f when n = a -> f () | _ -> ())
+          Logging.flags;
+        args rest
     | a :: rest when String.length a > 1 && a.[0] = '-' -> args rest   (* 5c's other flags: -w, -F, -V... *)
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()
@@ -215,6 +226,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         1
       end else begin
       if !dotnet then prelude := Option.map (fun (text : string) -> (Fpath.to_string lib, text)) (FS.read_opt caps lib);
+      Logs.info (fun m ->
+          m "compiling %s for %s, by %s" (Fpath.to_string file)
+            (if !dotnet then ".NET" else if !mach.thechar = '5' then "arm" else "arm64")
+            (if !dotnet then "the CIL back end"
+             else if !simple then
+               (if !ssa then "the SSA back end" else "the simple back end")
+               ^ (if !opti = [] then "" else ", opti/'s " ^ String.concat " " (List.rev !opti))
+             else "the compat back end (5c's and 7c's code)"));
       match compile caps !mach (if !dotnet then dotnet_backend caps ~out else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () when !acid_only ->
           (* (-n: x.acid, in the current directory as x.5, or -o's) *)

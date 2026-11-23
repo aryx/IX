@@ -7,6 +7,7 @@ ml – the OCaml compiler, for arm and arm64
 **ml**
 [ **-m** *arch* ]
 [ **-S** | **-gas** ]
+[ **-v** | **-debug** | **-quiet** ]
 [ **-o** *out* ]
 [ **-I** *dir* ]
 [ **-i** ]
@@ -105,6 +106,13 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
 :    How, by examples, and the options to debug the compiler
      (**-dast**, **-dscope**, **-dir**, **-dssa**, **-O**...).
 
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says **-L**'s
+     directories, the file compiled, for which machine and by which
+     back end and passes, each other unit's interface it reads (the
+     file found by **-I**), the summaries it inlines from, and the
+     files it writes.
+
 # EXAMPLES
 ```
 ml -i fact.ml
@@ -115,7 +123,8 @@ ml -dotnet fib.ml; dotnet fib.dll
 
 # SEE ALSO
 \man{ld}{1}, \man{singml}{1}, \man{analyze}{1}, \man{acid}{1},
-\man{dotnet}{1}
+\man{dotnet}{1},
+\man{common}{1}
 
 # DIAGNOSTICS
 An error names the file and the line,

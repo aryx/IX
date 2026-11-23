@@ -109,6 +109,10 @@ let run (caps : < caps; .. >) (argv : string array) : int =
          | 'a', rest -> always := true; options rest
          | 'k', rest -> keep := true; options rest
          | 'i', rest -> options rest
+         (* common(1)'s -v and -quiet; -d is mk's own (the dumps), so
+          * its debug level is IX_LOG=debug's *)
+         | 'v', rest -> Logs.set_level (Some Logs.Info); options rest
+         | 'q', rest when a = "-quiet" -> Logs.set_level None; options rest
          | 'd', rest ->
              (* -dp the mkfile as read, -dg the graph; -d both (and 9base's e) *)
              let what = if String.length a > 2 then String.sub a 2 (String.length a - 2) else "egp" in
@@ -150,10 +154,12 @@ let run (caps : < caps; .. >) (argv : string array) : int =
     (match Mkfile.lookup mk "MKSHELL" with
      | Some (_ :: _ as shell) -> Mkfile.set_default_shell mk shell
      | _ -> ());
+    Logs.info (fun m -> m "mkfile %s" (match !file with Some f -> f | None -> "mkfile"));
     (match !file with
      | Some f -> Mkfile.read ~override:false io mk ~file:f (read_file caps f |! failwith (f ^ ": No such file or directory"))
      | None -> Option.iter (Mkfile.read ~override:false io mk ~file:"mkfile") (read_file caps "mkfile"));
     if !dump_mkfile then print caps (Mkfile.dump mk);
+    Logs.info (fun m -> m "targets: %s" (if targets = [] then "the mkfile's first" else String.concat " " targets));
     let now = CapUnix.gettimeofday caps () in
     (* -w's names: each option's, between commas, blanks or newlines (mlpp's [%list]) *)
     let whatif =

@@ -23,9 +23,8 @@ and each stage is a function (`TinyAssembler.mli`, `TinyC.mli`,
 `TinyML.mli`). Once a program grows past about 700 lines, it becomes
 a directory of its name, its main file there and its parts beside it,
 each part a unit with its own `.mli`: `TinyKernel/`, where
-`TinyKernel.ml` boots the kernel, `TinyC/`, `TinyML/`, `TinyOffice/`
-and `TinyBrowser/`. (`TinyMachine/` still has its main file beside the
-directory.)
+`TinyKernel.ml` boots the kernel, `TinyC/`, `TinyML/`, `TinyOffice/`,
+`TinyBrowser/` and `TinyMachine/`.
 
 ## What is where
 
@@ -55,11 +54,11 @@ directory.)
   image and the disk and runs the tests on tiny-machine. `steps/` has
   what ran before tiny-kernel: a C program on the bare CPU, `v0/` in
   assembly, and `t6/` in C.
-- `TinyMachine.ml` and `TinyMachine/` are the machine, which runs on
-  the host. They hold the CPU (`TinyMachineCPU`, which `TinyCPU.ml`,
-  tiny-cpu, also runs alone), the devices, the other end of the network
-  wire, and the machine's window, socket and web page (`./tiny-machine
-  -web dir tiny-kernel`).
+- `TinyMachine/` is the machine, which runs on the host:
+  `TinyMachine.ml`, tiny-machine, and its parts. They hold the CPU
+  (`TinyMachineCPU`, which `TinyCPU.ml`, tiny-cpu, also runs alone), the
+  devices, the other end of the network wire, and the machine's window,
+  socket and web page (`./tiny-machine -web dir tiny-kernel`).
 - `examples/` holds the same files as tiny-kernel's `/examples`: small
   programs in C and ML to read, build and run.
 - `tests/` has each program's tests, `tests/TinyXxx_test.sh`.
@@ -125,7 +124,7 @@ of those in the top README.md.
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
 | **tiny-cpu** | a CPU of our own design, for teaching | 390 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](TinyCPU.ml), [`TinyMachineCPU.ml`](TinyMachine/TinyMachineCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
-| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 3,250 | mini-qemu | [`TinyMachine.ml`](TinyMachine.ml), [`TinyMachine/`](TinyMachine/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
+| **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 3,250 | mini-qemu | [`TinyMachine/`](TinyMachine/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine/TinyMachine.ml)) |
 
 **The kernel**, and what it is made of.
 
@@ -207,7 +206,7 @@ not have.
 | [tiny-as](TinyAssembler.ml) `as`, [tiny-ld](TinyLinker.ml) `ld`<br>mini-asm, mini-ld | sizes known before addresses, so the link never moves what it placed | ld's sweep leaves out what nothing reaches, so an archive is linked whole; `as -S`'s text reassembles to the same object, so the compilers write no text | `-data`, names private to a file, line tables, `-T` and `-E` |
 | [tiny-ar](TinyArchiver.ml) `ar`<br>mini-ar | objects in one library, in their order | — | all keys but `t`; the date, owner and mode, so a library made twice has the same bytes; the index |
 | [tiny-prof](TinyProfiler.ml) `prof`<br>mini-prof | each function's count, named by tiny-ld's maps; `-diff` | every instruction counted under a kernel, where mini-qemu samples; the kernel's counts and the program's apart | a function's instructions (mini-prof's `-a`), source files, the call graph |
-| [tiny-machine](TinyMachine.ml)<br>mini-qemu; Oberon, RISC-V | what a kernel needs: two modes, one trap and eret, a timer counting instructions, protection by base and bound | devices designed with the kernel, a few words each; a session replayed from `-events`, its screen a file | being a real board: other kernels (xv6, 9pi), real devices' protocols, a monitor |
+| [tiny-machine](TinyMachine/TinyMachine.ml)<br>mini-qemu; Oberon, RISC-V | what a kernel needs: two modes, one trap and eret, a timer counting instructions, protection by base and bound | devices designed with the kernel, a few words each; a session replayed from `-events`, its screen a file | being a real board: other kernels (xv6, 9pi), real devices' protocols, a monitor |
 | [tiny-kernel](TinyKernel/TinyKernel.ml)<br>mini-9pi | modes, system calls, preemption, fork and exec, pipes, files | a waiting call a closure the scheduler retries: no kernel stack per process, no lost wakeup; the kernel on core 0 alone, the other cores running programs and posting their traps to it (master and slaves, as the first multiprocessor Unixes): no lock in the kernel | swapping, users and permissions, signals but kill |
 | [its files](TinyKernel/KFS.ml)<br>mini-9pi's Kfs; xv6's fs | xv6's inode, its direct then indirect blocks; a directory a file of (name, number) pairs | nothing written over: a commit is one block, free blocks found by a collector, snapshots in `/dump` | xv6's buffer cache and locks, `.` and `..` entries, device files |
 | [its graphics](TinyKernel/KGraphics.ml)<br>libdraw, libmemdraw | one operation, `draw dst r src mask p`; a colour an image of one pixel; a program sends messages | a text carries its characters and a style; the kernel makes bold, large and italic from one font | depths but a byte, alpha, arcs and thick lines, fonts but the machine's |

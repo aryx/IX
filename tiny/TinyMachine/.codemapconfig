@@ -1,16 +1,34 @@
 // tiny/TinyMachine/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
-// docs/claude_notes/codemapconfig_guidelines.md there). tiny-machine's
-// parts (its programs are ../TinyMachine.ml and ../TinyCPU.ml, in tiny/'s
-// config): the CPU and its words, the devices, the wire's other end, and
+// docs/claude_notes/codemapconfig_guidelines.md there). tiny-machine,
+// TinyMachine.ml, and its parts (../TinyCPU.ml, in tiny/'s config, is
+// the other program on them): the CPU and its words, the devices, the wire's other end, and
 // four programs beside it, each apart so that tiny-machine links no C
 // and no network (the window by SDL, the socket, the fetch by ix's TLS,
 // the page by js_of_ocaml). Each .ml's header is in its .mli.
 local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "tiny-machine's parts: a CPU designed to teach, the devices a kernel needs, the wire's other end, its host programs.",
+  summary: "tiny-machine, TinyMachine.ml, and its parts: a CPU designed to teach, the devices a kernel needs, the wire's other end, its host programs.",
   files: {
+    'TinyMachine.ml': { digest: '3b00dd5c903c',
+      summary: "tiny-machine: the host around TinyMachineDevices' machine: console, window, disk file, net peer, cores.",
+      capitals: [{ at: 'def:run', say: "the host's side: devices given, the machine ticked" }],
+      important: [
+        { at: 'type:options', say: 'every flag: window, disk, net, prof, cores', weight: 2 },
+        { at: 'def:run', weight: 3 },
+        { at: "comment:\"the wire's other end: with -net-loop\"", say: "the peer, KNetwork's own stack on the host", weight: 2 },
+        { at: 'def:window_open', say: 'the screen shown by another program, a pipe away', weight: 1 },
+        { at: 'def:console_poll', say: "the host's keys as the console's input", weight: 1 },
+        { at: 'def:fetch', say: '-net-out: tiny-machine-fetch run, a page for real', weight: 1 },
+        { at: 'def:main', weight: 2 },
+      ],
+      related: ['TinyMachineDevices.ml', '../TinyKernel/', '../TinyKernel/steps/', '../tests/TinyMachine_test.sh', '../../raspberry/'],
+    },
+    'TinyMachine.mli': { digest: '6b51c505baf2',
+      summary: 'What the machine adds to the CPU for a kernel: two modes, one trap, a timer, a window, pages, devices.',
+      important: [{ at: 'comment:"One way in, one way out."', say: 'the trap: epc, cause, tval, tvec', weight: 3 }],
+    },
     // the CPU
     'TinyMachineCPU.mli': { digest: 'b6b9c3662719',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, no flags, one format; the design argued.",
@@ -25,7 +43,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'type:env', weight: 2 },
         { at: 'def:step', weight: 3 },
       ],
-      related: ['../TinyCPU.ml', '../TinyMachine.ml', '../../machine/'],
+      related: ['../TinyCPU.ml', 'TinyMachine.ml', '../../machine/'],
     },
     'TinyMachineCPU.ml': { digest: '19f1b94e0d2f',
       summary: "The interpreter: a word fetched, decoded (a cache of decoded words), run; memory OCaml's bytes, every case defined.",
@@ -202,7 +220,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'TinyMachineCPU.ml', role: 'the CPU: registers, memory, a step' },
         { at: 'TinyMachineDevices.ml', role: 'the machine: traps, window, pages, devices' },
         { at: 'TinyMachinePeer.ml', role: "the wire's other end" },
-        { at: '../TinyMachine.ml', role: 'the host: a terminal' },
+        { at: 'TinyMachine.ml', role: 'the host: a terminal' },
         { at: 'TinyMachineWeb.ml', role: 'the host: a page' },
         { at: 'TinyMachineWindow.ml', role: "the terminal host's window (SDL)" },
         { at: 'TinyMachineSocket.ml', role: 'a connection to the world' },
@@ -211,13 +229,13 @@ local skeletons = import '../../skeletons.libsonnet';
       joints: [
         { from: 'TinyMachineCPU.ml', to: '../TinyLibMachine.ml', say: 'decodes' },
         { from: 'TinyMachineDevices.ml', to: 'TinyMachineCPU.ml', say: 'an env: the hooks' },
-        { from: '../TinyMachine.ml', to: 'TinyMachineDevices.ml', say: 'put, on_open; ticks' },
+        { from: 'TinyMachine.ml', to: 'TinyMachineDevices.ml', say: 'put, on_open; ticks' },
         { from: 'TinyMachineWeb.ml', to: 'TinyMachineDevices.ml', say: 'the same machine' },
-        { from: '../TinyMachine.ml', to: 'TinyMachinePeer.ml', say: '-net' },
+        { from: 'TinyMachine.ml', to: 'TinyMachinePeer.ml', say: '-net' },
         { from: 'TinyMachineWeb.ml', to: 'TinyMachinePeer.ml', say: 'the page is the peer' },
-        { from: '../TinyMachine.ml', to: 'TinyMachineWindow.ml', say: 'PPM frames on a pipe' },
-        { from: '../TinyMachine.ml', to: 'TinyMachineSocket.ml', say: '-net-out: a connection' },
-        { from: '../TinyMachine.ml', to: 'TinyMachineFetch.ml', say: '-net-out: GET' },
+        { from: 'TinyMachine.ml', to: 'TinyMachineWindow.ml', say: 'PPM frames on a pipe' },
+        { from: 'TinyMachine.ml', to: 'TinyMachineSocket.ml', say: '-net-out: a connection' },
+        { from: 'TinyMachine.ml', to: 'TinyMachineFetch.ml', say: '-net-out: GET' },
       ],
     },
     skeletons.module('TinyMachineCPU.ml', 'The CPU: a step, its hooks the machine', [
@@ -357,7 +375,7 @@ local skeletons = import '../../skeletons.libsonnet';
   ],
   views: [
     { name: 'The CPU: tiny-cpu, its words, its toolchain', files: ['TinyMachineCPU.ml', '../TinyLibMachine.ml', '../TinyCPU.ml', '../TinyAssembler.ml', '../TinyLinker.ml'] },
-    { name: 'The machine: tiny-machine and mini-qemu', files: ['TinyMachineDevices.ml', '../TinyMachine.ml', '../../raspberry/'] },
+    { name: 'The machine: tiny-machine and mini-qemu', files: ['TinyMachineDevices.ml', 'TinyMachine.ml', '../../raspberry/'] },
     { name: 'The wire: the peer and the kernel it mirrors', files: ['TinyMachinePeer.ml', '../TinyKernel/KNetwork.ml', 'TinyMachineSocket.ml', 'TinyMachineFetch.ml'] },
   ],
 }

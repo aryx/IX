@@ -53,7 +53,7 @@ else echo "-- tcpdump: not here, not checked"; fi
 # these; the disk, the system's, used on a copy)
 IMAGE=${IMAGE:-$ROOT/tiny/TinyKernel/_make/boot.img}
 DISK=${DISK:-$ROOT/tiny/TinyKernel/_make/disk.img}
-MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine.exe}
+MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine/TinyMachine.exe}
 if [ -f $IMAGE ] && [ -f $DISK ] && [ -x $MACHINE ] && command -v python3 > /dev/null; then
   cp $DISK $W/disk.img; truncate -s 64M $W/disk.img
   if timeout 200 python3 $ROOT/tiny/tests/KNetwork_tests/linux.py $MACHINE $IMAGE $W/disk.img $ROOT/tiny/tests/www > $W/linux.out 2>&1; then

@@ -33,15 +33,15 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 
 cd $ROOT
 # tiny-machine's libraries in the order of its native link (dune rules
-# ./tiny/TinyMachine.exe), as bytecode
+# ./tiny/TinyMachine/TinyMachine.exe), as bytecode
 LIBS="lib_core/commons/ix_core tiny/tiny_lib_machine tiny/TinyMachine/tiny_machine_cpu
   tiny/TinyMachine/tiny_machine_devices tiny/TinyKernel/tiny_kernel_network
   tiny/TinyBrowser/tiny_browser_parts tiny/TinyMachine/tiny_machine_peer
   lib_core/parallel/ix_parallel tiny/TinyLibSystem/unix/tiny_lib_system_unix"
-dune build ./tiny/TinyMachine.exe $(for l in $LIBS; do echo ./$l.cma; done) \
-  ./tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo
+dune build ./tiny/TinyMachine/TinyMachine.exe $(for l in $LIBS; do echo ./$l.cma; done) \
+  ./tiny/TinyMachine/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo
 ocamlfind ocamlc -g -package caps,fpath,unix,logs,logs.fmt,fmt,astring,ppx_deriving.runtime -linkpkg \
-  $(for l in $LIBS; do echo $B/$l.cma; done) $B/tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo -o $W/tm.bc
+  $(for l in $LIBS; do echo $B/$l.cma; done) $B/tiny/TinyMachine/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo -o $W/tm.bc
 js_of_ocaml --opt 3 $([ $prof = 1 ] && echo --pretty --debug-info) $ROOT/machine/tests/bench_js_stubs.js $W/tm.bc -o $W/tm.js 2>/dev/null
 
 n=$(tail -1 $S/$s.events | cut -d' ' -f1)
@@ -57,7 +57,7 @@ run() { # name command...
   local same=another; [ "$(cksum < $W/s.ppm)" = "$(cat $S/$s.cksum)" ] && same=recorded
   echo "$name $s.events: $(echo "$t1 $t0 $n" | awk '{ printf "%.1f s, %.1f million instructions a second", $1 - $2, $3 / ($1 - $2) / 1e6 }'), the screen the $same one"
 }
-run "native" $B/tiny/TinyMachine.exe
+run "native" $B/tiny/TinyMachine/TinyMachine.exe
 run "node  " node $([ $prof = 1 ] && echo --cpu-prof --cpu-prof-dir=$W/prof) $W/tm.js
 if [ $prof = 1 ]; then
   python3 - $W/prof/*.cpuprofile <<'PY'

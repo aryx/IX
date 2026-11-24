@@ -37,16 +37,7 @@
  (modules TinyCPU)
  (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system))
 
-; tiny-machine, the processor with a kernel's machine: two modes, traps, a
-; timer, pages, a console, a disk, and (-window, -net) a screen, keys, a
-; speaker and a wire
-(executable
- (name TinyMachine)
- (public_name tiny-machine)
- (package ix)
- (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer ix_parallel
-  tiny_lib_system))
+; (tiny-machine, the processor with a kernel's machine: TinyMachine/)
 
 ; tiny-prof: where the instructions went, by function, from a profile of
 ; tiny-cpu -prof or tiny-machine -prof and tiny-ld's maps of what ran

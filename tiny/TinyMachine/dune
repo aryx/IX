@@ -1,6 +1,17 @@
-; tiny-machine's parts (../TinyMachine.ml and ../TinyCPU.ml are the
-; programs): the CPU, the devices, the wire's other end, and the
-; programs beside it, its window, its socket and its page
+; tiny-machine (TinyMachine.ml) and its parts (../TinyCPU.ml is the
+; other program on them): the CPU, the devices, the wire's other end,
+; and the programs beside it, its window, its socket and its page
+
+; tiny-machine, the processor with a kernel's machine: two modes, traps, a
+; timer, pages, a console, a disk, and (-window, -net) a screen, keys, a
+; speaker and a wire
+(executable
+ (name TinyMachine)
+ (public_name tiny-machine)
+ (package ix)
+ (modules TinyMachine)
+ (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer ix_parallel
+  tiny_lib_system))
 
 ; the CPU, on ../TinyLibMachine.ml's instructions (old: with them here,
 ; TinyMachineISA, and TinyMachineAsm, the toolchain's)

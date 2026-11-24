@@ -150,8 +150,8 @@
 <line x1="1102" y1="668" x2="1102" y2="805" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="807" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="968" y="830" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The machine</text>
-<text x="968" y="851" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-machine (tiny/TinyMachine.ml,</text>
-<text x="968" y="868" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyMachine/): the CPU, the devices</text>
+<text x="968" y="851" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-machine (tiny/TinyMachine/): the</text>
+<text x="968" y="868" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">CPU, the devices</text>
 <text x="30" y="911" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">Orange: t-ix&#x27;s own files. Grey: what is under them, m-ix&#x27;s or the system. A name in two columns is the same file. The tools are compiled by</text>
 <text x="30" y="929" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">m-ix&#x27;s mini-ml (mini-mk), on lib_core/ whole, as m-ix&#x27;s programs (docs/pics/layers.svg, its first column); what runs on tiny-machine by</text>
 <text x="30" y="947" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-ml and tiny-cc. While developing, dune builds a tool on OCaml&#x27;s own standard library and lib_core/commons/.</text>

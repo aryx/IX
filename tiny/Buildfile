@@ -530,10 +530,9 @@ boot.img: TinyKernel/kernel.img $BOOT
 # sources are every .ml of INCLUDES' directories, then the files of
 # each program with parts, read with that program's own -I's (its main
 # file's line comes again, now with its parts, and tiny-build merges a
-# target's lines). A unit that is added is found. The host's programs
-# among them, TinyCPU.ml and TinyMachine.ml, give lines that no target
-# asks for, or are left out, with a message, when tiny-ml cannot read
-# them. The globs are written here, not in a variable, because rc does
+# target's lines). A unit that is added is found. The host's program
+# among them, TinyCPU.ml, gives lines that no target asks for, or is
+# left out, with a message, when tiny-ml cannot read it. The globs are written here, not in a variable, because rc does
 # not glob a * that comes from a variable. .depend is kept beside this
 # file, as ocaml-light's stdlib keeps its own (TinyLibCore/ and
 # TinyKernel/ have theirs, and they are made again too). `build depend`

@@ -67,8 +67,7 @@ $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/KNetwork.ml Tiny
 # which is the wire's other end, is in TinyKernel/.) A part finds the
 # parts of its own directory (mini-ml looks there first). The -I's are
 # the other directories whose files a program names, and each program
-# has its own: tiny-machine's here, then those of tiny-cc's and
-# tiny-ml's main files
+# has its own: tiny-machine's here
 MACHINE_INCLUDES=-I TinyMachine -I TinyKernel -I TinyBrowser
 $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 	mkdir -p $D
@@ -76,9 +75,9 @@ $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 $D/TinyCPU.$O: TinyCPU.ml
 	mkdir -p $D
 	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyCPU.ml
-$D/TinyMachine.$O: TinyMachine.ml
+$D/TinyMachine.$O: TinyMachine/TinyMachine.ml
 	mkdir -p $D
-	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine.ml
+	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine/TinyMachine.ml
 # (TinyBrowser's units that tiny-machine uses: its end of the wire reads
 # the addresses and the HTTP that www sends with www's own code)
 $D/%.$O: TinyBrowser/%.ml

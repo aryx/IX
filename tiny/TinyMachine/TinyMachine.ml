@@ -189,7 +189,7 @@ let window_open
   (* beside this program, by its installed name or by dune's *)
   let name =
     if Filename.check_suffix Sys.executable_name ".exe" then
-      "TinyMachine/TinyMachineWindow.exe"
+      "TinyMachineWindow.exe"
     else "tiny-machine-window" in
   ignore (Procs.spawn caps
     (Filename.concat (Filename.dirname Sys.executable_name) name) []
@@ -284,7 +284,7 @@ let helper (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; Cap.signal; .. >)
   and from, out_w = CapUnix.pipe caps ~cloexec:true () in
   let name =
     if Filename.check_suffix Sys.executable_name ".exe" then
-      "TinyMachine/TinyMachineSocket.exe"
+      "TinyMachineSocket.exe"
     else "tiny-machine-socket" in
   helpers :=
     Procs.spawn caps
@@ -338,7 +338,7 @@ let fetch (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.pipe; .. >) args =
   and from, out_w = CapUnix.pipe caps ~cloexec:true () in
   let name =
     if Filename.check_suffix Sys.executable_name ".exe" then
-      "TinyMachine/TinyMachineFetch.exe"
+      "TinyMachineFetch.exe"
     else "tiny-machine-fetch" in
   let pid =
     Procs.spawn caps

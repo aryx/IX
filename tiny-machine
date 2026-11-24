@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# tiny-machine: a kernel booted on tiny-machine (tiny/TinyMachine.ml),
+# tiny-machine: a kernel booted on tiny-machine (tiny/TinyMachine/),
 # as mini-pi boots the Pi's kernels on mini-qemu; built first, with the
 # tools of ix's checkout.
 #
@@ -74,14 +74,14 @@ done
 [ $# = 0 ] && kernels
 
 B=$ROOT/_build/default/tiny
-machine=$B/TinyMachine.exe
+machine=$B/TinyMachine/TinyMachine.exe
 say() { echo "tiny-machine: $*" >&2; }
 # a file's size (wc, not stat -c: GNU's alone; macOS's wc pads its number)
 size() { echo $(( $(wc -c < "$1") )); }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC/TinyC.exe ./tiny/TinyAssembler.exe ./tiny/TinyLinker.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfat.exe ./tiny/TinyKernel/host/TinyMkfs.exe ./tiny/TinyArchiver.exe ./tiny/TinyBuildSystem.exe ./tiny/TinyShell.exe ./tiny/TinyML/TinyML.exe 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachine.exe ./tiny/TinyC/TinyC.exe ./tiny/TinyAssembler.exe ./tiny/TinyLinker.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfat.exe ./tiny/TinyKernel/host/TinyMkfs.exe ./tiny/TinyArchiver.exe ./tiny/TinyBuildSystem.exe ./tiny/TinyShell.exe ./tiny/TinyML/TinyML.exe 2>&1) || exit 1
   # (the window is a program apart: the one that links SDL)
   [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineWindow.exe 2>&1) || exit 1
 fi

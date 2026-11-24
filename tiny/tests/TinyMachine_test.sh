@@ -32,7 +32,7 @@
 # Usage: TinyMachine_test.sh
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-T=${T:-$ROOT/_build/default/tiny/TinyMachine.exe}
+T=${T:-$ROOT/_build/default/tiny/TinyMachine/TinyMachine.exe}
 . $ROOT/tiny/tests/link.sh
 K=$ROOT/tiny/TinyKernel/steps/v0/kernel.s
 P=$(ls $ROOT/tiny/TinyKernel/steps/v0/[abcd].s)

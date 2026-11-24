@@ -15,7 +15,7 @@
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
-MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine.exe}
+MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine/TinyMachine.exe}
 PROF=${PROF:-$ROOT/_build/default/tiny/TinyProfiler.exe}
 . $ROOT/tiny/tests/link.sh
 TL="$TL -map"

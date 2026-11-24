@@ -193,12 +193,12 @@ ifneq ($(filter run run-window self,$(MAKECMDGOALS)),)
 DOMAINS := $(shell command -v opam > /dev/null && opam switch list -s 2> /dev/null | grep -qx $(OCAML5) && echo yes)
 endif
 ifeq ($(DOMAINS),yes)
-RELEASE_MACHINE = $(abspath ../../_build5/default/tiny/TinyMachine.exe)
+RELEASE_MACHINE = $(abspath ../../_build5/default/tiny/TinyMachine/TinyMachine.exe)
 RELEASE_DUNE = opam exec --switch=$(OCAML5) -- dune build --build-dir _build5
 SELF_CORES = -cores 4 -cores-parallel
 SELF_J = 4
 else
-RELEASE_MACHINE = $(abspath ../../_build_release/default/tiny/TinyMachine.exe)
+RELEASE_MACHINE = $(abspath ../../_build_release/default/tiny/TinyMachine/TinyMachine.exe)
 RELEASE_DUNE = dune build --build-dir _build_release
 SELF_CORES =
 SELF_J = 1
@@ -210,7 +210,7 @@ endif
 # -window runs another program, which tiny-machine looks for beside
 # itself (TinyMachine.ml's window_open), so in the same build directory;
 # run-window's variable is also its prerequisites'.
-RELEASE_PROGRAMS = ./tiny/TinyMachine.exe
+RELEASE_PROGRAMS = ./tiny/TinyMachine/TinyMachine.exe
 run-window: RELEASE_PROGRAMS += ./tiny/TinyMachine/TinyMachineWindow.exe
 $(RELEASE_MACHINE): FORCE
 	cd ../.. && $(RELEASE_DUNE) --profile release $(RELEASE_PROGRAMS)

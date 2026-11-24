@@ -123,7 +123,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_cor
   own=
   case $f in
   tiny/TinyTroff.ml|tiny/user/office.ml) own="-I tiny/TinyOffice";;
-  tiny/TinyMachine.ml|tiny/TinyMachine/TinyMachinePeer.ml|tiny/user/www.ml) own="-I tiny/TinyBrowser";;
+  tiny/TinyMachine/TinyMachine.ml|tiny/TinyMachine/TinyMachinePeer.ml|tiny/user/www.ml) own="-I tiny/TinyBrowser";;
   esac
   case $f in
   lib_core/dotnet/*) err=$($ML -dotnet -L lib_core -o $W/dotnet.dll $f 2>&1 >/dev/null | head -1);;

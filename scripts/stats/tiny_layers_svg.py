@@ -108,8 +108,8 @@ COLUMNS = [
             "traps), kdraw.s (a row of pixels), the",
             "font; runtime/c/udivmod.s"]),
         ("The machine", "", [
-            "tiny-machine (tiny/TinyMachine.ml,",
-            "TinyMachine/): the CPU, the devices"]),
+            "tiny-machine (tiny/TinyMachine/): the",
+            "CPU, the devices"]),
     ]),
 ]
 

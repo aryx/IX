@@ -656,7 +656,7 @@ README_BEYOND = [
 ]
 README_TINY = [
     ("tiny-cpu", ["tiny/TinyCPU.", "tiny/TinyMachine/TinyMachineCPU."]),
-    ("tiny-machine", ["tiny/TinyMachine.", "tiny/TinyMachine/"]),
+    ("tiny-machine", ["tiny/TinyMachine/"]),
     ("tiny-kernel", ["tiny/TinyKernel/TinyKernel.", "tiny/TinyKernel/K",
                      "tiny/TinyKernel/k"]),
     ("tiny-shell", ["tiny/TinyShell."]),

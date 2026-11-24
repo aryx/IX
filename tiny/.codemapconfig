@@ -4,11 +4,11 @@
 //
 // A tiny program is one file, or a directory of its name holding its
 // main file and its parts (TinyKernel/, TinyC/, TinyML/, TinyOffice/,
-// TinyBrowser/; TinyMachine.ml is still beside its directory), each
-// directory with its own config: its skeleton is its own pipeline, from its main down to
-// the idea it keeps. All start at TinyLibSystem.main (the
-// host's Unix, or tiny-kernel's calls: [prog] below); the graphical
-// ones' main in their module, user/'s one line running it.
+// TinyBrowser/, TinyMachine/), each directory with its own config: its
+// skeleton is its own pipeline, from its main down to the idea it
+// keeps. All start at TinyLibSystem.main (the host's Unix, or
+// tiny-kernel's calls: [prog] below); the graphical ones' main in their
+// module, user/'s one line running it.
 local skeletons = import '../skeletons.libsonnet';
 local chain = skeletons.chain;
 // a tool on TinyLibSystem: its main given the capabilities by
@@ -231,24 +231,6 @@ local prog(name, file, core) = chain(name, [
     },
     'TinyCPU.mli': { digest: '3bed0c87c1a7',
       summary: 'Why an image needs no header: three constants answer where to load, where to start, what to zero.',
-    },
-    'TinyMachine.ml': { digest: '3b00dd5c903c',
-      summary: "tiny-machine: the host around TinyMachineDevices' machine: console, window, disk file, net peer, cores.",
-      capitals: [{ at: 'def:run', say: "the host's side: devices given, the machine ticked" }],
-      important: [
-        { at: 'type:options', say: 'every flag: window, disk, net, prof, cores', weight: 2 },
-        { at: 'def:run', weight: 3 },
-        { at: "comment:\"the wire's other end: with -net-loop\"", say: "the peer, KNetwork's own stack on the host", weight: 2 },
-        { at: 'def:window_open', say: 'the screen shown by another program, a pipe away', weight: 1 },
-        { at: 'def:console_poll', say: "the host's keys as the console's input", weight: 1 },
-        { at: 'def:fetch', say: '-net-out: tiny-machine-fetch run, a page for real', weight: 1 },
-        { at: 'def:main', weight: 2 },
-      ],
-      related: ['TinyMachine/', 'TinyKernel/', 'TinyKernel/steps/', 'tests/TinyMachine_test.sh', '../raspberry/'],
-    },
-    'TinyMachine.mli': { digest: '6b51c505baf2',
-      summary: 'What the machine adds to the CPU for a kernel: two modes, one trap, a timer, a window, pages, devices.',
-      important: [{ at: 'comment:"One way in, one way out."', say: 'the trap: epc, cause, tval, tvec', weight: 3 }],
     },
     'TinyProfiler.ml': { digest: '30fb3bb15e45',
       summary: "tiny-prof: every instruction counted by address, summed by function by the link's maps; kernel and programs apart.",
@@ -497,17 +479,17 @@ local prog(name, file, core) = chain(name, [
       ['TinyAssembler.ml', 'assembly to objects'],
       ['TinyLinker.ml', 'objects to an image or an a.out'],
       ['TinyMachine/', 'the CPU, its devices, its window and wire'],
-      ['TinyMachine.ml', 'the machine on the host: tiny-machine'],
+      ['TinyMachine/TinyMachine.ml', 'the machine on the host: tiny-machine'],
       ['TinyKernel/TinyKernel.ml', 'its kernel in ML'],
       ['TinyKernel/steps/', 'before it: v0 in assembly, t6 in C'],
     ], [
       ['TinyC/TinyC.ml', 'TinyAssembler.ml', '.s assembly'],
       ['TinyML/TinyML.ml', 'TinyAssembler.ml', '.s assembly'],
       ['TinyAssembler.ml', 'TinyLinker.ml', 'objects'],
-      ['TinyLinker.ml', 'TinyMachine.ml', 'an image'],
-      ['TinyMachine.ml', 'TinyMachine/', 'runs'],
-      ['TinyMachine.ml', 'TinyKernel/TinyKernel.ml', 'boots'],
-      ['TinyMachine.ml', 'TinyKernel/steps/', 'boots'],
+      ['TinyLinker.ml', 'TinyMachine/TinyMachine.ml', 'an image'],
+      ['TinyMachine/TinyMachine.ml', 'TinyMachine/', 'runs'],
+      ['TinyMachine/TinyMachine.ml', 'TinyKernel/TinyKernel.ml', 'boots'],
+      ['TinyMachine/TinyMachine.ml', 'TinyKernel/steps/', 'boots'],
     ]),
     skeletons.parts("tiny-kernel's programs and what they stand on", [
       ['TinyLibDraw.ml', 'drawing messages, a string each'],
@@ -759,15 +741,15 @@ local prog(name, file, core) = chain(name, [
       ['TinyCPU.ml:def:syscall', "the host's exit, write, read", 'sys'],
     ]),
     chain('tiny-machine: the host around the machine', [
-      ['TinyMachine.ml:code:".main"', 'the program: TinyLibSystem.main', ''],
-      ['TinyMachine.ml:def:main', 'the options; the files linked to an image', 'the capabilities'],
-      ['TinyMachine.ml:def:run', "the host's devices: console, window, disk, peer", 'options, image'],
+      ['TinyMachine/TinyMachine.ml:code:".main"', 'the program: TinyLibSystem.main', ''],
+      ['TinyMachine/TinyMachine.ml:def:main', 'the options; the files linked to an image', 'the capabilities'],
+      ['TinyMachine/TinyMachine.ml:def:run', "the host's devices: console, window, disk, peer", 'options, image'],
       ['TinyMachine/TinyMachineDevices.ml:def:create', 'the machine: cores, memory, devices', 'the callbacks'],
       ['TinyMachine/TinyMachineDevices.ml:def:ticks', 'instructions, the timer, interrupts', 'a core'],
       ['TinyMachine/TinyMachineDevices.ml:def:trap', 'epc, cause, tval; supervisor mode', 'a sys, a fault'],
     ]) + {
-      bones+: [{ at: 'TinyMachine.ml:def:window_poll', role: "the window's mouse and keys, each slice" }],
-      joints+: [{ from: 'TinyMachine.ml:def:run', to: 'TinyMachine.ml:def:window_poll', say: 'between slices' }],
+      bones+: [{ at: 'TinyMachine/TinyMachine.ml:def:window_poll', role: "the window's mouse and keys, each slice" }],
+      joints+: [{ from: 'TinyMachine/TinyMachine.ml:def:run', to: 'TinyMachine/TinyMachine.ml:def:window_poll', say: 'between slices' }],
     },
     chain('tiny-kernel: the boot', [
       ['TinyKernel/TinyKernel.ml:code:"k_init ()"', 'the machine set: traps, the timer', ''],

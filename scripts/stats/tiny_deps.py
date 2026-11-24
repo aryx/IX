@@ -40,7 +40,7 @@ PROGRAMS = {
     "tiny-cc": ["TinyC/TinyC"], "tiny-ml": ["TinyML/TinyML"], "tiny-db": ["TinyDatabase"],
     "tiny-vcs": ["TinyVCS"],
     "tiny-cpu": ["TinyCPU", "TinyMachineCPU"],
-    "tiny-machine": ["TinyMachine", "TinyMachineDevices", "TinyMachineCPU"], "tiny-mkfat": ["TinyKernel/steps/t6/TinyMkfat"],
+    "tiny-machine": ["TinyMachine/TinyMachine", "TinyMachineDevices", "TinyMachineCPU"], "tiny-mkfat": ["TinyKernel/steps/t6/TinyMkfat"],
 }
 ALWAYS = ["Pervasives", "std_exit"]
 

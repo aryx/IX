@@ -62,11 +62,20 @@ let clean (m : string) : string =
   done;
   Bytes.unsafe_to_string s
 
-(* whether this program's Marshal writes the color bits *)
-let colored : bool =
-  let m = Marshal.to_string (Array.make 8 0) [ Marshal.No_sharing ] in
-  Char.code m.[20] = 0x08 && Char.code m.[23] land 3 <> 0
+(* whether this program's Marshal writes the color bits: found at the
+ * first marshalling, not when the unit starts, for a program that links
+ * it and never marshals where Marshal fails (mini-cc on .NET).
+ * old: let colored : bool = ..., computed at the start *)
+let colored_ : bool option ref = ref None
+let colored () : bool =
+  match !colored_ with
+  | Some b -> b
+  | None ->
+      let m = Marshal.to_string (Array.make 8 0) [ Marshal.No_sharing ] in
+      let b = Char.code m.[20] = 0x08 && Char.code m.[23] land 3 <> 0 in
+      colored_ := Some b;
+      b
 
 let to_string (v : 'a) (flags : Marshal.extern_flags list) : string =
   let m = Marshal.to_string v flags in
-  if not colored then m else try clean m with Unknown | Invalid_argument _ | Not_found -> m
+  if not (colored ()) then m else try clean m with Unknown | Invalid_argument _ | Not_found -> m

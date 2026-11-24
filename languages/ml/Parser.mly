@@ -126,16 +126,25 @@ let with_attribute ds a =
 %token LESSMINUS MINUSGREATER QUOTE SEMI SEMISEMI STAR UNDERSCORE
 %token EOF
 
-/* from the loosest */
+/* from the loosest. The below_X levels, OCaml's since 3.x (ocaml-light's
+ * 1.07 left these choices to yacc): a rule that would end where X can
+ * continue it, X shifted instead. Each such choice is said, so that a
+ * new one is a conflict menhir reports. */
+%nonassoc below_SEMI           /* e1; e2 + 1 after a let ... in: all the body */
 %right SEMI
+%nonassoc LET LETINLINE        /* e; let ...: the sequence goes on */
 %right prec_fun prec_match prec_try
 %right prec_if
+%nonassoc ELSE                 /* an else is the nearest if's */
 %right COLONEQUAL LESSMINUS
 %left AS
 %left BAR
+%nonassoc below_COMMA          /* a, b, c: one tuple of three */
 %left COMMA
+%right MINUSGREATER            /* a -> b -> c: a -> (b -> c) */
 %right OR BARBAR
 %right AMPERSAND AMPERAMPER
+%nonassoc below_EQUAL          /* let* f = ...: f a function's name */
 %left INFIXOP0 EQUAL LESS GREATER
 %right INFIXOP1
 %right COLONCOLON
@@ -143,9 +152,15 @@ let with_attribute ds a =
 %left INFIXOP3 STAR
 %right INFIXOP4
 %right prec_unary_minus
+%nonassoc prec_constant_constructor /* C x: C applied, not C then x */
 %right prec_constr_appl
+%nonassoc below_DOT            /* M.x: a module's x */
 %left DOT
 %right PREFIXOP
+/* what starts a constructor's argument, above prec_constant_constructor
+ * (PREFIXOP is above already) */
+%nonassoc UIDENT LIDENT LPAREN LBRACKET LBRACKETBAR LBRACKETPERCENT LBRACE
+          BEGIN INT INT32 INT64 FLOAT CHAR STRING TRUE FALSE
 
 %start implementation interface
 %type <Ast.structure> implementation
@@ -234,7 +249,7 @@ module_type:
 /* expressions */
 
 seq_expr:
-  | expr { $1 }
+  | expr %prec below_SEMI { $1 }
   | expr SEMI { $1 }
   | expr SEMI seq_expr { mkexp $sloc (Eseq ($1, $3)) }
 ;
@@ -245,7 +260,7 @@ expr:
   | simple_expr DOT label_longident LESSMINUS expr { mkexp $sloc (Esetfield ($1, $3, $5)) }
   /* mlpp: a generator of [%list] */
   | LIDENT LESSMINUS expr { mkexp $sloc (Egenerator ($1, $3)) }
-  | expr_comma_list { mkexp $sloc (Etuple (List.rev $1)) }
+  | expr_comma_list %prec below_COMMA { mkexp $sloc (Etuple (List.rev $1)) }
   | FUNCTION BAR? match_cases %prec prec_fun { mkexp $sloc (Efunction (List.rev $3)) }
   | FUN parameter fun_def { mkfun $sloc $2 $3 }
   /* (f [@tailcall]) x, OCaml's place: the call marked, by its span */
@@ -295,7 +310,7 @@ simple_expr:
       { let e = { $2 with espan = span $sloc } in Hashtbl.replace Annotations.tailcalls e.espan (); e }
   | BEGIN seq_expr END { { $2 with espan = span $sloc } }
   | BEGIN END { unit $sloc }
-  | constr_longident { mkexp $sloc (Econstruct ($1, None)) }
+  | constr_longident %prec prec_constant_constructor { mkexp $sloc (Econstruct ($1, None)) }
   /* mlpp: the brackets in espan */
   | LBRACKET expr_semi_list SEMI? RBRACKET { { (mklist $sloc (List.rev $2)) with espan = span $sloc } }
   | LBRACE lbl_expr_list SEMI? RBRACE { mkexp $sloc (Erecord (List.rev $2)) }
@@ -392,7 +407,7 @@ pattern:
   | simple_pattern { $1 }
   | constr_longident pattern %prec prec_constr_appl { mkpat $sloc (Pconstruct ($1, Some $2)) }
   | pattern COLONCOLON pattern { mkpat $sloc (Pconstruct ([ "::" ], Some (mkpat $sloc (Ptuple [ $1; $3 ])))) }
-  | pattern_comma_list { mkpat $sloc (Ptuple (List.rev $1)) }
+  | pattern_comma_list %prec below_COMMA { mkpat $sloc (Ptuple (List.rev $1)) }
   | pattern AS val_ident { mkpat $sloc (Palias ($1, $3)) }
   | pattern BAR pattern { mkpat $sloc (Por ($1, $3)) }
   /* a match's | exception E -> (mkmatch) */
@@ -405,7 +420,7 @@ simple_pattern:
   | LBRACE lbl_pattern_list SEMI? RBRACE { mkpat $sloc (Precord (List.rev $2)) }
   /* { l = p; _ }: the other fields, which a record pattern never needed */
   | LBRACE lbl_pattern_list SEMI UNDERSCORE SEMI? RBRACE { mkpat $sloc (Precord (List.rev $2)) }
-  | val_ident { mkpat $sloc (Pvar $1) }
+  | val_ident %prec below_EQUAL { mkpat $sloc (Pvar $1) }
   | UNDERSCORE { mkpat $sloc Pany }
   /* mlpp: a [%bits] pattern's span has the parentheses */
   | LPAREN pattern RPAREN { match $2.p with Pextension (n, s, _) -> mkpat $sloc (Pextension (n, s, span $sloc)) | _ -> $2 }
@@ -552,7 +567,7 @@ constr_ident:
   | TRUE { "true" }
 ;
 constr_longident:
-  | mod_longident { $1 }
+  | mod_longident %prec below_DOT { $1 }
   | LBRACKET RBRACKET { [ "[]" ] }
   | LPAREN RPAREN { [ "()" ] }
   | FALSE { [ "false" ] }

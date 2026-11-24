@@ -45,7 +45,7 @@ printf '#!/boot/rc -m /boot/rcmain\n/boot/bind %s /proc\n/boot/echo acid:\n/boot
 touch -t 200001010000 $W/boot.rc
 mini-mkbootdir $b/$K/bootdir $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/rcmain rc=$BIN/rc echo=$BIN/echo bind=$BIN/bind \
     acid=$M/debuggers/acid/mini-acid target=$W/target port.acid=$LIB/port.acid arm.acid=$LIB/arm.acid s.acid=$T/acid.acid &&
-  (cd $ROOT/kernels/9pi && MINI=mini- NPROC=32 mini-mk O=5 B=$b DIR=$K PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
+  (cd $ROOT/kernels/9pi && MINI=mini- NPROC=${NPROC:-32} mini-mk O=5 B=$b DIR=$K PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
   { echo "the kernel not relinked:"; tail -3 $W/mk.log | cut -c1-200; exit 1; }
 out=$W/out.txt
 timeout 120 mini-qemu -M raspi1ap -device loader,file=$b/$K/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \

@@ -27,11 +27,10 @@
 # the change is in one system. A line for each job as soon as it ends,
 # its group first ([t-ix] ...: grep keeps one), its seconds, the
 # failures' first lines; at the end the failures again, a line a group,
-# and the jobs past the budget, 2 minutes the whole and 1 a job (said,
-# not a failure). The logs are kept when one fails. What this machine
+# and, when the whole is past its 2 minutes, the jobs past 1 (said, not
+# a failure). The logs are kept when one fails. What this machine
 # cannot do is said too, a "skip" line with its reason, and is not a
-# failure: mini-xv6 without xv6's disk image (~/xv6), mini-9pi's two
-# units that need its generated Memdata (principia's fonts), the arm64
+# failure: mini-xv6 without xv6's disk image (~/xv6), the arm64
 # programs that mini-ml makes on a machine that does not run them
 # (neither arm64 nor with qemu-aarch64 registered, binfmt_misc).
 # usage: tests/lite.sh [mix] [tix]    (none: all; shared always)
@@ -90,14 +89,25 @@ wanted() { [ $G = shared ] || [[ "$want_groups" == *" $G "* ]]; }
 names=()
 groups=()
 jobpids=()
-# as many jobs at once as the machine has cores (JOBS=n: another
+# jobs at once by tokens (JOBS=n: another
 # count), each taking a token of a pipe before it starts and giving it
 # back after: a job has a core, here or on GitHub's four, and a
 # timeout is its own time. Its clock starts with its token.
 # (old: all of them at once, 135 on four cores: a program of 3.5 s
 # alone over its 60, six jobs failing there only)
+# The builds' processes (mini-mk's NPROC, exported: its jobs' builds,
+# smoke.sh's, the kernels' tests'): NPROC=n another count. And the jobs
+# at once: half the cores, all of them on 8 or fewer (GitHub's 4). The
+# whole niced, so that the machine's own programs (a browser) get their
+# share first. Measured on 64 cores (the author: "trade comfort for
+# absolute speed"): 64 jobs and NPROC 32, 109 s, the load past 50; 64
+# and 8, 109 s; 32 and 8, 111 s; 16 and 8, 119 s; 64 and 2, 129 s.
+# old: the cores' count of jobs, 32 each build, not niced
+export NPROC=${NPROC:-8}
+renice -n 10 $$ > /dev/null 2>&1
+cores=$(nproc)
 mkfifo $W/slots; exec 3<> $W/slots
-for i in $(seq ${JOBS:-$(nproc)}); do echo >&3; done
+for i in $(seq ${JOBS:-$(( cores > 8 ? cores / 2 : cores ))}); do echo >&3; done
 # -after-ix: a check of what ix built by ix, its clock started once the
 # build is done (its own job); a skip when the build failed. Its family:
 # the last `family`'s, a line of the report with the others' (below; a
@@ -431,7 +441,7 @@ family "m-ix builds part of itself" system
 # other sessions', do not build over each other, and none waits)
 B=$W/mk/7
 K=$B
-mk() { (cd $1 && NPROC=32 mini-mk B=$B) > "$W/mk.$(echo $1 | tr / _).log" 2>&1 || { echo "mini-mk failed in $1:"; tail -3 "$W/mk.$(echo $1 | tr / _).log" | cut -c1-200; return 1; }; }
+mk() { (cd $1 && mini-mk B=$B) > "$W/mk.$(echo $1 | tr / _).log" 2>&1 || { echo "mini-mk failed in $1:"; tail -3 "$W/mk.$(echo $1 | tr / _).log" | cut -c1-200; return 1; }; }
 # a kernel's image booted until its line is said, 30 seconds at most
 # (5 times its boot alone, mini-xv6's 5.3 s, the step's 6.2; old: 15,
 # over on GitHub's four cores)
@@ -469,7 +479,7 @@ ix() {
   rm -rf $B
   # the libraries first, one after the other in their order (the top
   # mkfile's libs: a program's mkfile takes their archives as they are)
-  (NPROC=32 mini-mk B=$B libs) > "$W/mk.libs.log" 2>&1 || { echo "mini-mk failed in libs:"; tail -3 "$W/mk.libs.log" | cut -c1-200; return 1; }
+  (mini-mk B=$B libs) > "$W/mk.libs.log" 2>&1 || { echo "mini-mk failed in libs:"; tail -3 "$W/mk.libs.log" | cut -c1-200; return 1; }
   mk assembler || return 1
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
@@ -480,7 +490,7 @@ ix() {
   (mk version_control && mk tiny) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
   # (by the top mkfile: the libraries installed, then examples/ on them)
-  (NPROC=32 mini-mk B=$B examples > "$W/mk.examples.log" 2>&1 || { echo "mini-mk failed in examples:"; tail -3 "$W/mk.examples.log" | cut -c1-200; exit 1; }) & pids+=($!)
+  (mini-mk B=$B examples > "$W/mk.examples.log" 2>&1 || { echo "mini-mk failed in examples:"; tail -3 "$W/mk.examples.log" | cut -c1-200; exit 1; }) & pids+=($!)
   mk apps/media/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
   mk typesetting/man & pids+=($!)
@@ -545,9 +555,9 @@ job "the top mkfile's order: each directory after those whose objects it takes" 
 P=$HOME/principia
 pi1_by_ix() {
   local b=$W/mk/5 out=$W/pi1.txt n=0 pid
-  (NPROC=32 mini-mk O=5 B=$b libs) > $W/mk5.libs.log 2>&1 ||
+  (mini-mk O=5 B=$b libs) > $W/mk5.libs.log 2>&1 ||
     { echo "mini-mk O=5 failed in libs:"; tail -3 $W/mk5.libs.log | cut -c1-200; return 1; }
-  (cd kernels/9pi && NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P) > $W/mk5.9pi.log 2>&1 ||
+  (cd kernels/9pi && mini-mk O=5 B=$b PRINCIPIA=$P) > $W/mk5.9pi.log 2>&1 ||
     { echo "mini-mk O=5 failed in kernels/9pi:"; tail -3 $W/mk5.9pi.log | cut -c1-200; return 1; }
   # (timeout: an interrupted run leaves no emulator spinning; one did, 1 h 47)
   timeout 120 mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
@@ -640,8 +650,8 @@ job "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (
 # is drawn again as jobs end, a failure said above it at once (its job,
 # its errors), colors (not with NO_COLOR); elsewhere (GitHub, a pipe)
 # each job's line as it ends, the tree at the end. Then the skips, the
-# failures again, the jobs past the budget (plan_tests.md: the whole
-# 120 s, a job 60 s; said, not a failure).
+# failures again, the jobs past the budget when the whole is
+# (plan_tests.md: the whole 120 s, a job 60 s; said, not a failure).
 # old: only each job's line, 143 of them, and a line a group
 tag() { printf '%-8s' "[$1]"; }
 pad='                       '
@@ -806,8 +816,12 @@ total=$(( $(now) - begun ))
 tree
 for k in "${skips[@]}"; do echo "$k"; done
 for k in "${failed[@]}"; do echo "$k"; done
-if [ $total -gt 120000 ] || [ ${#slow[@]} != 0 ]; then
-  echo "past the budget (plan_tests.md: 120 s, a job 60 s):"
+# (the jobs past 60 s said only when the whole is past 120 s: under the
+# run's load, 64 jobs at once, a job takes 3 times its time alone, and
+# the long one matters when it makes the whole long. old: said whenever
+# a job was, a list each run with the whole in its budget)
+if [ $total -gt 120000 ]; then
+  echo "past the budget (plan_tests.md: the whole $((total / 1000)) s for 120; the jobs over 60 s, the first to make faster):"
   for k in "${slow[@]}"; do echo "  $k"; done
 fi
 printf "test-lite: %d jobs, %d failure(s), %d skipped, %.0f s\n" ${#names[@]} $failures ${#skips[@]} $(echo "$total / 1000" | bc -l)

@@ -45,14 +45,17 @@ test-lite: 135 jobs, 0 failure(s), 0 skipped, 117 s
   opam switch 5.5.1, no qemu-system-arm, no xv6 disk image, no arm64
   to run mini-ml's programs. Not a failure; CI skips the ones it has
   not. A developer's machine (arm64, with QEMU) skips none.
-- **Past the budget**: the jobs over a minute, and the whole over two,
-  are said at the end. Not a failure, but the next thing to make
-  faster.
-- **A job a core**: as many jobs at once as the machine has cores
-  (`JOBS=n` another count), so that a test's timeout is about its own
-  time, here as on GitHub's four cores (all 135 at once, a program of
-  3.5 s went over its 60 there). `taskset -c 0-3 make test` runs it as
-  GitHub does.
+- **Past the budget**: when the whole is over two minutes, it is said
+  at the end with the jobs over one, the first to make faster. Not a
+  failure. (Under the run's load a job takes about three times its time
+  alone: a job over a minute alone is not worth a line.)
+- **A job a core, half the cores**: half as many jobs at once as the
+  machine has cores, all of them on 8 or fewer (`JOBS=n` another
+  count), each build with `NPROC=8` (`NPROC=n`), the whole niced: the
+  machine stays usable (a browser) for 2 s of 109 on 64 cores. A test's
+  timeout is so about its own time, here as on GitHub's four cores (all
+  135 at once, a program of 3.5 s went over its 60 there).
+  `taskset -c 0-3 make test` runs it as GitHub does.
 - **Several sessions at once** run it without waiting for each other:
   each run builds in a directory of its own, and tests/lite.sh is
   read whole before it runs. What it tests is the working tree: another

@@ -72,3 +72,6 @@ let line = first_line "Toy.ml"
 
 (* a variable read, one never read and said so (bugs/unused.dl) *)
 let keep_first (x : int) (_y : int) = x
+
+(* a function only the tests call (dead.dl) *)
+let count_for_tests (l : int list) = List.length l [@@for_testing]

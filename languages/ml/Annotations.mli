@@ -74,6 +74,20 @@ val unboxed_floats : (Ast.span, unit) Hashtbl.t
  * docs/plans/done/plan_bug_analyses.md's A2). *)
 val raises : (string, string) Hashtbl.t
 
+(* A function's attributes, whatever they are, by their names, for the
+ * analyses: mini-analyze's annotation(F, Name) facts. It is keyed by
+ * the file and the function's span (mini-analyze parses many files, the
+ * same span in each). The one only the analyses read is
+ * [@@for_testing] (let fs_free fs = ... [@@for_testing]): a function
+ * only the tests call, which no program may. mini-ml compiles it as any
+ * other. mini-analyze -dead takes it as a root, called from the tests
+ * it does not read, so it and what it calls are not dead, and reports a
+ * program that calls it (analyzers/datalog/dead.dl's used_for_testing).
+ * others: Guava's @VisibleForTesting, whose Error Prone check reports a
+ * use from code that is not a test; Rust's #[cfg(test)] goes further and
+ * leaves the code out of the build. *)
+val functions : (string * Ast.span, string) Hashtbl.t
+
 (* The names of the item attributes, [@@name ...], that mini-ml knows:
  * the ones above, mlpp's ([@@deriving show], [@@class], [@@instance]),
  * and OCaml's own that a program may write ([@@unboxed], [@@noalloc],

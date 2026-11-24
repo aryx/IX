@@ -9,10 +9,11 @@ let zero_allocs : (Ast.span, unit) Hashtbl.t = Hashtbl.create 16
 let inlines : (Ast.span, unit) Hashtbl.t = Hashtbl.create 16
 let unboxed_floats : (Ast.span, unit) Hashtbl.t = Hashtbl.create 16
 let raises : (string, string) Hashtbl.t = Hashtbl.create 16
+let functions : (string * Ast.span, string) Hashtbl.t = Hashtbl.create 16
 
 let known =
   [ (* the checked annotations, and what the analyses read *)
-    "tailrec"; "zero_alloc"; "inline"; "unboxed_float"; "raise";
+    "tailrec"; "zero_alloc"; "inline"; "unboxed_float"; "raise"; "for_testing";
     (* mlpp's *)
     "deriving"; "class"; "instance";
     (* OCaml's *)

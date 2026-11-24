@@ -13,6 +13,8 @@
 %   dead_field(F, G)      the field G's code stores, that nothing live reads
 %   never_built(C, G)     the live G matches a constructor nothing live builds
 %   dead_stmt(F, Line)    C: a statement after a return, goto, break, continue
+%   used_for_testing(F, G) the live G names F, a [@@for_testing] function,
+%                         which only the tests may call
 %
 %     void show(Node *n) { ... }         void (*visit)(Node*) = show;
 %     void hide(Node *n) { ... }         main() { visit(&root); }
@@ -93,6 +95,19 @@ named_in_dead(F, G) :- dead(F), \+ is_named_in_live(F), names(G, F).
 
 called_by_name(F) :- call_direct(I, F), running(I, _, _).
 through_pointer(F) :- defined(F, _), reach(F), \+ called_by_name(F), \+ entry(F).
+
+% ---- a function only the tests call, an ML function's [@@for_testing]
+% (languages/ml/Annotations.mli: annotation(F, Name), a function's
+% attributes)
+
+% (a root: the tests call it, which the facts do not have, as what
+% mini-analyze -root names; so what it calls is not dead either)
+entry(F) :- annotation(F, for_testing).
+% (a program calls it: the program uses what is the tests', or the
+% annotation is wrong. Another such function may call it; the toplevel
+% that defines it names it once it is read, which is no use)
+used_for_testing(F, G) :-
+  annotation(F, for_testing), in_live(G, F), \+ annotation(G, for_testing), \+ global_def(F, G).
 
 % ---- what else nothing live uses
 

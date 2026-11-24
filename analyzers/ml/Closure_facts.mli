@@ -116,5 +116,6 @@ val added : (string -> arg list -> unit) ref
  * set. What a unit without one is given may be called from there. *)
 val has_body : (string -> bool) ref
 
-(* a unit's facts, a line each: its name, its items resolved *)
-val unit_ : string -> Scope.item list -> string
+(* a unit's facts, a line each: its file (where its functions'
+ * attributes are, Annotations.functions), its name, its items resolved *)
+val unit_ : string -> string -> Scope.item list -> string

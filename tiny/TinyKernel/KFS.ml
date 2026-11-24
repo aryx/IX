@@ -518,5 +518,5 @@ let fs_snapshots fs =
   List.init (fs_nsnaps fs) (fun i -> i + 1, fs_get (fs_root fs (i + 1) + 8))
 
 
-(* the free blocks, counted after a collection *)
-let fs_free fs = fs_gc fs; fs.nfree
+(* the free blocks, counted after a collection: tests/KFS_tests' *)
+let fs_free fs = fs_gc fs; fs.nfree [@@for_testing]

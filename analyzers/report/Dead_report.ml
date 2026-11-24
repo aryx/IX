@@ -5,13 +5,15 @@
 
 module D = Datalog
 
+type kept = Every_program | One_program
+
 let name = C_report.name
 let prefix = C_report.prefix
 let where = C_report.where
 let ml_function = Ml_report.ml_function
 
 (* -dead: what dead.dl finds, each with where it is written *)
-let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * int * string * string) list =
+let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * int * string * string * kept) list =
   let tuples r n = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r n)) in
   let unit_of (f : string) : string =
     let stop c = match String.index_opt f c with Some i -> i | None -> String.length f in
@@ -91,10 +93,22 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * in
       (fun c -> "never built " ^ constructor c)
       (fun c g -> Printf.sprintf "never built: %s, matched in %s" (constructor c) g)
       (fun c -> prefix "con:" c <> None) in
+  (* (where the program calls it) *)
+  let for_testing =
+    List.filter_map
+      (fun t ->
+        let f = t.(0) and g = t.(1) in
+        if not (is_own g) then None else
+        let file, l = at g in
+        Some (file, l, Printf.sprintf "used for testing %s in %s" (shown f) (shown g),
+              Printf.sprintf "used for testing: %s, [@@for_testing], but %s calls it" (shown f) (shown g)))
+      (tuples "used_for_testing" 2) in
   let all = List.sort_uniq compare (functions @ globals @ stmts @ fields @ constructors) in
-  List.iter (fun x -> Console.print caps (one x ^ "\n")) all;
+  let for_testing = List.sort_uniq compare for_testing in
+  List.iter (fun x -> Console.print caps (one x ^ "\n")) (all @ for_testing);
   Console.print caps
     (Printf.sprintf "%d functions dead (%d nothing names), %d only through a pointer; %d globals, %d fields, %d constructors, %d statements\n"
        (List.length dead) (List.length (List.filter (fun f -> is_own f && not (derived f)) unnamed)) (List.length (tuples "through_pointer" 1))
        (List.length globals) (List.length fields) (List.length constructors) (List.length stmts));
-  all
+  List.map (fun (f, l, w, m) -> (f, l, w, m, Every_program)) all
+  @ List.map (fun (f, l, w, m) -> (f, l, w, m, One_program)) for_testing

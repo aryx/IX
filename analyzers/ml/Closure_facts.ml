@@ -7,6 +7,7 @@ open Scope
 
 let out : Buffer.t = Buffer.create 4096
 let unit_name : string ref = ref ""
+let unit_file : string ref = ref ""
 let temps : int ref = ref 0
 let calls : int ref = ref 0
 let funs : int ref = ref 0
@@ -714,6 +715,9 @@ let rec flow (name : string option) (x : expr) (dst : string) : unit =
         | Some n -> n
         | None -> incr funs; Printf.sprintf "%s:fun%d@%d" !unit_name !funs x.loc in
       fact "closure" [ f; !unit_name; string_of_int x.loc ];
+      (* (its [@@...], [@@for_testing]: dead.dl's) *)
+      List.iter (fun (a : string) -> fact "annotation" [ f; a ])
+        (List.sort_uniq compare (Hashtbl.find_all Annotations.functions (!unit_file, x.span)));
       fact "alloc_in" [ f; !unit_name ];
       fact "htype" [ f; "->" ];
       (match Typing.expr_type x with
@@ -1067,12 +1071,13 @@ and lets (bindings : (pattern * expr) list) (exported : (var * global) list) : u
           exported_pattern := false)
     bindings
 
-let unit_ (name : string) (items : item list) : string =
+let unit_ (file : string) (name : string) (items : item list) : string =
   Buffer.clear out;
   Hashtbl.reset prims;
   Hashtbl.reset mentioned;
   Hashtbl.reset reads;
   unit_name := name;
+  unit_file := file;
   temps := 0;
   calls := 0;
   try_count := 0;

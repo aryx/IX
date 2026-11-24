@@ -9,9 +9,12 @@
 %   report(P, F, L, W, M) P says W is dead (its kind and name: dead
 %                         Http.asked, never built Leaf), at F's line L (0:
 %                         none), with the message M
+%   report_one(P, F, L, W, M) the same, of a kind one program's is enough:
+%                         a [@@for_testing] function the program calls
 % and these rules, given the facts of all the programs, answer
 %   dead_all(F, L, M)     a report kept: every program that has F, or
-%                         another implementation of its interface, says it
+%                         another implementation of its interface, says
+%                         it; or one says it, a report_one
 %
 %   mini-datalog analyzers/datalog/dead_all.dl prog1.dl prog2.dl ...
 %
@@ -35,5 +38,8 @@ said(P, G, W) :- report(P, F, _, W, _), group(F, G).
 has_group(P, G) :- own(P, F), group(F, G).
 not_everywhere(G, W) :- said(_, G, W), has_group(P, G), \+ said(P, G, W).
 dead_all(F, L, M) :- report(_, F, L, W, M), group(F, G), \+ not_everywhere(G, W).
+% (a program that uses what only the tests may: wrong in that program,
+% whatever the others do)
+dead_all(F, L, M) :- report_one(_, F, L, _, M).
 
 ?- dead_all(F, L, M).

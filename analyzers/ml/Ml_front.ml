@@ -224,7 +224,7 @@ let unit_ (caps : < Cap.open_in; Cap.readdir; .. >) (look : look) (file : Fpath.
         let dir = FS.cleanname (Filename.dirname f) in
         List.iter (fun (u : string) -> Hashtbl.replace wanted (dir, u) ()) named;
         ignore (Typing.unit_ name items);
-        ignore (Closure_facts.unit_ name items);
+        ignore (Closure_facts.unit_ f name items);
         (* (the program's own units' trees: bugs/layout.dl's) *)
         if Hashtbl.mem own name then Tree_facts.unit_ name text items;
         Ok named

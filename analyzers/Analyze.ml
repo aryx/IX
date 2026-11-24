@@ -188,9 +188,10 @@ let start_facts (fact : string -> C.Facts.arg list -> unit) (start : string)
  * interface is elsewhere (implements); a file outside the project, whose
  * root is the first directory above the first file given that has a
  * dune-project (outside); each report, by its file, line, what is dead
- * and message *)
+ * and message (report, or report_one when one program's is kept: a
+ * [@@for_testing] function the program calls) *)
 let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : string) (prog : string)
-    (given_files : string list) (reports : (string * int * string * string) list) : unit =
+    (given_files : string list) (reports : (string * int * string * string * Dead_report.kept) list) : unit =
   let b = Buffer.create 4096 in
   let add (r : string) (args : C.Facts.arg list) : unit = Buffer.add_string b (line r args ^ "\n") in
   let sym (s : string) : C.Facts.arg = C.Facts.Sym s in
@@ -218,7 +219,9 @@ let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : strin
        | None -> ())
    | [] -> ());
   List.iter
-    (fun ((f, l, w, m) : string * int * string * string) -> add "report" [ sym prog; sym f; C.Facts.Num l; sym w; sym m ])
+    (fun ((f, l, w, m, kept) : string * int * string * string * Dead_report.kept) ->
+      let r = match kept with Dead_report.Every_program -> "report" | Dead_report.One_program -> "report_one" in
+      add r [ sym prog; sym f; C.Facts.Num l; sym w; sym m ])
     reports;
   FS.write caps (Fpath.v out) (Buffer.contents b)
 

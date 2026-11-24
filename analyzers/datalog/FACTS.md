@@ -375,6 +375,16 @@ external_prim('Toy.remove', 'sys_remove').
 declares_raise('sys_remove', 'caml_exn_Sys_error').
 ```
 
+**A function's attributes**, each by its name (`let count_for_tests l = ...
+[@@for_testing]`, lib_core's `[@@tailrec]`; mini-ml's parser records them,
+`languages/ml/Annotations.mli`), for `dead.dl`: a `[@@for_testing]` function is a
+root, and a program that calls one is reported:
+
+```
+annotation('Toy.count_for_tests', 'for_testing').
+annotation('List.length_aux', 'tailrec').
+```
+
 **An int past 31 bits**, for `bugs/intwidth.dl`: a literal an int of the Pi 1
 does not hold, or a shift past bit 30 (by 31 or more, or of a value whose width is
 said: a constant, a mask, a char's code), in which unit and function; and a call in
@@ -530,7 +540,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
 | `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
 | `exceptions.dl` | `raise_in`, `raise_of`, `reraises`, `exn_block`, the `try`'s, `catches*`, over `call_edge`, `pt`, `reached` |
-| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call`, `runtime_builds` |
+| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call`, `runtime_builds`, `annotation` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand`, `compared`, `store_in`, `assign_load_field`, over `pts`, `reach` |

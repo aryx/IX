@@ -1,0 +1,5 @@
+analyzers/tests/dead/for_testing/Lib.ml:15: dead: Lib.unused, nothing names it
+analyzers/tests/dead/for_testing/Main.ml: dead global: Main.a, nothing live names it
+analyzers/tests/dead/for_testing/Main.ml: dead global: Main.b, nothing live names it
+analyzers/tests/dead/for_testing/Main.ml: used for testing: Lib.misused, [@@for_testing], but init calls it
+1 functions dead (1 nothing names), 0 only through a pointer; 2 globals, 0 fields, 0 constructors, 0 statements

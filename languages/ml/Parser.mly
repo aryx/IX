@@ -67,11 +67,12 @@ let mkfun at p e = mkexp at (Efunction [ p, None, e ])
 
 (* what a binding's annotation marks: the function, under its type
  * (let f : t = fun ...); on anything else a syntax error *)
-let rec marked_function e =
+let rec function_of e =
   match e.e with
-  | Econstraint (e, _) -> marked_function e
-  | Efunction _ -> e
-  | _ -> raise Parsing.Parse_error
+  | Econstraint (e, _) -> function_of e
+  | Efunction _ -> Some e
+  | _ -> None
+let marked_function e = match function_of e with Some f -> f | None -> raise Parsing.Parse_error
 
 let array_op at m f args = mkexp at (Eapply (mkexp at (Eident [ m; f ]), args))
 
@@ -101,12 +102,14 @@ let attribute at (s : string) : attribute =
   | name :: args -> { aname = name; aargs = args; aloc = line at; aend = snd (span at) }
   | [] -> raise Parsing.Parse_error
 
-(* What a binding's attributes mark (Annotations.mli), given the bound
- * expression: a function's, or a float's. The others are for mlpp
- * ([@@instance]) or OCaml's. *)
-let annotate (attrs : attribute list) (e : expr) : unit =
+(* What a binding's attributes mark (Annotations.mli), given its file
+ * and the bound expression: a function's, or a float's. The others are
+ * for mlpp ([@@instance]) or OCaml's. A function's, whatever they are,
+ * for the analyses (Annotations.functions). *)
+let annotate (file : string) (attrs : attribute list) (e : expr) : unit =
   List.iter
     (fun (a : attribute) ->
+      Option.iter (fun f -> Hashtbl.add Annotations.functions (file, f.espan) a.aname) (function_of e);
       match a.aname with
       | "tailrec" -> Hashtbl.replace Annotations.tailrecs (marked_function e).espan ()
       | "zero_alloc" -> Hashtbl.replace Annotations.zero_allocs (marked_function e).espan ()
@@ -387,7 +390,7 @@ parameter:
 ;
 /* a binding and its attributes, what they mark recorded (annotate) */
 let_binding:
-  | let_binding_body attribute* { let p, e = $1 in annotate $2 e; (p, e, $2) }
+  | let_binding_body attribute* { let p, e = $1 in annotate (fst $sloc).Lexing.pos_fname $2 e; (p, e, $2) }
 ;
 let_binding_body:
   | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }

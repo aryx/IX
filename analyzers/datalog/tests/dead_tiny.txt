@@ -1,2 +1,1 @@
-tiny/TinyKernel/KFS.ml:522: dead: KFS.fs_free, nothing names it
 tiny/TinyLibGUI.ml:656: dead: TinyLibGUI.repaint, nothing names it

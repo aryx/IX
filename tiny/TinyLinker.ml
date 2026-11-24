@@ -28,7 +28,8 @@ then the image. With -n, the text first, the data from the next 4 KB, and the
 text's size in a fourth word (another magic number): tiny-kernel's segments
 share the text between the runs of a program. With -s, an executable too (of 1 MB unless -a says), with its
 labels after the image, but the compilers' local ones (what debug reads). With
--map, out.map too: each label's address, by address (what tiny-prof reads).
+-map, out.map too: each label's address, by address (what tiny-prof reads);
+and out.manifest: the objects linked and their sources (for mini-analyze).
 With -debug, each object's items said (-v, -quiet: TSys.logging's).
 A library, tiny-ar's archive (lib.a), is its objects, all linked, in its order.
 A label's line is its address in hexadecimal and its name. In
@@ -281,7 +282,7 @@ let contents (out : output) (l : linked) : string =
 (* an object file's items (TinyLibMachine's of_object), each said with
  * -debug; an archive's objects, all of them, in its order, as if each
  * were given (a library: no member left out, the sweep below does it) *)
-let read (chan : Chan.i) : M.line list list =
+let read (chan : Chan.i) : ((string * E.taken) * M.line list) list =
   let f = Chan.origin chan in
   let items name s =
     let items =
@@ -293,8 +294,23 @@ let read (chan : Chan.i) : M.line list list =
   if E.is_archive s then
     let members =
       try E.of_archive s with M.Error e -> M.error (f ^ ": " ^ e) in
-    List.map (fun (name, o) -> items (f ^ "(" ^ name ^ ")") o) members
-  else [ items f s ]
+    List.map (fun (name, o) ->
+      ((name, E.Archive_member f), items (f ^ "(" ^ name ^ ")") o))
+      members
+  else [ ((f, E.Command_line), items f s) ]
+
+(* an object's source, for the manifest: x.o's x.ml, x.c or x.s beside
+ * it, an archive member's beside the archive; a start object's none *)
+let source (caps : < Cap.open_in; .. >) (o : string) (t : E.taken) :
+    string option =
+  let beside =
+    match t with E.Command_line -> o | E.Archive_member a -> a in
+  let dir = Filename.dirname beside in
+  let stem = Filename.remove_extension (Filename.basename o) in
+  let file ext =
+    if dir = "." then stem ^ ext else Filename.concat dir (stem ^ ext) in
+  List.find_opt (fun f -> TSys.exists caps (Fpath.v f))
+    (List.map file [ ".ml"; ".c"; ".s" ])
 
 type options = {
   megabytes : int option;
@@ -338,10 +354,15 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             (* the pipeline: the objects' paths, their channels, their
              * items, linked, the output's bytes *)
             let objects = List.concat_map (TSys.with_open_in caps read) files in
-            let linked = link o.sections objects in
+            let linked = link o.sections (List.map snd objects) in
             write out (contents (output o) linked);
-            if o.map then
+            if o.map then begin
               write (Fpath.v (Fpath.to_string out ^ ".map")) (map linked);
+              write (Fpath.v (Fpath.to_string out ^ ".manifest"))
+                (E.to_manifest
+                   (E.manifest (Filename.basename (Fpath.to_string out))
+                      (List.map fst objects) (source caps)))
+            end;
             Exit.OK
           with M.Error e -> Exit.Err e
 

@@ -1,10 +1,12 @@
 # what tiny/Buildfile makes beside the sources (build clean removes
-# them): objects, interfaces, maps, its stamps, the programs at the
-# top by their names, the kernel and the image; the libraries (tiny-ar's)
+# them): objects, interfaces, maps and manifests, its stamps, the
+# programs at the top by their names, the kernel and the image; the
+# libraries (tiny-ar's)
 *.o
 *.a
 *.tmi
 *.map
+*.manifest
 .tiny-build
 /kernel.img
 /boot.img

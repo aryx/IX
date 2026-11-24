@@ -210,9 +210,19 @@ if $TML -L $W/lib -c -o $W/units/Ops.o $W/units/Ops.ml && $TML -L $W/lib -c -I $
    && link_tm $W/units/ops $L/start.s $L/udivmod.s $W/exit.s $W/units/dmain.o $W/units/Ops.o $W/units/D.o $W/main4096.o $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/ops 2>&1)" = "1234" ]
 then echo "ok units: a unit's operator, M.( op )"; else echo "FAIL units: a unit's operator, M.( op )"; failures=$((failures + 1)); fi
+# (the sources beside the objects, as the Buildfile has them, for the
+# manifest below)
+cp $UT/Shapes.ml $UT/Main.ml $W/units/
 TL="$TL -map" link_tm $W/units/prog $L/start.s $L/udivmod.s $W/exit.s $W/units/prog_main.o $W/units/Shapes.o $W/units/Main.o $W/main4096.o $LIB_O
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi
+# (its manifest, marshalled: the sources' paths are in its bytes as
+# they are; mini-analyze reads it whole)
+if head -c 16 $W/units/prog.manifest | grep -q '^tiny-manifest 1$' \
+   && grep -aq "$W/units/Shapes.ml" $W/units/prog.manifest \
+   && grep -aq "$W/units/Main.ml" $W/units/prog.manifest
+then echo "ok units: tiny-ld -map's manifest names each unit's .ml"
+else echo "FAIL units: tiny-ld -map's manifest"; failures=$((failures + 1)); fi
 [ ${#refused[@]} = 0 ] || echo "refused (an integer beyond 31 bits): ${refused[*]}"
 echo "$failures failure(s)"
 [ $failures = 0 ]

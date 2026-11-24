@@ -173,3 +173,28 @@ let address funcs name =
       let l, a = funcs.(i) in
       if l = name || clean l = name then Some a else go (i + 1) in
   go 0
+
+(*****************************************************************************)
+(* The manifests *)
+(*****************************************************************************)
+
+type taken = Command_line | Archive_member of string
+type linked = {
+  l_object : string;
+  l_source : string option;
+  l_taken : taken;
+}
+type manifest = { m_program : string; m_units : linked list }
+
+let manifest (program : string) (objects : (string * taken) list)
+    (source : string -> taken -> string option) : manifest =
+  { m_program = program;
+    m_units =
+      List.map (fun (o, t) ->
+        { l_object = o; l_source = source o t; l_taken = t })
+        objects }
+
+(* (as an object's: 1, its format's version) *)
+let manifest_magic = "tiny-manifest 1\n"
+let to_manifest (m : manifest) =
+  manifest_magic ^ plain (Marshal.to_string m [ Marshal.No_sharing ])

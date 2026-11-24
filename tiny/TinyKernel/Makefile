@@ -241,7 +241,7 @@ S = $(O)/src
 # built from it: the build directories and the outputs
 COPY = --exclude ./tests --exclude '_make*' --exclude '_mk*' --exclude '*.o' \
   --exclude '*.tmi' --exclude '*.a' --exclude .tiny-build --exclude '*.img' \
-  --exclude '*.map'
+  --exclude '*.map' --exclude '*.manifest'
 
 all: $(O)/boot.img $(O)/disk.img $(O)/src.img
 

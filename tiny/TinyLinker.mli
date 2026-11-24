@@ -127,15 +127,17 @@ type linked = {
  *
  *     x.o lib.a ...  Fpath.t, each
  *       | opened     Chan.i
- *       | read       TinyLibMachine.line list list: an object, or the
- *                    objects of an archive
+ *       | read       an object's lines, or each object's of an archive,
+ *                    with its name and how it was taken
  *       | link       linked: the image and the labels' addresses
  *       | contents   string: the image, or an a.out (output)
- *     x              (and x.map, the lines of map, with -map)
+ *     x              (and x.map, the lines of map, and x.manifest, the
+ *                    objects read and their sources, with -map)
  *
  * read prints each item with -debug, and reports an error with the
  * file (Chan.origin). *)
-val read : Chan.i -> TinyLibMachine.line list list
+val read :
+  Chan.i -> ((string * TinyLibExecutable.taken) * TinyLibMachine.line list) list
 
 val link : sections -> TinyLibMachine.line list list -> linked
 

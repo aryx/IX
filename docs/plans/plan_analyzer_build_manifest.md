@@ -16,8 +16,9 @@ and other flags from mini-analyzer?", "and maybe also the make generated
 target, we can remove, and use instead again the metadata to specify the
 path to the generated file".
 
-**Status: proposed (2026-11-24); tiny/TinyLibExecutable.ml made from
-TinyLibMachine (where the type goes), no manifest yet.**
+**Status: proposed (2026-11-24). Done: tiny/TinyLibExecutable.ml made
+from TinyLibMachine; tiny-ld -map writes out.manifest (step 2, its
+tiny-ld-only version). Next: mini-analyze reading it.**
 
 ## The problem
 
@@ -246,10 +247,31 @@ mini-yacc's, changes a recorded report.
    (`mini-analyze -manifest x.manifest`: the marshalled bytes are not
    readable) and a test that the two declarations are the same text and
    that OCaml, mini-ml and tiny-ml write the same bytes of one value.
-2. **t-IX**: tiny-ml -c's compile record in its object, tiny-ar keeping
-   it, tiny-ld writing out.manifest. tiny_check.sh's tiny-kernel runs
-   (k and b) read the self-build's manifests; dead_tiny.txt and the
+2. **t-IX**: tiny-ld writing out.manifest. tiny_check.sh's tiny-kernel
+   runs (k and b) read the self-build's manifests; dead_tiny.txt and the
    other recordings unchanged.
+
+   Done 2026-11-24 in the cheaper version, tiny-ld alone, no compile
+   record in tiny-ml's objects (the author: "note that in theory we build
+   most of the tiny programs also on the host, and with dune and mini-ml
+   too, so we don't have to have the manifest in tiny-ml and tiny-ld in
+   theory, but if it's not too many LOC to add to tiny/, it might be
+   nice", "yes go ahead with the tiny-ld only version"). Only tiny-ld
+   says the tiny-kernel reading: the host's builds link
+   TinyLibSystem/unix and lib_core, and the windows' programs that only
+   tiny-kernel runs (windows, bigmem, temp, trace, debug) and the kernel
+   are linked by no host build. t-IX needs no record: it generates no
+   source and compiles each unit the same way, so the files linked are
+   all a reader needs; a source is found beside its object (the
+   Buildfile's way), an archive member's beside the archive. The
+   manifest is written with -map, which every Buildfile link gives, so
+   no link line changed: TinyLibExecutable's types and to_manifest,
+   tiny-ld's read saying where each object came from, and source: 46
+   lines of .ml, 48 of .mli (the types, their comment). Checked: rc's
+   manifest from a self-build's objects lists the runtime's .c and .s,
+   the 23 TinyLibCore members of stdlib.a,
+   TinyLibSystem/tinykernel/TinyLibSystem.ml and TinyShell.ml, rc.start.o
+   with no source; TinyML_test.sh's units link.
 3. **dune**: the describe reader writes the host's manifests;
    tiny_check.sh's host runs (h and b) read them; the table goes.
 4. **mini-ml, mini-cc, mini-asm, mini-ar, mini-ld**: the record as a

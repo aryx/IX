@@ -81,3 +81,49 @@ val find : symbols -> address -> (string * address) option
 (* A label's address, found by its name or its cleaned name (main,
  * browse). *)
 val address : symbols -> string -> int option
+
+(*****************************************************************************)
+(* The manifests *)
+(*****************************************************************************)
+
+(* What tiny-ld linked into a program, for the tools that read a program
+ * whole, mini-analyze first (docs/plans/plan_analyzer_build_manifest.md):
+ * the objects it took, in their order (in the Buildfile's links, the
+ * order the units start in), and the source of each, so that a reader
+ * knows the exact files of the program, its platform's among them
+ * (TinyLibCore's, TinyLibSystem/tinykernel's), without being told them.
+ * tiny-ld writes it with its map (-map: out.manifest), marshalled after
+ * a magic line, as an object.
+ *
+ * The paths are as tiny-ld was given them, relative to the directory it
+ * ran in, where the Buildfile's links put the program and its manifest.
+ * A source is found beside its object, x.o's x.ml, x.c or x.s, and an
+ * archive member's beside the archive (TinyLibCore/stdlib.a's List.o is
+ * TinyLibCore/List.ml); a start object (rc.start.o), which tiny-ml made
+ * from the units' names, has none. No compile's flags: t-IX generates
+ * no source and compiles each unit the same way (the Buildfile's MLC),
+ * so the files are all a reader needs. mini-analyze will have its own
+ * copy of these types; the constructors and fields are prefixed,
+ * tiny-ml's being one name space. *)
+
+type taken =
+  | Command_line            (* given to tiny-ld *)
+  | Archive_member of string  (* a member of this archive *)
+
+type linked = {
+  l_object : string;        (* x.o; an archive member's name, List.o *)
+  l_source : string option; (* x.ml, x.c or x.s *)
+  l_taken : taken;
+}
+
+type manifest = {
+  m_program : string;       (* the output's name, rc *)
+  m_units : linked list;    (* in the link's order *)
+}
+
+(* [manifest program objects source]: source gives an object's source *)
+val manifest :
+  string -> (string * taken) list -> (string -> taken -> string option) ->
+  manifest
+
+val to_manifest : manifest -> string

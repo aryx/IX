@@ -563,4 +563,4 @@ clean:
 	    TinyLibSystem/tinykernel/*.o TinyLibSystem/tinykernel/*.tmi \
 	    TinyML/*.o TinyML/*.tmi TinyOffice/*.o TinyOffice/*.tmi \
 	    runtime/c/*.o runtime/ml/*.o \
-	    user/*.o user/*.tmi *.map $PROGS boot.img
+	    user/*.o user/*.tmi *.map *.manifest $PROGS boot.img

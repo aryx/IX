@@ -16,7 +16,8 @@
 # comes. Compared without line numbers, the reports' own too (an edit above
 # a function moves it). Under a minute each.
 # usage: analyzers/datalog/tests/ix_check.sh -caps|-dead|-bugs|-exn out-file|-check
-#   (dune build, ix built first: its generated parsers, in MK or _mk/7)
+#   (dune build first; the units ix's build makes, its lexers and parsers,
+#   made here by generated.sh, or MK's: an ix build, _mk/7 say)
 # ANALYZE, DATALOG: the programs, if not dune's.
 cd "$(dirname "$0")/../../.."
 export LC_ALL=C
@@ -33,6 +34,8 @@ esac
 expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
+# (old: MK=${MK:-_mk/7}, the developers' ix build, make ix first)
+[ -n "${MK:-}" ] || { analyzers/datalog/tests/generated.sh $W/gen7 || exit 2; export MK=$W/gen7; }
 FLAG=$flag analyzers/datalog/tests/sweep.sh $W/sweep 300 > $W/sweep.log 2>&1
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)

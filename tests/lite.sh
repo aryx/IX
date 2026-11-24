@@ -633,11 +633,10 @@ job "mini-analyze -dead on tiny/'s host programs: no dead code but the recorded 
 job "mini-analyze -bugs on tiny/'s host programs: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
 job "mini-analyze -exn on tiny/'s host programs: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -exn -check
 group m-ix
-# (with the developers' ix, _mk/7, whole: make test's own builds part of it,
-# and a program partly built is read wrong, its generated units missing)
-if [ -n "$runs7" ] && [ -d _mk/7/languages/ml ]; then
-  job "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)" analyzers/datalog/tests/ix_check.sh -caps -check
-else skip "mini-analyze -caps on m-ix's 44 programs" "no ix build in _mk/7 (make ix), or $no7"; fi
+# (ix_check.sh makes the units ix's build makes, its lexers and parsers:
+# no ix build wanted, nor arm64. old: with the developers' _mk/7, whole,
+# skipped without it)
+job "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)" analyzers/datalog/tests/ix_check.sh -caps -check
 
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it
 # a line a family, each with its bar, its jobs ended and its failures,

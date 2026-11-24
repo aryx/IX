@@ -677,6 +677,7 @@ run's page (its summary). Each whole four-core run measured goes here:
 | + a fault's registers as integers, no breakpoint look on a data abort (the Mac quieter, load 5) | 1,106 s | 617 s (56%) | 400 s | Pwrite x 244, Pread x 178, fault-zero 150 |
 | the same, again (a quiet Mac; games' directories mk's targets, d457ad30) | 1,118 s | 610 s (54%) | 371 s | Pwrite x 244, Pread x 170, fault-zero 150 |
 | + the self build's games for the draw platform alone | 976 s | 529 s (54%) | 352 s | Pwrite x 225, Pread x 155, fault-zero 130 |
+| a fault's page zeroed out of the lock (tried, not kept; the Mac at load 5) | 1,004 s | 524 s (52%) | 396 s | fault-zero 607 (545 of it out of the lock), Pwrite x 225, Pread x 183 |
 
 The reads and writes were the card's (x, the card's file system;
 c870037a's run): its commands, polled with the lock held, 740 s of the
@@ -765,6 +766,33 @@ times slower than this Mac: self.yml at 8aeb061c, mk 2,904 s on the
 card where this Mac's was 1,118; its mix job 67 minutes, 48 of them
 the card's build, 10 the image's setup, 5 the rest of make self-mix,
 3 the image's export.
+
+### 2026-11-24: a fault's page zeroed out of the lock, not kept
+
+self.yml at 1f9ffcf3 (mini-ml's lexer, its kept interface trees, the
+runtime's MD5): mk 1,507 s on the card where 6a9ff915's was 1,741, the
+mix job 37.5 minutes where it was 43; but the tix job, the runner's
+speed, went from 35 to 23 minutes, so one run does not say how much
+of it is ix's. The lock held 940 s (62%), each core waiting 572 s;
+most held by Pread x 275 s, Pwrite x 247, fault-zero 221.
+
+So fault-zero, the third (the author: "let's do 1"), by the classic
+remedy: Linux's and the BSDs' faults zero a new page with no lock
+held. Mmu.kalloc_dirty, a page not zeroed; runtime.c's phys_zero_out,
+the zeroing between imag_out and imag_back as io_run's wait; Fault's
+make zeroing its page so, timed as "in unlocked zeroing". The whole
+build passed, its files Linux's, but gave nothing: mk 1,004 s where
+it was 976, the lock held 524 s where it was 529, each core waiting
+396 s where it was 352. The 9.8 million pages were 545 s out of the
+lock, 55 µs each, where zeroing one takes a few: the rest was taking
+the busy lock back, a fault now taking it twice. runtime.c's
+IMAG_WORTH says the same of the screen's copies: below 16 KB, a page
+is 4, giving the lock back costs more than it frees. Zeroing pages
+ahead while a core is idle (FreeBSD's old vm_page_zero_idle, Windows'
+zero page thread) does not fit either: the cores here are seldom idle,
+they wait for the lock. Most of fault-zero is the fault itself (22 µs,
+of it 6 the page): what is left is a cheaper fault, or fewer of them
+(several neighbouring pages mapped at a fault, Linux's fault-around).
 
 ## The gate
 

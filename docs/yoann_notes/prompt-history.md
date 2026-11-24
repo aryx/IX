@@ -75740,3 +75740,34 @@ Claude also fixed the m-ix byte mismatch with a new `Marshal_` module, so `make 
 **Claude (summary):**
 
 Claude checked the Makefile diff and ran `make test`, which passed twice when run alone, so it judged the full-run failure flaky. Claude committed the Makefile alone, then found `prompt-history.md` was already staged, which its unstaged-only check had missed. Yoann's rule is to include that file in every commit, so Claude amended the commit to add it. Claude also noted that other sessions had committed since the last check.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 07:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the mini-ml interface-tree cache in `languages/ml/CLI.ml` as 1f9ffcf3, noting that its trees matched the card only because they had no big blocks.
+Claude proposed switching that cache to `Marshal_` so every marshalled toolchain file goes through the same path.
+Claude then rebuilt and retested, reporting that both runs passed after the change.
+Claude said the `make self-quick-tix` check was optional, since t-ix does not use these files.
+Claude was about to commit the edits, stating that all the counts came from its own changes alone.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:12
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude said the session can be closed, since both fixes are committed as `4c6a604c` and `f31791bf`.
+Claude confirmed no background job or watcher is still running and the memory note is updated.
+The one loose end is `debanggers/tests/acid/linux/ml/typed.out`, which Claude flagged.
+If the arm64 Linux test fails in CI on `ml_program()+0x264`, Claude said to update that offset.

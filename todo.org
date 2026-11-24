@@ -68,8 +68,10 @@ faster with ocaml 4.14 ?
 
 ** Later
 
-*** LATER improve plan tiny multicore, only 1.41 speedup for self-tix
+*** still? LATER improve plan tiny multicore, only 1.41 speedup for self-tix
 because Core 0 is bottleneck, with master/slave design
+
+update: I think t-ix multicore improved  and self-tix faster, at least on macbook
 
 ** Components
 
@@ -141,22 +143,18 @@ faster cameltry?
 
 **** try tronscroll with rj45 with pi1 and pi2! play with giogio!
 
-
 *** mini-ml (-pp, for ix, adv features)
 
 **** m-ix: try new card after all those opti, try doom, quake, with and without games and sprites
 
-**** use mini-datalog for whole program analysis and optimized mini-ml compiler!
+**** use mini-datalog for optimized mini-ml compiler!
 better than ocaml :)
-
-
 
 **** mini-ml: idea from oxcaml to add to mini-ml? to improve some speed?
 that could benefit m-ix
 
 **** mini-ml: take inspiration from recent middle_end/
 and flambda opti?
-
 
 **** LATER implement domain?  mini-domains :) 
 #alt: multicore via -dotnet backend
@@ -173,24 +171,6 @@ runtime so compile mini-dotnet with OCaml 5! need multicore JIT too
 
 via mini-ml compiled jit ???
 # need mini-ml multicore too, cos reuse mini-ml runtime GC?
-
-
-**** => ANN mini-ml! no functor, no classes, but typeclasses! (using extension point)
-#spinoff ix!
-give LOC! compare to ocaml 5, compare to ocaml-light (1.07). LOC OCaml and C.
-
-no bytecode, direct to arm/arm64 (riscv64?)
-also has a -dotnet backend! (with multicore?)
-
-typeclass with attribute syntax, so works fine with ocamlformat, merlin, etc.)
-trivial, 'a show = { } record and implicit dictionnary passed.
-also type x = [%mli]
-
-opti typeclasses? well the compiler should do it
-whole-program datalog analysis for opti?
-inlining?
-
-LATER: And book about mini-ml!!
 
 *** emacs
 

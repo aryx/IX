@@ -23,7 +23,8 @@ val split_env : string array -> (string * string) list
  * with [args] after it, and returns its pid. Its standard input and
  * output are the descriptors given, and its standard error is ours. A
  * program that cannot be run exits 127 with a message, as a shell's
- * child does. *)
+ * child does. The command is said with Logs.info (-v), as FS says a
+ * file read; create_process too. *)
 val spawn : < Cap.fork; Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr -> stdout:Unix.file_descr -> int
 
 (* The same, by Unix.create_process, which does not fork in OCaml 5 (it

@@ -237,7 +237,6 @@ let run (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; ..
   let tmp = Filename.temp_file "mini-analyze" ".sexp" in
   let dune (args : string list) : string =
     let out = FS.open_out_fd caps tmp 0o644 in
-    Logs.info (fun m -> m "running dune %s" (String.concat " " args));
     let pid = Procs.create_process caps "dune" args ~stdin:Unix.stdin ~stdout:out in
     Unix.close out;
     if Procs.waitpid caps pid <> Unix.WEXITED 0 then

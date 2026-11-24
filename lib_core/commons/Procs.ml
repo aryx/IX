@@ -43,7 +43,12 @@ let split_env env =
     | Some i -> Some (String.sub kv 0 i, String.sub kv (i + 1) (String.length kv - i - 1))
     | None -> None)
 
+(* (said as a file's read is, FS's: what a program runs, with -v) *)
+let said prog args =
+  Logs.info (fun m -> m "run %s" (String.concat " " (prog :: args)))
+
 let spawn caps prog args ~stdin ~stdout =
+  said prog args;
   let candidates =
     if String.contains prog '/' then [ prog ]
     else
@@ -61,5 +66,6 @@ let spawn caps prog args ~stdin ~stdout =
   | pid -> pid
 
 let create_process (_caps : < Cap.exec; .. >) prog args ~stdin ~stdout =
+  said prog args;
   flush_all ();
   Unix.create_process prog (Array.of_list (prog :: args)) stdin stdout Unix.stderr

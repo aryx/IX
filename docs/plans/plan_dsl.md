@@ -16,7 +16,9 @@ starts as a pilot and spreads only if the pilot passes a gate. Nothing
 of this plan is written yet; its line counts are `wc -l` on
 2026-11-07, and its savings are estimates until a pilot measures them.
 
-**Status: not started** (2026-11-07).
+**Status: not started** (2026-11-07). 2026-11-24: a second question,
+on t-ix alone (STEPS, another language, tiny-ml's features), answered
+in "t-ix's size, a second look" below.
 
 ## How to choose a DSL
 
@@ -40,7 +42,7 @@ A DSL earns its place in IX only if it passes three tests.
 |---|---|---:|---:|
 | ARM32 encoding | `linker/Arm.ml` packs the bits from the linker's ops; `machine/arm32/Arm32_isa.ml` and `Arm32.ml` decode and print them as objdump does | 821, 180 + 700 | 2 |
 | ARM64 encoding | `linker/Arm64.ml` packs; `machine/arm64/Arm64.ml` decodes | 869, 1007 | 2 |
-| TinyCPU encoding | `tiny/TinyMachine/TinyMachineISA.ml` already holds encode, decode and print together | 141 | 1 |
+| TinyCPU encoding | `tiny/TinyLibMachine.ml` already holds encode, decode and print together (old: `TinyMachineISA.ml`, 141 lines) | about 150 | 1 |
 | byte layouts | about 160 `.ml` files read or write bytes by hand: 9P (`lib_networking/9p/P9.ml`, `kernels/9pi/files/P9.ml`, `kernels/9pi/devices/sys/Devmnt.ml`), a.out and ELF, FAT, TCP/IP, USB descriptors, image headers, the doom WAD | spread out | 2 (read and write) |
 | parsers written by hand | `browsers/javascript/parsing/Js_parse.ml` 862, `tiny/TinyML/Parser.ml` 643, `tiny/TinyC/Parser.ml` 530, `languages/dotnet/csc/Csc_parser.ml` 435, `assembler/Parser_asm.ml` 349, `languages/smalltalk/compiler/St_parse.ml` 326, `shell/Parser.ml` 251 | about 3,400 | 1, but the grammar is hidden in the code |
 | device registers | `raspberry/boards/Board.ml` 1010, `Emmc`, `Usbdwc`, `Devaudio`, tiny-machine's devices | to measure | 2 (the driver and the emulated device) |
@@ -156,6 +158,73 @@ approach pays off in IX.
 | device register tables, like ARM's SVD files | `raspberry/boards/Board.ml`, `Emmc`, `Usbdwc`, `Devaudio`, tiny-machine's devices | offsets, fields and access modes written once, for the driver and for the emulated device | modest |
 | more Datalog | mk's and tiny-build's dependency closure, the linker's reachable symbols, a VCS merge base | the engine is already in IX, and a merge base is a two-rule program | small in lines, larger in clarity |
 | BURG-style instruction selection | mini-cc's backend, TinyC's and TinyML's lowering | tree patterns with costs replace hand-ordered `match` cases | only if a backend grows (arm64, more peepholes) |
+| one stack machine for tiny-cc and tiny-ml | `tiny/TinyC/Machine.ml` 472 and `tiny/TinyML/Machine.ml` 573: two stack machines turned into the same CPU's assembly, each with its stack slots in registers | tiny-cc's `Lower` would emit tiny-ml's `ir`; one `Machine` left | 300 to 400 lines, if their differences (C's variables in registers, ML's value stack for the collector) fit one `ir`; to measure by reading both side by side |
+
+## t-ix's size, a second look (2026-11-24)
+
+The author (2026-11-24): "is there any way we could make tiny/ use
+less LOC while still maintaining the same feature set and also speed?
+Should we use another language than ML? Could we add features to
+tiny-ml that we could then use in the code of tiny/ to reduce overall
+the LOC? any DSLs to invent or reuse to factorize code? to reduce
+significantly the code? The STEPS project from Alan Kay had the goal
+of 10 000 LOC with a full system".
+
+The short answer: **at the same features and speed, about 5 to 10% of
+t-ix's code can go, not more**. The rest of this plan stays the way to
+get it. The numbers are `scripts/stats/loc.py` on 2026-11-24:
+
+    40,297 lines in t-ix:  24,491 code, 12,774 comments, 3,032 blank
+
+The comments are the teaching, not a target. The code is already
+dense: the CPU, TinyLibMachine and tiny-rc, read for this answer, have
+little to remove, and the instruction set is already a table.
+
+**STEPS.** Its count was of what ran on a host (Squeak's VM, an OS
+underneath), and its large ratios came from a few domains with a
+mathematical core: Nile, where Cairo's rendering became a few hundred
+lines of stream processing, and OMeta for grammars. As far as I know
+(its reports not read again for this), it did not end with a whole
+self-hosted system at its number. t-ix holds, in 24.5k lines of code, a
+CPU and its machine, a kernel, two compilers, a collector, a browser
+and an office. It is in STEPS' range already. STEPS' other lever was
+to redefine a feature (Nile is not Cairo ported), which this question
+excludes.
+
+**Another language.** No, for the reasons of "What not to do" and one
+more of t-ix's own: every tiny file builds with OCaml 4.14 and with
+tiny-ml, and the kernel and the compilers are in ML. A dynamic
+language would save tiny-ml's type checker (`TinyML/Types.ml`, about
+500 lines) and lose speed and OCaml's check.
+
+**Features in tiny-ml.** A file of tiny/ is also OCaml's, so tiny-ml
+can only take a feature OCaml has. Those it leaves out (TinyML.mli's
+list) are or-patterns that bind names, character ranges, functors,
+labeled arguments, nested modules, inline records. Each would shorten
+a few matches of the lexers and the kernel: under 1 to 2% together,
+less what tiny-ml grows to compile them. `[@@deriving show]` would
+need a ppx on OCaml's side. Not a lever.
+
+**What can go**, in the order to try:
+
+1. One stack machine for tiny-cc and tiny-ml (the row above, "Smaller
+   candidates"): 300 to 400 lines, if the pilot shows their `ir`s can
+   be one.
+2. Stage 3 for t-ix, with a second way next to tiny-yacc: a Pratt
+   parser for the expressions of `TinyML/Parser.ml` (781) and
+   `TinyC/Parser.ml` (585), and perhaps a few combinators shared by
+   the smaller parsers (tiny-rc's, HTML's, SQL's, the Buildfile's,
+   troff's, about 3,000 lines with the lexers). Plain OCaml, so no new
+   step in the build. Combinators make a closure per call in tiny-ml:
+   tiny-ml's own build on tiny-kernel is the speed check, Pratt
+   parsing (a loop and a table of precedences) the safe part.
+3. Not again: the system-call glue (`runtime/c/sys.s`, about 30 stubs
+   of seven lines, and `runtime/ml/mlsys.c`'s 30 `u_xxx`), proposed
+   again on 2026-11-24 for 300 to 450 lines; "What not to do" below
+   keeps its readable repetition, unless the author decides otherwise.
+4. Not either: `runtime/ml/ml.c`'s Marshal, SHA-1, Hashtbl and compare
+   (1,340 lines with the collector) are in C for speed; in ML they
+   would be shorter and slower.
 
 ## What not to do
 

@@ -31,7 +31,11 @@ pascal.md hello.pas     any program (HELLO.PAS is the disk'"'"'s)
 smalltalk.md Mine.st    the reader'"'"'s own classes
 '
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-git ls-files > $W/paths
+# (CI's docker image has no .git, .dockerignore's: the tree's files,
+# what the build made left out)
+git ls-files > $W/paths 2> /dev/null ||
+  find . \( -name '_build*' -o -name _mk -o -name '_make*' -o -name .git \) -prune -o -type f -print |
+    sed 's,^\./,,' > $W/paths
 sed 's,.*/,,' $W/paths | sort -u > $W/names
 failures=0 checked=0
 for f in docs/man/*/*.md; do

@@ -1,2 +1,3 @@
 analyzers/tests/callers/CallersLib.ml:13: dead: CallersLib.by_none, nothing names it
-1 reports, over the 2 programs that reach it: CallersA, CallersB
+1 reports, over the 2 programs that reach it:
+ CallersA CallersB

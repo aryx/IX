@@ -3,5 +3,6 @@
  * what, what it holds for nothing (Analyze.mli says the analysis).
  * Both of mini-analyze's roads use it, as C_report. *)
 
-(* the report, on the facts and the rules' answers *)
-val caps_report : < Cap.stdout; .. > -> Datalog.t -> unit
+(* the report, on the facts and the rules' answers, printed; its lines,
+ * without the count after them (-summary's said facts) *)
+val caps_report : < Cap.stdout; .. > -> Datalog.t -> string list

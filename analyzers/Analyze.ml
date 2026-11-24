@@ -206,7 +206,8 @@ let start_facts (fact : string -> C.Facts.arg list -> unit) (start : string)
  * and message (report, or report_one when one program's is kept: a
  * [@@for_testing] function the program calls) *)
 let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : string) (prog : string)
-    (given_files : string list) (reports : (string * int * string * string * Dead_report.kept) list) : unit =
+    (given_files : string list) (reports : (string * int * string * string * Dead_report.kept) list)
+    (said : string list) : unit =
   let b = Buffer.create 4096 in
   let add (r : string) (args : C.Facts.arg list) : unit = Buffer.add_string b (line r args ^ "\n") in
   let sym (s : string) : C.Facts.arg = C.Facts.Sym s in
@@ -238,25 +239,52 @@ let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : strin
       let r = match kept with Dead_report.Every_program -> "report" | Dead_report.One_program -> "report_one" in
       add r [ sym prog; sym f; C.Facts.Num l; sym w; sym m ])
     reports;
+  (* (another analysis's lines, a unit not read: datalog/merge/'s) *)
+  List.iter (fun (l : string) -> add "said" [ sym prog; sym l ]) said;
+  List.iter (fun (m : string) -> add "unread" [ sym prog; sym m ]) !Ml_front.unread;
   FS.write caps (Fpath.v out) (Buffer.contents b)
 
-(* -dead on a unit some file names (Caller_finder.mli): each program that
- * reaches it is mini-analyze itself, run with the flags given and
+(* words on lines within the console's 80 columns, each after a blank *)
+let wrapped (words : string list) : string list =
+  let line = Buffer.create 80 and lines = ref [] in
+  List.iter (fun (w : string) ->
+      if Buffer.length line > 0 && Buffer.length line + String.length w > 72 then begin
+        lines := Buffer.contents line :: !lines;
+        Buffer.clear line
+      end;
+      Buffer.add_string line (" " ^ w))
+    words;
+  List.rev (Buffer.contents line :: !lines)
+
+(* Several programs analyzed and merged (a library's file's programs,
+ * Caller_finder's or the manifests' that link it; or the programs given):
+ * each is mini-analyze itself, run with the flags given, its own and
  * -summary, all at once, as tiny_check.sh runs them; their summaries
- * merged by datalog/dead_all.dl in this process; the lines of [file]
- * printed, then how many programs said them. A program's own report
- * goes to a file of the run's directory, left there if it failed. *)
-let dead_of_callers (caps : < caps; .. >) (args : string list) (rules : string) (file : string)
-    (mains : (string * string list) list) : int =
-  let file = FS.cleanname file in
+ * merged in this process, -dead's by datalog/dead_all.dl (what every
+ * program that has the file says), the others' by datalog/said_all.dl
+ * (-bugs's, -caps's: any program's; -exn's: by program); the merged
+ * lines printed (of [file] alone when one is given), then how many
+ * programs said them. A program's own report goes to a file of the
+ * run's directory, left there if it failed; a unit a program could not
+ * read is said, and the status is 1. *)
+let merged_runs (caps : < caps; .. >) (args : string list) (rules : string) (analysis : string)
+    (file : string option) (mains : (string * string list) list) : int =
+  let file = Option.map FS.cleanname file in
   let w = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
   FS.mkdir caps w 0o755;
-  (* (the flags given, the file not; a program a name, its main's, once) *)
-  (* (no manifest: a run is given its own) *)
+  (* (the flags given, not the file, not a program: each run its own) *)
+  let program (a : string) : bool =
+    List.exists (fun x -> Filename.check_suffix a x) [ ".manifest"; ".exe" ]
+    || List.mem_assoc a mains in
+  (* (-sources each run's, in its extra flags) *)
+  let rec without_sources (l : string list) : string list =
+    match l with
+    | "-sources" :: _ :: rest -> without_sources rest
+    | a :: rest -> a :: without_sources rest
+    | [] -> [] in
   let flags =
-    List.filter (fun (a : string) ->
-        FS.cleanname a <> file && not (Filename.check_suffix a ".manifest"))
-      args in
+    List.filter (fun (a : string) -> Some (FS.cleanname a) <> file && not (program a))
+      (without_sources args) in
   let names = Hashtbl.create 16 in
   let runs =
     List.map
@@ -280,7 +308,8 @@ let dead_of_callers (caps : < caps; .. >) (args : string list) (rules : string) 
       Console.eprint caps (Printf.sprintf "mini-analyze: %s failed (its report: %s)\n" main (Filename.concat w (name ^ ".out"))))
     failed;
   let p = D.create () in
-  let all = Fpath.to_string (Fpath.append (Fpath.v rules) (Fpath.v "dead_all.dl")) in
+  let merge = if analysis = "-dead" then "dead_all.dl" else "said_all.dl" in
+  let all = Fpath.to_string (Fpath.append (Fpath.v rules) (Fpath.v merge)) in
   D.load p ~from:all (FS.read caps (Fpath.v all));
   List.iter
     (fun ((name, _, _) : string * string * int) ->
@@ -288,18 +317,29 @@ let dead_of_callers (caps : < caps; .. >) (args : string list) (rules : string) 
       match FS.read_opt caps (Fpath.v f) with Some text -> D.load p ~from:f text | None -> ())
     runs;
   ignore (Datalog_eval.run ~naive:false p);
+  let tuples (r : string) (n : int) : string list list =
+    List.map (fun (t : int array) -> List.map (R.name p) (Array.to_list t)) (D.tuples (D.relation p r n)) in
+  let mine (f : string) : bool = match file with Some x -> FS.cleanname f = x | None -> true in
   let lines =
-    List.filter_map
-      (fun (t : int array) ->
-        let f = R.name p t.(0) and l = R.name p t.(1) and m = R.name p t.(2) in
-        if FS.cleanname f <> file then None
-        else Some (int_of_string l, if l = "0" then Printf.sprintf "%s: %s" f m else Printf.sprintf "%s:%s: %s" f l m))
-      (D.tuples (D.relation p "dead_all" 3)) in
-  List.iter (fun ((_, s) : int * string) -> Console.print caps (s ^ "\n")) (List.sort_uniq compare lines);
+    match analysis with
+    | "-dead" ->
+        List.filter_map
+          (function
+            | [ f; l; m ] when mine f ->
+                Some (if l = "0" then Printf.sprintf "%s: %s" f m else Printf.sprintf "%s:%s: %s" f l m)
+            | _ -> None)
+          (tuples "dead_all" 3)
+    | "-exn" -> List.map (function [ p; l ] -> p ^ ": " ^ l | _ -> "") (tuples "said_by" 2)
+    | _ -> List.map (function [ l ] -> l | _ -> "") (tuples "said_any" 1) in
+  let lines = List.sort_uniq compare lines in
+  List.iter (fun (l : string) -> Console.print caps (l ^ "\n")) lines;
+  let unread = if analysis = "-dead" then [] else tuples "not_read" 2 in
+  List.iter (function [ p; m ] -> Console.eprint caps (Printf.sprintf "%s: not read: %s\n" p m) | _ -> ()) unread;
   Console.print caps
-    (Printf.sprintf "%d reports, over the %d programs that reach it: %s\n" (List.length lines) (List.length runs)
-       (String.concat ", " (List.map (fun ((n, _, _) : string * string * int) -> n) runs)));
-  if failed <> [] then 1
+    (Printf.sprintf "%d reports, over the %d programs%s:\n%s\n" (List.length lines) (List.length runs)
+       (if file = None then "" else " that reach it")
+       (String.concat "\n" (wrapped (List.map (fun ((n, _, _) : string * string * int) -> n) runs))));
+  if failed <> [] || unread <> [] then 1
   else begin
     List.iter
       (fun ((name, _, _) : string * string * int) ->
@@ -417,17 +457,60 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let given = if !sources = "" then None else Some !sources in
       match
         List.filter_map (fun (m : string) ->
-            Option.map (fun (root : string) ->
-                (m, if given <> None then [] else [ "-sources"; root ]))
+            Option.map (fun (root : string) -> (m, [ "-sources"; root ]))
               (Tiny_manifest.linking m (Tiny_manifest.of_string (FS.read caps (Fpath.v m))) given file))
           (List.rev !manifests)
       with
       | [] -> Console.eprint caps (Printf.sprintf "mini-analyze: no manifest given links %s\n" file); 1
-      | mains -> dead_of_callers caps (List.tl (Array.to_list argv)) !rules file mains
+      | mains -> merged_runs caps (List.tl (Array.to_list argv)) !rules "-dead" (Some file) mains
       | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); 1)
+  (* (several programs, manifests or dune's .exe: each run, merged;
+   * dune asked once, each .exe's manifest a file of its own) *)
+  | () when List.length !manifests + List.length !exes >= 2 && !files = []
+            && !summary_file = "" && not !only -> (
+      let analysis =
+        if !dead then "-dead" else if !exns then "-exn" else if !bugs then "-bugs"
+        else if !ambient then "-caps" else "" in
+      try
+        if analysis = "" then failwith "several programs: -dead, -exn, -bugs or -caps";
+        let dune =
+          if !exes = [] then []
+          else begin
+            let root, ms = Dune_manifest.run caps (List.rev !exes) in
+            let d = Filename.concat (Filename.get_temp_dir_name ())
+                (Printf.sprintf "mini-analyze-manifests-%d" (Unix.getpid ())) in
+            if not (CapSys.file_exists caps d) then FS.mkdir caps d 0o755;
+            let root = if root = FS.getcwd caps () then "." else root in
+            List.map (fun ((exe, m) : string * Tiny_manifest.manifest) ->
+                let f = Filename.concat d (Filename.basename exe ^ ".manifest") in
+                FS.write caps (Fpath.v f) (Tiny_manifest.to_string m);
+                (f, [ "-sources"; root ]))
+              ms
+          end in
+        (* (-sources: the shallowest manifest's directory's, a deeper
+         * one's below it as the manifest is below that one: tiny/
+         * TinyKernel for _make/src/TinyKernel's kernel.img.manifest) *)
+        let ms = List.rev !manifests in
+        let dirs = List.map (fun m -> FS.cleanname (Filename.dirname m)) ms in
+        let top =
+          List.fold_left (fun a d -> if String.length d < String.length a then d else a)
+            (match dirs with d :: _ -> d | [] -> ".") dirs in
+        let sources_of (m : string) : string list =
+          if !sources = "" then []
+          else
+            let d = FS.cleanname (Filename.dirname m) in
+            let below =
+              if d = top then ""
+              else if String.starts_with ~prefix:(top ^ "/") d then
+                String.sub d (String.length top + 1) (String.length d - String.length top - 1)
+              else "" in
+            [ "-sources"; if below = "" then !sources else Filename.concat !sources below ] in
+        merged_runs caps (List.tl (Array.to_list argv)) !rules analysis None
+          (List.map (fun m -> (m, sources_of m)) ms @ dune)
+      with Failure m | Sys_error m -> Console.eprint caps (m ^ "\n"); 1)
   | () when read_manifests () -> 1
   | () when (callers := find_callers (); !callers <> []) ->
-      dead_of_callers caps (List.tl (Array.to_list argv)) !rules (List.hd !files)
+      merged_runs caps (List.tl (Array.to_list argv)) !rules "-dead" (Some (List.hd !files))
         (List.map (fun m -> (m, [])) !callers)
   | () -> (
       (* (no -L: the standard library nearest the first ML file, tiny's
@@ -577,38 +660,34 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (fun (r : D.relation) ->
               Logs.debug (fun m -> m "%s/%d: %d tuples (%d given), %d rules, stratum %d" r.name r.arity r.count r.given r.rules r.stratum))
             relations;
+          let dead_reports = ref [] in
+          let said =
           if !ambient then caps_report caps p
           else if !exns then exn_report caps p
           else if !dead then begin
             let reports = dead_report caps p (ml <> []) in
+            dead_reports := reports;
             if Hashtbl.length Ml_front.components > 0 then begin
               (* (the units, wrapped within the console's 80 columns) *)
               let units =
                 List.sort compare (Hashtbl.fold (fun u () acc -> u :: acc) Ml_front.components []) in
-              let line = Buffer.create 80 and lines = ref [] in
-              List.iter (fun (u : string) ->
-                  if Buffer.length line + String.length u > 72 then begin
-                    lines := Buffer.contents line :: !lines;
-                    Buffer.clear line
-                  end;
-                  Buffer.add_string line (" " ^ u))
-                units;
-              lines := Buffer.contents line :: !lines;
               Console.print caps
                 ("(on the program's own files alone, not its libraries':\n"
-                 ^ String.concat "\n" (List.rev !lines)
+                 ^ String.concat "\n" (wrapped units)
                  ^ "\n a library's dead code: mini-analyze -dead its file, over its programs)\n")
             end;
-            if !summary_file <> "" then
-              summary caps !summary_file (if !program <> "" then !program else List.hd (List.rev !files))
-                (List.rev !files) reports
+            []
           end
           else if !bugs && c <> [] && ml <> [] then raises_report caps p
           else if !bugs && c = [] then bugs_report caps p
           else begin
             if c <> [] then report caps p;
-            if ml <> [] then ml_report caps p
-          end;
+            if ml <> [] then ml_report caps p;
+            []
+          end in
+          if !summary_file <> "" then
+            summary caps !summary_file (if !program <> "" then !program else List.hd (List.rev !files))
+              (List.rev !files) !dead_reports said;
           if !fingerprint then Console.print caps ("fingerprint of the answers: " ^ Answers.hex (Answers.fingerprint p) ^ "\n")
         end;
         if !failed > 0 then 1 else 0

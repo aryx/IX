@@ -37,7 +37,7 @@ let try_line (t : string) : string =
 let find (h : (string, string) Hashtbl.t) (k : string) (default : string) =
   match Hashtbl.find_opt h k with Some v -> v | None -> default
 
-let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
+let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : string list =
   let tuples r =
     List.map (fun (t : int array) -> Array.map (name p) t)
       (D.tuples (D.relation p r 2)) in
@@ -62,6 +62,7 @@ let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
              Some (site r.(2) ^ g))
          raised) in
   (* who: of a toplevel, a function C calls (trap), a try (Main:try2@67) *)
+  let lines = ref [] in
   let report (rel : string) (who : string -> string -> string -> string) =
     List.iter
       (fun t ->
@@ -74,7 +75,9 @@ let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
           let at = match sites f e with
             | [] -> ""
             | l -> ", raised at " ^ String.concat ", " l in
-          Console.print caps (who file f (exn e) ^ at ^ "\n")
+          let l = who file f (exn e) ^ at in
+          lines := l :: !lines;
+          Console.print caps (l ^ "\n")
         end)
       (List.sort_uniq compare (tuples rel)) in
   report "uncaught" (fun file _ e ->
@@ -84,4 +87,5 @@ let exn_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         (Ml_report.ml_function f) e);
   report "ends_in" (fun file t e ->
       Printf.sprintf "%s:%s: the try in %s, its handler raising, may be reached by %s"
-        file (try_line t) (Ml_report.ml_function (find fn t "?")) e)
+        file (try_line t) (Ml_report.ml_function (find fn t "?")) e);
+  List.rev !lines

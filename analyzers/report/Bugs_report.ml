@@ -14,7 +14,7 @@ let site (r : string) : string =
   | u :: l :: _ -> (match Hashtbl.find_opt Ml_front.files u with Some f -> f | None -> u ^ ".ml") ^ ":" ^ l
   | _ -> r
 
-let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
+let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : string list =
   let tuples r n = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r n)) in
   let unit_of (s : string) : string = match String.index_opt s ':' with Some i -> String.sub s 0 i | None -> s in
   let physeq =
@@ -390,9 +390,10 @@ let bugs_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         ("layout", layout); ("evalorder", unordered) ] in
   Console.print caps
     (Printf.sprintf "%d bugs?%s\n" (List.length all)
-       (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"))
+       (if counts = [] then "" else " (" ^ String.concat ", " counts ^ ")"));
+  all
 
-let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
+let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : string list =
   let tuples r = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r 3)) in
   let exn (e : string) : string = match C_report.prefix "caml_exn_" e with Some x -> x | None -> e in
   (* Sys.remove: Sys.ml, its unit's file *)
@@ -412,4 +413,5 @@ let raises_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
         (tuples "overdeclared") in
   let lines = List.sort_uniq compare lines in
   List.iter (fun l -> Console.print caps ("bug? " ^ l ^ "\n")) lines;
-  Console.print caps (Printf.sprintf "%d bugs? (raises %d)\n" (List.length lines) (List.length lines))
+  Console.print caps (Printf.sprintf "%d bugs? (raises %d)\n" (List.length lines) (List.length lines));
+  lines

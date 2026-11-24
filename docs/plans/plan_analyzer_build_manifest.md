@@ -439,3 +439,71 @@ records.
 - The compile record inside the object, or beside it (x.o.json in
   clang -MJ's way): inside, an object copied keeps it.
 - A test's kind: said by the build file (-kind test) or by its path.
+
+## The scripts, smaller: one mini-analyze call over the builds
+
+The author (2026-11-24): "anything we can do to further simplify
+tiny_check.sh and make it easier to run the different analysis with not
+too many flags while being precise? (moving stuff to the manifest
+generation, or to datalog, or more)", then "ok I like this plan; let's
+start and track the evolution of the size of tiny_check.sh (and maybe
+ix_check.sh too)".
+
+The aim: tiny_check.sh as three lines, t-IX's manifests made, one
+mini-analyze call over both builds, the answer against the recording;
+ix_check.sh the same after step 4. Each step below moves a part of the
+scripts into mini-analyze, Datalog or the manifest generation.
+
+- **A. The merge in mini-analyze and Datalog.** Every analysis's run
+  writes its reports as -summary facts, not -dead's alone; a rule file
+  per analysis says how programs combine (-dead: dead_all.dl, dead in
+  every program that has the file; -bugs, -caps: the union; -exn: by
+  program); a unit not read a fact, mini-analyze's failure. Several
+  programs on the command line (manifests, .exe) are each run and
+  merged, as dead_of_callers does for a library's file. Gone from the
+  script: the said patterns, the "not read" grep, the second Datalog
+  call, dead_lines.
+- **B. Directories as arguments.** A directory of manifests (every one
+  under it, the kernel's too), and a source directory, dune's
+  executables under it (dune describe lists them). Gone: the program
+  table, its k/h/b column, the Buildfile names.
+- **C. Stand-ins for the externals mini-ml cannot parse.** tsdl.mli has
+  polymorphic variants (67 backquotes), OCaml 5's domain.mli type !'a t:
+  small interfaces of what ix uses (lib_core's Parallel uses
+  Domain.spawn and Domain.t), as Models stands for List and Hashtbl.
+  Gone: the 10 host runs of the old way, O for them.
+- **D. tiny-kernel's capabilities.** Its system calls' externals mapped
+  to capabilities, so -caps reads tiny-kernel's programs from their
+  manifests. Gone: O.
+- **E.** mini-analyze finding its rules from its own path, from any
+  directory.
+
+### The ledger
+
+Lines (wc -l), at each step; the analyzer's: analyzers/Analyze.ml,
+ml/, report/, manifest/'s .ml.
+
+| step | commit | tiny_check.sh | ix_check.sh | compare.sh | mk_units.sh | generated.sh | analyzer |
+|---|---|---:|---:|---:|---:|---:|---:|
+| before the manifests | de9a26e5 | 166 | 95 | 89 | 124 | 37 | 3,968 |
+| manifests, library mode | 8baebe50 | 212 | 95 | 89 | 124 | 37 | 4,494 |
+| A, mini-analyze's part | the next | 212 | 95 | 89 | 124 | 37 | 4,581 |
+
+A, mini-analyze's part (2026-11-24): the reports return their lines
+(Caps_report, Exn_report, Bugs_report), every analysis's -summary has
+them, said(Program, Line), and the units not read, unread(Program,
+Message); merged_runs (dead_of_callers before) merges any analysis,
+-dead by dead_all.dl, the others by datalog/said_all.dl (-bugs, -caps:
+any program's; -exn: by program), an unread unit the merge's failure;
+several programs on the command line (manifests, .exe, dune asked once)
+each run and merged: mini-analyze -dead -sources tiny
+tiny/TinyKernel/_make/src/*.manifest tiny/TinyKernel/_make/src/
+TinyKernel/*.manifest, the 34 programs in 3 s. -sources, for several
+manifests, is the shallowest one's directory's, a deeper one's below it
+(tiny/TinyKernel for the kernel's). A .sources file the copy would have
+held, naming tiny/, was tried and taken out (the author: "I'd rather not
+add too many special files like .source which add some requirements on
+mini-anlyzer and what external script or mkaefile must produce"). The
+programs' list under a merge wrapped within 80 columns (callers/'s
+expected.out). The scripts not yet changed: tiny_check.sh's
+post-processing is the next part.

@@ -11,7 +11,7 @@ let ml_function = Ml_report.ml_function
 
 (* -caps: what capabilities.dl finds, a line a function: what it holds, what is
  * missing and by what, what it holds for nothing *)
-let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
+let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : string list =
   let tuples r n = List.map (fun (t : int array) -> Array.map (name p) t) (D.tuples (D.relation p r n)) in
   let file_of u = match Hashtbl.find_opt Ml_front.files u with Some f -> f | None -> u in
   let lines = Hashtbl.create 101 in
@@ -84,9 +84,11 @@ let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
           @ List.map (fun t -> [| t.(0) |]) all
           @ List.map (fun t -> [| t.(0) |]) around
           @ List.map (fun t -> [| t.(0) |]) untyped)) in
-  List.iter
-    (fun (f, l, msg) -> Console.print caps (if l > 0 then Printf.sprintf "%s:%d: %s\n" f l msg else Printf.sprintf "%s: %s\n" f msg))
-    (List.sort compare report);
+  let lines =
+    List.map
+      (fun (f, l, msg) -> if l > 0 then Printf.sprintf "%s:%d: %s" f l msg else Printf.sprintf "%s: %s" f msg)
+      (List.sort compare report) in
+  List.iter (fun (l : string) -> Console.print caps (l ^ "\n")) lines;
   (* what is asked for most: where to start *)
   let counts = Hashtbl.create 17 in
   List.iter
@@ -103,4 +105,5 @@ let caps_report (caps : < Cap.stdout; .. >) (p : D.t) : unit =
        (List.length (functions none)) (List.length (functions wrong)) (List.length (functions unused))
        (List.length (functions all))
        (List.length (functions around)) (List.length (functions untyped))
-       (if by_cap = [] then "" else "; missing: " ^ String.concat ", " by_cap))
+       (if by_cap = [] then "" else "; missing: " ^ String.concat ", " by_cap));
+  lines

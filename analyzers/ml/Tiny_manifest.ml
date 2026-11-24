@@ -104,8 +104,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
            match of_string (FS.read caps (Fpath.v (Filename.concat dir n))) with
            | o -> Some o
            | exception Failure _ -> None) in
-  of_manifest caps m others
-    (match sources with Some d -> d | None -> Filename.dirname file)
+  of_manifest caps m others (match sources with Some d -> d | None -> dir)
 
 let linking (manifest_file : string) (m : manifest) (sources : string option)
     (file : string) : string option =

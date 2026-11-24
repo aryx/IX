@@ -1,0 +1,12 @@
+% The reports of several programs' runs merged, mini-analyze -summary's
+% facts (said(Program, Line), unread(Program, Message)) of each, as
+% dead_all.dl merges -dead's: by mini-analyze given several programs
+% (Analyze's merged_runs), and tiny_check.sh, ix_check.sh.
+%
+% -bugs's and -caps's: a report is one of any program that says it (a
+% library's function's, said by each program that reaches it, once).
+said_any(L) :- said(_, L).
+% -exn's: a program's, its toplevel's exceptions its own.
+said_by(P, L) :- said(P, L).
+% a unit a program could not read: its answer says nothing of it
+not_read(P, M) :- unread(P, M).

@@ -19,5 +19,6 @@ val unit_of : string -> string
 (* a try's line: 67 of Main:try2@67 *)
 val try_line : string -> string
 
-(* the report, on the facts and the rules' answers *)
-val exn_report : < Cap.stdout; .. > -> Datalog.t -> unit
+(* the report, on the facts and the rules' answers, printed; its lines,
+ * without the count after them (-summary's said facts) *)
+val exn_report : < Cap.stdout; .. > -> Datalog.t -> string list

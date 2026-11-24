@@ -490,7 +490,8 @@ ml/, report/, manifest/'s .ml.
 | A, mini-analyze's part | 4ec6246f | 212 | 95 | 89 | 124 | 37 | 4,581 |
 | A, tiny_check.sh's merge | bab77cc3 | 196 | 95 | 100 | 124 | 37 | 4,581 |
 | C, interface alone; tiny-machine | 456676db | 197 | 95 | 100 | 124 | 37 | 4,632 |
-| C, the SDL programs; tiny-mkfs | the next | 190 | 95 | 100 | 124 | 37 | 4,642 |
+| C, the SDL programs; tiny-mkfs | 5ea071c0 | 190 | 95 | 100 | 124 | 37 | 4,642 |
+| B, directories; one call | the next | 76 | 95 | 92 | 124 | 37 | 4,786 |
 
 A, mini-analyze's part (2026-11-24): the reports return their lines
 (Caps_report, Exn_report, Bugs_report), every analysis's -summary has
@@ -567,3 +568,29 @@ caps_tiny.txt: 21 reports of TinyLibSystem/sdl recorded, read now for
 the first time (getenv, the clock, exit, files without capabilities),
 unix's dial's gone (said through the SDL programs read on unix's). O
 left for -caps of tiny-kernel's 7 programs dune does not build (D).
+
+B, done (2026-11-24): tiny_check.sh is t-IX's manifests made, one call,
+mini-analyze FLAG -sources tiny $W/tix/src tiny, and the comparison;
+the program table, its runs, the dune manifests' step, O, the Datalog
+merge and the standalone Dune_manifest program gone (the author: "let's
+commit and do 1 and 2, and let's wait for step D to restore the
+programs. and 3."). mini-analyze takes directories: one of manifests,
+each under it named by its path from it (build, TinyKernel/kernel.img);
+another, dune's executables under it (dune describe workspace, describe
+targets for an .exe, not tiny-machine-web's .bc.js; tests' directories
+left out), named by their path (tiny/TinyShell). 55 programs: t-IX's 27
+ML programs, the kernel's among them (tiny-cc's 7 not read, said), and
+dune's 28, tiny-machine-window new. Needed on the way: dune describe
+targets answers on its standard error (Procs.create_process_stderr); a
+link with no standard library of the project's is on lib_core
+(tiny-machine-window had TinyLibCore, the nearest); built_outside, the
+constructors of a unit read by its interface alone (TinyMachineSDL's
+events); TinyMachineWindow's Scanf by split_on_char; the walk skips .
+and _ directories; the runs not given the directories; another dune
+holding the kept build directory (make test's four analyses at once),
+one of the run's, cleaned by dune clean. Recordings: -dead and -bugs
+the same; -exn's programs renamed (tiny-build, tiny-build-host to build,
+tiny/TinyBuildSystem), TinyMachineWindow's Failure new; -caps: unix's
+seed, box, raw_console gone until D (tiny-kernel's 7 programs dune does
+not build, read on unix's TinyLibSystem before), TinyMachineWindow's 4
+new. -dead 6 s, -bugs 8, -exn 13, -caps 6, both builds.

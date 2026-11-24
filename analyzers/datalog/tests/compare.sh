@@ -16,14 +16,6 @@ dead_lines() {
     -e 's/^([^:]*):0: /\1: /' -e "s/\\\\'/'/g"
 }
 
-# said_all.dl's answers as lines: said_any's a report, said_by's and
-# not_read's after their program's name (an atom, quoted or not); the
-# atoms' \' back to '.
-said_lines() { # relation
-  sed -nE -e "s/^$1\('?([^',]*)'?,'(.*)'\)\.$/\1: \2/p" -e t \
-    -e "s/^$1\('(.*)'\)\.$/\1/p" | sed -e "s/\\\\'/'/g"
-}
-
 # -exn's lines: a toplevel's exception, without where it is raised (that
 # list moves with every edit). An exception of lib_core's, which most
 # programs may raise (Not_found, Failure, End_of_file...), is kept when

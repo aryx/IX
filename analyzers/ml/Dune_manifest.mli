@@ -3,8 +3,9 @@
  * built by OCaml as it reads one built by t-IX, its exact files, its
  * platform's among them, nothing told (-L, -own, -I) or guessed.
  *
- * dune says it in two answers, which this program is given as files
- * (the script runs dune, this program reads):
+ * dune says it in two answers, which mini-analyze asks it for (run),
+ * given dune's executables (an .exe) or a directory of them
+ * (executables, by dune describe targets too):
  *
  *     dune describe workspace     each library's modules and each
  *                                 executables stanza's, with their
@@ -21,7 +22,8 @@
  * own .cmx (dune__exe__TinyShell.cmx) the module of its stanza
  * (describe's, by the stanza's .eobjs directory), given; opam's
  * libraries, with no source here, are left out, and dune's alias module
- * (dune__exe). A path is the project's file, from its root (describe's
+ * (dune__exe); a copy dune made (copy_files#) its original, by its
+ * first line. A path is the project's file, from its root (describe's
  * root: tiny/TinyShell.ml, mini-analyze -sources the root), or, for a
  * file the build made (a lexer, lib_core's Parallel chosen by OCaml's
  * version), _build/default's, which dune build makes, else the build
@@ -47,11 +49,6 @@ val run :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. > ->
   string list -> string * (string * Tiny_manifest.manifest) list
 
-(* [main caps argv]: Dune_manifest describe.sexp rules.sexp out-dir:
- * out-dir/tiny/TinyShell.exe.manifest for each executable of rules.sexp *)
-val main :
-  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. > ->
-  string array -> int
 
 (* [executables caps dirs]: the executables dune builds under dirs
  * (tiny), from the project's root: dune describe workspace's stanzas,

@@ -3,39 +3,33 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-analyze FLAG on tiny/'s programs, each read as each system builds
-# it: on tiny-kernel, by tiny-ml on TinyLibCore and tiny-kernel's
-# TinyLibSystem (the Buildfile's programs); on the host, by OCaml on
-# lib_core and the host's TinyLibSystem (tiny/dune's tools, the windows'
-# programs of user/sdl/, tiny-machine...). A program is given by its
-# build's manifest, made here: on tiny-kernel, tiny-ld's (-map's) of
-# t-IX's build; on the host, Dune_manifest's of dune's link (dune
-# describe and dune rules): its files as linked, its platform's among
-# them, nothing told (a library unit whose code mini-ml's dialect cannot
-# read by its interface: lib_core's Parallel on OCaml 5's Domain,
-# TinyMachineSDL on tsdl). -caps reads each on the host alone: the
-# analyzer does not know tiny-kernel's calls' capabilities yet. Not
-# here: tiny-machine-window (tsdl), tiny-machine-web (js_of_ocaml).
-# (old: the SDL windows' programs read on the host's TinyLibSystem,
-# which stood for theirs, an include then.) The kernel is read as a
-# program of tiny-kernel, which it is, on TinyLibCore (TinyLibSystem, which it does not name, is
-# not read): it shares KNetwork.ml with tiny-machine, and without it a
-# function only the kernel calls would be said dead.
-# Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
-# TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
-# bugs_tiny.txt, -dead dead_tiny.txt (what every build that has the
-# file says dead, TinyLibSystem's implementations one file: its functions
-# one program does not call are not dead), -exn exn_tiny.txt (a build's toplevel exceptions, a tool's
-# two builds each named, the host's name-host, but lib_core's every
-# program may raise). -check (make test's): the answer against the recording,
+# it, by one mini-analyze call over both builds:
+# - tiny-kernel's: t-IX's build, made here as TinyKernel/Makefile makes
+#   it, in a copy of tiny/, each program's manifest (tiny-ld -map's), its
+#   paths read in tiny/ (-sources); the kernel's among them;
+# - the host's: the executables dune builds under tiny/, their manifests
+#   made by mini-analyze from dune's own answers (Dune_manifest).
+# mini-analyze runs each program as linked, its platform's files among
+# them, and merges their reports (-dead's: what every program that has
+# the file says, so a library's function one program does not call is
+# not dead). -caps reads the host's alone: the analyzer does not know
+# tiny-kernel's calls' capabilities yet, whose programs dune does not
+# build (windows, bigmem, square, temp, trace, debug, the kernel) wait
+# for that. tiny-cc's programs are not read (no ML unit).
+# Each report once, sorted, recorded: -caps caps_tiny.txt, -bugs
+# bugs_tiny.txt, -dead dead_tiny.txt, -exn exn_tiny.txt (a program's
+# toplevel exceptions, by the program, build or tiny/TinyBuildSystem,
+# lib_core's that every program may raise left out: compare.sh's
+# exn_lines). -check (make test's): the answer against the recording,
 # without line numbers (an edit above a function moves it). With no
 # out-file, the reports on the standard output. Seconds.
+# (old, before the manifests: a table of the programs, each one's main
+# file, its platform's flags, -L, -own, -I's, its runs merged here)
 # usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]
 #   (dune build first)
-# ANALYZE, DATALOG: the programs, if not dune's.
+# ANALYZE: the analyzer, if not dune's.
 cd "$(dirname "$0")/../../.."
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
-DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
-DUNE_MANIFEST=${DUNE_MANIFEST:-_build/default/analyzers/manifest/Main.exe}
 export LC_ALL=C
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
@@ -46,139 +40,31 @@ case $flag in
 esac
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 if [ -z "$out" ]; then show=1; out=$(mktemp); fi
-T=tiny
-# How a program dune does not build is read on the host, for -caps (the
-# tiny-kernel's alone, by their main file): its platform, the one choice
-# the analyzer cannot make from a main file (TinyLibSystem's
-# implementations have the same names), on lib_core and the host's
-# TinyLibSystem (O). A manifest says it:
-# TinyLibCore's members of stdlib.a and tiny-kernel's TinyLibSystem;
-# lib_core and TinyLibSystem/unix in dune's link. (old, before the
-# manifests: K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel" and
-# each main file; the host's -I's, lib_crypto's, lib_networking's...)
-O="-L lib_core -own $T/TinyLibSystem/unix"
-# a program a line: its name; where it runs: k tiny-kernel alone (the
-# Buildfile's windows' programs), h the host alone (tiny-machine...,
-# mkfont, built by OCaml on lib_core), b both (the tools: tiny/dune's and
-# the Buildfile's; and the windows' programs of user/sdl/dune, whose
-# TinyLibSystem includes the host's, read here for it: the analyzer does
-# not read tsdl); its name in the Buildfile (its manifest's); its main
-# file; its executable on the host, dune's (its manifest's)
-programs() {
-  cat <<EOF
-tiny-build|b|build|$T/TinyBuildSystem.ml|$T/TinyBuildSystem.exe
-tiny-shell|b|rc|$T/TinyShell.ml|$T/TinyShell.exe
-tiny-editor|b|ed|$T/TinyEditorLine.ml|$T/TinyEditorLine.exe
-tiny-utils|b|utils|$T/TinyUtilities.ml|$T/TinyUtilities.exe
-tiny-cc|b|cc|$T/TinyC/TinyC.ml|$T/TinyC/TinyC.exe
-tiny-db|b|db|$T/TinyDatabase.ml|$T/TinyDatabase.exe
-tiny-vcs|b|vcs|$T/TinyVCS.ml|$T/TinyVCS.exe
-tiny-as|b|as|$T/TinyAssembler.ml|$T/TinyAssembler.exe
-tiny-ld|b|ld|$T/TinyLinker.ml|$T/TinyLinker.exe
-tiny-ar|b|ar|$T/TinyArchiver.ml|$T/TinyArchiver.exe
-tiny-cpu|h||$T/TinyCPU.ml|$T/TinyCPU.exe
-tiny-prof|b|prof|$T/TinyProfiler.ml|$T/TinyProfiler.exe
-tiny-ml|b|ml|$T/TinyML/TinyML.ml|$T/TinyML/TinyML.exe
-tiny-machine|h||$T/TinyMachine/TinyMachine.ml|$T/TinyMachine/TinyMachine.exe
-tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml|$T/TinyMachine/TinyMachineSocket.exe
-tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|$T/TinyMachine/TinyMachineFetch.exe
-tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml|$T/TinyKernel/steps/t6/TinyMkfat.exe
-tiny-mkfs|h||$T/TinyKernel/host/TinyMkfs.ml|$T/TinyKernel/host/TinyMkfs.exe
-mkfont|h||$T/TinyKernel/fonts/Mkfont.ml|$T/TinyKernel/fonts/Mkfont.exe
-windows|k|windows|$T/user/windows.ml
-bigmem|k|bigmem|$T/user/bigmem.ml
-square|k|square|$T/user/square.ml
-tetris|b|tetris|$T/user/tetris.ml|$T/user/sdl/tetris.exe
-orrery|b|orrery|$T/user/orrery.ml|$T/user/sdl/orrery.exe
-calc|b|calc|$T/user/calc.ml|$T/user/sdl/calc.exe
-temp|k|temp|$T/user/temp.ml
-emacs|b|emacs|$T/user/emacs.ml|$T/user/sdl/emacs.exe
-office|b|office|$T/user/office.ml|$T/user/sdl/office.exe
-troff|b|troff|$T/user/troff.ml|$T/user/sdl/troff.exe
-play|b|play|$T/user/play.ml|$T/user/sdl/play.exe
-www|b|www|$T/user/www.ml|$T/user/sdl/www.exe
-trace|k|trace|$T/user/trace.ml
-debug|k|debug|$T/user/debug.ml
-tiny-kernel|k|TinyKernel/kernel.img|$T/TinyKernel/TinyKernel.ml
-EOF
-}
-# a run a line: its name, its flags, its main file. A tool runs on both
-# systems, read both ways (its host's run named -host): a function is
-# dead only if every build that has its file says so. -caps: each on the
-# host, whose externals' capabilities the analyzer knows (tiny-kernel's
-# calls not yet).
-runs() {
-  programs | while IFS='|' read -r name sys tix main host; do
-    # (the host's: dune's manifest of its link, or the main file and O)
-    if [ "${host%.exe}" != "$host" ]; then
-      hostrun="$name|-sources .|$W/dune/$host.manifest"
-    else
-      hostrun="$name|$O|$main"
-    fi
-    if [ $flag = -caps ]; then echo "$hostrun"; continue; fi
-    # (tiny-kernel's: tiny-ld's manifest of the build below, its paths
-    # read in tiny/, where the build's copy of tiny/ came from)
-    if [ -n "$tix" ]; then
-      d=$(dirname $tix); src=$T; [ $d = . ] || src=$T/$d
-      tixrun="$name|-sources $src|$W/tix/src/$tix.manifest"
-    fi
-    case $sys in
-      k) echo "$tixrun";;
-      h) echo "$hostrun";;
-      b) echo "$tixrun"; echo "${hostrun/#$name|/$name-host|}";;
-    esac
-  done
-}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-# (t-IX built as tiny-kernel builds it, TinyKernel/Makefile's build of the
-# Buildfile in a copy of tiny/: each program's manifest, seconds)
-if [ $flag != -caps ]; then
-  make -s -C $T/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
-    { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
-fi
-# (the host's programs as dune links them: its modules' sources and each
-# link, in a build directory of its own, not _build's, which another
-# dune may hold; Dune_manifest makes their manifests, seconds)
-exes=$(programs | awk -F'|' '$5 ~ /\.exe$/ { print "./" $5 }')
-{ dune describe workspace --build-dir $W/dune-build > $W/describe.sexp &&
-  dune rules --build-dir $W/dune-build $exes > $W/rules.sexp &&
-  $DUNE_MANIFEST $W/describe.sexp $W/rules.sexp $W/dune; } > $W/dune.log 2>&1 ||
-  { tail -5 $W/dune.log; echo "tiny_check.sh: dune's manifests failed"; exit 2; }
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
-# (the programs at once, the analyses first: seconds, not a minute; each
-# one's reports and files as facts, -summary's, merged below; one that
-# fails, said)
-runs | { while IFS='|' read -r name flags files; do
-  { timeout 300 $ANALYZE $flag -summary $W/$name.dl -program $name $flags $files \
-      > $W/$name.out 2>&1 || echo "$name FAILED: $W/$name.out" >> $W/unread; } &
-done; wait; }
-# (merged: -dead's what every program that has the file, or another
-# implementation of its interface, says, dead_all.dl's; the others'
-# said_all.dl's, -exn's by program; a unit not read, a failure)
-merge=said_all.dl; [ $flag = -dead ] && merge=dead_all.dl
-$DATALOG analyzers/datalog/$merge $W/*.dl 2> $W/datalog.err > $W/merged ||
-  { cat $W/datalog.err; exit 2; }
-said_lines not_read < $W/merged | sed 's/: / NOT READ: /' >> $W/unread
-case $flag in
-  -dead) dead_lines < $W/merged;;
-  -exn) said_lines said_by < $W/merged | exn_lines by;;
-  *) said_lines said_any < $W/merged;;
-esac | sort -u > $out
-[ -s $W/unread ] && { cat $W/unread; }
+programs=tiny
+if [ $flag != -caps ]; then
+  make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
+    { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
+  programs="-sources tiny $W/tix/src tiny"
+fi
+$ANALYZE $flag $programs > $W/answer 2> $W/err ||
+  { grep -v WARNING $W/err | tail -5; echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; exit 1; }
+# (the reports, not the programs' list under them)
+sed '/^[0-9]* reports, over the/,$d' $W/answer |
+  if [ $flag = -exn ]; then exn_lines by; else cat; fi | sort -u > $out
 if [ -n "$show" ]; then cat $out; rm -f $out; exit 0; fi
 if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0
 fi
-# (a program not read: a failure, all tiny/'s programs readable here)
-[ -s $W/unread ] && { echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; rm -f $out; exit 1; }
 compare "mini-analyze $flag on tiny/'s programs" $out $expected /dev/null
 st=$?
-# (-dead on a library's file over the build's manifests: its programs
-# those that link it, each run as linked, merged: the lines of the
-# merge above that are its)
+# (-dead on a library's file over t-IX's manifests: its programs those
+# that link it, each run as linked, merged: the lines of the merge above
+# that are its)
 if [ $flag = -dead ]; then
-  lib=$T/TinyLibGUI.ml
+  lib=tiny/TinyLibGUI.ml
   $ANALYZE -dead $lib $W/tix/src/*.manifest 2>&1 | grep "^$lib:" | bare_line | sort > $W/lib.out
   grep "^$lib:" $out | bare_line | sort > $W/lib.expected
   if [ -s $W/lib.expected ] && cmp -s $W/lib.out $W/lib.expected; then

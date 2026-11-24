@@ -4,21 +4,22 @@
 # itself, with its functions that do (compare.sh's exn_lines). Not tried
 # yet: the 11 "raised in" lines; tiny-cc's Division_by_zero false when
 # tried (1 / 0 and 7 % 0 said or folded, not raised).
-tiny-build-host: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 490
-tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 490
-tiny-cc-host: TinyC.ml: the toplevel may let Division_by_zero escape
-tiny-cc-host: TinyC.ml: the toplevel may let Not_found escape, raised in emit, go, Parser.assign_expr, loop, Parser.primary, Tree.binop_name
-tiny-cc-host: Types.ml: the toplevel may let Failure escape, raised in init
-tiny-cc: TinyC.ml: the toplevel may let Not_found escape, raised in go, Parser.assign_expr, loop, Parser.primary, Tree.binop_name
-tiny-db-host: TinyDatabase.ml: the toplevel may let Common.Error escape
-tiny-db-host: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
-tiny-db: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
-tiny-machine-fetch: TinyMachineFetch.ml: the toplevel may let Zlib.Corrupt escape
-tiny-machine: TinyMachine.ml: the toplevel may let Not_found escape, raised in TinyMachine.run
-tiny-machine: TinyMachine.ml: the toplevel may let Unix.Unix_error escape, raised in TinyMachine.run
-tiny-ml-host: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 187, Types:fun at line 386
-tiny-ml: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 187, Types:fun at line 386
-tiny-shell-host: TinyShell.ml: the toplevel may let Not_found escape, raised in TinyShell.protect, TinyShell.run, TinyShell:fun at line 687
-tiny-shell-host: TinyShell.ml: the toplevel may let Unix.Unix_error escape, raised in TinyShell.protect, TinyShell.with_fds, TinyShell.run
-tiny-vcs-host: TinyVCS.ml: the toplevel may let Not_found escape, raised in TinyVCS.copy
-tiny-vcs: TinyVCS.ml: the toplevel may let Not_found escape, raised in TinyVCS.copy
+build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 490
+cc: TinyC.ml: the toplevel may let Not_found escape, raised in go, Parser.assign_expr, loop, Parser.primary, Tree.binop_name
+db: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
+ml: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 188, Types:fun at line 386
+tiny/TinyBuildSystem: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 490
+tiny/TinyC/TinyC: TinyC.ml: the toplevel may let Division_by_zero escape
+tiny/TinyC/TinyC: TinyC.ml: the toplevel may let Not_found escape, raised in emit, go, Parser.assign_expr, loop, Parser.primary, Tree.binop_name
+tiny/TinyC/TinyC: Types.ml: the toplevel may let Failure escape, raised in init
+tiny/TinyDatabase: TinyDatabase.ml: the toplevel may let Common.Error escape
+tiny/TinyDatabase: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
+tiny/TinyML/TinyML: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 188, Types:fun at line 386
+tiny/TinyMachine/TinyMachine: TinyMachine.ml: the toplevel may let Not_found escape, raised in TinyMachine.run
+tiny/TinyMachine/TinyMachine: TinyMachine.ml: the toplevel may let Unix.Unix_error escape, raised in TinyMachine.run
+tiny/TinyMachine/TinyMachineFetch: TinyMachineFetch.ml: the toplevel may let Zlib.Corrupt escape
+tiny/TinyMachine/TinyMachineWindow: TinyMachineWindow.ml: the toplevel may let Failure escape, raised in TinyMachineWindow:fun at line 9
+tiny/TinyShell: TinyShell.ml: the toplevel may let Not_found escape, raised in TinyShell.protect, TinyShell.run, TinyShell:fun at line 687
+tiny/TinyShell: TinyShell.ml: the toplevel may let Unix.Unix_error escape, raised in TinyShell.protect, TinyShell.with_fds, TinyShell.run
+tiny/TinyVCS: TinyVCS.ml: the toplevel may let Not_found escape, raised in TinyVCS.copy
+vcs: TinyVCS.ml: the toplevel may let Not_found escape, raised in TinyVCS.copy

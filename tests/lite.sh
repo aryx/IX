@@ -634,10 +634,10 @@ job -after-ix "each unit compiled after those it inlines (else builds differ)" e
 # here, two under make test's load); not -exn: mini-ml's alone a minute, 6 GB
 group t-ix
 family "ix's code by its analyses: no new report" check
-job "mini-analyze -caps on tiny/'s host programs: no report but the recorded one (caps_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -caps -check
-job "mini-analyze -dead on tiny/'s host programs: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -dead -check
-job "mini-analyze -bugs on tiny/'s host programs: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
-job "mini-analyze -exn on tiny/'s host programs: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -exn -check
+job "mini-analyze -caps on tiny/'s programs dune links: no report but the recorded ones (caps_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -caps -check
+job "mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -dead -check
+job "mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
+job "mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -exn -check
 group m-ix
 # (ix_check.sh makes the units ix's build makes, its lexers and parsers:
 # no ix build wanted, nor arm64. old: with the developers' _mk/7, whole,

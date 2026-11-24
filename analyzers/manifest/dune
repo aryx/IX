@@ -1,8 +1,0 @@
-; Dune_manifest: dune's programs' manifests, in tiny-ld's format, from
-; dune describe workspace and dune rules, for mini-analyze
-; (docs/plans/plan_analyzer_build_manifest.md, step 3); dune's alone, no
-; mkfile: under mini-mk there is no dune
-(executable
- (name Main)
- (modules Main)
- (libraries ix_analyze_ml ix_core fpath caps))

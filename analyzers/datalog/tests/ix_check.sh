@@ -67,7 +67,7 @@ case $flag in
     # (its warnings, a relation with no fact, said only if it fails)
     $DATALOG analyzers/datalog/dead_all.dl $W/sweep/*.dl 2> $W/datalog.err > $W/dead_all ||
       { cat $W/datalog.err; exit 2; }
-    dead_lines < $W/dead_all | grep -E ': dead( [a-z]+)?:' | gen | sort -u > $out;;
+    dead_lines < $W/dead_all | gen | sort -u > $out;;
 esac
 if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0

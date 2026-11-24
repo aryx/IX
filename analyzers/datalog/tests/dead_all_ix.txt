@@ -67,6 +67,8 @@ database/storage/Btree.ml:30: dead: Btree.pager, nothing names it
 database/storage/Record.ml:71: dead: Record.packed_size, nothing names it
 debuggers/acid/Frame64.ml:51: dead field: pc stored in go, nothing live reads it
 editors/ed/Input.ml:21: dead: Input.of_string, nothing names it
+editors/ed/Input.ml:51: never built: Str.0, matched in Input.getc
+editors/ed/Input.ml:51: never built: Str.1, matched in Input.getc
 editors/ed/Input.ml:62: dead: Input.lastc, nothing names it
 editors/emacs/modes/Paren_mode.ml: dead field: min_name stored in init, nothing live reads it
 editors/turbopascal/editor/Tui_turbo.ml: dead global: Tui_turbo.execution_line, nothing live names it
@@ -231,6 +233,7 @@ lib_graphics/Keyboard.ml: dead global: Keyboard.shift, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.up, nothing live names it
 lib_graphics/Mouse.ml:16: dead field: msec stored in Mouse.state_of, nothing live reads it
 lib_graphics/Rectangle.ml:47: dead: Rectangle.contains, nothing names it
+lib_networking/9p/P9_server.ml:128: never built: Later.0, matched in P9_server:fun at line 128
 lib_networking/9p/P9_server.ml:136: dead: response, in P9_server:fun at line 130 but no call goes through the pointer
 lib_networking/9p/P9_server.ml:137: dead: P9_server:fun at line 137, nothing names it
 lib_networking/9p/P9_server.ml:25: dead: P9_server.no_write, nothing names it

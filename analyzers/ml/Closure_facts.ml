@@ -965,6 +965,9 @@ and applied (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
              fact "in_function" [ i; !inside ];
              site_in i;
              List.iter (fun (e : string) -> fact "raise_of" [ i; "caml_exn_" ^ e ]) es;
+             (* (the runtime builds it, its message: a handler's
+              * Sys_error e reads what C wrote, dead.dl's built) *)
+             List.iter (fun (e : string) -> fact "runtime_builds" [ i; Printf.sprintf "con:%s.0" e ]) es;
              fact "primitive" [ i; p ]);
         (* (x == y, x != y: bugs/physeq.dl's, a side made here never the other) *)
         if p = "%eq" || p = "%noteq" then begin

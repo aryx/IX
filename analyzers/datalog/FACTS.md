@@ -353,11 +353,14 @@ list_like('Toy.chain').
 **A case that says nothing**, for `bugs/swallowed.dl`: its answer `()` or a number, so
 nothing of what it caught is used, by the exception it names or all. And a
 primitive of the runtime that may fail, its external marked `[@@raise Sys_error]`
-(`Annotations.raises`), a raise at each call; in `clean`:
+(`Annotations.raises`), a raise at each call, and the exception's argument built
+there by the runtime (for `dead.dl`: a handler's `Sys_error e` reads what C wrote,
+not a constructor never built); in `clean`:
 
 ```
 raise_in('Toy:52:c50', 'Toy.clean').
 raise_of('Toy:52:c50', 'caml_exn_Sys_error').
+runtime_builds('Toy:52:c50', 'con:Sys_error.0').
 primitive('Toy:52:c50', 'sys_remove').
 silent('Toy:try4@52', 'caml_exn_Sys_error').
 silent_all('Toy:try4@52').
@@ -527,7 +530,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
 | `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
 | `exceptions.dl` | `raise_in`, `raise_of`, `reraises`, `exn_block`, the `try`'s, `catches*`, over `call_edge`, `pt`, `reached` |
-| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call` |
+| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call`, `runtime_builds` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand`, `compared`, `store_in`, `assign_load_field`, over `pts`, `reach` |

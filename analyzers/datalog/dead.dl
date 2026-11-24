@@ -117,6 +117,9 @@ dead_field(F, G) :-
   store(X, F, _), F \= star, var_in(X, G), root(G, R), reach(R), \+ field_read(F).
 
 built(F) :- store(X, F, _), live_var(X).
+% (a live primitive that may fail: the runtime builds its exception,
+% Sys_error's message, read by a handler's Sys_error e)
+built(F) :- runtime_builds(I, F), raise_in(I, G), root(G, R), reach(R).
 % (not what a handler catches, in ext: C raises Sys_error)
 never_built(F, G) :-
   load(P, X, F), X \= ext, var_in(P, G), root(G, R), reach(R), \+ built(F).

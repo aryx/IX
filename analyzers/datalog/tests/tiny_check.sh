@@ -38,7 +38,7 @@ flag=$1; out=$2; check=; show=
 case $flag in
   -caps) expected=caps_tiny.txt; said=': (no capability|has <|names .* itself)';;
   -bugs) expected=bugs_tiny.txt; said='^bug\? ';;
-  -dead) expected=dead_tiny.txt; said=': dead( [a-z]+)?:';;
+  -dead) expected=dead_tiny.txt; said=': (dead( [a-z]+)?|never built):';;
   -exn) expected=exn_tiny.txt; said='the toplevel may let ';;
   *) echo "usage: tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]"; exit 2;;
 esac
@@ -148,7 +148,7 @@ if [ $flag = -dead ]; then
   # (its warnings, a relation with no fact, said only if it fails)
   $DATALOG analyzers/datalog/dead_all.dl $W/*.dl 2> $W/datalog.err > $W/dead_all ||
     { cat $W/datalog.err; exit 2; }
-  dead_lines < $W/dead_all | grep -E "$said" | sort -u > $out
+  dead_lines < $W/dead_all | sort -u > $out
 else
   cut -f2- $W/said 2> /dev/null | sort -u > $out
 fi

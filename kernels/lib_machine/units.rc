@@ -1,0 +1,13 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# mkkernel's rules for the kernel's units, one each, read by its <|:
+# a unit (a path without .ml, KML's) made from its source, so that mk
+# makes several at once (NPROC); their order is mkdepend's. mk text:
+# $D, $O, $ML, $MLI, $KSRC and $LIBSRC are the mkfile's.
+# usage: $RC kernels/lib_machine/units.rc path...
+for(m) {
+	u=`{basename $m}
+	echo '$D/'$u'.$O: '$m'.ml $KSRC $LIBSRC'
+	echo '	$ML $MLI -o $target '$m'.ml'
+}

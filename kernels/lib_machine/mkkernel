@@ -79,12 +79,11 @@ ${LIB_ML:%=$D/%.$O}: $LIBSRC
 # (One rule makes them all, because a module is in a directory of its
 # own, and a change in one interface may change the others' code.)
 KSRC=${KML:%=%.ml}
-${KNAMES:%=$D/%.$O}: $KSRC $LIBSRC
-	mkdir -p $D
-	for(t in $target){
-		u=`{basename $t .$O}
-		for(m in $KML) if(~ `{basename $m} $u){ $ML $MLI -o $t $m.ml || exit 1 }
-	}
+# a rule each unit, its source by KML's path: mk makes as many at once as
+# NPROC says, each after the units whose summaries it reads (mkdepend's
+# .depend, at the end). old: one rule for all of KNAMES, whose recipe
+# made the units out of date one after the other, whatever NPROC
+<|$RC $KLIB/units.rc $KML
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 	mkdir -p $D
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
@@ -144,3 +143,13 @@ $D/stamp.$O: $OBJS
 
 clean:V:
 	rm -rf $D
+
+# mkfiles/mkdepend gives the units' order: a unit after those it names
+# (their summaries, X.inline, read by mini-ml -O3), the library's and the
+# kernel's; their sources by MLI's -I's
+MADE=`{mkdir -p $D}
+INCLUDES=$MLI
+DEPOBJ=D
+DEPDIRS=$KLIB $BD
+DEPUNITS=$LIB_ML $KNAMES
+<$TOP/mkfiles/mkdepend

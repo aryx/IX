@@ -653,9 +653,11 @@ let rec with_leaves olds news =
   | [], n :: ns -> fresh n :: with_leaves [] ns
   | _, [] -> []
 
+(* run_canvas does it itself, keeping the leaves for the next change *)
 let repaint shown now =
   let olds = with_leaves [] shown in
   repaint_leaves olds (with_leaves olds now)
+[@@for_testing]
 
 (* The program, until its typed says None or the keys end: its picture
  * drawn where it changed, then the keys or the mouse waited for. The

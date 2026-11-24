@@ -1,1 +1,2 @@
-tiny/TinyLibGUI.ml:656: dead: TinyLibGUI.repaint, nothing names it
+tiny/TinyLibGUI.ml:472: never built: Disc.1, matched in TinyLibGUI.area_of
+tiny/TinyLibGUI.ml:472: never built: Disc.2, matched in TinyLibGUI.area_of

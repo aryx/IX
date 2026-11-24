@@ -80,7 +80,7 @@ tiny-ld|b||$T/TinyLinker.ml
 tiny-ar|b||$T/TinyArchiver.ml
 tiny-cpu|h||$T/TinyCPU.ml
 tiny-prof|b||$T/TinyProfiler.ml
-tiny-ml|b||$T/TinyML.ml
+tiny-ml|b||$T/TinyML/TinyML.ml
 tiny-machine|h|-I lib_core/parallel|$T/TinyMachine.ml
 tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml
 tiny-machine-fetch|h|$NET -I lib_graphics/core -I lib_graphics/images|$T/TinyMachine/TinyMachineFetch.ml

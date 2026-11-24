@@ -1,13 +1,29 @@
 // tiny/TinyML/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The program
-// is ../TinyML.ml; these are its passes, in their order. The .mli files
-// are the bare interfaces (no header: TinyML.mli has the design).
+// is TinyML.ml; the others are its passes, in their order. Their .mli
+// files are the bare interfaces (no header: TinyML.mli has the design).
 local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "tiny-ml's passes: the tokens, the tree, Printf's formats, the parser, Hindley-Milner, the stack machine, the tree compiled.",
+  summary: "tiny-ml, TinyML.ml, and its passes: the tokens, the tree, Printf's formats, the parser, Hindley-Milner, the stack machine, the tree compiled.",
   files: {
+    'TinyML.ml': { digest: '7719b0e67c36',
+      summary: "tiny-ml: an ML, Hindley-Milner typed, through TinyC's stack machine to tiny-machine; separate units by .tmi files.",
+      capitals: [{ at: 'def:compile_unit', say: 'a unit: its items typed, then compiled' }],
+      important: [
+        { at: 'def:compile_unit', say: 'its globals the roots, a block each', weight: 3 },
+        { at: 'def:compile_main', say: 'the program: the units joined, their inits in order', weight: 2 },
+        { at: 'def:write_interface', say: 'M.tmi: what a unit leaves the next ones', weight: 2 },
+        { at: 'def:read_interface', weight: 1 },
+        { at: 'def:main', weight: 2 },
+      ],
+      related: ['Compile.ml', '../runtime/ml/ml.c', '../TinyLibCore/', '../tests/TinyML_test.sh', '../tests/TinyML_fuzz.py', '../../languages/ml/'],
+    },
+    'TinyML.mli': { digest: 'd1ebc729cffb',
+      summary: "tiny-ml's design: the passes, a value's layout, the value stack as the roots, Cheney's collector.",
+      important: [{ at: 'comment:"How a file is compiled"', say: 'the passes, each its own type', weight: 3 }],
+    },
     'Lexer.ml': { digest: 'b319aaf1330e',
       summary: 'The tokens of a file, each with its line; keywords and symbols looked up in tables.',
       important: [

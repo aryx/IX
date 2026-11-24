@@ -1,7 +1,8 @@
-; TinyML.ml's parts, the compiler's passes (tiny-ml compiles them before
-; it, for ml on tiny-kernel)
-(library
- (name tiny_ml_parts)
- (wrapped false)
- (modules Lexer Tree Formats Parser Types Machine Compile Link)
- (libraries ix_core tiny_lib_machine))
+; tiny-ml: TinyML.ml, the main, on its parts, the compiler's passes
+; (tiny-ml compiles them before it, for ml on tiny-kernel)
+(executable
+ (name TinyML)
+ (public_name tiny-ml)
+ (package ix)
+ (modules TinyML Lexer Tree Formats Parser Types Machine Compile Link)
+ (libraries ix_core fpath caps tiny_lib_system tiny_lib_machine))

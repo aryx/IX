@@ -39,8 +39,6 @@ tiny/TinyLibGUI.ml:409: stack: rows calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:652: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
 tiny/TinyLibGUI.ml:653: stack: TinyLibGUI.with_leaves calls itself, not a tail call, over a list
 tiny/TinyLibPlayground.ml:71: stack: pairs calls itself, not a tail call, over a list
-tiny/TinyML.ml:394: evalorder: operands at 394:20 and 394:33, both with an effect: their order the compiler's
-tiny/TinyML.ml:396: evalorder: operands at 396:13 and 397:15, both with an effect: their order the compiler's
 tiny/TinyML/Compile.ml:430: stack: Compile.match_cases calls itself, not a tail call, over a list
 tiny/TinyML/Compile.ml:468: stack: Compile.app calls itself, not a tail call, over a list
 tiny/TinyML/Compile.ml:471: stack: Compile.app calls itself, not a tail call, over a list
@@ -53,6 +51,8 @@ tiny/TinyML/Formats.ml:109: stack: adds calls itself, not a tail call, over a li
 tiny/TinyML/Formats.ml:115: stack: adds calls itself, not a tail call, over a list
 tiny/TinyML/Formats.ml:85: stack: build calls itself, not a tail call, over a list
 tiny/TinyML/Formats.ml:87: stack: build calls itself, not a tail call, over a list
+tiny/TinyML/TinyML.ml:394: evalorder: operands at 394:20 and 394:33, both with an effect: their order the compiler's
+tiny/TinyML/TinyML.ml:396: evalorder: operands at 396:13 and 397:15, both with an effect: their order the compiler's
 tiny/TinyML/Types.ml:49: evalorder: operands at 49:12 and 49:21, both with an effect: their order the compiler's
 tiny/TinyMachine.ml:376: int31: in TinyMachine's toplevel, 0xa1b2c3d4: not on the Pi 1's 31 bits
 tiny/TinyMachine/TinyMachineCPU.ml:13: int31: in TinyMachineCPU.m32, 0xffffffff: not on the Pi 1's 31 bits

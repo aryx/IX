@@ -90,9 +90,6 @@ $D/KNetwork.$O: TinyKernel/KNetwork.ml
 $D/%.$O: TinyML/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyML/$stem.ml
-$D/TinyML.$O: TinyML.ml
-	mkdir -p $D
-	$ML $INCLUDES -I TinyML -o $target TinyML.ml
 
 # (tiny-cc's directories come before INCLUDES' $D, where tiny-ml's
 # Lexer.$O is)

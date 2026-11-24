@@ -23,8 +23,8 @@ and each stage is a function (`TinyAssembler.mli`, `TinyC.mli`,
 `TinyML.mli`). Once a program grows past about 700 lines, it becomes
 a directory of its name, its main file there and its parts beside it,
 each part a unit with its own `.mli`: `TinyKernel/`, where
-`TinyKernel.ml` boots the kernel, and `TinyC/`. (`TinyML/`,
-`TinyOffice/`, `TinyBrowser/` and `TinyMachine/` still have their main
+`TinyKernel.ml` boots the kernel, `TinyC/` and `TinyML/`.
+(`TinyOffice/`, `TinyBrowser/` and `TinyMachine/` still have their main
 file beside the directory.)
 
 ## What is where
@@ -154,7 +154,7 @@ builds t-IX with them.
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
 | **tiny-cc** | a C subset compiler, to tiny-cpu | 2,200 | mini-cc | [`TinyC/`](TinyC/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC/TinyC.ml)) |
-| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 3,850 | mini-ml | [`TinyML.ml`](TinyML.ml), [`TinyML/`](TinyML/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
+| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 3,850 | mini-ml | [`TinyML/`](TinyML/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML/TinyML.ml)) |
 | **tiny-as**, **tiny-ld** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 760 | mini-asm, mini-ld | [`TinyAssembler.ml`](TinyAssembler.ml), [`TinyLinker.ml`](TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
 
 **The window system** and the programs in its windows.
@@ -201,7 +201,7 @@ not have.
 | [`play`](TinyPlay.ml)<br>mini-play | a WAV to the speaker a block at a time, the kernel pacing it | the file decoded as it plays, where mini-play decodes it whole into floats first | MOD, MIDI, MP3, a WAV's other encodings |
 | [tiny-troff](TinyTroff.ml) `troff`<br>mini-troff | the office's documents, or Markdown, as text, HTML or PDF | one format, the office's, read by the office's own functions: no roff, no LaTeX | text flowing onto the next page, a paint as a real image, colours and fonts in HTML |
 | [tiny-cc](TinyC/TinyC.ml) `cc`<br>mini-cc; 5c, 7c | C's types (long 4 bytes, as Plan 9's), every operator and statement, `#include` and `#define` of a name | a stack machine in between, P-code's idea but compiled, its stack kept in registers, so the front end knows no instruction and the back end no C; types at parse time | floats, unions, bitfields, structs by value, goto, macros with arguments, `#if`, long long |
-| [tiny-ml](TinyML.ml) `ml`<br>mini-ml; ocamlopt | variants, closures, exceptions, Hindley-Milner; types checked, then forgotten: every value a word | a `Printf` with a literal format rewritten into concatenations: no format type, nothing read at run time | ocamlopt's functors, classes, polymorphic variants, GADTs and optional arguments (none in mini-ml either); mini-ml's floats, labeled arguments, `-g`, derived printers and young generation |
+| [tiny-ml](TinyML/TinyML.ml) `ml`<br>mini-ml; ocamlopt | variants, closures, exceptions, Hindley-Milner; types checked, then forgotten: every value a word | a `Printf` with a literal format rewritten into concatenations: no format type, nothing read at run time | ocamlopt's functors, classes, polymorphic variants, GADTs and optional arguments (none in mini-ml either); mini-ml's floats, labeled arguments, `-g`, derived printers and young generation |
 | [tiny-db](TinyDatabase.ml) `db`<br>mini-chidb; chidb | tables with a key, indexes, joins, a file that outlives the program | a query a pipeline of the relational algebra; a copy-on-write B-tree, so a statement commits by one write | SQL, NULL, the register machine, SQLite's file format |
 | [tiny-cpu](TinyCPU.ml)<br>mini-5i; MIX, MMIX | a machine of our own, for teaching: 16 registers, r0 zero, no flags, one format, every case defined | no header and no loader: the image is the first bytes of memory, where mini-5i reads an ELF | mini-5i's instruction trace, counts and system-call log; all calls but three |
 | [tiny-as](TinyAssembler.ml) `as`, [tiny-ld](TinyLinker.ml) `ld`<br>mini-asm, mini-ld | sizes known before addresses, so the link never moves what it placed | ld's sweep leaves out what nothing reaches, so an archive is linked whole; `as -S`'s text reassembles to the same object, so the compilers write no text | `-data`, names private to a file, line tables, `-T` and `-E` |

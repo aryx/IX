@@ -37,7 +37,7 @@ PROGRAMS = {
     "tiny-build": ["TinyBuildSystem"], "tiny-shell": ["TinyShell"],
     "tiny-editor": ["TinyEditorLine"], "tiny-as": ["TinyAssembler", "TinyMachineCPU", "TinyMachineDevices"],
     "tiny-ld": ["TinyLinker", "TinyMachineCPU"],
-    "tiny-cc": ["TinyC/TinyC"], "tiny-ml": ["TinyML"], "tiny-db": ["TinyDatabase"],
+    "tiny-cc": ["TinyC/TinyC"], "tiny-ml": ["TinyML/TinyML"], "tiny-db": ["TinyDatabase"],
     "tiny-vcs": ["TinyVCS"],
     "tiny-cpu": ["TinyCPU", "TinyMachineCPU"],
     "tiny-machine": ["TinyMachine", "TinyMachineDevices", "TinyMachineCPU"], "tiny-mkfat": ["TinyKernel/steps/t6/TinyMkfat"],

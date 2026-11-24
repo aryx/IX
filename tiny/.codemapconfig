@@ -3,7 +3,7 @@
 // docs/claude_notes/codemapconfig_guidelines.md there)
 //
 // A tiny program is one file, or a directory of its name holding its
-// main file and its parts (TinyKernel/, TinyC/; TinyML.ml, TinyOffice.ml
+// main file and its parts (TinyKernel/, TinyC/, TinyML/; TinyOffice.ml
 // and TinyBrowser.ml are still beside theirs), each directory with its
 // own config: its skeleton is its own pipeline, from its main down to
 // the idea it keeps. All start at TinyLibSystem.main (the
@@ -27,22 +27,6 @@ local prog(name, file, core) = chain(name, [
     // ---------------------------------------------------------------
     // the toolchain: compilers, assembler, linker
     // ---------------------------------------------------------------
-    'TinyML.ml': { digest: '7719b0e67c36',
-      summary: "tiny-ml: an ML, Hindley-Milner typed, through TinyC's stack machine to tiny-machine; separate units by .tmi files.",
-      capitals: [{ at: 'def:compile_unit', say: 'a unit: its items typed, then compiled' }],
-      important: [
-        { at: 'def:compile_unit', say: 'its globals the roots, a block each', weight: 3 },
-        { at: 'def:compile_main', say: 'the program: the units joined, their inits in order', weight: 2 },
-        { at: 'def:write_interface', say: 'M.tmi: what a unit leaves the next ones', weight: 2 },
-        { at: 'def:read_interface', weight: 1 },
-        { at: 'def:main', weight: 2 },
-      ],
-      related: ['TinyML/', 'runtime/ml/ml.c', 'TinyLibCore/', 'tests/TinyML_test.sh', 'tests/TinyML_fuzz.py', '../languages/ml/'],
-    },
-    'TinyML.mli': { digest: 'd1ebc729cffb',
-      summary: "tiny-ml's design: the passes, a value's layout, the value stack as the roots, Cheney's collector.",
-      important: [{ at: 'comment:"How a file is compiled"', say: 'the passes, each its own type', weight: 3 }],
-    },
     'TinyAssembler.ml': { digest: '86d091988762',
       summary: "tiny-as: assembly written by hand, a .s file, parsed into TinyLibMachine's lines and encoded by its assemble.",
       important: [
@@ -540,7 +524,7 @@ local prog(name, file, core) = chain(name, [
   skeletons: [
     // the directory's own: what makes what, and what runs it
     skeletons.parts('One machine, one toolchain', [
-      ['TinyML.ml', "ML to assembly, through TinyC's stack machine"],
+      ['TinyML/TinyML.ml', "ML to assembly, through TinyC's stack machine"],
       ['TinyC/TinyC.ml', "C to assembly: TinyCPU's"],
       ['TinyAssembler.ml', 'assembly to objects'],
       ['TinyLinker.ml', 'objects to an image or an a.out'],
@@ -550,7 +534,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyKernel/steps/', 'before it: v0 in assembly, t6 in C'],
     ], [
       ['TinyC/TinyC.ml', 'TinyAssembler.ml', '.s assembly'],
-      ['TinyML.ml', 'TinyAssembler.ml', '.s assembly'],
+      ['TinyML/TinyML.ml', 'TinyAssembler.ml', '.s assembly'],
       ['TinyAssembler.ml', 'TinyLinker.ml', 'objects'],
       ['TinyLinker.ml', 'TinyMachine.ml', 'an image'],
       ['TinyMachine.ml', 'TinyMachine/', 'runs'],
@@ -595,21 +579,21 @@ local prog(name, file, core) = chain(name, [
       joints+: [{ from: 'TinyC/TinyC.ml:def:main', to: 'TinyC/Parser.ml:def:declaration', say: 'each declaration' },
                 { from: 'TinyC/TinyC.ml:def:main', to: 'TinyC/TinyC.ml:def:compile', say: 'its definitions' }],
     },
-    prog('tiny-ml: parse, infer, compile', 'TinyML.ml', [
+    prog('tiny-ml: parse, infer, compile', 'TinyML/TinyML.ml', [
       ['TinyML/Parser.ml:def:parse', 'a file parsed', 'files'],
       ['TinyML/Parser.ml:def:items', 'the toplevel items: the tree', 'tokens'],
       ['TinyML/Types.ml:def:type_unit', 'a unit typed, Hindley-Milner with levels', 'the tree'],
-      ['TinyML.ml:def:compile_unit', 'the toplevel, its globals the roots', 'the typed tree'],
+      ['TinyML/TinyML.ml:def:compile_unit', 'the toplevel, its globals the roots', 'the typed tree'],
       ['TinyML/Compile.ml:def:value', 'an expression to the stack machine', 'expressions'],
       ['TinyML/Machine.ml:def:machine', 'the stack machine to tiny-machine', 'IR'],
       ['TinyLibMachine.ml:def:assemble', 'the lines encoded: the object (-S: their text)', 'lines'],
     ]) + {
       bones+: [
-        { at: 'TinyML.ml:def:write_interface', role: 'M.tmi, for the units after' },
+        { at: 'TinyML/TinyML.ml:def:write_interface', role: 'M.tmi, for the units after' },
         { at: 'runtime/ml/ml.c:def:ml_alloc', role: 'at run time: a block, or a collection' },
       ],
       joints+: [
-        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:write_interface', say: '-c: the unit typed' },
+        { from: 'TinyML/TinyML.ml:def:main', to: 'TinyML/TinyML.ml:def:write_interface', say: '-c: the unit typed' },
         { from: 'TinyML/Compile.ml:def:value', to: 'runtime/ml/ml.c:def:ml_alloc', say: 'blocks, at run time' },
       ],
     },
@@ -635,19 +619,19 @@ local prog(name, file, core) = chain(name, [
     {
       name: 'TinyML.ml: units, their interfaces, and the main',
       bones: [
-        { at: 'TinyML.ml:def:main', role: 'the flags: a unit (-c) or a whole program' },
-        { at: 'TinyML.ml:def:read_interface', role: "a .tmi: the library's, the units' before" },
-        { at: 'TinyML.ml:def:compile_unit', role: "a unit's toplevel, its init and its globals" },
-        { at: 'TinyML.ml:def:snapshot', role: 'the tables before the unit' },
-        { at: 'TinyML.ml:def:write_interface', role: 'M.tmi: what the unit added' },
-        { at: 'TinyML.ml:def:compile_main', role: "ml_init: each unit's init in order, ml_globals" },
+        { at: 'TinyML/TinyML.ml:def:main', role: 'the flags: a unit (-c) or a whole program' },
+        { at: 'TinyML/TinyML.ml:def:read_interface', role: "a .tmi: the library's, the units' before" },
+        { at: 'TinyML/TinyML.ml:def:compile_unit', role: "a unit's toplevel, its init and its globals" },
+        { at: 'TinyML/TinyML.ml:def:snapshot', role: 'the tables before the unit' },
+        { at: 'TinyML/TinyML.ml:def:write_interface', role: 'M.tmi: what the unit added' },
+        { at: 'TinyML/TinyML.ml:def:compile_main', role: "ml_init: each unit's init in order, ml_globals" },
       ],
       joints: [
-        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:read_interface', say: 'each .tmi given' },
-        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:compile_unit', say: 'each .ml, parsed and typed' },
-        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:snapshot', say: '-c: before the unit' },
-        { from: 'TinyML.ml:def:snapshot', to: 'TinyML.ml:def:write_interface', say: 'the difference' },
-        { from: 'TinyML.ml:def:main', to: 'TinyML.ml:def:compile_main', say: 'a whole program, or the .tmi alone' },
+        { from: 'TinyML/TinyML.ml:def:main', to: 'TinyML/TinyML.ml:def:read_interface', say: 'each .tmi given' },
+        { from: 'TinyML/TinyML.ml:def:main', to: 'TinyML/TinyML.ml:def:compile_unit', say: 'each .ml, parsed and typed' },
+        { from: 'TinyML/TinyML.ml:def:main', to: 'TinyML/TinyML.ml:def:snapshot', say: '-c: before the unit' },
+        { from: 'TinyML/TinyML.ml:def:snapshot', to: 'TinyML/TinyML.ml:def:write_interface', say: 'the difference' },
+        { from: 'TinyML/TinyML.ml:def:main', to: 'TinyML/TinyML.ml:def:compile_main', say: 'a whole program, or the .tmi alone' },
       ],
     },
     prog('tiny-as: a line, a word, an object', 'TinyAssembler.ml', [
@@ -1022,7 +1006,7 @@ local prog(name, file, core) = chain(name, [
   ],
   views: [
     { name: 'tiny-cc and its passes', files: ['TinyC/', 'runtime/'] },
-    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/', 'runtime/ml/ml.c', 'TinyLibCore/'] },
+    { name: 'tiny-ml and its runtime', files: ['TinyML/', 'runtime/ml/ml.c', 'TinyLibCore/'] },
     { name: 'tiny-as, tiny-ld and the ISA', files: ['TinyAssembler.ml', 'TinyLinker.ml', 'TinyLibMachine.ml'] },
     { name: 'debug, trace, prof: looking at a program', files: ['TinyDebugger.ml', 'TinyTracer.ml', 'TinyProfiler.ml', 'TinyLibMachine.ml'] },
     { name: 'TinyLibGUI and its users', of: 'TinyLibGUI.ml', with: 'users' },

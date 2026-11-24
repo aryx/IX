@@ -65,7 +65,7 @@ The modules as planned (plan_ml.md, "How to be smaller"):
 | `languages/ml/Gen` | the stack machine into instructions, the value stack | §10 |
 | `languages/ml/Arm`, `Arm64` | what each machine decides | §10 |
 | `languages/ml/runtime/` | allocation, the collector, the primitives, in C | §11 |
-| `tiny/TinyML.ml` | all of it, smaller, in one file | §14 |
+| `tiny/TinyML/TinyML.ml` | all of it, smaller, in one file | §14 |
 
 Read §1 and §3 first: the rest follows from how a value looks at run
 time.
@@ -556,8 +556,8 @@ the kernel while gcc still builds the rest.
 
 ## 14. The one-file variant
 
-`tiny/TinyML.ml` (plan_ml.md, "Outside the compiler"): the same design
-for a smaller ML, no modules, records or arrays, in one file, first
+`tiny/TinyML/TinyML.ml` (plan_ml.md, "Outside the compiler"): the same
+design for a smaller ML, no modules, records or arrays, in one file, first
 for arm64 and TinyAssembler, now for tiny-machine only, with a runtime
 compiled by tiny-cc. Built first, to test §10 and §11's design cheaply.
 

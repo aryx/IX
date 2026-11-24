@@ -21,7 +21,7 @@
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 B=$ROOT/_build/default/tiny
-TML=${TML:-$B/TinyML.exe}
+TML=${TML:-$B/TinyML/TinyML.exe}
 TC=${TC:-$B/TinyC/TinyC.exe}
 MACHINE=${MACHINE:-$B/TinyMachine.exe}
 . $ROOT/tiny/tests/link.sh

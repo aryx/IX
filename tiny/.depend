@@ -18,7 +18,6 @@ TinyLibMachine.o: TinyLibMachine.mli
 TinyLibPlayground.o: TinyLibDraw.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLibPlayground.mli
 TinyLibRegex.o: TinyLibRegex.mli
 TinyLinker.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyLinker.mli
-TinyML.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML.mli
 TinyOffice.o: TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice.mli
 TinyPlay.o: TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyPlay.mli
 TinyProfiler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyProfiler.mli
@@ -50,13 +49,13 @@ TinyC/Parser.o: TinyC/Lexer.tmi TinyC/Tree.tmi TinyC/Types.tmi TinyC/Parser.mli
 TinyC/TinyC.o: TinyC/Lexer.tmi TinyC/Lower.tmi TinyC/Machine.tmi TinyC/Parser.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyC/Tree.tmi TinyC/Types.tmi TinyC/TinyC.mli
 TinyC/Tree.o: TinyC/Types.tmi TinyC/Tree.mli
 TinyC/Types.o: TinyC/Types.mli
-TinyML.o: TinyML/Compile.tmi TinyML/Lexer.tmi TinyML/Link.tmi TinyML/Machine.tmi TinyML/Parser.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML.mli
 TinyML/Compile.o: TinyML/Lexer.tmi TinyML/Machine.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML/Compile.mli
 TinyML/Formats.o: TinyML/Lexer.tmi TinyML/Tree.tmi TinyML/Formats.mli
 TinyML/Lexer.o: TinyML/Lexer.mli
 TinyML/Link.o: TinyML/Compile.tmi TinyML/Machine.tmi TinyLibMachine.tmi TinyML/Tree.tmi TinyML/Link.mli
 TinyML/Machine.o: TinyML/Lexer.tmi TinyLibMachine.tmi TinyML/Tree.tmi TinyML/Machine.mli
 TinyML/Parser.o: TinyML/Formats.tmi TinyML/Lexer.tmi TinyML/Tree.tmi TinyML/Parser.mli
+TinyML/TinyML.o: TinyML/Compile.tmi TinyML/Lexer.tmi TinyML/Link.tmi TinyML/Machine.tmi TinyML/Parser.tmi TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyML/Tree.tmi TinyML/Types.tmi TinyML/TinyML.mli
 TinyML/Tree.o: TinyML/Lexer.tmi TinyML/Tree.mli
 TinyML/Types.o: TinyML/Lexer.tmi TinyML/Parser.tmi TinyML/Tree.tmi TinyML/Types.mli
 TinyOffice.o: TinyOffice/Chart.tmi TinyOffice/Drawing.tmi TinyOffice/File.tmi TinyOffice/Model.tmi TinyOffice/Paint.tmi TinyOffice/Sheet.tmi TinyOffice/Text.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice.mli

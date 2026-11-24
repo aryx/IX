@@ -172,7 +172,7 @@ has5() { command -v opam > /dev/null &&
 # both tiny-mls and compared, by a rule of tiny/TinyKernel/Makefile gone
 # with 12b1da04).
 by5() {
-  opam exec --switch=$ocaml5 -- dune build @check ./tiny/TinyML.exe --build-dir _build5
+  opam exec --switch=$ocaml5 -- dune build @check ./tiny/TinyML/TinyML.exe --build-dir _build5
 }
 case $(ocamlfind ocamlopt -version) in
   5.*) skip "$t5" "dune's build is OCaml 5's already";;

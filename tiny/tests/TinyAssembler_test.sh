@@ -17,7 +17,7 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TAS=${TAS:-$ROOT/_build/default/tiny/TinyAssembler.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC/TinyC.exe}
-TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
+TML=${TML:-$ROOT/_build/default/tiny/TinyML/TinyML.exe}
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 

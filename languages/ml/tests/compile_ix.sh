@@ -122,7 +122,6 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_cor
   # user/office.ml too, mini-ml reading TinyOffice.mli's Model.office)
   own=
   case $f in
-  tiny/TinyML.ml) own="-I tiny/TinyML";;
   tiny/TinyOffice.ml|tiny/TinyTroff.ml|tiny/user/office.ml) own="-I tiny/TinyOffice";;
   tiny/TinyBrowser.ml|tiny/TinyMachine.ml|tiny/TinyMachine/TinyMachinePeer.ml) own="-I tiny/TinyBrowser";;
   esac

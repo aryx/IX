@@ -489,7 +489,8 @@ ml/, report/, manifest/'s .ml.
 | manifests, library mode | 8baebe50 | 212 | 95 | 89 | 124 | 37 | 4,494 |
 | A, mini-analyze's part | 4ec6246f | 212 | 95 | 89 | 124 | 37 | 4,581 |
 | A, tiny_check.sh's merge | bab77cc3 | 196 | 95 | 100 | 124 | 37 | 4,581 |
-| C, interface alone; tiny-machine | the next | 197 | 95 | 100 | 124 | 37 | 4,632 |
+| C, interface alone; tiny-machine | 456676db | 197 | 95 | 100 | 124 | 37 | 4,632 |
+| C, the SDL programs; tiny-mkfs | the next | 190 | 95 | 100 | 124 | 37 | 4,642 |
 
 A, mini-analyze's part (2026-11-24): the reports return their lines
 (Caps_report, Exn_report, Bugs_report), every analysis's -summary has
@@ -543,3 +544,26 @@ its interface alone, every program's main escaping into it, nothing
 dead: the 8 SDL programs and tiny-mkfs (KRaw, the SDL windows' memory)
 kept the old way; the author: "let's commit and use a ref None for sdl
 so we can also process those sdl progs".
+
+C, done (2026-11-24): every host run of tiny_check.sh by dune's manifest.
+TinyLibSystem/sdl kept to mini-ml's dialect, host-only as it is (the
+author: "there is no support for include in mini-ml (or tiny-ml) so we
+should try to avoid its use, even in parts that are host only like the
+sdl, so it can be analyzed by the mini-analyer"): its two lazy values a
+ref None and a function; include TinyLibSystemUnix replaced by its 56
+values and 6 types said one by one (module U = TinyLibSystemUnix, type
+stat = U.stat = {...}), a comment saying why; Unix.open_process_args_in
+by pipe, create_process and waitpid, which lib_core's Unix has;
+Option.value ~default a match. Smoke-run with SDL_VIDEODRIVER=dummy:
+calc and www draw their screens. TinyMachineSDL (tsdl's polymorphic
+variants) read by its interface. In the analyzer: a unit whose code
+cannot be read, of the program's part too, by its interface; and a unit
+a manifest links resolves to the file linked before the naming file's
+own directory (the author: "we should use a manifest based approach so
+we don't need those filename heuristic that sometimes fail"):
+KGraphics.ml's KRaw was tiny/TinyKernel/KRaw.ml beside it, not the
+host/KRaw.ml dune links, and 11 of host KRaw's functions looked dead.
+caps_tiny.txt: 21 reports of TinyLibSystem/sdl recorded, read now for
+the first time (getenv, the clock, exit, files without capabilities),
+unix's dial's gone (said through the SDL programs read on unix's). O
+left for -caps of tiny-kernel's 7 programs dune does not build (D).

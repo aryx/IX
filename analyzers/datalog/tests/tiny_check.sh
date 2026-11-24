@@ -11,19 +11,13 @@
 # t-IX's build; on the host, Dune_manifest's of dune's link (dune
 # describe and dune rules): its files as linked, its platform's among
 # them, nothing told (a library unit whose code mini-ml's dialect cannot
-# read, by its interface: lib_core's Parallel on OCaml 5's Domain, for
-# tiny-machine). Nine host runs are given by their main file and flags,
-# the old way (the analyzer finds the units it names in the project,
-# Unit_finder, lib_core's by itself, an -I's read and not reported on),
-# their manifest's link being what the analyzer cannot read: the 8 SDL
-# windows' programs (TinyLibSystem/sdl's lazy), tiny-mkfs (its KRaw,
-# host/, is the SDL windows' memory too, whose uses are not read: its -I
-# keeps it a library, not reported on). -caps reads each on the host alone: the
-# analyzer does not know tiny-kernel's calls' capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
-# does not read: tiny-machine-window, user/sdl/'s own TinyLibSystem,
-# stood for by the host's, whose code it includes), js_of_ocaml
-# (tiny-machine-web). The kernel is read as a program of tiny-kernel,
-# which it is, on TinyLibCore (TinyLibSystem, which it does not name, is
+# read by its interface: lib_core's Parallel on OCaml 5's Domain,
+# TinyMachineSDL on tsdl). -caps reads each on the host alone: the
+# analyzer does not know tiny-kernel's calls' capabilities yet. Not
+# here: tiny-machine-window (tsdl), tiny-machine-web (js_of_ocaml).
+# (old: the SDL windows' programs read on the host's TinyLibSystem,
+# which stood for theirs, an include then.) The kernel is read as a
+# program of tiny-kernel, which it is, on TinyLibCore (TinyLibSystem, which it does not name, is
 # not read): it shares KNetwork.ml with tiny-machine, and without it a
 # function only the kernel calls would be said dead.
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
@@ -53,10 +47,11 @@ esac
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 T=tiny
-# How a program given by its main file is read on the host: its
-# platform, the one choice the analyzer cannot make from a main file
-# (TinyLibSystem's implementations have the same names), as OCaml builds
-# it, on lib_core and the host's TinyLibSystem (O). A manifest says it:
+# How a program dune does not build is read on the host, for -caps (the
+# tiny-kernel's alone, by their main file): its platform, the one choice
+# the analyzer cannot make from a main file (TinyLibSystem's
+# implementations have the same names), on lib_core and the host's
+# TinyLibSystem (O). A manifest says it:
 # TinyLibCore's members of stdlib.a and tiny-kernel's TinyLibSystem;
 # lib_core and TinyLibSystem/unix in dune's link. (old, before the
 # manifests: K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel" and
@@ -68,41 +63,40 @@ O="-L lib_core -own $T/TinyLibSystem/unix"
 # the Buildfile's; and the windows' programs of user/sdl/dune, whose
 # TinyLibSystem includes the host's, read here for it: the analyzer does
 # not read tsdl); its name in the Buildfile (its manifest's); its main
-# file; on the host, dune (dune's manifest of the main's .exe) or the
-# flags beside O's of the old way, above
+# file; its executable on the host, dune's (its manifest's)
 programs() {
   cat <<EOF
-tiny-build|b|build|$T/TinyBuildSystem.ml|dune
-tiny-shell|b|rc|$T/TinyShell.ml|dune
-tiny-editor|b|ed|$T/TinyEditorLine.ml|dune
-tiny-utils|b|utils|$T/TinyUtilities.ml|dune
-tiny-cc|b|cc|$T/TinyC/TinyC.ml|dune
-tiny-db|b|db|$T/TinyDatabase.ml|dune
-tiny-vcs|b|vcs|$T/TinyVCS.ml|dune
-tiny-as|b|as|$T/TinyAssembler.ml|dune
-tiny-ld|b|ld|$T/TinyLinker.ml|dune
-tiny-ar|b|ar|$T/TinyArchiver.ml|dune
-tiny-cpu|h||$T/TinyCPU.ml|dune
-tiny-prof|b|prof|$T/TinyProfiler.ml|dune
-tiny-ml|b|ml|$T/TinyML/TinyML.ml|dune
-tiny-machine|h||$T/TinyMachine/TinyMachine.ml|dune
-tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml|dune
-tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|dune
-tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml|dune
-tiny-mkfs|h||$T/TinyKernel/host/TinyMkfs.ml|-I $T/TinyKernel/host -I $T/TinyKernel
-mkfont|h||$T/TinyKernel/fonts/Mkfont.ml|dune
+tiny-build|b|build|$T/TinyBuildSystem.ml|$T/TinyBuildSystem.exe
+tiny-shell|b|rc|$T/TinyShell.ml|$T/TinyShell.exe
+tiny-editor|b|ed|$T/TinyEditorLine.ml|$T/TinyEditorLine.exe
+tiny-utils|b|utils|$T/TinyUtilities.ml|$T/TinyUtilities.exe
+tiny-cc|b|cc|$T/TinyC/TinyC.ml|$T/TinyC/TinyC.exe
+tiny-db|b|db|$T/TinyDatabase.ml|$T/TinyDatabase.exe
+tiny-vcs|b|vcs|$T/TinyVCS.ml|$T/TinyVCS.exe
+tiny-as|b|as|$T/TinyAssembler.ml|$T/TinyAssembler.exe
+tiny-ld|b|ld|$T/TinyLinker.ml|$T/TinyLinker.exe
+tiny-ar|b|ar|$T/TinyArchiver.ml|$T/TinyArchiver.exe
+tiny-cpu|h||$T/TinyCPU.ml|$T/TinyCPU.exe
+tiny-prof|b|prof|$T/TinyProfiler.ml|$T/TinyProfiler.exe
+tiny-ml|b|ml|$T/TinyML/TinyML.ml|$T/TinyML/TinyML.exe
+tiny-machine|h||$T/TinyMachine/TinyMachine.ml|$T/TinyMachine/TinyMachine.exe
+tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml|$T/TinyMachine/TinyMachineSocket.exe
+tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|$T/TinyMachine/TinyMachineFetch.exe
+tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml|$T/TinyKernel/steps/t6/TinyMkfat.exe
+tiny-mkfs|h||$T/TinyKernel/host/TinyMkfs.ml|$T/TinyKernel/host/TinyMkfs.exe
+mkfont|h||$T/TinyKernel/fonts/Mkfont.ml|$T/TinyKernel/fonts/Mkfont.exe
 windows|k|windows|$T/user/windows.ml
 bigmem|k|bigmem|$T/user/bigmem.ml
 square|k|square|$T/user/square.ml
-tetris|b|tetris|$T/user/tetris.ml
-orrery|b|orrery|$T/user/orrery.ml
-calc|b|calc|$T/user/calc.ml
+tetris|b|tetris|$T/user/tetris.ml|$T/user/sdl/tetris.exe
+orrery|b|orrery|$T/user/orrery.ml|$T/user/sdl/orrery.exe
+calc|b|calc|$T/user/calc.ml|$T/user/sdl/calc.exe
 temp|k|temp|$T/user/temp.ml
-emacs|b|emacs|$T/user/emacs.ml
-office|b|office|$T/user/office.ml
-troff|b|troff|$T/user/troff.ml
-play|b|play|$T/user/play.ml
-www|b|www|$T/user/www.ml
+emacs|b|emacs|$T/user/emacs.ml|$T/user/sdl/emacs.exe
+office|b|office|$T/user/office.ml|$T/user/sdl/office.exe
+troff|b|troff|$T/user/troff.ml|$T/user/sdl/troff.exe
+play|b|play|$T/user/play.ml|$T/user/sdl/play.exe
+www|b|www|$T/user/www.ml|$T/user/sdl/www.exe
 trace|k|trace|$T/user/trace.ml
 debug|k|debug|$T/user/debug.ml
 tiny-kernel|k|TinyKernel/kernel.img|$T/TinyKernel/TinyKernel.ml
@@ -116,10 +110,10 @@ EOF
 runs() {
   programs | while IFS='|' read -r name sys tix main host; do
     # (the host's: dune's manifest of its link, or the main file and O)
-    if [ "$host" = dune ]; then
-      hostrun="$name|-sources .|$W/dune/${main%.ml}.exe.manifest"
+    if [ "${host%.exe}" != "$host" ]; then
+      hostrun="$name|-sources .|$W/dune/$host.manifest"
     else
-      hostrun="$name|$O $host|$main"
+      hostrun="$name|$O|$main"
     fi
     if [ $flag = -caps ]; then echo "$hostrun"; continue; fi
     # (tiny-kernel's: tiny-ld's manifest of the build below, its paths
@@ -145,8 +139,7 @@ fi
 # (the host's programs as dune links them: its modules' sources and each
 # link, in a build directory of its own, not _build's, which another
 # dune may hold; Dune_manifest makes their manifests, seconds)
-exes=$(programs |
-  awk -F'|' '$5 == "dune" { sub(/\.ml$/, ".exe", $4); print "./" $4 }')
+exes=$(programs | awk -F'|' '$5 ~ /\.exe$/ { print "./" $5 }')
 { dune describe workspace --build-dir $W/dune-build > $W/describe.sexp &&
   dune rules --build-dir $W/dune-build $exes > $W/rules.sexp &&
   $DUNE_MANIFEST $W/describe.sexp $W/rules.sexp $W/dune; } > $W/dune.log 2>&1 ||

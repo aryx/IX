@@ -29,7 +29,82 @@
  * copy kept in dir when the fetch fails (as tiny-machine -net dir); the
  * answer's messages read one at a time, as a link's are. *)
 
-include TinyLibSystemUnix
+(* The host's calls, unix/'s (TinyLibSystemUnix, its file copied here),
+ * as they are; this file makes the screen's, the mouse's, the sound's,
+ * the console's and the processes' its own.
+ *
+ * Why each one is said here rather than by include TinyLibSystemUnix:
+ * neither mini-ml nor tiny-ml has include, and mini-analyze reads ML
+ * with mini-ml's front end, so an include would make this file, and
+ * with it every window's program as dune links it, unreadable to the
+ * analyses (their manifests, Dune_manifest). This file is the host's
+ * alone, built by OCaml, but it keeps to their dialect for that.
+ * (old: include TinyLibSystemUnix) *)
+module U = TinyLibSystemUnix
+
+type pid = int
+type fd = int
+type status = string
+type stat = U.stat = { st_dir : bool; st_size : int }
+type seconds = int
+type milliseconds = int
+
+let box = U.box
+let chdir = U.chdir
+let dup2 = U.dup2
+let environment = U.environment
+let eprint = U.eprint
+let exec = U.exec
+let exists = U.exists
+let exit = U.exit
+let fd_draw = U.fd_draw
+let fd_mouse = U.fd_mouse
+let fd_stderr = U.fd_stderr
+let fd_stdin = U.fd_stdin
+let fd_stdout = U.fd_stdout
+let flush = U.flush
+let fork = U.fork
+let getcwd = U.getcwd
+let getpid = U.getpid
+let ignore_interrupt = U.ignore_interrupt
+let isatty = U.isatty
+let is_directory = U.is_directory
+let is_executable = U.is_executable
+let kill = U.kill
+let link = U.link
+let links = U.links
+let logging = U.logging
+let main = U.main
+let millis = U.millis
+let mkdir = U.mkdir
+let mtime = U.mtime
+let open_append = U.open_append
+let open_in = U.open_in
+let open_rw = U.open_rw
+let pipe = U.pipe
+let print = U.print
+let read_all = U.read_all
+let readdir = U.readdir
+let read_file = U.read_file
+let read_line = U.read_line
+let remove = U.remove
+let rename = U.rename
+let save = U.save
+let seek = U.seek
+let seek_end = U.seek_end
+let set_executable = U.set_executable
+let shell = U.shell
+let sleep = U.sleep
+let stat = U.stat
+let stdin = U.stdin
+let time = U.time
+let touch = U.touch
+let wait = U.wait
+let wait_any = U.wait_any
+let with_open_append = U.with_open_append
+let with_open_in = U.with_open_in
+let with_open_out = U.with_open_out
+let write_file = U.write_file
 
 module G = KGraphics
 module Audio = KAudio
@@ -48,11 +123,11 @@ let enq = "\005"
  * one of the host's, /dev/null's, so that a file opened after it never
  * has its number; and 3 and 4, the drawing's and the mouse's, are taken
  * so at the start *)
-let reserve () : fd = number (Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0)
+let reserve () : fd = U.number (Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0)
 let () =
   let rec take () =
     let n = reserve () in
-    if n <= fd_mouse then take () else Unix.close (fd n) in
+    if n <= fd_mouse then take () else Unix.close (U.fd n) in
   take ()
 
 (*****************************************************************************)
@@ -71,23 +146,38 @@ let screen_at = 0xf00000
  * Ubuntu Mono with grey edges; tiny.font, the same a pixel set or not;
  * TINY_FONT=kernels/lib_machine/font1.bin: the bold and the large made
  * of its one face, as before tiny.font) *)
-let conn = lazy (
-  let font =
-    match Sys.getenv_opt "TINY_FONT" with
-    | Some file -> In_channel.with_open_bin file In_channel.input_all
-    | None -> TinyFont.bits
-  in
-  Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
-  G.arena 0xd00000 0x200000;
-  G.free 0xfc0000 0x3f000;
-  let (screen : G.image) =
-    { r = G.rect 0 0 width height; at = screen_at; repl = false } in
-  G.connect screen
-    (G.font_mask 0x1000 (String.length font)
-       (G.alloc 16384)))
+(* (made at the first use, as the window: a ref, not lazy, which
+ * mini-ml's dialect has not, so that mini-analyze reads this file) *)
+let made_conn : G.conn option ref = ref None
+let conn () : G.conn =
+  match !made_conn with
+  | Some c -> c
+  | None ->
+      let font =
+        match Sys.getenv_opt "TINY_FONT" with
+        | Some file -> In_channel.with_open_bin file In_channel.input_all
+        | None -> TinyFont.bits
+      in
+      Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
+      G.arena 0xd00000 0x200000;
+      G.free 0xfc0000 0x3f000;
+      let (screen : G.image) =
+        { r = G.rect 0 0 width height; at = screen_at; repl = false } in
+      let c =
+        G.connect screen
+          (G.font_mask 0x1000 (String.length font)
+             (G.alloc 16384)) in
+      made_conn := Some c;
+      c
 
-let display =
-  lazy (SDL.create ~title:(Filename.basename Sys.argv.(0)))
+let made_display : SDL.t option ref = ref None
+let display () : SDL.t =
+  match !made_display with
+  | Some d -> d
+  | None ->
+      let d = SDL.create ~title:(Filename.basename Sys.argv.(0)) in
+      made_display := Some d;
+      d
 
 (* TINY_SCREEN=file: the screen written there as a PPM when the program
  * ends, a TERM signal ending it (for a look without a window:
@@ -114,13 +204,13 @@ let show () =
         (3 * Char.code (Bytes.get KRaw.mem (screen_at + i)))
         rgb (3 * i) 3
     done;
-    (Lazy.force display).present width height (Bytes.unsafe_to_string rgb)
+    (display ()).present width height (Bytes.unsafe_to_string rgb)
   end
 
 (* the drawing's messages; one refused is said, and the program goes on, as
  * after tiny-kernel's write of /dev/draw (-1 there) *)
 let draw s =
-  match G.messages (Lazy.force conn) s with
+  match G.messages (conn ()) s with
   | () -> dirty := true
   | exception KGraphics.Graphics why ->
       prerr_string ("draw: " ^ why ^ "\n"); dirty := true
@@ -156,7 +246,7 @@ let feed () =
           Bytes.set KRaw.mem a '\000'
         done;
         fed := due;
-        (Lazy.force display).play (Bytes.unsafe_to_string b)
+        (display ()).play (Bytes.unsafe_to_string b)
       end
 
 let speak (ahead : int ref) s =
@@ -210,7 +300,7 @@ let keys = SDL.keyboard ()
 
 (* the window's events, made keys and the mouse *)
 let pump () =
-  if Lazy.is_val display then begin
+  if !made_display <> None then begin
     let key byte = typed := !typed ^ String.make 1 (Char.chr byte) in
     let now = Unix.gettimeofday () in
     List.iter (function
@@ -225,7 +315,7 @@ let pump () =
           mouse := { m with p_buttons = held };
           fresh := true
       | e -> List.iter key (SDL.typed keys now e))
-      ((Lazy.force display).poll ());
+      ((display ()).poll ());
     Option.iter key (SDL.repeated keys now)
   end
 
@@ -274,9 +364,17 @@ let fetch args =
     if Filename.check_suffix Sys.executable_name ".exe" then
       Filename.concat dir "../../TinyMachine/TinyMachineFetch.exe"
     else Filename.concat dir "tiny-machine-fetch" in
-  let ic = Unix.open_process_args_in helper (Array.of_list (helper :: args)) in
+  (* (old: Unix.open_process_args_in, which lib_core's Unix has not, the
+   * library mini-analyze reads this file on) *)
+  let r, w = Unix.pipe ~cloexec:true () in
+  let pid =
+    Unix.create_process helper (Array.of_list (helper :: args)) Unix.stdin w
+      Unix.stderr in
+  Unix.close w;
+  let ic = Unix.in_channel_of_descr r in
   let out = In_channel.input_all ic in
-  match Unix.close_process_in ic with Unix.WEXITED 0 -> Ok out | _ -> Error out
+  close_in ic;
+  match Unix.waitpid [] pid with _, Unix.WEXITED 0 -> Ok out | _ -> Error out
 
 (* a copy kept in TINY_WWW's directory, by its name *)
 let kept name = match Sys.getenv_opt "TINY_WWW", name with
@@ -375,7 +473,7 @@ let write (n : fd) (s : string) : unit =
     | None -> TinyLibSystemUnix.write n s
 
 let close (n : fd) : unit =
-  if Hashtbl.mem made n then (Hashtbl.remove made n; Unix.close (fd n))
+  if Hashtbl.mem made n then (Hashtbl.remove made n; Unix.close (U.fd n))
   else TinyLibSystemUnix.close n
 
 (* /dev/audio, a voice; the speaker started at the first open, and what
@@ -392,7 +490,7 @@ let open_out (caps : < Cap.open_out; .. >) (file : Fpath.t) : fd =
             (fun _ m k -> match m with Speaker a -> max k !a | _ -> k)
             made 0 in
         while !fed < last + 1600 do feed (); Unix.sleepf 0.02 done;
-        while (Lazy.force display).queued () > 0 do Unix.sleepf 0.02 done)
+        while (display ()).queued () > 0 do Unix.sleepf 0.02 done)
     end;
     opened (Speaker (ref 0))
   end
@@ -412,7 +510,7 @@ let spawn (_ : < Cap.fork; Cap.exec; .. >) (file : Fpath.t)
     (if String.contains argv0 '/' then [ Filename.dirname argv0 ] else [])
     @ [ Filename.dirname exe ]
     @ String.split_on_char ':'
-        (Option.value (Sys.getenv_opt "PATH") ~default:"") in
+        (match Sys.getenv_opt "PATH" with Some p -> p | None -> "") in
   let names = [ "tiny-" ^ name; "mini-" ^ name ] in
   let found =
     List.find_opt Sys.file_exists

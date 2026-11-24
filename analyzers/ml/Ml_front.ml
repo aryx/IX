@@ -169,6 +169,9 @@ let parsed (caps : < Cap.open_in; .. >) (f : string) (text : string) : (Ast.sour
   | Ok tree when !flat_dir <> None -> Ok (tree, text)
   | Ok tree -> rewritten caps f text tree
 
+(* (see Ml_front.mli; the loader's) *)
+let linked : (string, string) Hashtbl.t = Hashtbl.create 64
+
 (* how a unit's file is found: by the file that names it, the unit's
  * name, the extensions *)
 type look = string -> string -> string list -> (Fpath.t * string) option
@@ -177,8 +180,15 @@ type look = string -> string -> string list -> (Fpath.t * string) option
 let loader (caps : < Cap.open_in; Cap.readdir; .. >) (look : look) (file : Fpath.t) : Scope.loader =
  fun name ->
   let exts = [ ".mli"; ".ml" ] in
-  (* (the naming unit's own directory first) *)
-  let found = match find caps [ Fpath.parent file ] name exts with Some x -> Some x | None -> look (Fpath.to_string file) name exts in
+  (* (the naming unit's own directory first; but a unit a manifest says
+   * linked is the file linked: tiny/TinyKernel/KGraphics.ml's KRaw is
+   * host/KRaw.ml when dune links that, not the KRaw.ml beside it) *)
+  let found =
+    if Hashtbl.mem linked name then look (Fpath.to_string file) name exts
+    else
+      match find caps [ Fpath.parent file ] name exts with
+      | Some x -> Some x
+      | None -> look (Fpath.to_string file) name exts in
   match found with
   | None -> None
   | Some (f, text) -> (match parsed caps (Fpath.to_string f) text with Ok (src, _) -> Some src | Error m -> raise (Resolve.Error (0, m)))
@@ -234,7 +244,6 @@ let unread : string list ref = ref []
 let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 let own_dirs : Fpath.t list ref = ref []
-let linked : (string, string) Hashtbl.t = Hashtbl.create 64
 let components : (string, unit) Hashtbl.t = Hashtbl.create 16
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
@@ -379,9 +388,10 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     if not (Hashtbl.mem files u) then begin
       Hashtbl.replace files u "";
       match look from u [ ".ml" ] with
-      | Some (f, _)
-        when not (mine (FS.cleanname (Fpath.to_string (Fpath.parent f))))
-             && not (!Closure_facts.has_body u) -> ()
+      (* (a unit whose code cannot be read, its interface alone: a
+       * library's, or of the program's part, -own's; a file given is
+       * read before, not here) *)
+      | Some _ when not (!Closure_facts.has_body u) -> ()
       | Some (f, text) when mine (FS.cleanname (Fpath.to_string (Fpath.parent f))) ->
           (* (a unit of the program's: as a file given, marked before it
            * is read for Tree_facts) *)

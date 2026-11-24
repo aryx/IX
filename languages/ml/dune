@@ -11,9 +11,12 @@
 (ocamllex Lexer)
 
 ; the grammar's places are menhir's ($sloc), which mini-yacc reads too:
-; menhir here, mini-yacc in the mkfile
+; menhir here, mini-yacc in the mkfile. --strict, as OCaml's own: a
+; conflict, or any other warning of menhir's, fails the build (the
+; grammar's ambiguities are said by its precedences)
 (menhir
- (modules Parser))
+ (modules Parser)
+ (flags --strict))
 
 ; the command: the front end given its back ends
 (library

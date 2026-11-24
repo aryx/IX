@@ -1,4 +1,12 @@
-; TinyBrowser.ml's parts (tiny-ml compiles them before it, for www on
+; TinyBrowser.ml, www, tiny-kernel's browser, on its parts below: built
+; here as a library for tiny-www (user/sdl/)
+(library
+ (name tiny_browser)
+ (wrapped false)
+ (modules TinyBrowser)
+ (libraries tiny_lib_gui tiny_browser_parts tiny_browser_screen))
+
+; its parts (tiny-ml compiles them before it, for www on
 ; tiny-kernel): the reading of a page into lines, its test's on the
 ; host (../tests/TinyBrowser_tests/), the addresses, and the HTTP www and
 ; the wire's other end speak
@@ -7,7 +15,7 @@
  (wrapped false)
  (modules Strings Charset Tokens Lines Html Url Http))
 
-; TinyBrowser.ml's screen: what it shows, drawn by TinyLibGUI's and the
+; its screen: what it shows, drawn by TinyLibGUI's and the
 ; kernel's drawing messages (apart from the parts above, which the wire's
 ; other end links too, with no TinyLibSystem)
 (library

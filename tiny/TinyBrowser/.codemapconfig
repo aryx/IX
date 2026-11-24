@@ -1,13 +1,30 @@
 // tiny/TinyBrowser/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The program,
-// www, is ../TinyBrowser.ml; these are its reading of a page, in their
-// order, the addresses, HTTP and the screen.
+// www, is TinyBrowser.ml; the others are its reading of a page, in
+// their order, the addresses, HTTP and the screen.
 local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "www's parts: a page read once, as it arrives, to lines with no tree; its addresses, HTTP/1.0, its screen.",
+  summary: "www, TinyBrowser.ml, and its parts: a page read once, as it arrives, to lines with no tree; its addresses, HTTP/1.0, its screen.",
   files: {
+    'TinyBrowser.ml': { digest: 'b40318a99e1a',
+      summary: "www: a page asked of the wire's other end, drawn as its lines come, its pictures a row a message.",
+      capitals: [{ at: 'def:browse', say: 'one loop: the keys, the mouse, the wire' }],
+      important: [
+        { at: 'def:helpers', say: "Mosaic's helpers: a WAV to play, a PDF to page", weight: 1 },
+        { at: 'def:take', say: "the page's bytes fed to the reading as they come", weight: 2 },
+        { at: 'def:load', say: 'a page asked for; the old one let go', weight: 2 },
+        { at: 'def:next_picture', say: 'the pictures one at a time, those on screen first', weight: 2 },
+        { at: 'def:act', weight: 1 },
+        { at: 'def:browse', weight: 3 },
+      ],
+      related: ['Lines.ml', '../user/www.ml', '../TinyLibGUI.ml', '../tests/TinyBrowser_test.sh', '../../browsers/'],
+    },
+    'TinyBrowser.mli': { digest: '970e9e873109',
+      summary: "www's idea: a page read once, as it arrives, straight to lines; no tree, a tag a row in a table.",
+      important: [{ at: 'comment:"read only once, as it arrives"', say: 'the pipeline of the reading', weight: 3 }],
+    },
     'Charset.ml': { digest: '00ebcbc1d4a4',
       summary: "UTF-8 and HTML's entities to the font's 128 characters: an accent dropped, a dash a -, the rest ?.",
       important: [

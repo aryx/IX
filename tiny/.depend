@@ -5,7 +5,6 @@ TinyAppTemperature.o: TinyLibGUI.tmi TinyAppTemperature.mli
 TinyAppTetris.o: TinyLibPlayground.tmi TinyAppTetris.mli
 TinyArchiver.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyArchiver.mli
 TinyAssembler.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyAssembler.mli
-TinyBrowser.o: TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser.mli
 TinyBuildSystem.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBuildSystem.mli
 TinyCPU.o: TinyLibMachine.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyCPU.mli
 TinyDatabase.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyDatabase.mli
@@ -40,7 +39,7 @@ user/tetris.o: TinyAppTetris.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
 user/trace.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTracer.tmi
 user/troff.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyTroff.tmi
 user/windows.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyWindows.tmi
-user/www.o: TinyBrowser.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi
+user/www.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi
 TinyC/Lexer.o: TinyC/Lexer.mli
 TinyC/Lower.o: TinyC/Tree.tmi TinyC/Types.tmi TinyC/Lower.mli
 TinyC/Machine.o: TinyC/Lower.tmi TinyLibMachine.tmi TinyC/Tree.tmi TinyC/Types.tmi TinyC/Machine.mli
@@ -67,12 +66,13 @@ TinyOffice/Sheet.o: TinyOffice/Model.tmi TinyOffice/Text.tmi TinyLibPlayground.t
 TinyOffice/Text.o: TinyOffice/Model.tmi TinyLibPlayground.tmi TinyOffice/Text.mli
 TinyOffice/TinyOffice.o: TinyOffice/Chart.tmi TinyOffice/Drawing.tmi TinyOffice/File.tmi TinyOffice/Model.tmi TinyOffice/Paint.tmi TinyOffice/Sheet.tmi TinyOffice/Text.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOffice.mli
 user/office.o: TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyOffice/TinyOffice.tmi
-TinyBrowser.o: TinyBrowser/Html.tmi TinyBrowser/Http.tmi TinyBrowser/Lines.tmi TinyBrowser/Screen.tmi TinyBrowser/Strings.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/Url.tmi TinyBrowser.mli
 TinyBrowser/Charset.o: TinyBrowser/Strings.tmi TinyBrowser/Charset.mli
 TinyBrowser/Html.o: TinyBrowser/Lines.tmi TinyBrowser/Strings.tmi TinyBrowser/Tokens.tmi TinyBrowser/Html.mli
 TinyBrowser/Http.o: TinyBrowser/Strings.tmi TinyBrowser/Url.tmi TinyBrowser/Http.mli
 TinyBrowser/Lines.o: TinyBrowser/Lines.mli
 TinyBrowser/Screen.o: TinyBrowser/Html.tmi TinyBrowser/Lines.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/Screen.mli
 TinyBrowser/Strings.o: TinyBrowser/Strings.mli
+TinyBrowser/TinyBrowser.o: TinyBrowser/Html.tmi TinyBrowser/Http.tmi TinyBrowser/Lines.tmi TinyBrowser/Screen.tmi TinyBrowser/Strings.tmi TinyLibDraw.tmi TinyLibGUI.tmi TinyLibPlayground.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi TinyBrowser/Url.tmi TinyBrowser/TinyBrowser.mli
 TinyBrowser/Tokens.o: TinyBrowser/Charset.tmi TinyBrowser/Strings.tmi TinyBrowser/Tokens.mli
 TinyBrowser/Url.o: TinyBrowser/Strings.tmi TinyBrowser/Url.mli
+user/www.o: TinyBrowser/TinyBrowser.tmi TinyLibSystem/tinykernel/TinyLibSystem.tmi

@@ -352,11 +352,11 @@ WWW_INCLUDES = -I TinyBrowser
 WWW_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI TinyBrowser/Strings.o \
     TinyBrowser/Charset.o TinyBrowser/Tokens.o TinyBrowser/Lines.o \
     TinyBrowser/Html.o TinyBrowser/Url.o TinyBrowser/Http.o \
-    TinyBrowser/Screen.o TinyBrowser.o user/www.o
+    TinyBrowser/Screen.o TinyBrowser/TinyBrowser.o user/www.o
 TinyBrowser/&.o: TinyBrowser/&.ml $STDLIB
 	$MLC $WWW_INCLUDES -o $target TinyBrowser/$stem.ml
-TinyBrowser.o: TinyBrowser.ml $STDLIB
-	$MLC $WWW_INCLUDES -o $target TinyBrowser.ml
+user/www.o: user/www.ml $STDLIB
+	$MLC $WWW_INCLUDES -o $target user/www.ml
 www.start.o: $STDLIB $WWW_UNITS
 www: $CRT $MLRT www.start.o $STDLIB $WWW_UNITS $MLEND
 	$LD -map -s -n -a 10 -o $target $prereq
@@ -544,7 +544,7 @@ depend:
 	$ML -depend $INCLUDES $CC_INCLUDES TinyC/*.ml >> .depend
 	$ML -depend $INCLUDES $ML_INCLUDES TinyML/*.ml >> .depend
 	$ML -depend $INCLUDES $OFFICE_INCLUDES TinyTroff.ml TinyOffice/*.ml user/office.ml >> .depend
-	$ML -depend $INCLUDES $WWW_INCLUDES TinyBrowser.ml TinyBrowser/*.ml >> .depend
+	$ML -depend $INCLUDES $WWW_INCLUDES TinyBrowser/*.ml user/www.ml >> .depend
 	@{ cd TinyLibCore && $BUILD ML=^$ML depend }
 	@{ cd TinyKernel && $BUILD ML=^$ML depend }
 

@@ -677,7 +677,7 @@ README_TINY = [
     ("tiny-temperature", ["tiny/TinyAppTemperature."]),
     ("tiny-office", ["tiny/TinyOffice/"]),
     ("tiny-troff", ["tiny/TinyTroff."]),
-    ("tiny-browser", ["tiny/TinyBrowser.", "tiny/TinyBrowser/"]),
+    ("tiny-browser", ["tiny/TinyBrowser/"]),
     # (not a program: tiny/README.md says their sum)
     ("the libraries", ["tiny/TinyLibCore/", "tiny/TinyLibSystem/",
                        "tiny/TinyLibMachine.", "tiny/TinyLibRegex.",

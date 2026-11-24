@@ -223,13 +223,7 @@
  (modules TinyTroff)
  (libraries caps tiny_office_parts tiny_lib_system))
 
-; TinyBrowser.ml, www, tiny-kernel's browser, on its parts (TinyBrowser/):
-; built here as a library for tiny-www (user/sdl/)
-(library
- (name tiny_browser)
- (wrapped false)
- (modules TinyBrowser)
- (libraries tiny_lib_gui tiny_browser_parts tiny_browser_screen))
+; (www, tiny-kernel's browser, on its parts: TinyBrowser/)
 
 ; TinyWindows.ml, tiny-kernel's window system. OCaml only checks it: its
 ; pipes and box, the windows' shells, are tiny-kernel's

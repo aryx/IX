@@ -105,7 +105,7 @@ local env_color = '#e173eb';
     { name: 'rio: mini-rio and tiny-windows', files: ['windows/rio/', 'tiny/TinyWindows.ml'] },
     { name: 'emacs: mini-emacs and tiny-kernel\'s emacs', files: ['editors/emacs/', 'tiny/TinyEditorScreen.ml'] },
     { name: 'troff: mini-troff and tiny-troff', files: ['typesetting/troff/', 'tiny/TinyTroff.ml'] },
-    { name: 'the browser: mini-netscape and tiny-browser', files: ['browsers/', 'tiny/TinyBrowser.ml', 'tiny/TinyBrowser/'] },
+    { name: 'the browser: mini-netscape and tiny-browser', files: ['browsers/', 'tiny/TinyBrowser/'] },
     { name: 'the office: mini-office and tiny-office', files: ['apps/office/', 'tiny/TinyOffice/'] },
     { name: 'acid: mini-acid and tiny-debugger', files: ['debuggers/acid/', 'tiny/TinyDebugger.ml'] },
     { name: 'prof: mini-prof and tiny-profiler', files: ['profilers/', 'tiny/TinyProfiler.ml'] },

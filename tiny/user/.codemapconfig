@@ -117,7 +117,7 @@ local wrapper(file, prog, role) = {
     },
     wrapper('emacs.ml', '../TinyEditorScreen.ml', 'the editor'),
     wrapper('office.ml', '../TinyOffice/TinyOffice.ml', 'the office'),
-    wrapper('www.ml', '../TinyBrowser.ml', 'the browser'),
+    wrapper('www.ml', '../TinyBrowser/TinyBrowser.ml', 'the browser'),
     wrapper('troff.ml', '../TinyTroff.ml', 'the typesetter'),
     wrapper('play.ml', '../TinyPlay.ml', 'the WAV player'),
     {

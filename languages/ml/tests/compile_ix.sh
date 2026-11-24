@@ -119,11 +119,11 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_cor
   # (lib_core/dotnet/: mini-ml -dotnet's runtime unit, whose externals
   # name .NET's members: compiled as -dotnet compiles it)
   # (a tiny/ program's -I's, its parts' directory: a part finds its own first;
-  # user/office.ml too, mini-ml reading TinyOffice.mli's Model.office)
+  # user/office.ml and user/www.ml too, their module in that directory)
   own=
   case $f in
   tiny/TinyTroff.ml|tiny/user/office.ml) own="-I tiny/TinyOffice";;
-  tiny/TinyBrowser.ml|tiny/TinyMachine.ml|tiny/TinyMachine/TinyMachinePeer.ml) own="-I tiny/TinyBrowser";;
+  tiny/TinyMachine.ml|tiny/TinyMachine/TinyMachinePeer.ml|tiny/user/www.ml) own="-I tiny/TinyBrowser";;
   esac
   case $f in
   lib_core/dotnet/*) err=$($ML -dotnet -L lib_core -o $W/dotnet.dll $f 2>&1 >/dev/null | head -1);;

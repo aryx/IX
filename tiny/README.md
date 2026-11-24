@@ -23,9 +23,9 @@ and each stage is a function (`TinyAssembler.mli`, `TinyC.mli`,
 `TinyML.mli`). Once a program grows past about 700 lines, it becomes
 a directory of its name, its main file there and its parts beside it,
 each part a unit with its own `.mli`: `TinyKernel/`, where
-`TinyKernel.ml` boots the kernel, `TinyC/`, `TinyML/` and
-`TinyOffice/`. (`TinyBrowser/` and `TinyMachine/` still have their main
-file beside the directory.)
+`TinyKernel.ml` boots the kernel, `TinyC/`, `TinyML/`, `TinyOffice/`
+and `TinyBrowser/`. (`TinyMachine/` still has its main file beside the
+directory.)
 
 ## What is where
 
@@ -169,7 +169,7 @@ builds t-IX with them.
 | **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 130, 70 | lib_gui's 7GUIs | [`TinyAppCalculator.ml`](TinyAppCalculator.ml), [`TinyAppTemperature.ml`](TinyAppTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppCalculator.ml)) |
 | **tiny-office** | an office suite in one program: a document of pages of boxes, each a text edited as it is shown (bold, italic, large), a sheet with its formulas, a drawing, a paint or a chart that follows its sheet; pull-down menus; its file Markdown with a few LaTeX commands | 2,230 | mini-office | [`TinyOffice/`](TinyOffice/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyOffice/TinyOffice.ml)) |
 | **tiny-troff** | the office's documents, or Markdown, printed as text, a web page or PDF | 640 | mini-troff | [`TinyTroff.ml`](TinyTroff.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTroff.ml)) |
-| **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 2,380 | mini-netscape | [`TinyBrowser.ml`](TinyBrowser.ml), [`TinyBrowser/`](TinyBrowser/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
+| **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 2,380 | mini-netscape | [`TinyBrowser/`](TinyBrowser/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser/TinyBrowser.ml)) |
 
 ### What each keeps, changes and drops
 
@@ -218,7 +218,7 @@ not have.
 | [tiny-tetris](TinyAppTetris.ml) `tetris`<br>m-IX's Tetris | the well never changed once in a model; the background kept as shapes; m-IX's sounds and theme | each rotation 16 bits, so a fit is sixteen bit tests, with no case per piece | the shadow, holding a piece, wall kicks, the bag, pause, high scores |
 | [tiny-orrery](TinyAppOrrery.ml) `orrery`<br>the playground's SolarSystem | the view from above, each planet's place on 2000-01-01 and its period, the distances compressed and the sizes magnified | — | the floats (a sine table instead), Kepler's ellipses and second law (circles at a constant speed), the true scale, the Moon |
 | [tiny-gui](TinyLibGUI.ml)<br>lib_gui; libpanel | an interface a value the model is turned into: widgets made again from each model | the state below the model three points of the mouse: the focus is a position, no widget needs a name | a moving caret, selection, sliders and lists, themes, resizing, time |
-| [tiny-browser](TinyBrowser.ml) `www`<br>mini-netscape | a page's text, links and pictures, in the ASCII of the machine's font | read once as it arrives, straight into lines: no document tree, a tag a row in a table | style sheets, scripts, forms, a page's colours and fonts |
+| [tiny-browser](TinyBrowser/TinyBrowser.ml) `www`<br>mini-netscape | a page's text, links and pictures, in the ASCII of the machine's font | read once as it arrives, straight into lines: no document tree, a tag a row in a table | style sheets, scripts, forms, a page's colours and fonts |
 | [`debug`](TinyDebugger.ml)<br>principia's acid | one descriptor and text commands; the kernel keeps the breakpoints; gdb's letters | a step is the timer's interrupt after one instruction, nothing decoded | the source: instructions only, no line of C or ML; watchpoints, conditional breakpoints, printing by type, the kernel |
 | [`trace`](TinyTracer.ml)<br>ratrace, strace | a stop before and after each call; the bytes as C strings, strace's way | the kernel decodes nothing, where ratrace's formats every call; children followed without parsing lines | strace's options (`-e`, `-t`, `-c`, `-s`), detaching |
 | [tiny-vcs](TinyVCS.ml) `vcs`<br>mini-git; git9 | git's objects, trees and DAG; Myers' diff, diff3's merge; remotes as directories | the repository one hash, an operation log: every command atomic and undoable; no staging area | git's formats, packs, the wire protocol, the index, tags, rebase |

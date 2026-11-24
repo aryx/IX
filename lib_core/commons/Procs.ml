@@ -65,7 +65,10 @@ let spawn caps prog args ~stdin ~stdout =
       Unix._exit 127
   | pid -> pid
 
-let create_process (_caps : < Cap.exec; .. >) prog args ~stdin ~stdout =
+let create_process_stderr (_caps : < Cap.exec; .. >) prog args ~stdin ~stdout ~stderr =
   said prog args;
   flush_all ();
-  Unix.create_process prog (Array.of_list (prog :: args)) stdin stdout Unix.stderr
+  Unix.create_process prog (Array.of_list (prog :: args)) stdin stdout stderr
+
+let create_process caps prog args ~stdin ~stdout =
+  create_process_stderr caps prog args ~stdin ~stdout ~stderr:Unix.stderr

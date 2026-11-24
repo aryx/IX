@@ -43,6 +43,11 @@ val linked : (string, string) Hashtbl.t
  * the program links (Dead_report) *)
 val components : (string, unit) Hashtbl.t
 
+(* the constructors' fields (con:At.0) of the types of a manifest's unit read
+ * by its interface alone, whose code may build them: dead.dl's
+ * built_outside facts *)
+val built_outside : string list ref
+
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref
 

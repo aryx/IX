@@ -52,3 +52,12 @@ val run :
 val main :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. > ->
   string array -> int
+
+(* [executables caps dirs]: the executables dune builds under dirs
+ * (tiny), from the project's root: dune describe workspace's stanzas,
+ * those of a tests' directory left out (tests/, *_tests/), and of
+ * their names the ones dune describe targets says an .exe of
+ * (tiny-machine-web's is a .bc.js) *)
+val executables :
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. > ->
+  string list -> string list

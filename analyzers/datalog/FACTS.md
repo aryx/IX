@@ -366,6 +366,13 @@ silent('Toy:try4@52', 'caml_exn_Sys_error').
 silent_all('Toy:try4@52').
 ```
 
+**A constructor built outside**, `built_outside(F)`, a constructor's field
+(`con:At.0`, `con:At.1`) of a type of a unit that mini-analyze reads by its
+interface alone, its code in a dialect mini-ml cannot read (a manifest's
+`TinyMachineSDL`, on tsdl's polymorphic variants): its code may build it, so
+`dead.dl` does not say it never built. Given by mini-analyze itself, not the
+front ends, so the toy above has none.
+
 **An external and what it says it raises**, for `bugs/raises.dl`, which checks it
 against the C of its primitive (`mini-analyze -bugs runtime.c ... Sys.ml ...`: the C
 function is the primitive's name, the exception the global the C raises):
@@ -540,7 +547,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
 | `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
 | `exceptions.dl` | `raise_in`, `raise_of`, `reraises`, `exn_block`, the `try`'s, `catches*`, over `call_edge`, `pt`, `reached` |
-| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call`, `runtime_builds`, `annotation` |
+| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call`, `runtime_builds`, `annotation`, and mini-analyze's `built_outside` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand`, `compared`, `store_in`, `assign_load_field`, over `pts`, `reach` |

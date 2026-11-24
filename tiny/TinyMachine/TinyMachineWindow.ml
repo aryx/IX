@@ -16,8 +16,12 @@ let read_ppm ic =
            (really_input_string ic
               (int_of_string (String.sub line 2 (String.length line - 2)))))
   | _p6 ->
+      (* (old: Scanf.sscanf "%d %d", which lib_core has not, the library
+       * mini-analyze reads this file on) *)
       let width, height =
-        Scanf.sscanf (input_line ic) "%d %d" (fun w h -> w, h) in
+        match String.split_on_char ' ' (String.trim (input_line ic)) with
+        | [ w; h ] -> (int_of_string w, int_of_string h)
+        | _ -> failwith "a PPM's size: width height" in
       ignore (input_line ic);
       Some (Screen (width, height, really_input_string ic (3 * width * height)))
 

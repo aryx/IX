@@ -243,21 +243,70 @@ let target (exe : string) : string =
       "./" ^ String.sub exe j (String.length exe - j)
   | None -> if Filename.is_relative exe && not (prefix "./" exe) then "./" ^ exe else exe
 
+(* dune's answer, its standard output, in its build directory (above) *)
+let ask (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
+    (args : string list) : string =
+  let tmp = Filename.temp_file "mini-analyze" ".sexp" in
+  let out = FS.open_out_fd caps tmp 0o644 in
+  (* (describe targets answers on its standard error, the others on
+   * their standard output) *)
+  let pid =
+    if List.mem "targets" args then
+      Procs.create_process_stderr caps "dune" args ~stdin:Unix.stdin ~stdout:out ~stderr:out
+    else Procs.create_process caps "dune" args ~stdin:Unix.stdin ~stdout:out in
+  Unix.close out;
+  let ok = Procs.waitpid caps pid = Unix.WEXITED 0 in
+  let text = FS.read caps (Fpath.v tmp) in
+  FS.remove_any caps tmp;
+  if not ok then failwith ("dune " ^ String.concat " " args ^ ": failed");
+  text
+
 let run (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
     (exes : string list) : string * (string * M.manifest) list =
   let b = build_dir caps in
-  let tmp = Filename.temp_file "mini-analyze" ".sexp" in
-  let dune (args : string list) : string =
-    let out = FS.open_out_fd caps tmp 0o644 in
-    let pid = Procs.create_process caps "dune" args ~stdin:Unix.stdin ~stdout:out in
-    Unix.close out;
-    if Procs.waitpid caps pid <> Unix.WEXITED 0 then
-      failwith ("dune " ^ String.concat " " args ^ ": failed");
-    FS.read caps (Fpath.v tmp) in
-  let described = dune [ "describe"; "workspace"; "--build-dir"; b ] in
-  let ruled = dune ([ "rules"; "--build-dir"; b ] @ List.map target exes) in
-  FS.remove_any caps tmp;
+  let described = ask caps [ "describe"; "workspace"; "--build-dir"; b ] in
+  let ruled = ask caps ([ "rules"; "--build-dir"; b ] @ List.map target exes) in
   of_dune caps described ruled
+
+(* (a tests' directory: tests/, KFS_tests/; their programs are not the
+ * project's, as Caller_finder leaves them out) *)
+let tests (d : string) : bool =
+  List.exists (fun (p : string) -> p = "tests" || String.ends_with ~suffix:"_tests" p)
+    (String.split_on_char '/' d)
+
+let executables (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
+    (dirs : string list) : string list =
+  let b = build_dir caps in
+  let answer = parse (ask caps ([ "describe"; "workspace"; "--build-dir"; b ] @ dirs)) in
+  let w, _ = describe answer in
+  let entries = match answer with [ List l ] -> l | l -> l in
+  (* (each stanza's directory, from its .eobjs, and its names) *)
+  let stanzas =
+    List.concat_map (fun (e : sexp) ->
+        match e with
+        | List [ Atom "executables"; fields ] -> (
+            match atoms (field "include_dirs" fields) with
+            | inc :: _ ->
+                let d = Filename.dirname (Filename.dirname (rel w inc)) in
+                if tests d then []
+                else List.map (fun (n : string) -> (d, n)) (atoms (field "names" fields))
+            | [] -> [])
+        | _ -> [])
+      entries in
+  let ds = List.sort_uniq compare (List.map fst stanzas) in
+  (* (an executable, not a js one, tiny-machine-web's: dune describe
+   * targets, its directories' targets as ls says them) *)
+  let built = Hashtbl.create 64 in
+  let here = ref "" in
+  if ds <> [] then
+    String.split_on_char '\n' (ask caps ([ "describe"; "targets"; "--build-dir"; b ] @ ds))
+    |> List.iter (fun (l : string) ->
+           if String.ends_with ~suffix:":" l then here := String.sub l 0 (String.length l - 1)
+           else if l <> "" then Hashtbl.replace built (Filename.concat !here l) ());
+  List.filter_map (fun ((d, n) : string * string) ->
+      let exe = Filename.concat d (n ^ ".exe") in
+      if Hashtbl.mem built exe then Some exe else None)
+    stanzas
 
 let main
     (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; .. >)

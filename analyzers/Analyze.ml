@@ -244,6 +244,10 @@ let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : strin
   List.iter (fun (m : string) -> add "unread" [ sym prog; sym m ]) !Ml_front.unread;
   FS.write caps (Fpath.v out) (Buffer.contents b)
 
+(* (Sys.is_directory's, false for what is not there: a flag, a typo) *)
+let directory (caps : < Cap.readdir; .. >) (p : string) : bool =
+  try CapSys.is_directory caps p with Sys_error _ -> false
+
 (* words on lines within the console's 80 columns, each after a blank *)
 let wrapped (words : string list) : string list =
   let line = Buffer.create 80 and lines = ref [] in
@@ -268,14 +272,15 @@ let wrapped (words : string list) : string list =
  * run's directory, left there if it failed; a unit a program could not
  * read is said, and the status is 1. *)
 let merged_runs (caps : < caps; .. >) (args : string list) (rules : string) (analysis : string)
-    (file : string option) (mains : (string * string list) list) : int =
+    (file : string option) (mains : (string * string * string list) list) : int =
   let file = Option.map FS.cleanname file in
   let w = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
   FS.mkdir caps w 0o755;
   (* (the flags given, not the file, not a program: each run its own) *)
   let program (a : string) : bool =
     List.exists (fun x -> Filename.check_suffix a x) [ ".manifest"; ".exe" ]
-    || List.mem_assoc a mains in
+    || directory caps a
+    || List.exists (fun ((_, m, _) : string * string * string list) -> m = a) mains in
   (* (-sources each run's, in its extra flags) *)
   let rec without_sources (l : string list) : string list =
     match l with
@@ -286,15 +291,19 @@ let merged_runs (caps : < caps; .. >) (args : string list) (rules : string) (ana
     List.filter (fun (a : string) -> Some (FS.cleanname a) <> file && not (program a))
       (without_sources args) in
   let names = Hashtbl.create 16 in
+  let file_of (name : string) : string = String.map (fun c -> if c = '/' then '_' else c) name in
   let runs =
     List.map
-      (fun ((main, extra) : string * string list) ->
-        let base = Filename.remove_extension (Filename.basename main) in
+      (fun ((given, main, extra) : string * string * string list) ->
+        (* (its name, given, or its main's, made unique; its files' names
+         * without a /) *)
+        let base = if given <> "" then given else Filename.remove_extension (Filename.basename main) in
         let n = (match Hashtbl.find_opt names base with Some n -> n | None -> 0) + 1 in
         Hashtbl.replace names base n;
         let name = if n = 1 then base else Printf.sprintf "%s%d" base n in
-        let out = FS.open_out_fd caps (Filename.concat w (name ^ ".out")) 0o644 in
-        let args = flags @ extra @ [ "-summary"; Filename.concat w (name ^ ".dl"); "-program"; name; main ] in
+        let file = file_of name in
+        let out = FS.open_out_fd caps (Filename.concat w (file ^ ".out")) 0o644 in
+        let args = flags @ extra @ [ "-summary"; Filename.concat w (file ^ ".dl"); "-program"; name; main ] in
         let pid = Procs.create_process caps Sys.executable_name args ~stdin:Unix.stdin ~stdout:out in
         Unix.close out;
         (name, main, pid))
@@ -305,7 +314,7 @@ let merged_runs (caps : < caps; .. >) (args : string list) (rules : string) (ana
       runs in
   List.iter
     (fun ((name, main, _) : string * string * int) ->
-      Console.eprint caps (Printf.sprintf "mini-analyze: %s failed (its report: %s)\n" main (Filename.concat w (name ^ ".out"))))
+      Console.eprint caps (Printf.sprintf "mini-analyze: %s failed (its report: %s)\n" main (Filename.concat w (file_of name ^ ".out"))))
     failed;
   let p = D.create () in
   let merge = if analysis = "-dead" then "dead_all.dl" else "said_all.dl" in
@@ -313,7 +322,7 @@ let merged_runs (caps : < caps; .. >) (args : string list) (rules : string) (ana
   D.load p ~from:all (FS.read caps (Fpath.v all));
   List.iter
     (fun ((name, _, _) : string * string * int) ->
-      let f = Filename.concat w (name ^ ".dl") in
+      let f = Filename.concat w (file_of name ^ ".dl") in
       match FS.read_opt caps (Fpath.v f) with Some text -> D.load p ~from:f text | None -> ())
     runs;
   ignore (Datalog_eval.run ~naive:false p);
@@ -343,7 +352,7 @@ let merged_runs (caps : < caps; .. >) (args : string list) (rules : string) (ana
   else begin
     List.iter
       (fun ((name, _, _) : string * string * int) ->
-        List.iter (fun (x : string) -> FS.remove_any caps (Filename.concat w (name ^ x))) [ ".out"; ".dl" ])
+        List.iter (fun (x : string) -> FS.remove_any caps (Filename.concat w (file_of name ^ x))) [ ".out"; ".dl" ])
       runs;
     FS.remove_any caps w;
     0
@@ -415,7 +424,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           (List.length p.own));
     files := List.rev_append p.own !files;
     Ml_front.own_dirs := !Ml_front.own_dirs @ List.map Fpath.v p.own_dirs;
-    Option.iter (fun d -> if !lib = "" then lib := d) p.library;
+    (* (a link with no standard library of the project's, an archive's,
+     * is on OCaml's, lib_core's for the analyzer: dune's
+     * tiny-machine-window; not the nearest to its files, TinyLibCore) *)
+    if !lib = "" then lib := (match p.library with Some d -> d | None -> "lib_core");
     if !program = "" then program := p.name;
     List.iter (fun (u, f) -> Hashtbl.replace Ml_front.linked u f) p.units;
     (* (-dead on the program alone: its components' dead code, not its
@@ -423,11 +435,51 @@ let main (caps : < caps; .. >) (argv : string array) : int =
      * -summary's, all of it) *)
     if !dead && !summary_file = "" then
       List.iter (fun f -> Hashtbl.replace Ml_front.components (unit_of_file f) ()) p.components in
-  let manifests = ref [] and exes = ref [] in
+  let manifests = ref [] and exes = ref [] and dirs = ref [] in
   let anon (f : string) =
     if Filename.check_suffix f ".manifest" then manifests := f :: !manifests
     else if Filename.check_suffix f ".exe" then exes := f :: !exes
+    else if directory caps f then dirs := f :: !dirs
     else files := f :: !files in
+  (* (a program's name, a directory's: its path from it, build or
+   * TinyKernel/kernel.img for tiny/TinyKernel/_make/src's, tiny/TinyShell
+   * for tiny's dune executables; else its main's, merged_runs's) *)
+  let named : (string, string) Hashtbl.t = Hashtbl.create 64 in
+  (* (a directory: the manifests under it, every one; with none, the
+   * executables dune builds under it) *)
+  let expand_dirs () : bool =
+    let rec under (d : string) : string list =
+      Array.to_list (CapSys.readdir caps d)
+      |> List.sort compare
+      |> List.concat_map (fun (n : string) ->
+             let p = Filename.concat d n in
+             (* (not .git's, nor a build's, _build's or _make's, which
+              * only a directory given is) *)
+             if n <> "" && (n.[0] = '.' || n.[0] = '_') then []
+             else if CapSys.is_directory caps p then under p
+             else if Filename.check_suffix n ".manifest" then [ p ]
+             else []) in
+    match
+      let source_dirs = ref [] in
+      List.iter (fun (d : string) ->
+          match under d with
+          | [] -> source_dirs := d :: !source_dirs
+          | ms ->
+              List.iter (fun (m : string) ->
+                  let n = String.length (FS.cleanname d) + 1 in
+                  let m' = FS.cleanname m in
+                  Hashtbl.replace named m (Filename.chop_suffix (String.sub m' n (String.length m' - n)) ".manifest");
+                  manifests := m :: !manifests)
+                (List.rev ms))
+        (List.rev !dirs);
+      if !source_dirs <> [] then
+        List.iter (fun (e : string) ->
+            Hashtbl.replace named e (Filename.chop_suffix e ".exe");
+            exes := e :: !exes)
+          (Dune_manifest.executables caps (List.rev !source_dirs))
+    with
+    | () -> false
+    | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); true in
   (* (after the flags: -sources; an .exe's manifest by dune itself, its
    * paths from the project's root) *)
   let read_manifests () =
@@ -448,6 +500,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   match Arg.parse_argv argv options anon usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
+  | () when !summary_file = "" && expand_dirs () -> 1
   (* (-dead on one .ml file and manifests: the file a library's or a
    * part of a program's, its programs the manifests that link it, each
    * run as linked, merged; its -sources found if not given) *)
@@ -457,7 +510,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let given = if !sources = "" then None else Some !sources in
       match
         List.filter_map (fun (m : string) ->
-            Option.map (fun (root : string) -> (m, [ "-sources"; root ]))
+            Option.map (fun (root : string) -> ("", m, [ "-sources"; root ]))
               (Tiny_manifest.linking m (Tiny_manifest.of_string (FS.read caps (Fpath.v m))) given file))
           (List.rev !manifests)
       with
@@ -466,7 +519,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); 1)
   (* (several programs, manifests or dune's .exe: each run, merged;
    * dune asked once, each .exe's manifest a file of its own) *)
-  | () when List.length !manifests + List.length !exes >= 2 && !files = []
+  | () when (List.length !manifests + List.length !exes >= 2 || !dirs <> []) && !files = []
             && !summary_file = "" && not !only -> (
       let analysis =
         if !dead then "-dead" else if !exns then "-exn" else if !bugs then "-bugs"
@@ -482,15 +535,27 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             if not (CapSys.file_exists caps d) then FS.mkdir caps d 0o755;
             let root = if root = FS.getcwd caps () then "." else root in
             List.map (fun ((exe, m) : string * Tiny_manifest.manifest) ->
-                let f = Filename.concat d (Filename.basename exe ^ ".manifest") in
+                let name =
+                  match Hashtbl.find_opt named exe with
+                  | Some n -> n
+                  | None -> Filename.chop_suffix exe ".exe" in
+                let f = Filename.concat d (String.map (fun c -> if c = '/' then '_' else c) exe ^ ".manifest") in
                 FS.write caps (Fpath.v f) (Tiny_manifest.to_string m);
-                (f, [ "-sources"; root ]))
+                (name, f, [ "-sources"; root ]))
               ms
           end in
         (* (-sources: the shallowest manifest's directory's, a deeper
          * one's below it as the manifest is below that one: tiny/
          * TinyKernel for _make/src/TinyKernel's kernel.img.manifest) *)
-        let ms = List.rev !manifests in
+        (* (a program with no ML unit, tiny-cc's: not read, said) *)
+        let ml (m : string) : bool =
+          List.exists (fun (l : Tiny_manifest.linked) ->
+              match l.l_source with Some s -> Filename.check_suffix s ".ml" | None -> false)
+            (Tiny_manifest.of_string (FS.read caps (Fpath.v m))).m_units in
+        let ms, others = List.partition ml (List.rev !manifests) in
+        if others <> [] then
+          Console.eprint caps
+            (Printf.sprintf "mini-analyze: no ML unit, not read: %s\n" (String.concat " " others));
         let dirs = List.map (fun m -> FS.cleanname (Filename.dirname m)) ms in
         let top =
           List.fold_left (fun a d -> if String.length d < String.length a then d else a)
@@ -505,13 +570,21 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 String.sub d (String.length top + 1) (String.length d - String.length top - 1)
               else "" in
             [ "-sources"; if below = "" then !sources else Filename.concat !sources below ] in
-        merged_runs caps (List.tl (Array.to_list argv)) !rules analysis None
-          (List.map (fun m -> (m, sources_of m)) ms @ dune)
+        let st =
+          merged_runs caps (List.tl (Array.to_list argv)) !rules analysis None
+            (List.map (fun m ->
+                 ((match Hashtbl.find_opt named m with Some n -> n | None -> ""), m, sources_of m))
+                ms
+             @ dune) in
+        (* (dune's manifests, files of this run's) *)
+        List.iter (fun ((_, f, _) : string * string * string list) -> FS.remove_any caps f) dune;
+        if dune <> [] then FS.remove_any caps (Filename.dirname (match dune with (_, f, _) :: _ -> f | [] -> "."));
+        st
       with Failure m | Sys_error m -> Console.eprint caps (m ^ "\n"); 1)
   | () when read_manifests () -> 1
   | () when (callers := find_callers (); !callers <> []) ->
       merged_runs caps (List.tl (Array.to_list argv)) !rules "-dead" (Some (List.hd !files))
-        (List.map (fun m -> (m, [])) !callers)
+        (List.map (fun m -> ("", m, [])) !callers)
   | () -> (
       (* (no -L: the standard library nearest the first ML file, tiny's
        * TinyLibCore for tiny/'s programs, lib_core for ix's) *)
@@ -633,6 +706,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                   given p "unit_dir" [ C.Facts.Sym u; C.Facts.Sym d ])
                 (dirs_from caps !lib f))
             Ml_front.files;
+        (* (dead.dl's: what a unit read by its interface alone may build) *)
+        if !dead then
+          List.iter (fun (c : string) -> given p "built_outside" [ C.Facts.Sym c ])
+            (List.sort_uniq compare !Ml_front.built_outside);
         (* (what they call would be reported dead; -exn's and -bugs's
          * reports through them would be missing, gone from a recording) *)
         if !dead || !ambient || !exns || !bugs then List.iter (fun m -> Console.eprint caps ("not read: " ^ m ^ "\n"); incr failed) !Ml_front.unread;

@@ -33,3 +33,9 @@ val spawn : < Cap.fork; Cap.exec; .. > -> string -> string list -> stdin:Unix.fi
  * are run this way, since its worker is a domain. A program that
  * cannot be run raises Unix_error, in the calling program. *)
 val create_process : < Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr -> stdout:Unix.file_descr -> int
+
+(* The same, its standard error the descriptor given (dune describe
+ * targets answers on its standard error, Dune_manifest) *)
+val create_process_stderr :
+  < Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr ->
+  stdout:Unix.file_descr -> stderr:Unix.file_descr -> int

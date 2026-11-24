@@ -245,6 +245,7 @@ let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 let own_dirs : Fpath.t list ref = ref []
 let components : (string, unit) Hashtbl.t = Hashtbl.create 16
+let built_outside : string list ref = ref []
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
@@ -361,6 +362,29 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
                 | None -> false
                 | Some (file, text) -> Hashtbl.length linked = 0 || readable file text) in
           Hashtbl.replace bodies u b;
+          (* (its interface alone: what its code builds, the constructors
+           * of its types, built outside: TinyMachineSDL.ml's events) *)
+          if not b && Hashtbl.length linked > 0 then
+            Option.iter (fun ((m, text) : Fpath.t * string) ->
+                match parse (Fpath.to_string m) text with
+                | Ok (Ast.Signature items) ->
+                    List.iter (fun (i : Ast.sig_item) ->
+                        match i.s with
+                        | Ast.Stype ds ->
+                            List.iter (fun (d : Ast.type_decl) ->
+                                match d.tkind with
+                                | Ast.Variant cs ->
+                                    List.iter (fun ((c, args) : string * Ast.ty list) ->
+                                        List.iteri (fun k _ ->
+                                            built_outside := Printf.sprintf "con:%s.%d" c k :: !built_outside)
+                                          args)
+                                      cs
+                                | _ -> ())
+                              ds
+                        | _ -> ())
+                      items
+                | _ -> ())
+              (look "" u [ ".mli" ]);
           b);
   let read (file : Fpath.t) (text : string) (mine : bool) =
     Unit_finder.mentions finder text;

@@ -234,6 +234,7 @@ let unread : string list ref = ref []
 let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 let own_dirs : Fpath.t list ref = ref []
+let linked : (string, string) Hashtbl.t = Hashtbl.create 64
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
@@ -259,7 +260,21 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     || (List.exists is program_dirs && not (List.exists is library)) in
   (* (the generated units said once each, not built) *)
   let not_built : (string, unit) Hashtbl.t = Hashtbl.create 4 in
+  (* (a manifest's: a unit's code is the file linked, or none; its
+   * interface the .mli beside it, else the directories') *)
+  let linked_look (name : string) (exts : string list) : (Fpath.t * string) option =
+    let at =
+      match Hashtbl.find_opt linked name with
+      | Some f -> [ Fpath.parent (Fpath.v f) ]
+      | None -> [] in
+    let mli =
+      if List.mem ".mli" exts then find caps (at @ dirs ()) name [ ".mli" ]
+      else None in
+    match mli with
+    | Some x -> Some x
+    | None -> if List.mem ".ml" exts then find caps at name [ ".ml" ] else None in
   let look (from : string) (name : string) (exts : string list) : (Fpath.t * string) option =
+    if Hashtbl.length linked > 0 then linked_look name exts else
     match find caps (dirs ()) name exts with
     | Some x -> Some x
     (* (a unit the directories know otherwise, by its .mli alone, has no

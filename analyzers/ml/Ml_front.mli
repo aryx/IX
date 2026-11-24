@@ -32,6 +32,12 @@ val alone : bool ref
  * read too, but is not reported on. *)
 val own_dirs : Fpath.t list ref
 
+(* the units a build linked, each one's .ml, by the unit's name (a
+ * manifest's, Tiny_manifest): when it has any, a unit's code is the file
+ * linked and nothing else, no directory searched and nothing guessed;
+ * its interface is the .mli beside it, else the directories'. *)
+val linked : (string, string) Hashtbl.t
+
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref
 

@@ -6,7 +6,9 @@
 # it: on tiny-kernel, by tiny-ml on TinyLibCore and tiny-kernel's
 # TinyLibSystem (the Buildfile's programs); on the host, by OCaml on
 # lib_core and the host's TinyLibSystem (tiny/dune's tools, the windows'
-# programs of user/sdl/, tiny-machine...). A program is given by its main
+# programs of user/sdl/, tiny-machine...). On tiny-kernel, a program is
+# given by tiny-ld's manifest (-map's) of t-IX's build, made here: its
+# files as linked, its platform's among them. On the host, by its main
 # file alone: the analyzer finds the units it names in the project
 # (Unit_finder), its own, and lib_core's by itself; the other ix
 # libraries' are given by -I, read and not reported on. -caps reads
@@ -48,14 +50,14 @@ expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 T=tiny
-# How each program is read: its platform, the one choice the analyzer
-# cannot make (TinyLibSystem's implementations have the same names). On
-# the host (O), as OCaml builds it, on lib_core and the host's
-# TinyLibSystem. On tiny-kernel (K), as t-IX builds it: on TinyLibCore and
-# tiny-kernel's TinyLibSystem (TinyLibCore's Cap.mli names the
-# capabilities TinyLibSystem.mli takes, which tiny-ml leaves out).
+# How each program is read on the host: its platform, the one choice
+# the analyzer cannot make from a main file (TinyLibSystem's
+# implementations have the same names), as OCaml builds it, on lib_core
+# and the host's TinyLibSystem (O). On tiny-kernel, the manifest says it:
+# TinyLibCore's members of stdlib.a and tiny-kernel's TinyLibSystem.
+# (old: K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel" and the
+# main file, before tiny-ld's manifests)
 O="-L lib_core -own $T/TinyLibSystem/unix"
-K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel"
 NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
 NET="$NET -I lib_crypto -I lib_compression"
 # a program a line: its name; where it runs: k tiny-kernel alone (the
@@ -63,47 +65,46 @@ NET="$NET -I lib_crypto -I lib_compression"
 # mkfont, built by OCaml on lib_core), b both (the tools: tiny/dune's and
 # the Buildfile's; and the windows' programs of user/sdl/dune, whose
 # TinyLibSystem includes the host's, read here for it: the analyzer does
-# not read tsdl); its flags beside O's or K's; its main file; its flags
-# on the host alone. A program on tiny-kernel has TinyLibCore and
-# TinyLibSystem, no ix library: one is given (-I) only to what the host
+# not read tsdl); its name in the Buildfile (its manifest's); its main
+# file; its flags on the host. One is given (-I) only to what the host
 # builds, as tiny/dune links it (tiny-build's and tiny-vcs's Sha1 is
 # lib_crypto's there, TinyLibCore's on tiny-kernel, the runtime's C)
 programs() {
   cat <<EOF
-tiny-build|b||$T/TinyBuildSystem.ml|-I lib_crypto
-tiny-shell|b||$T/TinyShell.ml
-tiny-editor|b||$T/TinyEditorLine.ml
-tiny-utils|b||$T/TinyUtilities.ml
-tiny-cc|b||$T/TinyC/TinyC.ml
-tiny-db|b||$T/TinyDatabase.ml
-tiny-vcs|b||$T/TinyVCS.ml|-I lib_crypto
-tiny-as|b||$T/TinyAssembler.ml
-tiny-ld|b||$T/TinyLinker.ml
-tiny-ar|b||$T/TinyArchiver.ml
+tiny-build|b|build|$T/TinyBuildSystem.ml|-I lib_crypto
+tiny-shell|b|rc|$T/TinyShell.ml
+tiny-editor|b|ed|$T/TinyEditorLine.ml
+tiny-utils|b|utils|$T/TinyUtilities.ml
+tiny-cc|b|cc|$T/TinyC/TinyC.ml
+tiny-db|b|db|$T/TinyDatabase.ml
+tiny-vcs|b|vcs|$T/TinyVCS.ml|-I lib_crypto
+tiny-as|b|as|$T/TinyAssembler.ml
+tiny-ld|b|ld|$T/TinyLinker.ml
+tiny-ar|b|ar|$T/TinyArchiver.ml
 tiny-cpu|h||$T/TinyCPU.ml
-tiny-prof|b||$T/TinyProfiler.ml
-tiny-ml|b||$T/TinyML/TinyML.ml
-tiny-machine|h|-I lib_core/parallel|$T/TinyMachine/TinyMachine.ml
+tiny-prof|b|prof|$T/TinyProfiler.ml
+tiny-ml|b|ml|$T/TinyML/TinyML.ml
+tiny-machine|h||$T/TinyMachine/TinyMachine.ml|-I lib_core/parallel
 tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml
-tiny-machine-fetch|h|$NET -I lib_graphics/core -I lib_graphics/images|$T/TinyMachine/TinyMachineFetch.ml
+tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|$NET -I lib_graphics/core -I lib_graphics/images
 tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml
-tiny-mkfs|h|-I $T/TinyKernel/host -I $T/TinyKernel|$T/TinyKernel/host/TinyMkfs.ml
-mkfont|h|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software|$T/TinyKernel/fonts/Mkfont.ml
-windows|k||$T/user/windows.ml
-bigmem|k||$T/user/bigmem.ml
-square|k||$T/user/square.ml
-tetris|b||$T/user/tetris.ml
-orrery|b||$T/user/orrery.ml
-calc|b||$T/user/calc.ml
-temp|k||$T/user/temp.ml
-emacs|b||$T/user/emacs.ml
-office|b||$T/user/office.ml
-troff|b||$T/user/troff.ml
-play|b||$T/user/play.ml
-www|b||$T/user/www.ml
-trace|k||$T/user/trace.ml
-debug|k||$T/user/debug.ml
-tiny-kernel|k||$T/TinyKernel/TinyKernel.ml
+tiny-mkfs|h||$T/TinyKernel/host/TinyMkfs.ml|-I $T/TinyKernel/host -I $T/TinyKernel
+mkfont|h||$T/TinyKernel/fonts/Mkfont.ml|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software
+windows|k|windows|$T/user/windows.ml
+bigmem|k|bigmem|$T/user/bigmem.ml
+square|k|square|$T/user/square.ml
+tetris|b|tetris|$T/user/tetris.ml
+orrery|b|orrery|$T/user/orrery.ml
+calc|b|calc|$T/user/calc.ml
+temp|k|temp|$T/user/temp.ml
+emacs|b|emacs|$T/user/emacs.ml
+office|b|office|$T/user/office.ml
+troff|b|troff|$T/user/troff.ml
+play|b|play|$T/user/play.ml
+www|b|www|$T/user/www.ml
+trace|k|trace|$T/user/trace.ml
+debug|k|debug|$T/user/debug.ml
+tiny-kernel|k|TinyKernel/kernel.img|$T/TinyKernel/TinyKernel.ml
 EOF
 }
 # a run a line: its name, its flags, its main file. A tool runs on both
@@ -112,16 +113,28 @@ EOF
 # host, whose externals' capabilities the analyzer knows (tiny-kernel's
 # calls not yet).
 runs() {
-  programs | while IFS='|' read -r name sys flags main host; do
-    if [ $flag = -caps ]; then echo "$name|$O $flags $host|$main"; continue; fi
+  programs | while IFS='|' read -r name sys tix main host; do
+    if [ $flag = -caps ]; then echo "$name|$O $host|$main"; continue; fi
+    # (tiny-kernel's: tiny-ld's manifest of the build below, its paths
+    # read in tiny/, where the build's copy of tiny/ came from)
+    if [ -n "$tix" ]; then
+      d=$(dirname $tix); src=$T; [ $d = . ] || src=$T/$d
+      tixrun="$name|-sources $src|$W/tix/src/$tix.manifest"
+    fi
     case $sys in
-      k) echo "$name|$K $flags|$main";;
-      h) echo "$name|$O $flags $host|$main";;
-      b) echo "$name|$K $flags|$main"; echo "$name-host|$O $flags $host|$main";;
+      k) echo "$tixrun";;
+      h) echo "$name|$O $host|$main";;
+      b) echo "$tixrun"; echo "$name-host|$O $host|$main";;
     esac
   done
 }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
+# (t-IX built as tiny-kernel builds it, TinyKernel/Makefile's build of the
+# Buildfile in a copy of tiny/: each program's manifest, seconds)
+if [ $flag != -caps ]; then
+  make -s -C $T/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
+    { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
+fi
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
 # (the programs at once, the analyses first: seconds, not a minute)

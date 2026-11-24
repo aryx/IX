@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; Cap.exec; Cap.wait >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... [-sources dir] file.c|file.ml|file.manifest...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... [-sources dir] file.c|file.ml|file.manifest...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -27,6 +27,10 @@ program's functions that its toplevel never reaches (calls.dl):
   Events.ml:15: in Events:fun at line 15, through h.on_key: Events.beep, Main:fun at line 4
   Events.ml:17: in Events.twice, through f: Events.log
   never reached: Events.unused (Events.ml:19)
+A program as its build linked it: tiny-ld's manifest (-map), its files and
+nothing else, the platform's among them, no -L or -own to give; -sources
+where its paths are read when the build ran in a copy (TinyKernel's):
+  mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src/rc.manifest
 -dead: instead, what no run can reach (dead.dl), from main and the toplevels:
   dead.c:12: dead: unused, nothing names it
   dead.c:18: dead: hide, named only by dead code: unused
@@ -299,6 +303,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
   let fingerprint = ref false and exns = ref false and flow = ref false and answers = ref false in
   let bugs = ref false and start = ref "" and summary_file = ref "" and program = ref "" in
+  let sources = ref "" in
   let options =
     Logging.flags
     @ [ ("-r", Arg.Set_string rules, " the directory of points_to/ and bugs/");
@@ -334,7 +339,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         ("-own",
          Arg.String (fun d -> Ml_front.own_dirs := !Ml_front.own_dirs @ [ Fpath.v d ]),
          " dir: ML: the units the program names found there are its own, reported on as the files given");
-        ("-D", Arg.String (fun d -> defs := d :: !defs), " name=value, as #define") ] in
+        ("-D", Arg.String (fun d -> defs := d :: !defs), " name=value, as #define");
+        ("-sources", Arg.Set_string sources,
+         " dir: a manifest's paths read there, the build having run in a copy\n\
+         \    of it (tiny/ for tiny/TinyKernel/_make/src)") ] in
   (* (-Idir and -Dx in one word too, as mini-cc's) *)
   let split a =
     if String.length a > 2 && (String.sub a 0 2 = "-I" || String.sub a 0 2 = "-D") then [ String.sub a 0 2; String.sub a 2 (String.length a - 2) ]
@@ -348,9 +356,31 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | [ f ] when !dead && Filename.check_suffix f ".ml" && !summary_file = "" && not !only ->
         Caller_finder.programs caps (List.map Fpath.to_string !Ml_front.own_dirs @ !incs) f
     | _ -> [] in
-  match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
+  (* (a manifest's files: its ML units given to tiny-ld, its archive's
+   * directory the library, every linked unit's file) *)
+  let manifest (m : string) : unit =
+    let sources = if !sources = "" then None else Some !sources in
+    let p = Tiny_manifest.program caps m sources in
+    Logs.info (fun l ->
+        l "%s: %d units, %d the program's own" m (List.length p.units)
+          (List.length p.own));
+    files := List.rev_append p.own !files;
+    Option.iter (fun d -> if !lib = "" then lib := d) p.library;
+    if !program = "" then program := p.name;
+    List.iter (fun (u, f) -> Hashtbl.replace Ml_front.linked u f) p.units in
+  let manifests = ref [] in
+  let anon (f : string) =
+    if Filename.check_suffix f ".manifest" then manifests := f :: !manifests
+    else files := f :: !files in
+  (* (after the flags: -sources) *)
+  let read_manifests () =
+    match List.iter manifest (List.rev !manifests) with
+    | () -> false
+    | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); true in
+  match Arg.parse_argv argv options anon usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
+  | () when read_manifests () -> 1
   | () when (callers := find_callers (); !callers <> []) ->
       dead_of_callers caps (List.tl (Array.to_list argv)) !rules (List.hd !files) !callers
   | () -> (

@@ -18,7 +18,8 @@ path to the generated file".
 
 **Status: proposed (2026-11-24). Done: tiny/TinyLibExecutable.ml made
 from TinyLibMachine; tiny-ld -map writes out.manifest (step 2, its
-tiny-ld-only version). Next: mini-analyze reading it.**
+tiny-ld-only version); mini-analyze reads it, tiny_check.sh's tiny-kernel
+runs by manifests, K gone. Next: dune's manifests (step 3).**
 
 ## The problem
 
@@ -272,6 +273,24 @@ mini-yacc's, changes a recorded report.
    the 23 TinyLibCore members of stdlib.a,
    TinyLibSystem/tinykernel/TinyLibSystem.ml and TinyShell.ml, rc.start.o
    with no source; TinyML_test.sh's units link.
+
+   Read by mini-analyze, the same day: a file.manifest argument
+   (Tiny_manifest, its types the same text as TinyLibExecutable's,
+   analyzers/tests/run.sh checks it) gives the files tiny-ld was given,
+   in the link's order, as the program's own; the archive's directory as
+   -L; and every linked unit's file to Ml_front.linked, where a unit's
+   code is the file linked, or none, nothing searched or guessed.
+   -sources dir: the paths read there, the build having run in a copy of
+   it (TinyKernel's _make/src). tiny_check.sh builds t-IX in its own O=
+   (4 s) and reads each tiny-kernel run from its manifest: K (-L
+   TinyLibCore -own TinyLibSystem/tinykernel) gone, the four recordings
+   unchanged. Run by run, against the old way, -dead the same for 25 of
+   the 27 programs, the kernel among them; troff and play differ, the manifest
+   right: troff links all of OFFICE_PARTS, Paint.o which it never names,
+   so Paint's functions are linked and dead in troff; play links GUI
+   without naming it, which the old reading did not read. The merge
+   (dead_all.dl) leaves both out, office using Paint and other programs
+   TinyLibDraw's d_*.
 3. **dune**: the describe reader writes the host's manifests;
    tiny_check.sh's host runs (h and b) read them; the table goes.
 4. **mini-ml, mini-cc, mini-asm, mini-ar, mini-ld**: the record as a

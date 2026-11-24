@@ -76692,3 +76692,381 @@ Claude found that upstream added a tiny-kernel line to tiny_check.sh, which need
 Claude was verifying that the new tiny-kernel line matched the TinyXxx.ml file moves in tiny_check.sh.
 Claude started the analysis checks and make test on the merged result to confirm the moves still work.
 Claude had not yet reported test results, so the TinyXxx.ml move was not yet confirmed clean.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:21
+
+**Yoann:**
+
+> can I close this session? We are done with the TinyXxx.ml move?
+
+**Claude (summary):**
+
+Claude noted that two of its saved memories still describe the old file layout.
+Claude said it would update those two memories before the session is closed.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:32
+
+**Yoann:**
+
+> make clean should also delete this _build_release (and maybe document where all those _build and _mk and _make and what's not come from, next to the make clean target in the Makefile
+
+**Claude (summary):**
+
+Claude made `make clean` also remove `_build_release`, and documented each build directory above the `clean` target in `Makefile`.
+Claude's comment lists `_build`, `_build5`, `_build_release`, `_mk`, and `_make*`, with what builds each and what keeps it.
+It noted that `_cross` and `Makefile.config` survive `make clean`, and how to clear them with `rm -rf` and `./configure`.
+Claude checked the change with `make -n clean` but did not run the real clean, to protect the shared tree's builds.
+Nothing was committed, as Yoann's next message asks Claude to do that.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:43
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `de9a26e5`, with only `Makefile` in the commit.
+Claude ran `make test` before committing: 198 jobs, 0 failures, one skipped.
+Claude left `docs/yoann_notes/prompt-history.md` out of the commit because it was already staged but not by Claude.
+Claude noted it was probably staged by another session or by Yoann, and did not unstage it.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:49
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since the Makefile change is committed and nothing is running.
+Claude noted that nothing of its own remains uncommitted in the working tree.
+Claude flagged that the only pending change is docs/yoann_notes/prompt-history.md, which is staged but not Claude's.
+Claude explained that closing the session would leave that staged file untouched.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:54
+
+**Yoann:**
+
+> we've recently improved the ergonomy of mini-analyzer with the Unit_finder.ml and Caller_finder.ml; can we simplify things even more, can we reduce the tiny_checks.sh script further? remove some flags? the -L, -I, -own, -library, and a few more might be too confusing for the user. I wonder if there is an alternative way to perform those global program analysis in an easier way, without having to specify or replicate what is in the dune file, or Makefile, or mkfile, or Buildfile. I wonder if there are easier ways to do those analysis. Analyze and report ideas.
+
+**Claude (summary):**
+
+Claude read tiny_check.sh, mini-analyze's flags, and the build files to find where the flags could come from.
+Claude checked ix_check.sh and found the same flag duplication in the m-ix counterpart.
+Claude tested dropping the -I flags, since Unit_finder now searches the project for units.
+For mkfont and tiny-machine-fetch, the reports matched, with only correctly guessed "tie" warnings remaining.
+Claude was still checking the remaining -I programs when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:03
+
+**Yoann:**
+
+> I like this linker idea that generate metadata for mini-analyzer to use. Actually I remember LLVM and the clang-analyzer also rely on some .json generated next to the Makefile to describe the files and -I -D etc. Seems like a good idea given when one can build a program, the info is there to build it! I remember coverity also used to provide an xgcc wrapper over gcc to collect the flags (they even later intercepted syscalls instead to infer all the flags). Maybe we can instrument the ocaml linker, and C linker, and mini-ml, mini-cc, mini-ld, but also tiny-ml, tiny-cc, tiny-ld to generate those metadata for the analyzer to use! we can probably find a way to tag some files as a library, as a program component, as the enty point, as a test, as test infra, etc. Ideally we want to specify a format/type for mini-analyzer to share with the different tools so one can simply marshall this complex metadata build type.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:04
+
+**Yoann:**
+
+> we probably need a plan document for it, with a design for the type of metadata we need
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:04
+
+**Yoann:**
+
+> and we can probably remove lots of the -I, -L, -own, and other flags from mini-analyzer?
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:04
+
+**Yoann:**
+
+> and maybe also the make generated target, we can remove, and use instead again the metadata to specify the path to the generated file
+
+**Claude (summary):**
+
+Claude confirmed the plan would drop the make `generated` target in favor of metadata giving the generated file's path.
+Claude checked how generated files are handled today before settling on that replacement.
+Claude found that `dune describe` works with a private build directory and lists each executable's libraries.
+Claude noted that this output also shows which TinyLibSystem implementation each executable uses.
+Claude then wrote the plan document and said the flags were being removed from it.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:14
+
+**Yoann:**
+
+> ok let's commit the plan, maybe add analyzer in the plan document file name, so we know it's mostly done for the analyzer. not sure where the type of this manifest should be declared. maybe in lib_code/ ? it would be shared by the different tools. or under lib_executable ? not sure.
+
+**Claude (summary):**
+
+Claude recommended putting the build manifest type in lib_executable/, not lib_code/, and wrote that reasoning into the plan.
+Claude argued a manifest is like the symbol and line tables a linker writes, and DWARF already records similar per-file compile data.
+Claude committed the plan as e480ac6f, renamed to docs/plans/plan_analyzer_build_manifest.md, leaving the staged prompt-history.md out.
+Claude noted t-IX tools cannot reach outside tiny/, so each needs its own copy of the type.
+Claude left the lib_executable/ versus lib_code/ choice listed under "To decide" in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:33
+
+**Yoann:**
+
+> yes let's to TinyLibManifest.ml or TinyLibExecutable.ml maybe, and move stuff from TinyLibMachine.ml into it if needed
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:34
+
+**Yoann:**
+
+> maybe the mini-analyzer could keep those Caller_finder.ml, Unit_finder.ml so one can also call mini-analyzer on a fresh repo without anything built; but we should probably focus now more on using those manifest for precise set of files to analyze
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:34
+
+**Yoann:**
+
+> in any case, for the library, we still need to find the callers which are probably not in the library manifest; they are in the programs manifest instead
+
+**Claude (summary):**
+
+Claude moved the file-format code into TinyLibExecutable.ml, with make test and self-quick-tix passing, uncommitted.
+Claude took up the point that library callers sit in program manifests, not the library's own.
+Claude planned that -dead on a library file reads all program manifests and keeps those that link it.
+Claude noted this answers from the build rather than name matching, which Caller_finder did before.
+Claude kept Unit_finder and Caller_finder for checkouts with nothing built, and deferred the manifest type.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:47
+
+**Yoann:**
+
+> ok let's commit TinyLibExecutable.ml changes
+
+**Claude (summary):**
+
+Claude found one README line running past 80 columns after the TinyLibExecutable.ml changes.
+Claude rewrapped that README line before making the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 18:48
+
+**Yoann:**
+
+> note that in theory we build most of the tiny programs also on the host, and with dune and mini-ml too, so we don't have to have the manifest in tiny-ml and tiny-ld in theory, but if it's not too many LOC to add to tiny/, it might be nice
+
+**Claude (summary):**
+
+Claude said it was checking what tiny-ld knows about its inputs, to estimate the LOC honestly.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 19:40
+
+**Yoann:**
+
+> yes go ahead with the tiny-ld only version
+
+**Claude (summary):**
+
+Claude added a `-map` option to tiny-ld that writes a manifest recording each linked object's source file.
+Claude defined the manifest type and writer in TinyLibExecutable, and tiny-ld's `read` now records where each object came from.
+Claude added cleanup rules so manifests stay out of git, `build clean` removes them, and the source disk excludes them.
+Claude tested the `-map` link on an existing t-IX build tree and extended TinyML_test.sh to check each unit's `.ml` is named.
+Claude ran `make test` (198 jobs, 0 failures) and started `self-quick-tix` in the background, which was still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 19:51
+
+**Yoann:**
+
+> ok let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the earlier work as `5ecde53d`, then started mini-analyze's manifest reading.
+Claude wrote the `analyzers/ml/Tiny_manifest` reader and made Ml_front collect manifests during parsing.
+Claude moved manifest expansion to just after parsing, so a bad manifest's `Failure` is caught properly.
+Claude compared manifest builds against the old `-L`/`-own` invocation on tiny-shell and rc, and the reports matched.
+Claude wrapped long lines, added `file.manifest` to the usage line, and `make test` passed 198 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:12
+
+**Yoann:**
+
+> ok let's commit and move forward with dune's manifests
+
+**Claude (summary):**
+
+Claude confirmed the `-dead` analysis still gave its recorded results after the dune switch.
+Claude removed the unused `NET` entry and rewrote the table comment to explain what `dune` means.
+Claude's table comment also explains why three rows keep their own flags instead of dune manifests.
+Claude's generator now reads `describe`'s root and build_context fields, preferring files in `_build/default`.
+Claude moved 17 of 27 host runs to dune manifests, and `make test` passed 198 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:31
+
+**Yoann:**
+
+> ok assuming I've run make and build with dune the tiny programs, what is the mini-analyzer command to check dead code in Tinyu
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:31
+
+**Yoann:**
+
+> TinyBuildSystem program ?
+
+**Claude (summary):**
+
+Claude explained two ways to run the dead-function analysis on TinyBuildSystem: the t-IX manifest route and the dune route on the host.
+Claude warned that `mini-analyze -dead tiny/TinyBuildSystem.ml` falsely reports "0 functions dead" because it can't pick TinyLibSystem's implementations.
+Claude proposed letting mini-analyze accept the `_build/default/tiny/TinyBuildSystem.exe` path and run the dune queries itself, to replace the three-step dune route.
+Claude also noted that the silent 0 should become a warning when a called unit has no code.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:34
+
+**Yoann:**
+
+> yes, let mini-analyze take the .exe and run dune itself
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:35
+
+**Yoann:**
+
+> who create the TinyKernel/_make/ with the .manifest in it ? make in tiny/ will create those dirs?
+
+**Claude (summary):**
+
+Claude explained that TinyKernel's own Makefile creates `_make/`, not plain `make` in tiny/.
+Claude made mini-analyze accept dune's executable and run `dune describe workspace` and `dune rules` itself.
+Claude moved those dune runs into a per-project temporary build directory, cutting reruns from 4.5 s to 2 s.
+Claude verified the dead-code check gives the same 43 functions, and `make test` passes with 198 jobs.
+Claude left the dune-manifest work and this change uncommitted, and flagged the project-root limit for mini-analyze.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:40
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `9dc31049` after `make test` passed with 198 jobs and no failures.
+Claude kept the change as one commit because the tiny_check.sh and `mini-analyze X.exe` dune manifests both touch Tiny_manifest, Analyze, and Dune_manifest.
+Claude listed step 4 as the next manifest task: generating manifests from m-ix's mini-ml, mini-cc, and mini-ld to replace `mk_units.sh` and `generated.sh`.
+Claude noted that ten host runs still use flags, and that they need the analyzer to read tsdl and OCaml 5's `Domain`.
+Claude also flagged that mini-analyze still finds its Datalog rules by path, which breaks when run from a subdirectory.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:41
+
+**Yoann:**
+
+> I ran ./bin/mini-analyze -dead tiny/TinyKernel/_make/src/build.manifest    and got lots of dead function reported in TinyLibSystem which is not what we want; ideally we can detect from the manifest the files that are pure "external" libraries vs the component of the program analyzed, here just TinyBuildSystem.ml really
+
+**Claude (summary):**
+
+Claude made `-dead` report only the program's own files, so `build.manifest` now names only TinyBuildSystem.ml.
+Claude derived components from the manifests: a file that no other manifest in the build directory links.
+Claude checked TinyBuildSystem.ml had 0 dead functions against the full report, and tiny-ml's 9 files likewise.
+Claude left these changes uncommitted, with `-help` and the plan updated and `make test` passing at 198 jobs.
+Claude kept `-bugs`, `-exn` and `-caps` reporting library code, and suggested a test for `build.manifest`.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:49
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the seven-file change as `ee12ea90`, leaving `prompt-history.md` out as before.
+Claude reported that `make test` passed on this code, with 198 jobs and 0 failures.
+Claude noted an open gap: no test checks that `-dead` on one program reports only its own files.
+Claude suggested a one-line check on `build.manifest` to cover that gap.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:50
+
+**Yoann:**
+
+> ok I've run ./bin/mini-analyze -dead tiny/TinyKernel/_make/src/build.manifest   and got now a good report. What is the command now to detect dead code in a library like TinyLibGui.ml
+
+**Claude (summary):**
+
+Claude recommended a manifest-based `-dead` mode for mini-analyze, taking the TinyLibGUI.ml file plus the kernel's manifests.
+Claude explained the current name-search version can wrongly treat GUI callbacks handed to TinyLibSystem as alive, since it reads programs without their manifests.
+The manifest version would keep only manifests that link TinyLibGUI.ml, reading each program exactly as linked, with no guessing or ties.
+With no manifests given, it would fall back to the current name search, for checkouts not yet built.
+Claude asked whether to build it, and Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:51
+
+**Yoann:**
+
+> yes, build the manifest-based version
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:53
+
+**Yoann:**
+
+> btw, Logs.info should also print something when a program execute another program (just like we do print something when we open a file internally)
+
+------------------------------------------------------------------------
+
+## 2026-11-24 20:53
+
+**Yoann:**
+
+> dunno if that's the case in mini-analyzer program
+
+**Claude (summary):**
+
+Claude made mini-analyze's `-dead` library mode use the build's manifests, reporting Disc.1 and Disc.2 in TinyLibGUI.ml.
+Claude fixed the earlier 4.5-minute, zero-report run by giving each sub-run only the manifests that link its file.
+Claude added a tiny_check.sh `-dead` check so library mode keeps matching the merge's lines for TinyLibGUI.ml.
+Claude reported `make test` passing, but left everything uncommitted because `self-quick-mix` was still running.
+Claude also moved program-run logging into lib_core's `Procs.spawn` and `Procs.create_process`, removing mini-analyze's duplicate lines.

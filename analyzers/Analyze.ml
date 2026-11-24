@@ -5,7 +5,7 @@
 
 module D = Datalog
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; Cap.exec; Cap.wait >
 
 let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... file.c|file.ml...   (-h: how)"
 
@@ -32,6 +32,10 @@ program's functions that its toplevel never reaches (calls.dl):
   dead.c:18: dead: hide, named only by dead code: unused
   dead.c:24: dead: orphan, in main but no call goes through the pointer
   dead.c:31: dead code: in main, after a return
+-dead on one .ml file some other names, a library's or a part of a program's
+(tiny/TinyLibGUI.ml): each program that reaches it (Caller_finder), run by
+mini-analyze itself, merged (datalog/dead_all.dl), what is said of the file:
+  tiny/TinyLibGUI.ml:472: never built: Disc.1, matched in TinyLibGUI.area_of
 -caps: instead, whether ML's own functions hold the capabilities they need
 (capabilities.dl), from their types' < Cap.x; .. > and what they reach:
   Log.ml:5: Log.log: no capability, needs Cap.stdout (Stdlib.print_string)
@@ -225,6 +229,71 @@ let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : strin
     reports;
   FS.write caps (Fpath.v out) (Buffer.contents b)
 
+(* -dead on a unit some file names (Caller_finder.mli): each program that
+ * reaches it is mini-analyze itself, run with the flags given and
+ * -summary, all at once, as tiny_check.sh runs them; their summaries
+ * merged by datalog/dead_all.dl in this process; the lines of [file]
+ * printed, then how many programs said them. A program's own report
+ * goes to a file of the run's directory, left there if it failed. *)
+let dead_of_callers (caps : < caps; .. >) (args : string list) (rules : string) (file : string) (mains : string list) : int =
+  let file = FS.cleanname file in
+  let w = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
+  FS.mkdir caps w 0o755;
+  (* (the flags given, the file not; a program a name, its main's, once) *)
+  let flags = List.filter (fun (a : string) -> FS.cleanname a <> file) args in
+  let names = Hashtbl.create 16 in
+  let runs =
+    List.map
+      (fun (main : string) ->
+        let base = Filename.remove_extension (Filename.basename main) in
+        let n = (match Hashtbl.find_opt names base with Some n -> n | None -> 0) + 1 in
+        Hashtbl.replace names base n;
+        let name = if n = 1 then base else Printf.sprintf "%s%d" base n in
+        let out = FS.open_out_fd caps (Filename.concat w (name ^ ".out")) 0o644 in
+        let args = flags @ [ "-summary"; Filename.concat w (name ^ ".dl"); "-program"; name; main ] in
+        Logs.info (fun m -> m "running %s" (String.concat " " (Sys.executable_name :: args)));
+        let pid = Procs.create_process caps Sys.executable_name args ~stdin:Unix.stdin ~stdout:out in
+        Unix.close out;
+        (name, main, pid))
+      mains in
+  let failed =
+    List.filter
+      (fun ((_, _, pid) : string * string * int) -> Procs.waitpid caps pid <> Unix.WEXITED 0)
+      runs in
+  List.iter
+    (fun ((name, main, _) : string * string * int) ->
+      Console.eprint caps (Printf.sprintf "mini-analyze: %s failed (its report: %s)\n" main (Filename.concat w (name ^ ".out"))))
+    failed;
+  let p = D.create () in
+  let all = Fpath.to_string (Fpath.append (Fpath.v rules) (Fpath.v "dead_all.dl")) in
+  D.load p ~from:all (FS.read caps (Fpath.v all));
+  List.iter
+    (fun ((name, _, _) : string * string * int) ->
+      let f = Filename.concat w (name ^ ".dl") in
+      match FS.read_opt caps (Fpath.v f) with Some text -> D.load p ~from:f text | None -> ())
+    runs;
+  ignore (Datalog_eval.run ~naive:false p);
+  let lines =
+    List.filter_map
+      (fun (t : int array) ->
+        let f = R.name p t.(0) and l = R.name p t.(1) and m = R.name p t.(2) in
+        if FS.cleanname f <> file then None
+        else Some (int_of_string l, if l = "0" then Printf.sprintf "%s: %s" f m else Printf.sprintf "%s:%s: %s" f l m))
+      (D.tuples (D.relation p "dead_all" 3)) in
+  List.iter (fun ((_, s) : int * string) -> Console.print caps (s ^ "\n")) (List.sort_uniq compare lines);
+  Console.print caps
+    (Printf.sprintf "%d reports, over the %d programs that reach it: %s\n" (List.length lines) (List.length runs)
+       (String.concat ", " (List.map (fun ((n, _, _) : string * string * int) -> n) runs)));
+  if failed <> [] then 1
+  else begin
+    List.iter
+      (fun ((name, _, _) : string * string * int) ->
+        List.iter (fun (x : string) -> FS.remove_any caps (Filename.concat w (name ^ x))) [ ".out"; ".dl" ])
+      runs;
+    FS.remove_any caps w;
+    0
+  end
+
 let main (caps : < caps; .. >) (argv : string array) : int =
   let rules = ref "analyzers/datalog" and lib = ref "" and only = ref false and incs = ref [] and defs = ref [] and files = ref [] in
   let dead = ref false and ambient = ref false and roots = ref [] and context = ref "" and library = ref false in
@@ -271,9 +340,19 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     if String.length a > 2 && (String.sub a 0 2 = "-I" || String.sub a 0 2 = "-D") then [ String.sub a 0 2; String.sub a 2 (String.length a - 2) ]
     else [ a ] in
   let argv = Array.of_list (List.concat_map split (Array.to_list argv)) in
+  (* (-dead on one .ml file some other names: its programs', found; not a
+   * -summary's run, which is one of them) *)
+  let callers = ref [] in
+  let find_callers () =
+    match !files with
+    | [ f ] when !dead && Filename.check_suffix f ".ml" && !summary_file = "" && not !only ->
+        Caller_finder.programs caps (List.map Fpath.to_string !Ml_front.own_dirs @ !incs) f
+    | _ -> [] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
+  | () when (callers := find_callers (); !callers <> []) ->
+      dead_of_callers caps (List.tl (Array.to_list argv)) !rules (List.hd !files) !callers
   | () -> (
       (* (no -L: the standard library nearest the first ML file, tiny's
        * TinyLibCore for tiny/'s programs, lib_core for ix's) *)

@@ -47,6 +47,12 @@ val library : < Cap.readdir; .. > -> string -> string option
  * not reported on, as an -I's is *)
 val own : t -> string -> bool
 
+(* [part_dir caps file]: that top directory of the project for [file],
+ * as the files are named (tiny for tiny/TinyLibGUI.ml), the project
+ * itself for a file at its top; None when there is no project. Where
+ * Caller_finder looks for the programs of a unit. *)
+val part_dir : < Cap.readdir; .. > -> string -> string option
+
 (* [generated caps t dir name]: whether the unit [name] of the program's
  * directory [dir] is one its build makes, from a .mll (ocamllex's,
  * mini-lex's) or a .mly (ocamlyacc's, menhir's, mini-yacc's) of its

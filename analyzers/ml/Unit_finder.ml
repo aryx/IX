@@ -108,6 +108,16 @@ let part (t : t) (p : string) : string =
 
 let own (t : t) (d : string) : bool = part t d = part t t.first
 
+let part_dir (caps : < Cap.readdir; .. >) (file : string) : string option =
+  match root caps file with
+  | None -> None
+  | Some r ->
+      let t = { first = file; root = r; index = None; make = (fun () -> None); needed = Hashtbl.create 1; chosen = Hashtbl.create 1 } in
+      let x = part t file in
+      (* (a file at the project's top: the whole project) *)
+      if x = Filename.basename (FS.cleanname file) then Some r
+      else Some (if r = "." then x else Filename.concat r x)
+
 let is_ident (c : char) : bool =
   match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '\'' -> true | _ -> false
 

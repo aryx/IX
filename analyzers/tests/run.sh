@@ -25,6 +25,14 @@ for d in analyzers/tests/c/*/ analyzers/tests/ml/*/ analyzers/tests/dead/*/ anal
   elif cmp -s $W/$n.out $d/expected.out; then echo "ok mini-analyze: $n"
   else echo "FAIL mini-analyze: $n"; diff $d/expected.out $W/$n.out | head -10; failures=$((failures + 1)); fi
 done
+# callers/: -dead on a library given alone, its programs found by
+# mini-analyze (Caller_finder): a program by the library's name, one by
+# an alias, one that names it only in a comment and a string, not one
+d=analyzers/tests/callers
+$ANALYZE -dead $d/CallersLib.ml > $W/callers.out 2>&1
+if [ "${1:-}" = -record ]; then cp $W/callers.out $d/expected.out; echo "recorded $d/expected.out"
+elif cmp -s $W/callers.out $d/expected.out; then echo "ok mini-analyze: callers"
+else echo "FAIL mini-analyze: callers"; diff $d/expected.out $W/callers.out | head -10; failures=$((failures + 1)); fi
 # models/: List's and Hashtbl's models (analyzers/ml/Models) against their
 # code as written (-no-models): for each function of Probe.ml, what may
 # escape it, and whether it is called (a function given a container's)

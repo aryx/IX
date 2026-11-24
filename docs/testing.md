@@ -42,9 +42,9 @@ test-lite: 135 jobs, 0 failure(s), 0 skipped, 117 s
 - **A failure** prints its first lines and its log's end; the logs are
   kept (the last line says where).
 - **A skip** is what this machine cannot do, with what it lacks: no
-  opam switch 5.5.1, no qemu-system-arm, no ocaml-light for arm
-  (`kernels/ocaml-light.sh arm`), no xv6 disk image, no arm64 to run
-  mini-ml's programs. Not a failure; CI skips the ones it has not.
+  opam switch 5.5.1, no qemu-system-arm, no xv6 disk image, no arm64
+  to run mini-ml's programs. Not a failure; CI skips the ones it has
+  not. A developer's machine (arm64, with QEMU) skips none.
 - **Past the budget**: the jobs over a minute, and the whole over two,
   are said at the end. Not a failure, but the next thing to make
   faster.

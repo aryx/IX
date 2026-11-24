@@ -7,7 +7,8 @@
 # its own:
 #  - ix for arm and Plan 9 by mini-mk: lib_core, rc, the toolchain,
 #    what boot.rc runs, self-quick's two programs (tests/self/);
-#  - a mini-9pi for the Pi 2 with those in its bootdir;
+#  - a mini-9pi for the Pi 2 with those in its bootdir, by ix's tools
+#    too (mini-ml and mini-cc: no ocaml-light, no gcc for arm);
 #  - a small card: the toolchain (ml, cc, asm, ld) and cmp, lib_core's
 #    sources and tests/self/'s in /src, the host's objects in /host.
 # Then under QEMU, on the card: Stdlib.ml by ml and libc's pow.c by
@@ -28,11 +29,12 @@ X=$D/mk/5-plan9
 log() { echo $D/mk.$(echo $1 | tr / _).log; }
 mk() { (cd $1 && NPROC=32 mini-mk O=5 OS=plan9 B=$X "${@:2}") > $(log $1) 2>&1 ||
   { echo "mini-mk failed in $1:"; tail -3 $(log $1); return 1; }; }
-# (the kernel's OCaml, by ocaml-light, meanwhile: it needs none of
-# them, most of the kernel's 16 s; old: after them; then its C, -j4.
-# COMPILER=light: the Pi 2's default is ix's tools since 9f9e8389, whose
-# kernel is made in the shared _mk, not in $D)
-make -s -C kernels/9pi BOARD=pi2 COMPILER=light B=$D/k $D/k/ocaml.o > $D/kernel-ml.log 2>&1 &
+# (the kernel by ix's tools, the Pi 2's default, in $D/mk/5 (IXB), not
+# the shared _mk/5: its lib_core meanwhile, Linux's objects for a
+# kernel, beside these Plan 9 programs'. old: COMPILER=light, ocaml-light
+# for arm, which the developers' machines and CI may not have)
+K5=$D/mk/5
+(cd lib_core && NPROC=32 mini-mk O=5 B=$K5) > $D/kernel-lib.log 2>&1 &
 kml=$!
 # (lib_core alone: these programs name no other library, LIBDIRS; old:
 # mk . libs, the 20 of the top mkfile, 31 s of which 27 for nothing)
@@ -48,13 +50,13 @@ for p in "${pids[@]}"; do wait $p; done
 
 # mini-9pi for the Pi 2, its bootdir what boot.rc runs to mount the
 # card (the date: the Makefile's KERNDATE_IX)
-wait $kml || { echo "the kernel's OCaml:"; tail -3 $D/kernel-ml.log; exit 1; }
+wait $kml || { echo "the kernel's lib_core:"; tail -3 $D/kernel-lib.log; exit 1; }
 U=$X/utilities
 boot="boot=conf/boot.rc rc=$X/shell/mini-rc echo=$U/misc/mini-echo"
 boot="$boot ls=$U/files/mini-ls cat=$U/files/mini-cat"
 boot="$boot bind=$U/namespace/mini-bind mount=$U/namespace/mini-mount"
 boot="$boot fdisk=$X/kernels/9pi/devices/storage/user/fdisk/mini-fdisk"
-make -s -j4 -C kernels/9pi BOARD=pi2 COMPILER=light B=$D/k IMAGE=$D/kernel.img \
+NPROC=32 make -s -C kernels/9pi BOARD=pi2 COMPILER=ix IXB=$K5 B=$D/k IMAGE=$D/kernel.img \
   KERNDATE=1790380800 BOOTDIR="$boot" $D/kernel.img > $D/kernel.log 2>&1 ||
   { echo "the kernel:"; tail -3 $D/kernel.log; exit 1; }
 

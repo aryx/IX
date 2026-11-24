@@ -529,14 +529,10 @@ by_ix_play() { ! lib_audio/tests/play.sh $K/apps/media/play/mini-play | grep -v 
 # m-ix building in itself, a part (kernels/9pi/tests/smoke.sh: ix for
 # arm and Plan 9, a mini-9pi, a small card; on it under QEMU, a unit and
 # a C file compiled, two programs linked and run, the host's bytes;
-# about 40 s, beside "ix built by ix"); the kernel wants ocaml-light's
-# compiler for arm (kernels/ocaml-light.sh arm) and gcc's for arm
+# about 75 s, beside "ix built by ix"); the kernel by ix's tools too.
+# old: by ocaml-light for arm and gcc for arm, skipped without them
 t9="m-ix built in mini-9pi: ml, cc, ld, a part"
 if ! command -v qemu-system-arm > /dev/null; then skip "$t9" "no qemu-system-arm"
-elif [ ! -x $ROOT/_cross/ocaml-light-arm/bin/ocamlopt ]; then
-  skip "$t9" "no ocaml-light for arm: kernels/ocaml-light.sh arm"
-elif ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
-  skip "$t9" "no arm-linux-gnueabihf-gcc"
 else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
 # make self-mix's make ix in a fresh tree: each directory after those
 # whose objects it takes (here _mk/5-plan9 hides a wrong order)

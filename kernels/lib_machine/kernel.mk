@@ -302,10 +302,13 @@ IXO = $(if $(filter pi4,$(BOARD)),7,5)
 # (SMP=1's kernel in a directory of its own: mk makes an object again
 # when its source changed, not a flag)
 IXDIR = kernels/$(notdir $(CURDIR))-$(notdir $(B))$(if $(SMP),-smp)
-IXIMAGE = $(IXTOP)/_mk/$(IXO)/$(IXDIR)/$(if $(filter pi4,$(BOARD)),kernel8.img,kernel.img)
+# (IXB: mini-mk's B, the shared _mk/O; a test's own directory, so that two
+# runs do not build over each other: kernels/9pi/tests/smoke.sh)
+IXB ?= $(IXTOP)/_mk/$(IXO)
+IXIMAGE = $(IXB)/$(IXDIR)/$(if $(filter pi4,$(BOARD)),kernel8.img,kernel.img)
 $(IMAGE): $(B)/fs.img FORCE
-	cd $(IXTOP)/lib_core && PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) > /dev/null
-	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img) $(if $(filter pi2,$(BOARD)),PI2=1) $(if $(SMP),SMP=1)
+	cd $(IXTOP)/lib_core && PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) B=$(IXB) > /dev/null
+	PATH=$(IXTOP)/bin:$$PATH mini-mk O=$(IXO) B=$(IXB) DIR=$(IXDIR) FS=$(abspath $(B)/fs.img) $(if $(filter pi2,$(BOARD)),PI2=1) $(if $(SMP),SMP=1)
 	cmp -s $(IXIMAGE) $@ || cp $(IXIMAGE) $@
 else
 ifneq ($(ARM32),)

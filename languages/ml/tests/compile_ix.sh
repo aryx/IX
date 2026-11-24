@@ -33,10 +33,6 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_mime) $(dirs lib_compressio
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
 # nor tiny-machine's page and mini-qemu's (raspberry/web), which are js_of_ocaml's (Js_of_ocaml: built by dune only)
 # nor OCaml 5's domains (mini-netscape's Worker_spawn by OCaml 5: dune's only; mini-ml's is spawn/large_threads.ml)
-# the kernel's Memdata is generated from principia's fonts (its Makefile's, mini-mkpixdata):
-# where it was not built, the two units that name it are left out
-memdata=_make/9pi/pi1-ocaml
-nomem='^$'; [ -d $memdata ] || nomem='^kernels/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'
 # mini-singularity's Programs is generated too (its mkfile's PROGRAMS, their names in an array,
 # what each is granted): one of no name here, which has its types
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
@@ -49,7 +45,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/user/sdl/|^tiny/TinyLibSystem/sdl/|^tiny/TinyLibCore/|^tiny/TinyLibSystem/tinykernel/TinyLibSystem\.ml$|^tiny/user/emacs\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/|^browsers/netscape/spawn/domains\.ml$'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/user/sdl/|^tiny/TinyLibSystem/sdl/|^tiny/TinyLibCore/|^tiny/TinyLibSystem/tinykernel/TinyLibSystem\.ml$|^tiny/user/emacs\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/|^browsers/netscape/spawn/domains\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -95,7 +91,6 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   tiny/*) incs[$root]="-I tiny -I tiny/TinyLibSystem -I tiny/TinyLibSystem/unix $(dirs tiny | sed -E 's#-I [^ ]*tiny/(TinyLibCore|TinyML|TinyC|TinyOffice|TinyBrowser) ##g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
-  [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"
   [ $root = kernels ] && incs[$root]="${incs[$root]} -I $W"
   # (mini-usbd: with the kernel's lib_usb, which it shares)
   [ $root = kernels/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernels/9pi/buses/user/usbd) $(dirs kernels/9pi/buses/lib_usb)"

@@ -76443,3 +76443,252 @@ Claude started self workflow run 45393874105 on main, which was still queued at 
 Claude noted the docker run 45393862829 was about 35 minutes from done, with qemu-system-arm now in the image.
 Claude said it would watch the docker and self runs in the background and report when each finished.
 Claude planned to confirm "m-ix built in mini-9pi" now runs in CI rather than being skipped.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:59
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed five remaining items, starting with reporting the CI results and fixing mini-9pi if its build is too slow.
+Claude recommended starting with the slow mini-ml jobs, games/racing (87 s) and -pp (82 s), since they slow every test run.
+Claude proposed making mini-analyze skip its zero-count report after an unreadable file, since it already exits 1.
+Claude could not find why .dockerignore lists _build_release, and suggested removing the stale entry or cleaning it in make clean.
+Claude suggested an optional --strict mode for mini-yacc that fails on conflicts, with awk's grammar opting out.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:06
+
+**Yoann:**
+
+> Can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed that everything from today is committed and pushed up to commit edeca011.
+Claude noted that docs/yoann_notes/prompt-history.md is still staged and uncommitted, but predates this session.
+Claude explained the only loss is two background watches, and the GitHub CI runs continue running.
+Claude gave `gh run view 45393862829` for the docker run and `gh run view 45393874105` for the self run.
+Claude said the docker run should print "m-ix built in mini-9pi" as `ok` rather than `skip (no qemu-system-arm)`.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:09
+
+**Yoann:**
+
+> for tiny/ I think it would be better to move the TinyXxx.ml to their TinyXxx/ when there is such a dir; we did that for TinyKernel.ml so for consistency we should do it for the other; this might simplify some Buildfile, help codemap to see all the code of the rpogram by just entering in the dir, maybe even help tools like mini-analyzer -dead to pass just *.ml of the dir
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:09
+
+**Yoann:**
+
+> what do you think?
+
+**Claude (summary):**
+
+Claude recommended flattening each program into one directory, covering TinyC, TinyML, TinyBrowser, TinyOffice and TinyMachine, and leaving TinyLibSystem alone.
+Claude listed the gains: codemap and mini-analyzer would see whole compilers at once, and the Buildfile loses its special TinyC.o rules.
+Claude proposed moving each program's dune stanza into its own directory, merging tiny_c_parts and tiny_ml_parts where nothing else links them.
+Claude estimated about 450 references to update, mainly in tiny/Buildfile, mkfile, .codemapconfig, and several test scripts, with recordings needing re-recording.
+Claude proposed one commit per program, starting with TinyC, and asked whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:14
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude moved TinyC and updated its dune, Buildfile, mkfile, and compile_ix.sh build scripts.
+Claude ran the full `make test` after the TinyC move, which passed with 199 jobs and 0 failures.
+Claude started `make self-quick` as well, since the toolchain's build changed and tiny-kernel rebuilds t-IX with its own cc.
+Claude also found that the analyzer checks failed on tiny-ml, a file it had not touched, and began investigating why.
+Claude had not yet committed the TinyC move when that turn ended.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:27
+
+**Yoann:**
+
+> yes commit and continue with TinyML
+
+**Claude (summary):**
+
+Claude committed the TinyC move (02ac3c20) and then moved TinyML into the tiny/ tree, updating its build files, scripts, codemap config, and docs. The TinyML executable is now `TinyML/TinyML.exe`, and the `tiny_ml_parts` library is gone. Claude also found that `tests/ix_files.sh` read dune's `.pp.ml` files under `_build_release/` after `make self-quick`, and changed it to skip every `_build*` directory. `make test` passes (199 jobs, 0 failures) and `make self-quick` passes, but full `make self` has not been run. Claude proposed committing the `ix_files.sh` fix separately and the TinyML work together before starting TinyOffice.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:40
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:41
+
+**Yoann:**
+
+> why do we need a user/office.ml? We don't need a user/cc.ml or user/ml.ml ?
+
+**Claude (summary):**
+
+Claude's answer was only a stated intent: it said it would fix a stale path in the `user/office.ml` comment, then answer the question.
+Claude did not yet give any substantive reasoning about why `user/office.ml` exists or why `user/cc.ml` and `user/ml.ml` are absent.
+The answer was cut off before explaining the design, so nothing about the file layout was actually resolved.
+Yoann's follow-up "yes" suggests he wanted Claude to proceed with the fix and answer.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:50
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:50
+
+**Yoann:**
+
+> regarding those last line; would it be possible, since anyway in the sdl/ we do some copy of files to then get the regular TinyOffice.ml full, with the last line, and then just in the sdl/ or tests/ or whatever do some magic to remove this last line instead?
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:51
+
+**Yoann:**
+
+> or it's too complicated?
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:51
+
+**Yoann:**
+
+> and the split TinyOffice.ml and user/office.ml is worth the complexity?
+
+**Claude (summary):**
+
+Claude added `-I tiny/TinyBrowser` to `compile_ix.sh` so mini-ml could find TinyBrowser when compiling `user/www.ml`.
+Claude gave `user/www.ml` the same directory flag that `user/office.ml` already had, matching existing practice.
+Claude reran `make test`, which passed with 199 jobs, 0 failures, and matching analyzer reports.
+Claude started `make self-quick` in the background to confirm tiny-kernel builds www with the new rule.
+Claude recommended keeping the TinyOffice.ml and user/office.ml split rather than stripping the last line.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 14:00
+
+**Yoann:**
+
+> yes commit and continue with TinyMachine
+
+**Claude (summary):**
+
+Claude committed the TinyBrowser work as ca1aa1c4, then moved TinyMachine into its own `tiny/TinyMachine/` directory.
+Claude updated the tiny-machine script, TinyKernel Makefile, five tiny/tests scripts, and helper paths to the new `TinyMachine/TinyMachine.exe`.
+Claude ran `make test` (199 jobs, 0 failures) and `make self-quick`, both passing; the full `make self` was not run.
+Claude left TinyCPU.ml at the top and restored the done plan `plan_tiny_windows.md` that a stray `sed` had edited.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:13
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the TinyMachine move as f68207de, the last of five per-program moves, and skipped `prompt-history.md`.
+Claude also committed c4aca536, a separate fix to the "no control byte" test that failed on `make self-quick` leftovers.
+Each move passed `make test` (199 jobs, 0 failures) and `make self-quick`, but the full `make self` was never run.
+Claude noted the Buildfile and dune stanzas got simpler, and codemap and `-dead` can now analyze one program's directory.
+Claude flagged that `user/office.ml` and `user/www.ml` need new Buildfile rules, while `TinyTroff.ml` and `TinyCPU.ml` stay at `tiny/`.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 13:45
+
+**Yoann:**
+
+> is there any way we could make tiny/ use less LOC while still maintianint the same feature set and also speed? Should we use another language than ML? Could we add features to tiny-ml that we could then use in the code of tiny/ to reduce overall the LOC? any DSLs to invent or reuse to factorize code? to reduce significantly the code? The STEPS project from Alan Kay had the goal  of 10 000 LOC with a full system
+
+**Claude (summary):**
+
+Claude's answer only said it was measuring where tiny/'s code lines go and what tiny-ml supports. It gave no recommendation, findings, or files yet. Yoann's next message proposes extending an existing plan document with ideas for shrinking tiny/, so the answer's content itself is not something he reacted to.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:17
+
+**Yoann:**
+
+> I think we maybe add an existing plan document with ideas about reducing the size of tiny/ ? maybe we could extend that document?
+
+**Claude (summary):**
+
+Claude was adding a new section to the existing plan document about reducing the size of tiny/.
+Claude placed the new section just before the "What not to do" section of that document.
+The reply stopped at that point, so no further edits or commits from Claude are shown.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:20
+
+**Yoann:**
+
+> ok let's commit those changes
+
+**Claude (summary):**
+
+Claude committed the plan as commit 969b1647, containing only the docs/plans/plan_dsl.md file.
+Claude left the other uncommitted files in the working tree untouched and out of this commit.
+Claude skipped running make test, reasoning that the commit only changed a plan document.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:21
+
+**Yoann:**
+
+> ok can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the user could close the session without losing any work.
+Claude noted the plan was committed as 969b1647 and nothing else was in progress.
+Claude said the uncommitted TinyOffice/ and prompt-history.md changes were not its own.
+Claude added that closing the session would leave those other uncommitted files untouched.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 17:14
+
+**Yoann:**
+
+> ok let's pull, rebase, fix easy conflict, and push
+
+**Claude (summary):**
+
+Claude reported that the rebase finished with no conflicts and planned to fast-forward main.
+Claude found that upstream added a tiny-kernel line to tiny_check.sh, which needed checking against the moved paths.
+Claude was verifying that the new tiny-kernel line matched the TinyXxx.ml file moves in tiny_check.sh.
+Claude started the analysis checks and make test on the merged result to confirm the moves still work.
+Claude had not yet reported test results, so the TinyXxx.ml move was not yet confirmed clean.

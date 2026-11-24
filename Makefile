@@ -41,13 +41,23 @@ install: all
 generated:
 	dune build $(shell find . -mindepth 1 \( -name '_*' -o -name '.*' \) -prune -o \( -name '*.mll' -o -name '*.mly' \) -print | sed 's/\.ml[ly]$$/.ml/' | sort -u)
 
-# (_build5: make test's build by OCaml 5.5, tests/lite.sh's; _make*:
-# what the Makefiles make, the kernels' (_make/9pi...) and TinyKernel's
-# (its _make, _make-pages, steps/_make), wherever they are, as
-# .dockerignore's **/_make*; rm -rf of what is not there is nothing)
+# What the builds make, and who makes it (rm -rf of what is not there
+# is nothing):
+#  _build          dune's default build (dune clean)
+#  _build5         dune by OCaml 5.5: make test's (tests/lite.sh),
+#                  mini-pi's, TinyKernel's run and self when opam has it
+#  _build_release  dune --profile release by the host's OCaml:
+#                  TinyKernel's run and self without OCaml 5.5
+#  _mk             what the mkfiles build by mini-mk (_mk/7, _mk/5,
+#                  _mk/$O-$OS off Linux)
+#  _make*          what the Makefiles make, wherever they are (as
+#                  .dockerignore's **/_make*): the kernels' (_make/9pi...)
+#                  and TinyKernel's (its _make, _make-pages, steps/_make)
+# Not removed: configure's _cross (musl, OCaml cross: long to redo) and
+# Makefile.config; rm -rf _cross Makefile.config and rerun ./configure.
 clean:
 	dune clean
-	rm -rf _mk _build5
+	rm -rf _mk _build5 _build_release
 	find . \( -name .git -o -name .claude -o -name '_build*' \) -prune -o -name '_make*' -type d -prune -exec rm -rf {} +
 
 # (tiny-cc and tiny-ml are run on random programs in $(TINY_W), against

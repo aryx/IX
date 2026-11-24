@@ -46,13 +46,9 @@ export LC_ALL=C
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
 flag=$1; out=$2; check=; show=
 case $flag in
-  -caps) expected=caps_tiny.txt; said=': (no capability|has <|names .* itself)';;
-  -bugs) expected=bugs_tiny.txt; said='^bug\? ';;
-  -dead) expected=dead_tiny.txt; said=': (dead( [a-z]+)?|never built):';;
-  -exn) expected=exn_tiny.txt; said='the toplevel may let ';;
+  -caps|-bugs|-dead|-exn) expected=analyzers/datalog/tests/${flag#-}_tiny.txt;;
   *) echo "usage: tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]"; exit 2;;
 esac
-expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 T=tiny
@@ -156,37 +152,25 @@ exes=$(programs |
   { tail -5 $W/dune.log; echo "tiny_check.sh: dune's manifests failed"; exit 2; }
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
-# (the programs at once, the analyses first: seconds, not a minute)
-# (-dead: each program's files and reports as facts, merged below)
+# (the programs at once, the analyses first: seconds, not a minute; each
+# one's reports and files as facts, -summary's, merged below; one that
+# fails, said)
 runs | { while IFS='|' read -r name flags files; do
-  summary=; [ $flag = -dead ] && summary="-summary $W/$name.dl -program $name"
-  timeout 300 $ANALYZE $flag $summary $flags $files > $W/$name.out 2>&1 &
+  { timeout 300 $ANALYZE $flag -summary $W/$name.dl -program $name $flags $files \
+      > $W/$name.out 2>&1 || echo "$name FAILED: $W/$name.out" >> $W/unread; } &
 done; wait; }
-# (a unit not read, or the analyzer stopped: its program's 0 would say
-# nothing)
-failed='unbound (module|value|type)|not read|syntax error|Fatal error'
-runs | while IFS='|' read -r name flags files; do
-  n=$(grep -cE "$said" $W/$name.out)
-  unread=$(grep -cE "$failed" $W/$name.out)
-  [ -z "$check$show" ] && printf '%-20s %3d%s\n' $name $n "$([ $unread -gt 0 ] && echo "  NOT READ: $(grep -m1 -E "$failed" $W/$name.out)")"
-  [ $unread -gt 0 ] && echo "$name NOT READ" >> $W/unread
-  if [ $flag = -exn ]; then
-    # (a program's name first: its exceptions, not a file's)
-    exn_lines < $W/$name.out | sed 's|^|'$name'\t'$name': |' >> $W/said
-  else
-    grep -E "$said" $W/$name.out | sed 's/^bug? //; s|^|'$name'\t|' >> $W/said
-  fi
-done
-if [ $flag = -dead ]; then
-  # (kept where every program that has the file, or another
-  # implementation of its interface, says it: dead_all.dl's)
-  # (its warnings, a relation with no fact, said only if it fails)
-  $DATALOG analyzers/datalog/dead_all.dl $W/*.dl 2> $W/datalog.err > $W/dead_all ||
-    { cat $W/datalog.err; exit 2; }
-  dead_lines < $W/dead_all | sort -u > $out
-else
-  cut -f2- $W/said 2> /dev/null | sort -u > $out
-fi
+# (merged: -dead's what every program that has the file, or another
+# implementation of its interface, says, dead_all.dl's; the others'
+# said_all.dl's, -exn's by program; a unit not read, a failure)
+merge=said_all.dl; [ $flag = -dead ] && merge=dead_all.dl
+$DATALOG analyzers/datalog/$merge $W/*.dl 2> $W/datalog.err > $W/merged ||
+  { cat $W/datalog.err; exit 2; }
+said_lines not_read < $W/merged | sed 's/: / NOT READ: /' >> $W/unread
+case $flag in
+  -dead) dead_lines < $W/merged;;
+  -exn) said_lines said_by < $W/merged | exn_lines by;;
+  *) said_lines said_any < $W/merged;;
+esac | sort -u > $out
 [ -s $W/unread ] && { cat $W/unread; }
 if [ -n "$show" ]; then cat $out; rm -f $out; exit 0; fi
 if [ -z "$check" ]; then

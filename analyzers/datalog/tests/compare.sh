@@ -16,6 +16,14 @@ dead_lines() {
     -e 's/^([^:]*):0: /\1: /' -e "s/\\\\'/'/g"
 }
 
+# said_all.dl's answers as lines: said_any's a report, said_by's and
+# not_read's after their program's name (an atom, quoted or not); the
+# atoms' \' back to '.
+said_lines() { # relation
+  sed -nE -e "s/^$1\('?([^',]*)'?,'(.*)'\)\.$/\1: \2/p" -e t \
+    -e "s/^$1\('(.*)'\)\.$/\1/p" | sed -e "s/\\\\'/'/g"
+}
+
 # -exn's lines: a toplevel's exception, without where it is raised (that
 # list moves with every edit). An exception of lib_core's, which most
 # programs may raise (Not_found, Failure, End_of_file...), is kept when
@@ -26,8 +34,8 @@ dead_lines() {
 # name: lib_core's are its files' names. Invalid_argument always left
 # out: every string's and array's index is one of its sites. (old: such
 # an exception always left out, the program's own raises with it)
-exn_lines() {
-  grep 'the toplevel may let ' | awk -v libs="$(find lib_core -name '*.ml' \
+exn_lines() { # [by]
+  grep 'the toplevel may let ' | awk -v by="${1:+1}" -v libs="$(find lib_core -name '*.ml' \
       -not -path '*/tests/*' -exec basename {} \; | sort -u | tr '\n' ' ')" '
     BEGIN { n = split(libs, l, " "); for (i = 1; i <= n; i++) lib[l[i]] = 1 }
     { i = index($0, ", raised at ")
@@ -43,8 +51,11 @@ exn_lines() {
         fn = s; sub(/^[^(]*\(/, "", fn); sub(/\)$/, "", fn)
         if (!(fn in seen)) { seen[fn] = 1; out = out (out == "" ? "" : ", ") fn }
       }
-      # (its units each the same: the first said)
-      key = head; sub(/^[^:]*: /, "", key); key = key out
+      # (its units each the same: the first said; by program, when the
+      # lines are of several programs, after its name: by=1)
+      key = head; sub(/^[^:]*: /, "", key)
+      if (by) { p = head; sub(/: .*/, "", p); sub(/^[^:]*: /, "", key); key = p ": " key }
+      key = key out
       if (out != "" && !(key in said)) { said[key] = 1; print head ", raised in " out }
     }'
 }

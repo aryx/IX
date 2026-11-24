@@ -10,3 +10,7 @@ said_any(L) :- said(_, L).
 said_by(P, L) :- said(P, L).
 % a unit a program could not read: its answer says nothing of it
 not_read(P, M) :- unread(P, M).
+
+?- said_any(L).
+?- said_by(P, L).
+?- not_read(P, M).

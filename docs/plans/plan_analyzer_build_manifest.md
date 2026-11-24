@@ -487,7 +487,8 @@ ml/, report/, manifest/'s .ml.
 |---|---|---:|---:|---:|---:|---:|---:|
 | before the manifests | de9a26e5 | 166 | 95 | 89 | 124 | 37 | 3,968 |
 | manifests, library mode | 8baebe50 | 212 | 95 | 89 | 124 | 37 | 4,494 |
-| A, mini-analyze's part | the next | 212 | 95 | 89 | 124 | 37 | 4,581 |
+| A, mini-analyze's part | 4ec6246f | 212 | 95 | 89 | 124 | 37 | 4,581 |
+| A, tiny_check.sh's merge | the next | 196 | 95 | 100 | 124 | 37 | 4,581 |
 
 A, mini-analyze's part (2026-11-24): the reports return their lines
 (Caps_report, Exn_report, Bugs_report), every analysis's -summary has
@@ -507,3 +508,21 @@ mini-anlyzer and what external script or mkaefile must produce"). The
 programs' list under a merge wrapped within 80 columns (callers/'s
 expected.out). The scripts not yet changed: tiny_check.sh's
 post-processing is the next part.
+
+A, tiny_check.sh's merge: each run -summary for every analysis, a run
+that fails said by its status (old: a grep of its output for "unbound
+module|not read|syntax error|Fatal error"); one mini-datalog call,
+dead_all.dl or said_all.dl (its queries added), for the four; the said
+patterns gone, the recordings' names from the flag. compare.sh grew by
+11: said_lines reads said_all.dl's answers, and exn_lines keys by
+program when its lines are of several (by). So 16 lines less in
+tiny_check.sh, 5 in all; the program table (B) is the big part. One
+report new to caps_tiny.txt, recorded: Procs.spawn takes a capability
+of no written type. It was there before, a kind of -caps line the old
+pattern dropped; the merge keeps every line the report prints. (Its
+caps annotated, it says what spawn reaches without one: Sys.getenv_opt,
+the standard descriptors; left as written, analyses recorded, not
+fixed.) The author on where such logic goes: "in general we should aim
+to not abuse the use of scripts and shell wrappers over programs but
+instead improve the ergonomy of those programs; the same is true for
+the Buildfile/Makefile/... which should also remain simple and small".

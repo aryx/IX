@@ -35,6 +35,11 @@ let param_of = function
 %token STAR AT CARET PERCENT BANG PLUS MINUS AMP BAR ASSIGN LT GT SLASH DOT
 %token EOF
 
+/* the three ambiguities shifted, as yacc does by default: an else is the
+ * nearest if's, defn f( is a definition's, and (x) before an operand is
+ * a cast; LOWER is these rules', below the tokens they would shift */
+%nonassoc LOWER
+%nonassoc RPAREN
 %left SEMI
 %right ASSIGN
 %left FMT
@@ -68,14 +73,14 @@ prog:
 bigstmnt:
   | stmnt { Stmt $1 }
   | DEFN ID LPAREN args RPAREN zsemi LBRACE slist RBRACE { Defn ($2, List.map param_of $4, List.rev $8) }
-  | DEFN ID { Undefn $2 }
+  | DEFN ID %prec LOWER { Undefn $2 }
   | COMPLEX ID LBRACE members RBRACE SEMI { Aggr ($2, List.rev $4) }
   ;
 
 stmnt:
   | zexpr SEMI { Expr $1 }
   | LBRACE slist RBRACE { Block (List.rev $2) }
-  | IF expr THEN stmnt { If ($2, $4, None) }
+  | IF expr THEN stmnt %prec LOWER { If ($2, $4, None) }
   | IF expr THEN stmnt ELSE stmnt { If ($2, $4, Some $6) }
   | LOOP expr COMMA expr DO stmnt { Loop ($2, $4, $6) }
   | WHILE expr DO stmnt { While ($2, $4) }
@@ -177,7 +182,7 @@ zexpr:
   ;
 
 name:
-  | ID { Name $1 }
+  | ID %prec LOWER { Name $1 }
   | ID COLON name { Frame ($1, name_of $3) }
   ;
 

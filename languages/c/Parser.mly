@@ -74,6 +74,11 @@ let body b = b ||| Block []
 %token SEMI COMMA ASSIGN QUESTION COLON OR XOR AND LT GT PLUS MINUS STAR SLASH PERCENT
 %token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE DOT NOT TILDE EOF
 
+/* a typedef's name after a declaration's class words (static T x) or at
+ * its start (T x) is its type, shifted as yacc does by default: the
+ * empty zctlist and a gcnlist alone are LOWER_THAN_TYPE */
+%nonassoc LOWER_THAN_TYPE
+%nonassoc LTYPE
 %nonassoc LOWER_THAN_ELSE
 %nonassoc LELSE
 %left SEMI
@@ -459,7 +464,7 @@ sbody_open:
 ;
 
 zctlist:
-  /* empty */                           { Declare.lastclass := Cxxx; Declare.lasttype := Some (ty Tint) }
+  /* empty */ %prec LOWER_THAN_TYPE     { Declare.lastclass := Cxxx; Declare.lasttype := Some (ty Tint) }
 | ctlist                                { () }
 ;
 
@@ -467,7 +472,7 @@ zctlist:
 types:
   complex                               { $1, Cxxx }
 | tname                                 { Declare.simplet $1, Cxxx }
-| gcnlist                               { Declare.garbt (Declare.simplet $1) $1, Declare.simplec $1 }
+| gcnlist %prec LOWER_THAN_TYPE       { Declare.garbt (Declare.simplet $1) $1, Declare.simplec $1 }
 | complex gctnlist
     { if List.exists (fun w -> List.mem w Declare.type_words) $2 then ignore (diag None "duplicate types given: %s" (show_type (Some $1)));
       Declare.garbt $1 $2, Declare.simplec $2 }

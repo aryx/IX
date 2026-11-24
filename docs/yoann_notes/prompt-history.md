@@ -75771,3 +75771,675 @@ Claude said the session can be closed, since both fixes are committed as `4c6a60
 Claude confirmed no background job or watcher is still running and the memory note is updated.
 The one loose end is `debanggers/tests/acid/linux/ml/typed.out`, which Claude flagged.
 If the arm64 Linux test fails in CI on `ml_program()+0x264`, Claude said to update that offset.
+
+## 2026-11-24 08:20
+
+**Yoann:**
+
+> typing make gives lots of warnings: 
+>
+> make
+> dune build
+> 3 shift/reduce conflicts.                  
+> 2 shift/reduce conflicts.                   
+> 2 shift/reduce conflicts.                   
+> Warning: 14 states have shift/reduce conflicts.
+> Warning: 2 states have reduce/reduce conflicts.
+> Warning: 40 shift/reduce conflicts were arbitrarily resolved.
+> Warning: 81 reduce/reduce conflicts were arbitrarily resolved.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfffffffe (4294967294) truncated to 0xfffffffe (-2); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning: 11 states have shift/reduce conflicts.
+> Warning: 45 shift/reduce conflicts were arbitrarily resolved.
+> Warning [integer-overflow]: integer 0xe1200070 (3776970864) truncated to 0xe1200070 (-517996432); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffff0000 (4294901760) truncated to 0xffff0000 (-65536); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffff0000 (4294901760) truncated to 0xffff0000 (-65536); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80ffff00 (2164260608) truncated to 0x80ffff00 (-2130706688); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffff0000 (4294901760) truncated to 0xffff0000 (-65536); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xff000000 (4278190080) truncated to 0xff000000 (-16777216); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xaaaaaaaa (2863311530) truncated to 0xaaaaaaaa (-1431655766); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xffffffff (4294967295) truncated to 0xffffffff (-1); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfc000000 (4227858432) truncated to 0xfc000000 (-67108864); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfc000000 (4227858432) truncated to 0xfc000000 (-67108864); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfc000000 (4227858432) truncated to 0xfc000000 (-67108864); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe104000 (4262477824) truncated to 0xfe104000 (-32489472); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe200000 (4263510016) truncated to 0xfe200000 (-31457280); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe201000 (4263514112) truncated to 0xfe201000 (-31453184); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe00b880 (4261460096) truncated to 0xfe00b880 (-33507200); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe980000 (4271374336) truncated to 0xfe980000 (-23592960); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe300000 (4264558592) truncated to 0xfe300000 (-30408704); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe000000 (4261412864) truncated to 0xfe000000 (-33554432); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xfe007000 (4261441536) truncated to 0xfe007000 (-33525760); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xff841000 (4286844928) truncated to 0xff841000 (-8122368); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xff842000 (4286849024) truncated to 0xff842000 (-8118272); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd2801b05 (3531610885) truncated to 0xd2801b05 (-763356411); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd53800a6 (3577217190) truncated to 0xd53800a6 (-717750106); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x924004c6 (2453669062) truncated to 0x924004c6 (-1841298234); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd503205f (3573751903) truncated to 0xd503205f (-721215393); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xf86678a4 (4167465124) truncated to 0xf86678a4 (-127502172); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xb4ffffc4 (3036676036) truncated to 0xb4ffffc4 (-1258291260); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd2800000 (3531603968) truncated to 0xd2800000 (-763363328); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd2800001 (3531603969) truncated to 0xd2800001 (-763363327); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd2800002 (3531603970) truncated to 0xd2800002 (-763363326); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd2800003 (3531603971) truncated to 0xd2800003 (-763363325); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xd61f0080 (3592355968) truncated to 0xd61f0080 (-702611328); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0xc0000000 (3221225472) truncated to 0xc0000000 (-1073741824); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000000 (2147483648) truncated to 0x80000000 (-2147483648); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x84448003 (2219081731) truncated to 0x84448003 (-2075885565); the generated code might be incorrect.
+> Warning [integer-overflow]: integer 0x80000f00 (2147487488) truncated to 0x80000f00 (-2147479808); the generated code might be incorrect.
+> pad@pad:~/ix$
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:22
+
+**Yoann:**
+
+> /login
+
+**Claude (summary):**
+
+(no answer: the request errored out)
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:35
+
+**Yoann:**
+
+> is it safe to turn off the jsoo warnings? any alternative? usually warnings are here for a reason
+
+**Claude (summary):**
+
+Claude recommended turning off the jsoo integer-overflow warning, since the code already handles 32-bit constants deliberately.
+Claude pointed to Bits.ml, Bits.mask32, and the node checks as what makes silencing it safe.
+Claude listed four alternatives, including a recorded-warnings check, a separate make web target, and rewriting literals.
+Claude suggested option 4: add `-w no-integer-overflow` to raspberry/web, machine/tests, and tiny/TinyMachine with an explanatory comment.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:37
+
+**Yoann:**
+
+> ok let's do 4
+
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:41
+
+**Yoann:**
+
+> what are those .mlitree file at the top?
+
+**Claude (summary):**
+
+Claude moved the js_of_ocaml warning suppression into an `(env …)` stanza in the root `dune` file.
+Claude chose the root stanza because the warnings come from library code, which per-target flags would not reach.
+Claude confirmed the three web targets rebuild silently with the flag, and `make` now prints only `dune build`.
+Claude left the grammar conflicts unfixed, and the warning change was still uncommitted at the end.
+Claude also deleted the stray `.mlitree` files, traced to a stale `stdlib.ml` job in `tests/lite.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:46
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the root `dune` file as 7b5eb38f, with a message explaining why the warning is safe to disable.
+Claude noted two `make test` failures that predate this change and were not caused by it.
+Claude left `docs/yoann_notes/prompt-history.md` alone, since it is staged by another session.
+Claude flagged three open issues: a stale `modern/stdlib.ml` reference at `tests/lite.sh:375`, a `typed.out` re-recording need, and grammar conflicts.
+Claude listed the grammar conflicts as acid and C in ocamlyacc, plus awk and ML in menhir, which print on every rebuild.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:48
+
+**Yoann:**
+
+> let's fix the small 3 and 2 s/r conflicts, hopefully with some simple %prec or other directive
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:55
+
+**Yoann:**
+
+> still those toplevel .mlitree, this is annoying
+
+------------------------------------------------------------------------
+
+## 2026-11-24 08:55
+
+**Yoann:**
+
+> we should fix mini-ml to at least make them next to the mli, like we do for all the other object-like files
+
+**Claude (summary):**
+
+Claude traced the stray trees to run.sh's `$ML -M $S $L/$p.ml` call, which has no `-o`.
+Claude recommended writing a tree only when an object is written, the same rule print-only flags follow.
+Claude changed mini-ml so trees go only beside a written object, not into the current directory.
+Claude then fixed the mini-cc .NET failure, caused by Marshal_'s initializer calling unsupported Marshal.to_string.
+Claude reran make test with all four changes, including the check that mini-ml compiles lib_core.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:02
+
+**Yoann:**
+
+> let's do 3 commits
+
+**Claude (summary):**
+
+Claude made three commits, each limited to its own files: d86193df for the acid and C grammars, 5bc52987 for `mini-ml -M`, and 65ccb758 for the `Marshal_` color-bit check.
+Claude left `docs/yoann_notes/prompt-history.md` staged and uncommitted, untouched.
+Claude reported two `make test` failures unrelated to these commits: `tests/lite.sh` names a renamed `modern/stdlib.ml`, and mini-acid's `linux/ml/typed.out` needs re-recording.
+Claude noted that menhir conflicts remain in the awk and ML grammars.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:04
+
+**Yoann:**
+
+> anything easy to remove those conflicts? how the official ML and awk grammars (in plan 9, ocaml-light, etc.) handle those conflicts? They also have those conflicts?
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:05
+
+**Yoann:**
+
+> ironic that awk is made by Aho a pioneer of grammar and author of the dragon book, but did manage to write a very ambiguous grammar
+
+**Claude (summary):**
+
+Claude argued that awk's ambiguity is deliberate, following Aho, Johnson and Ullman's 1975 case for ambiguous grammars resolved by precedence rules.
+Claude explained that yacc's `%left`, `%right` and shift-on-conflict defaults come from that doctrine, so awkgram.y's 42 shift/reduce conflicts are expected.
+Claude said the 83 reduce/reduce conflicts are harder to defend, since they stem from awk's one-liner syntax: concatenation, `>` redirection, `/` ambiguity, newlines.
+Claude noted POSIX awk avoids these by splitting expressions into separate rules, and that ix's `ppattern` uses the same trick on a smaller scale.
+Claude contrasted this with OCaml, whose grammar went from conflicts to zero under `--strict`, reflecting a modern demand for provably decided grammars.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:07
+
+**Yoann:**
+
+> ok so maybe let's stop here?
+
+**Claude (summary):**
+
+Claude listed the session's four commits: js_of_ocaml overflow warning off, acid/C grammars conflict-free, `mini-ml -M` fix, and `Marshal_` lazy check for mini-cc.
+Claude flagged the ML grammar's 45 conflicts as settleable with OCaml 5.5's precedence declarations, which Yoann is now asking about.
+Claude listed open items: a stale `tests/lite.sh:375` reference, a mini-acid re-recording, awk's intentional conflicts, and an unstaged prompt-history file.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:08
+
+**Yoann:**
+
+> for the ML grammar, are the precedence annotations small? or it complicates a lot the grammar?
+
+**Claude (summary):**
+
+Claude estimated the precedence annotations at about 15 lines: 6–8 new precedence-list entries and about 9 `%prec` tags.
+Claude said the grammar's structure stays the same, with no rule split or rewritten, and the list grows from 19 to about 26 lines.
+Claude flagged two costs: the `%nonassoc` line for the constant constructor must list all 17 argument-starting tokens, and level order must be checked.
+Claude said the annotations only make existing parser choices explicit, and it verified nothing since it had not written them yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:09
+
+**Yoann:**
+
+> ok let's add those annotations to the ML grammar; Why we didn't write this annots in the first place? because we based it on ocaml-light which didn't have those?
+
+**Claude (summary):**
+
+Claude compared ocaml-light's precedence list with ix's and traced the IF/ELSE conflict states.
+Claude added the missing precedence declarations to the ML grammar and %prec annotations on its rules.
+Claude checked that mini-yacc reaches the same states and actions, with zero conflicts after precedence-only tokens counted.
+Claude found menhir's generated parser identical except for line numbers and three action indentations.
+Claude then ran dune build and make test, since mini-ml builds on the mini-yacc parser.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:27
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the grammar fix as 279e685a, touching only `languages/ml/Parser.mly`.
+The commit message records that the precedences derive from ocaml-light and OCaml 1.07, and lists each of the 11 conflicts.
+Claude explained that awk's grammar keeps its conflicts on purpose, matching the original awkgram.y.
+The grammar now rebuilds without conflict warnings apart from awk's intentional ones.
+Claude flagged `(menhir (flags --strict))` in `languages/ml/dune` as the optional follow-up that would turn new mini-ml conflicts into build errors.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 09:27
+
+**Yoann:**
+
+> ok let's add the --strict then now if it works
+
+**Claude (summary):**
+
+Claude ran dune with `--strict` on the menhir grammar, and the build passed.
+Claude confirmed that `--strict` fails with exit 1 on a small ambiguous grammar, as intended.
+Claude then started `make test` to check the change before committing.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:17
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed 059df00b, containing only `languages/ml/dune`, so a conflict or other menhir warning in mini-ml's grammar now fails the dune build.
+Claude noted `docs/yoann_notes/prompt-history.md` is still staged and uncommitted, as before.
+Claude listed two open `make test` failures: the stale `modern/stdlib.ml` in `tests/lite.sh`.
+Claude also flagged acid's `typed.out`, which still needs re-recording.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:20
+
+**Yoann:**
+
+> make test is currently failing; some things about acid and other issues
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:21
+
+**Yoann:**
+
+> CI is also failing
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:21
+
+**Yoann:**
+
+> the 3 docker jobs in CI are failing
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:25
+
+**Yoann:**
+
+> CI used to work, so curious what recent changes triggered those regressions
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:25
+
+**Yoann:**
+
+> when you give your final report
+
+**Claude (summary):**
+
+Claude found that the CI failures came from four recent commits, each needing a small fix. Claude recommended committing the four fixes, one commit per cause, so each message names the commit it repairs. The fixes cover the man-page check, which used `git ls-files` and failed when `.git` was absent in CI. They also cover orrery's stale tiny-kernel checksum, the renamed `modern/stdlib.ml` reference in `tests/lite.sh`, and mini-acid's `typed.out` offset. Claude asked whether to commit them before pushing.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:36
+
+**Yoann:**
+
+> ok great, let's commit and push and look for CI updated results
+
+**Claude (summary):**
+
+Claude committed the changes as four commits, one per cause.
+Claude left the staged `prompt-history.md` out of the commits so it stays local.
+Claude pushed the commits to the remote.
+CI run 45376451446 started, and Claude expected it to take about 32 minutes.
+Claude planned to wait for the run in the background and report the results.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:46
+
+**Yoann:**
+
+> in make test, 3 things are reported skipped: but I'm not sure why: 
+>
+> [m-ix]   skip           m-ix built in mini-9pi: ml, cc, ld, a part (no ocaml-light for arm: kernels/ocaml-light.sh arm)
+> [m-ix]   skip           mini-ml compiles mini-9pi's Memchan and Memfont (no generated Memdata: principia's fonts, mini-9pi's Makefile)
+> [m-ix]   skip           mini-analyze -caps on m-ix's 44 programs (no ix build in _mk/7 (make ix), or arm64's programs do not run here)
+>
+>   this is an arm64 machine
+
+**Claude (summary):**
+
+Claude said it would look at the condition behind each of the three skipped tests.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:49
+
+**Yoann:**
+
+> regarding 1, maybe we should build m-ix in mini-9pi using the mini toolchain instead of ocaml-light? Dunno if 2 is related. For 3, not sure why we need _mk/6/languages/ml/, we manage to run mini-analyze in make check
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:50
+
+**Yoann:**
+
+> this machine should really not skip any test in make test
+
+------------------------------------------------------------------------
+
+## 2026-11-24 10:57
+
+**Yoann:**
+
+> why mini-analyzer depends on _mk/7 ?
+
+**Claude (summary):**
+
+Claude wrote `generated.sh` to build the 29 generated lexer and parser units with mini-mk, so `ix_check.sh` no longer needs `_mk/7`.
+Claude said the mini-9pi m-ix skip needs `kernel.mk` changes, because its build writes into the shared `_mk/5`.
+Claude offered running `kernels/ocaml-light.sh arm` once, about five minutes, as the quick fix instead of the mini toolchain.
+Claude noted the mini-toolchain route needs `kernel.mk`'s `COMPILER=ix` rule to accept a private build directory.
+Claude removed the stale Memchan/Memfont skip and asked whether to commit these changes before the kernel work.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:21
+
+**Yoann:**
+
+> let's commit those changes. I'm not a huge fan of this generated.sh because it prevents a bit to run mini-analyzer manually on some files outside any build, but I understand the issue with generated files. maybe a make depend or something could generate those generated files, or make generated that could help tools like mini-analyzer. For the kernel, I'd rather use the mini-toolchain and not depend too much on ocaml-light for some tests when possible
+
+**Claude (summary):**
+
+Yoann's reaction targets the kernel build work: he wants `make generated` instead of `generated.sh`, and he wants the kernel built with the mini-toolchain rather than ocaml-light.
+Claude split the `tests/lite.sh` diff into two commits, staging the Memdata hunk first via a temporary index.
+Claude replaced the `generated.sh` approach for generated units with a `make generated` target.
+Claude added a variable in `kernel.mk` for the ix build directory, defaulting to the shared `_mk`.
+Claude changed smoke.sh to build the kernel with the ix toolchain into its own `$D/mk/5` directory.
+Timing showed no speedup, so Claude began looking at compiling kernel objects in the background.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:33
+
+**Yoann:**
+
+> ok let's commit. let's add make generated, and maybe mini-analyzer could warn about its use if it has unresolved module or something (but let's try to not be too specific to ix as one might want to use mini-analyzer on non ix programs later
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:36
+
+**Yoann:**
+
+> ok sounds like a good approach
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:36
+
+**Yoann:**
+
+> we can assume most ocaml projects now use dune; it's an ubiquitous tool now
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:37
+
+**Yoann:**
+
+> so getting the heuristics to rely on dune makes sense
+
+**Claude (summary):**
+
+Claude recommended that mini-analyze find generated units through dune's `_build/default/<dir>/` directory instead of other paths.
+Claude added `Unit_finder.generated` and `Ml_front.look` so an unbuilt `.mll` or `.mly` unit triggers a one-time warning naming the build step.
+Claude added a `make generated` target that builds only the 20 generated modules with dune, working without git too.
+Claude documented generated units in `docs/man/1/analyze.md`, and left `generated.sh` in place for `make check`'s `_mk/7` recordings.
+`make test` passed with 199 jobs and 0 failures, and all eight `make check` analyses still match.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:44
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the work as ab27d309, leaving five unpushed local commits from 4cac29c4 onward.
+Claude noted that docs/yoann_notes/prompt-history.md remained staged and uncommitted after the commit.
+Claude offered three follow-ups: overlap kernel compilation with the Plan 9 builds to cut the 35 s test time.
+Claude also flagged that mini-analyze exits 0 with a zero report when its own files are unreadable, and that its rules path only resolves from ix's root.
+Claude asked whether to push the five commits to the remote.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:45
+
+**Yoann:**
+
+> I pushed. what's next?
+
+**Claude (summary):**
+
+Claude recommended watching CI run 45387123169 for the first `-caps` job on x86, plus the mini-9pi job.
+Claude proposed making mini-analyze exit non-zero when one of its own files can't be read, instead of exiting 0 with a report of zeros.
+Claude suggested a `mkkernel` target so the kernel's objects compile while the Plan 9 programs build, leaving only the disk image and link.
+Claude also flagged that mini-analyze hardcodes its rules path as `analyzers/datalog/...` relative to the current directory.
+Claude listed the awk 45 → 0 grammar conflicts as optional, to be handled only if mini-yacc should fail on conflicts.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:49
+
+**Yoann:**
+
+> ok let's do 1 and watch CI. let's do 2 and exit non-zero. for 3 I'm ok to add a target but I don't fully understand the "compile while X do y". just add a target that allows to leverage NPROC and do things in paralell for the kernel build part. for 4, I thought there was a -r to specify the datalog dir anyway.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:51
+
+**Yoann:**
+
+> independently, there are lots of warnings in make test about over time jobs: 
+>
+> past the budget (plan_tests.md: 120 s, a job 60 s):
+>   [m-ix]    64.6 s  mini-ml: the runtime from C
+>   [m-ix]    68.7 s  mini-ml compiles lib_graphics...
+>   [m-ix]    67.8 s  mini-ml on arm (qemu-arm): the runtime from C, shifts by 0
+>   [m-ix]    64.9 s  mini-ml compiles games/fps
+>   [t-ix]    66.4 s  mini-ml compiles tiny..., the rest
+>   [m-ix]    79.3 s  mini-ml -pp
+>   [m-ix]    68.7 s  ix built by ix
+>   [m-ix]    73.5 s  mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)
+>   [m-ix]    94.0 s  mini-ml compiles games/racing...
+>   [m-ix]   102.8 s  mini-9pi for the Pi 1 built by ix, booted to rc; its segments run a JIT's code; mini-acid debugs in it; its panic's trace named
+>   [m-ix]   108.4 s  m-ix built in mini-9pi: ml, cc, ld, a part
+> test-lite: 199 jobs, 0 failure(s), 0 skipped, 127 s
+>
+>   wonder if this is because the machine is too overloaded? or things regressed? or we should augment the budget? or improve the speed of certain things that can have a big impact on the time reduction
+
+**Claude (summary):**
+
+Claude timed the serial mkkernel build at 45 s, mostly system time, and wired in per-unit rules.
+Claude found the Ureg.5 job takes 18.6 s alone but 65.7 s inside make test.
+Claude attributed that roughly 3.5 times slowdown to machine load and contention.
+Claude proposed raising the plan_tests.md time budget for the over-budget jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 11:59
+
+**Yoann:**
+
+> let's commit and yes change the budget like you propose. maybe we should also try to reduce contention if in the end it causes more issues than it solves and make the whole build slower. Maybe we could reduce NPROC in the recursive mk called from make test? so we still get a good usage, but don't halt the machine and remove contention to maybe even speedup things overall
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:10
+
+**Yoann:**
+
+> note that make test significantly slow down my machine and my browser has difficulty getting a slice of CPU so it's fine  to use maybe less CPUs if the slowdown is negligible (trade comfort for absolute speed)
+
+**Claude (summary):**
+
+Yoann's reply "yes!" approves committing, so the focus is Claude's proposed commit of the uncommitted changes. Claude proposed committing the uncommitted `tests/lite.sh`, kernel test, `smoke.sh`, and `docs/testing.md` changes after measuring the new defaults.
+Claude's chosen defaults were 32 jobs, `NPROC=8`, and a `nice` 10 renice, which ran `make test` in 108 s.
+Claude's measurements across JOBS and NPROC settings showed `NPROC=8` costing nothing versus `NPROC=32`, while `JOBS=16` added about 8 s.
+Claude explained that `nice` protects the browser because the run yields CPU, though load average stays near 48.
+Claude asked whether to commit, and the summary stops there because the commit itself is what Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:21
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude committed the change as 385a877d, but it is local only and has not been pushed.
+Claude noted that the kernel build commit 870d9e3c is also local only.
+Claude said the CI run for ab27d309 is still going and excludes these two commits.
+Claude promised to report the CI result once that run finishes.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:22
+
+**Yoann:**
+
+> make clean should probably also remove the _build5 no?
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:22
+
+**Yoann:**
+
+> if it exists
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:22
+
+**Yoann:**
+
+> and _make too
+
+**Claude (summary):**
+
+Claude extended `make clean` to remove every `_make*` directory, including the top-level `_make`.
+Claude also covered TinyKernel's `_make`, `_make-pages`, `_make-segments` and the steps' `_make` directories, skipping `.git`, `.claude` and `_build*`.
+Claude checked the recipe with `make -n clean`, listing those five directories, but did not run the clean itself.
+Claude warned that the clean would delete the shared `_build` and `_mk` builds other sessions use, requiring TinyKernel rebuilds.
+Claude then asked whether to commit the change along with the `_build5` line.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:22
+
+**Yoann:**
+
+> yes commit
+
+**Claude (summary):**
+
+Claude committed the change as 0afbcaca, leaving three unpushed local commits: 870d9e3c (kernel build), 385a877d (`make test` load), and this one.
+Claude reported that the CI run on the earlier push had passed.
+Claude said it would check that the newly enabled CI jobs actually ran rather than being skipped.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:24
+
+**Yoann:**
+
+> ok let's install qemu-system-arm then in the Docker image to get more tests running
+
+**Claude (summary):**
+
+Claude checked that `smoke.sh` doesn't need `~/principia`, and it passed without it in 63 seconds.
+Claude edited the Dockerfile to add qemu-system-arm, after checking the package installs cleanly on Ubuntu 24.04.
+Claude tested the install in a throwaway container, since the cached `ubuntu:24.04` image was x86 and wouldn't run here.
+Claude switched to the arm64 `ubuntu:24.04` image, which has the same release and packages.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 12:28
+
+**Yoann:**
+
+> let's commit and push; let's also trigger a self.yml workflow
+
+**Claude (summary):**
+
+Claude committed the Dockerfile change as edeca011 and pushed it with three earlier local commits.
+Claude started self workflow run 45393874105 on main, which was still queued at that point.
+Claude noted the docker run 45393862829 was about 35 minutes from done, with qemu-system-arm now in the image.
+Claude said it would watch the docker and self runs in the background and report when each finished.
+Claude planned to confirm "m-ix built in mini-9pi" now runs in CI rather than being skipped.

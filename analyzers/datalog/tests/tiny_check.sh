@@ -195,4 +195,18 @@ fi
 # (a program not read: a failure, all tiny/'s programs readable here)
 [ -s $W/unread ] && { echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; rm -f $out; exit 1; }
 compare "mini-analyze $flag on tiny/'s programs" $out $expected /dev/null
-st=$?; rm -f $out; exit $st
+st=$?
+# (-dead on a library's file over the build's manifests: its programs
+# those that link it, each run as linked, merged: the lines of the
+# merge above that are its)
+if [ $flag = -dead ]; then
+  lib=$T/TinyLibGUI.ml
+  $ANALYZE -dead $lib $W/tix/src/*.manifest 2>&1 | grep "^$lib:" | bare_line | sort > $W/lib.out
+  grep "^$lib:" $out | bare_line | sort > $W/lib.expected
+  if [ -s $W/lib.expected ] && cmp -s $W/lib.out $W/lib.expected; then
+    echo "ok mini-analyze -dead $lib over t-IX's manifests: the merge's lines"
+  else
+    echo "FAIL mini-analyze -dead $lib over t-IX's manifests"; diff $W/lib.expected $W/lib.out | head -5; st=1
+  fi
+fi
+rm -f $out; exit $st

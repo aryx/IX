@@ -106,3 +106,28 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
            | exception Failure _ -> None) in
   of_manifest caps m others
     (match sources with Some d -> d | None -> Filename.dirname file)
+
+let linking (manifest_file : string) (m : manifest) (sources : string option)
+    (file : string) : string option =
+  let file = FS.cleanname file in
+  let ends_with (s : string) : string option =
+    (* (file is the tree's s: the build ran in a copy of the rest) *)
+    let n = String.length file - String.length s in
+    if file = s then Some "."
+    else if n > 0 && file.[n - 1] = '/' && String.sub file n (String.length s) = s
+    then Some (String.sub file 0 (n - 1))
+    else None in
+  List.find_map (fun (l : linked) ->
+      match l.l_source with
+      | None -> None
+      | Some s ->
+          let at (d : string) : string =
+            FS.cleanname (if Filename.is_relative s then Filename.concat d s else s) in
+          match sources with
+          | Some d -> if at d = file then Some d else None
+          | None ->
+              let d = Filename.dirname manifest_file in
+              if at d = file then Some d
+              else if Filename.is_relative s then ends_with (FS.cleanname s)
+              else None)
+    m.m_units

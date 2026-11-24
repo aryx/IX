@@ -41,8 +41,11 @@ those no other program of the build links (a library's: -dead its file):
   dead.c:24: dead: orphan, in main but no call goes through the pointer
   dead.c:31: dead code: in main, after a return
 -dead on one .ml file some other names, a library's or a part of a program's
-(tiny/TinyLibGUI.ml): each program that reaches it (Caller_finder), run by
-mini-analyze itself, merged (datalog/dead_all.dl), what is said of the file:
+(tiny/TinyLibGUI.ml): each program that reaches it, run by mini-analyze
+itself, merged (datalog/dead_all.dl), what is said of the file. Its programs
+the manifests given that link it, each read as linked (-sources found);
+without manifests, those whose files name it (Caller_finder), from their main:
+  mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest
   tiny/TinyLibGUI.ml:472: never built: Disc.1, matched in TinyLibGUI.area_of
 -caps: instead, whether ML's own functions hold the capabilities they need
 (capabilities.dl), from their types' < Cap.x; .. > and what they reach:
@@ -243,23 +246,27 @@ let summary (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : strin
  * merged by datalog/dead_all.dl in this process; the lines of [file]
  * printed, then how many programs said them. A program's own report
  * goes to a file of the run's directory, left there if it failed. *)
-let dead_of_callers (caps : < caps; .. >) (args : string list) (rules : string) (file : string) (mains : string list) : int =
+let dead_of_callers (caps : < caps; .. >) (args : string list) (rules : string) (file : string)
+    (mains : (string * string list) list) : int =
   let file = FS.cleanname file in
   let w = Filename.concat (Filename.get_temp_dir_name ()) (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
   FS.mkdir caps w 0o755;
   (* (the flags given, the file not; a program a name, its main's, once) *)
-  let flags = List.filter (fun (a : string) -> FS.cleanname a <> file) args in
+  (* (no manifest: a run is given its own) *)
+  let flags =
+    List.filter (fun (a : string) ->
+        FS.cleanname a <> file && not (Filename.check_suffix a ".manifest"))
+      args in
   let names = Hashtbl.create 16 in
   let runs =
     List.map
-      (fun (main : string) ->
+      (fun ((main, extra) : string * string list) ->
         let base = Filename.remove_extension (Filename.basename main) in
         let n = (match Hashtbl.find_opt names base with Some n -> n | None -> 0) + 1 in
         Hashtbl.replace names base n;
         let name = if n = 1 then base else Printf.sprintf "%s%d" base n in
         let out = FS.open_out_fd caps (Filename.concat w (name ^ ".out")) 0o644 in
-        let args = flags @ [ "-summary"; Filename.concat w (name ^ ".dl"); "-program"; name; main ] in
-        Logs.info (fun m -> m "running %s" (String.concat " " (Sys.executable_name :: args)));
+        let args = flags @ extra @ [ "-summary"; Filename.concat w (name ^ ".dl"); "-program"; name; main ] in
         let pid = Procs.create_process caps Sys.executable_name args ~stdin:Unix.stdin ~stdout:out in
         Unix.close out;
         (name, main, pid))
@@ -401,9 +408,27 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   match Arg.parse_argv argv options anon usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
+  (* (-dead on one .ml file and manifests: the file a library's or a
+   * part of a program's, its programs the manifests that link it, each
+   * run as linked, merged; its -sources found if not given) *)
+  | () when (match !files with [ f ] -> !dead && Filename.check_suffix f ".ml" | _ -> false)
+            && !manifests <> [] && !summary_file = "" && not !only -> (
+      let file = List.hd !files in
+      let given = if !sources = "" then None else Some !sources in
+      match
+        List.filter_map (fun (m : string) ->
+            Option.map (fun (root : string) ->
+                (m, if given <> None then [] else [ "-sources"; root ]))
+              (Tiny_manifest.linking m (Tiny_manifest.of_string (FS.read caps (Fpath.v m))) given file))
+          (List.rev !manifests)
+      with
+      | [] -> Console.eprint caps (Printf.sprintf "mini-analyze: no manifest given links %s\n" file); 1
+      | mains -> dead_of_callers caps (List.tl (Array.to_list argv)) !rules file mains
+      | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); 1)
   | () when read_manifests () -> 1
   | () when (callers := find_callers (); !callers <> []) ->
-      dead_of_callers caps (List.tl (Array.to_list argv)) !rules (List.hd !files) !callers
+      dead_of_callers caps (List.tl (Array.to_list argv)) !rules (List.hd !files)
+        (List.map (fun m -> (m, [])) !callers)
   | () -> (
       (* (no -L: the standard library nearest the first ML file, tiny's
        * TinyLibCore for tiny/'s programs, lib_core for ix's) *)

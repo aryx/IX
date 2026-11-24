@@ -82,3 +82,11 @@ val of_manifest :
  * sources if given, else against the manifest's directory *)
 val program :
   < Cap.open_in; Cap.readdir; .. > -> string -> string option -> program
+
+(* [linking manifest_file m sources file]: when the manifest links file
+ * (a library's, tiny/TinyLibGUI.ml), the directory its paths are read
+ * in for one of them to be file: sources if given, else the manifest's
+ * directory, else the one that makes the manifest's path (TinyLibGUI.ml)
+ * the file's, the build having run in a copy (tiny/TinyKernel/_make/src
+ * of tiny); None when it does not link it *)
+val linking : string -> manifest -> string option -> string -> string option

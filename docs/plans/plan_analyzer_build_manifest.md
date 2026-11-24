@@ -361,6 +361,26 @@ mini-yacc's, changes a recorded report.
    merge (-summary: tiny_check.sh, -dead lib.ml) reports all, the merge
    deciding. build: 47 dead reported before, all TinyLibSystem's, 0 of
    TinyBuildSystem.ml now; ml's 9 components, 0.
+
+   And -dead on a library's file finds its programs in the manifests
+   given (the author: "yes, build the manifest-based version"):
+   mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/
+   *.manifest keeps the manifests that link the file
+   (Tiny_manifest.linking), runs each as linked with -summary, merges
+   (dead_of_callers, as for Caller_finder's). -sources is found from the
+   file: the manifest's TinyLibGUI.ml is the tree's tiny/TinyLibGUI.ml,
+   so the build ran in a copy of tiny/ (tiny/TinyKernel for the
+   kernel's). TinyLibGUI.ml: 1.4 s, the 2 lines of the merge, over calc,
+   debug, emacs, office, play, temp, troff, www: play links GUI without
+   naming it, which Caller_finder's name search missed, and gui
+   (examples/gui.ml) is no program of the build. TinyOffice/Model.ml:
+   office and troff; KFS.ml: the kernel. tiny_check.sh -dead checks
+   TinyLibGUI.ml's lines against the merge's. Without manifests,
+   Caller_finder as before. With it, lib_core's Procs says each program
+   it runs (Logs.info, -v), as FS says a file read (the author: "btw,
+   Logs.info should also print something when a program execute another
+   program (just like we do print something when we open a file
+   internally)"); mini-analyze's own two lines for it gone.
 4. **mini-ml, mini-cc, mini-asm, mini-ar, mini-ld**: the record as a
    section of Asm's objects, the manifest beside each executable and the
    kernel. ix_check.sh, sweep.sh, kernel.sh on manifests; mk_units.sh

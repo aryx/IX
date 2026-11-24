@@ -22,6 +22,12 @@ tiny/TinyDebugger.ml:335: evalorder: operands at 335:8 and 335:22, both with an 
 tiny/TinyEditorScreen.ml:569: stack: TinyEditorScreen.take calls itself, not a tail call, over a list
 tiny/TinyEditorScreen.ml:646: stack: go calls itself, not a tail call, over a list
 tiny/TinyEditorScreen.ml:710: stack: go calls itself, not a tail call, over a list
+tiny/TinyKernel/KGraphics.ml:188: stack: KGraphics.insert calls itself, not a tail call, over a list
+tiny/TinyKernel/KGraphics.ml:215: stack: edges calls itself, not a tail call, over a list
+tiny/TinyKernel/KGraphics.ml:256: stack: take calls itself, not a tail call, over a list
+tiny/TinyKernel/KGraphics.ml:265: stack: put calls itself, not a tail call, over a list
+tiny/TinyKernel/KGraphics.ml:517: layout: in the column of the if's branch above, not in it: run whatever the test
+tiny/TinyKernel/KMemory.ml:67: stack: insert calls itself, not a tail call, over a list
 tiny/TinyKernel/KRaw.ml: link: two units KRaw, tiny/TinyKernel/KRaw.ml and tiny/TinyKernel/host/KRaw.ml: which one is linked the build's
 tiny/TinyKernel/fonts/Mkfont.ml:370: evalorder: operands at 370:15 and 370:40, both with an effect: their order the compiler's
 tiny/TinyKernel/fonts/Mkfont.ml:370: evalorder: operands at 370:40 and 371:15, both with an effect: their order the compiler's

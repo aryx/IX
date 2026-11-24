@@ -14,8 +14,10 @@
 # capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
 # does not read: tiny-machine-window, user/sdl/'s own TinyLibSystem,
 # stood for by the host's, whose code it includes), js_of_ocaml
-# (tiny-machine-web) and the kernel (its calls are the machine's, not a
-# library's).
+# (tiny-machine-web). The kernel is read as a program of tiny-kernel,
+# which it is, on TinyLibCore (TinyLibSystem, which it does not name, is
+# not read): it shares KNetwork.ml with tiny-machine, and without it a
+# function only the kernel calls would be said dead.
 # Each report once, sorted, recorded: -caps caps_tiny.txt (its one line
 # TinyBuildSystem.start's, analyzers/datalog/README.md), -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt (what every build that has the
@@ -101,6 +103,7 @@ play|b||$T/user/play.ml
 www|b||$T/user/www.ml
 trace|k||$T/user/trace.ml
 debug|k||$T/user/debug.ml
+tiny-kernel|k||$T/TinyKernel/TinyKernel.ml
 EOF
 }
 # a run a line: its name, its flags, its main file. A tool runs on both

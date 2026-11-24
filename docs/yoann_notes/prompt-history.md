@@ -75713,3 +75713,18 @@ Claude explained that this group isolation keeps the terminal's SIGINT from reac
 Claude fixed this by introducing a `TIMEOUT` variable and applying it to every t-ix machine run in the Makefile.
 Claude then set out to verify the fix with a real pseudo-terminal and Ctrl-C, both with and without `--foreground`.
 Claude also checked the leftover m-ix and t-ix run logs to find what made `make self` fail.
+
+------------------------------------------------------------------------
+
+## 2026-11-23 21:51
+
+**Yoann:**
+
+> run it yourself and fix make self
+
+**Claude (summary):**
+
+Claude added `timeout --foreground` to `tiny/TinyKernel/Makefile` so Ctrl-C can interrupt the t-ix build.
+Claude confirmed that t-ix's `make self` passed with that change in about 8 minutes.
+Claude said nothing in the t-ix half needed fixing, and left the change uncommitted.
+Claude also fixed the m-ix byte mismatch with a new `Marshal_` module, so `make self-quick-mix` passes.

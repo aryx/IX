@@ -4,6 +4,19 @@
 ; the first build.
 (dirs :standard \ docs bin)
 
+; js_of_ocaml's integer-overflow warning off: in JavaScript an int has
+; 32 bits, and the code it would compile is written for that (Bits: its
+; masks and unsigned comparisons; plan_web.md). What it warns about is
+; such a word (0xffffffff, an instruction's encoding, whose 32 bits are
+; the same as a negative int), or Pi4's and arm64's code, linked in
+; MiniQemuWeb but never run by the Pi 1 board there. It gives no
+; place, and misses the bug 32-bit ints did cause (TinyMachineCPU's
+; unsigned comparisons by <): the checks are the runs under node.
+(env
+ (_
+  (js_of_ocaml
+   (flags (:standard -w no-integer-overflow)))))
+
 ; the script that boots the Pi kernels under mini-qemu, installed with
 ; the programs (dune install)
 (install

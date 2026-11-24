@@ -372,7 +372,7 @@ family "mini-ml code runs as OCaml's" reference
 # (each builds the stdlib first)
 M=languages/ml/tests/modern
 if [ -n "$runs7" ]; then
-job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml $M/hashtables.ml $M/formats.ml $M/fields.ml $M/constructors.ml
+job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/later_stdlib.ml $M/hashtables.ml $M/formats.ml $M/fields.ml $M/constructors.ml
 job "mini-ml: floats, digests, marshal" languages/ml/tests/modern.sh $M/floats.ml $M/digests.ml $M/marshalled.ml $M/engines.ml
 job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/unix_calls.ml $M/unix_sockets.ml $M/signals.ml
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"

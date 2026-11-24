@@ -73,3 +73,18 @@ val unboxed_floats : (Ast.span, unit) Hashtbl.t
  * (mini-analyze's Closure_facts puts a raise at each call;
  * docs/plans/done/plan_bug_analyses.md's A2). *)
 val raises : (string, string) Hashtbl.t
+
+(* The names of the item attributes, [@@name ...], that mini-ml knows:
+ * the ones above, mlpp's ([@@deriving show], [@@class], [@@instance]),
+ * and OCaml's own that a program may write ([@@unboxed], [@@noalloc],
+ * [@@warning "-32"]...). The lexer reads every [@@name ...] into one
+ * token and refuses another name, at its line: a misspelled [@@tailrc]
+ * would otherwise check nothing. The parser puts each item's attributes
+ * in the tree (Ast.attribute) and records here what the ones above
+ * mark. A new annotation is a name in this list and what reads it.
+ * ([@@@...], a floating attribute, and an expression's [@...] are not
+ * these: the first is skipped, [@inline] and [@tailcall] are tokens.) *)
+val known : string list
+
+(* whether the attributes have one of that name *)
+val has : string -> Ast.attribute list -> bool

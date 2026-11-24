@@ -423,7 +423,7 @@ let has_classes ~file text (items : Ast.structure) =
     List.exists (fun (it : Ast.item) ->
       match it.i with
       | Itype ds -> List.exists (fun (d : Ast.type_decl) -> List.exists (fun (a : Ast.attribute) -> a.aname = "class") d.tattrs) ds
-      | Ivalue (_, _, attrs) -> attrs <> []
+      | Ivalue (_, _, attrs) -> Annotations.has "instance" attrs
       | Imodule (_, m) ->
           let rec inside (m : Ast.module_expr) = match m with Mstruct s -> marked s | Mconstraint (m, _) -> inside m | Mident _ -> false in
           inside m

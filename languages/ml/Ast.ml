@@ -159,8 +159,9 @@ type type_decl = {
   tattrs : attribute list;
 }
 
-(* mlpp: [@@deriving show], [@@class]; its end, where mlpp puts the code;
- * and a value's [@@instance] *)
+(* an item's [@@name args] (Annotations.known): mlpp's [@@deriving show],
+ * [@@class], a value's [@@instance], the checked annotations, OCaml's;
+ * its end, where mlpp puts the code *)
 and attribute = { aname : string; aargs : string list; aloc : loc; aend : int }
 
 and tkind =

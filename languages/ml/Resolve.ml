@@ -222,7 +222,7 @@ and sig_env path scope (items : Ast.signature) =
           let g = global_with (Some (resolve scope it.sloc t)) path x in
           g.glabels <- type_labels t;
           (* mlpp: *)
-          if attrs <> [] then add_instance it.sloc path g (Option.get g.gtype);
+          if Annotations.has "instance" attrs then add_instance it.sloc path g (Option.get g.gtype);
           both (add_value x (Global g))
       | Sexternal (x, t, p :: _) -> both (add_value x (Prim (p, arity t, resolve scope it.sloc t)))
       | Sexternal (x, _, []) -> error it.sloc "%s: an external without a primitive" x
@@ -882,7 +882,7 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
       | Ivalue (r, bs, attrs) ->
           let labels = List.concat_map (fun (p, e) -> defined_labels env p e) bs in
           (* mlpp: an instance's type, as written *)
-          let types = List.concat_map (fun ((p : Ast.pattern), e) -> match p.p with Pvar x when attrs <> [] -> [ x, written env e ] | _ -> []) bs in
+          let types = List.concat_map (fun ((p : Ast.pattern), e) -> match p.p with Pvar x when Annotations.has "instance" attrs -> [ x, written env e ] | _ -> []) bs in
           let bs, vs =
             if r = Rec then (let bs, vs, _ = recursive env bs in bs, vs)
             else (let l = List.map (fun (p, e) -> let p, e, vs = binding env p e in (p, e), vs) bs in List.map fst l, List.concat_map snd l)
@@ -891,7 +891,7 @@ let rec structure path env (items : Ast.structure) : item list * env * env =
             let g = define path x in
             g.glabels <- List.assoc_opt x labels ||| [];
             (match Hashtbl.find_opt var_types v.vid with Some t -> Hashtbl.replace global_types g.gsym t | None -> ());
-            if attrs <> [] then add_instance it.iloc path g (List.assoc_opt x types ||| Tvar "_");
+            if Annotations.has "instance" attrs then add_instance it.iloc path g (List.assoc_opt x types ||| Tvar "_");
             x, v, g) vs in
           emit (Ivalue (r = Rec, bs, List.map (fun (_, v, g) -> v, g) gs));
           List.fold_left (fun (env, exports) (x, _, g) -> add_value x (Global g) env, add_value x (Global g) exports) (env, exports) (List.rev gs)

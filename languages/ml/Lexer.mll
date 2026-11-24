@@ -24,6 +24,8 @@ let () =
       "lor", INFIXOP3 "lor"; "lxor", INFIXOP3 "lxor"; "lsl", INFIXOP4 "lsl"; "lsr", INFIXOP4 "lsr"; "asr", INFIXOP4 "asr" ]
 
 let buf = Buffer.create 256
+(* an item's attribute, [@@name ...]: its name and its payload's words *)
+let abuf = Buffer.create 64
 
 let escape = function 'n' -> '\n' | 't' -> '\t' | 'b' -> '\b' | 'r' -> '\r' | c -> c
 
@@ -79,24 +81,26 @@ rule token = parse
   | "{" { LBRACE } | "}" { RBRACE }
   | "[" { LBRACKET } | "]" { RBRACKET }
   | "[|" { LBRACKETBAR } | "|]" { BARRBRACKET }
-  (* mlpp: [%bits "..."], [@@deriving show] *)
-  | "[%" { LBRACKETPERCENT } | "[@@" [' ' '\t']* "deriving" { DERIVING }
-  (* mlpp: a class, a record type's [@@class]; an instance, a value's [@@instance] *)
-  | "[@@" [' ' '\t']* "class" [' ' '\t']* "]" { CLASS } | "[@@" [' ' '\t']* "instance" [' ' '\t']* "]" { INSTANCE }
-  (* the checked annotations (Annotations.mli): a call's [@tailcall], a
-   * recursive function's [@@tailrec], a function's [@@zero_alloc], its
-   * [@inline] (OCaml's place, let[@inline] f, or [@@inline] after it), a
-   * float's [@@unboxed_float] *)
+  (* mlpp: [%bits "..."] *)
+  | "[%" { LBRACKETPERCENT }
+  (* an item's attribute, [@@deriving show], [@@tailrec], [@@raise
+   * Sys_error]: one token, its name and its payload's words (a string's
+   * without its quotes), the name one mini-ml knows (Annotations.known).
+   * Its place the whole [@@...], mlpp's (aend). *)
+  | "[@@" [' ' '\t']* (lowercase ['a'-'z' 'A'-'Z' '_' '0'-'9' '.']* as name)
+      { if not (List.mem name Annotations.known) then raise (Error ("unknown attribute [@@" ^ name ^ "]"));
+        let start = lexbuf.lex_start_p in
+        Buffer.clear abuf; Buffer.add_string abuf name; payload 1 lexbuf;
+        lexbuf.lex_start_p <- start;
+        ATTRIBUTE (Buffer.contents abuf) }
+  (* the checked annotations of an expression (Annotations.mli): a
+   * call's [@tailcall], a function's [@inline] at OCaml's place, let[@inline] f *)
   | "let" [' ' '\t']* "[@" [' ' '\t']* "inline" [' ' '\t']* "]" { LETINLINE }
-  | "[@@" [' ' '\t']* "inline" [' ' '\t']* "]" { INLINE }
-  | "[@@" [' ' '\t']* "unboxed_float" [' ' '\t']* "]" { UNBOXED_FLOAT }
   | "[@" [' ' '\t']* "tailcall" [' ' '\t']* "]" { TAILCALL }
-  | "[@@" [' ' '\t']* "tailrec" [' ' '\t']* "]" { TAILREC }
-  | "[@@" [' ' '\t']* "zero_alloc" [' ' '\t']* "]" { ZERO_ALLOC }
-  (* what an external may raise, [@@raise Sys_error] (Annotations.raises) *)
-  | "[@@" [' ' '\t']* "raise" [' ' '\t']+ { RAISES }
-  (* the other attributes, [@inline], [@@unboxed], [@@@warning "-32"]:
-   * skipped (OCaml reads them in -pp's output, the text itself) *)
+  (* the other attributes, an expression's [@inline], a floating
+   * [@@@warning "-32"]: skipped (OCaml reads them in -pp's output, the
+   * text itself) *)
+  | "[@@@" { attribute 1 lexbuf; token lexbuf }
   | "[@" { attribute 1 lexbuf; token lexbuf }
   | "|" { BAR } | "*" { STAR } | "'" { QUOTE } | "," { COMMA }
   | "->" { MINUSGREATER } | "." { DOT } | ".." { DOTDOT }
@@ -163,3 +167,12 @@ and attribute depth = parse
   | newline { Lexing.new_line lexbuf; attribute depth lexbuf }
   | eof { raise (Error "unterminated attribute") }
   | _ { attribute depth lexbuf }
+
+(* an item's attribute after its name, up to its ]: into abuf *)
+and payload depth = parse
+  | "[" { Buffer.add_char abuf '['; payload (depth + 1) lexbuf }
+  | "]" { if depth > 1 then (Buffer.add_char abuf ']'; payload (depth - 1) lexbuf) }
+  | "\"" { Buffer.clear buf; string lexbuf; Buffer.add_char abuf ' '; Buffer.add_string abuf (Buffer.contents buf); payload depth lexbuf }
+  | newline { Lexing.new_line lexbuf; Buffer.add_char abuf ' '; payload depth lexbuf }
+  | eof { raise (Error "unterminated attribute") }
+  | _ as c { Buffer.add_char abuf c; payload depth lexbuf }

@@ -61,8 +61,12 @@ check() {
 }
 
 cd $ROOT
-# ix's own sources, and what the lexer refuses or reads oddly
-check ml languages/ml "" "()" $(tests/ix_files.sh | grep -E '\.mli?$') $ROOT/generators/tests/tokens/*.ml
+# ix's own sources, and what the lexer refuses or reads oddly; the
+# lexer's header names Annotations for the attributes' names, which
+# names Ast for two types
+mkdir -p $W/stub-ml
+echo 'type span = int * int type attribute = { aname : string; aargs : string list; aloc : int; aend : int }' > $W/stub-ml/Ast.ml
+check ml languages/ml "$W/stub-ml/Ast.ml $ROOT/languages/ml/Annotations.ml" "()" $(tests/ix_files.sh | grep -E '\.mli?$') $ROOT/generators/tests/tokens/*.ml
 # the lexer's header names Ast for its line count only
 mkdir -p $W/stub; echo 'let line = ref 1' > $W/stub/Ast.ml
 check sql database/sql "$W/stub/Ast.ml" "Lexer.state := Lexer.Initial; Ast.line := 1" $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null) $ROOT/generators/tests/tokens/*.sql

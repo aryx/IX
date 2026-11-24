@@ -93,17 +93,43 @@ let mkmatch at e cases =
 (* { x; M.y }: a field of the variable of its name *)
 let last l = List.nth l (List.length l - 1)
 
+(* an item's attribute, the lexer's ATTRIBUTE: its name, then its
+ * payload's words (deriving show: [ "show" ]) *)
+let attribute at (s : string) : attribute =
+  let words = List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.map (fun c -> if c = '\t' then ' ' else c) s)) in
+  match words with
+  | name :: args -> { aname = name; aargs = args; aloc = line at; aend = snd (span at) }
+  | [] -> raise Parsing.Parse_error
+
+(* What a binding's attributes mark (Annotations.mli), given the bound
+ * expression: a function's, or a float's. The others are for mlpp
+ * ([@@instance]) or OCaml's. *)
+let annotate (attrs : attribute list) (e : expr) : unit =
+  List.iter
+    (fun (a : attribute) ->
+      match a.aname with
+      | "tailrec" -> Hashtbl.replace Annotations.tailrecs (marked_function e).espan ()
+      | "zero_alloc" -> Hashtbl.replace Annotations.zero_allocs (marked_function e).espan ()
+      | "inline" -> Hashtbl.replace Annotations.inlines (marked_function e).espan ()
+      | "unboxed_float" -> Hashtbl.replace Annotations.unboxed_floats e.espan ()
+      | _ -> ())
+    attrs
+
 (* an external's [@@raise E]'s, by its primitive (Annotations.raises),
  * each once (a .ml and its .mli both say it) *)
-let raises (prims : string list) (es : string list) : unit =
+let raises (prims : string list) (attrs : attribute list) : unit =
+  let es = List.concat_map (fun (a : attribute) -> if a.aname = "raise" then a.aargs else []) attrs in
   match prims with
   | p :: _ ->
       List.iter (fun e -> if not (List.mem e (Hashtbl.find_all Annotations.raises p)) then Hashtbl.add Annotations.raises p e) es
   | [] -> ()
 
 (* mlpp: the [@@...] after a group of types: its last's, as in OCaml's tree *)
-let with_attribute ds a =
-  match List.rev ds with d :: l -> List.rev ({ d with tattrs = d.tattrs @ [ a ] } :: l) | [] -> ds
+let with_attributes ds attrs =
+  match List.rev ds with d :: l -> List.rev ({ d with tattrs = d.tattrs @ attrs } :: l) | [] -> ds
+
+(* a let's bindings, each with its attributes: the bindings alone *)
+let bindings l = List.map (fun (p, e, _) -> (p, e)) l
 %}
 
 %token <int> INT
@@ -115,10 +141,12 @@ let with_attribute ds a =
 %token AND AS ASSERT BEGIN DO DONE DOWNTO ELSE END EXCEPTION EXTERNAL FALSE FOR FUN FUNCTION IF IN LET MATCH
 %token MODULE MUTABLE OF OPEN OR REC SIG STRUCT THEN TO TRUE TRY TYPE VAL WHEN WHILE WITH
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
-/* mlpp: [% and [@@deriving */
-%token LBRACKETPERCENT DERIVING CLASS INSTANCE RAISES
-/* the checked annotations (Annotations.mli) */
-%token TAILCALL TAILREC ZERO_ALLOC LETINLINE INLINE UNBOXED_FLOAT
+/* mlpp: [% */
+%token LBRACKETPERCENT
+/* an item's attribute, [@@name ...]: its name and its payload's words */
+%token <string> ATTRIBUTE
+/* the checked annotations of an expression (Annotations.mli) */
+%token TAILCALL LETINLINE
 %token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
@@ -189,33 +217,24 @@ structure_tail:
   | structure_item structure_tail { $1 :: $2 }
 ;
 structure_item:
-  | let_keyword rec_flag separated_nonempty_list(AND, let_binding) instance
-      { $1 $3;
-        match $3 with
+  /* (the item's attributes, mlpp's [@@instance]: each binding's) */
+  | let_keyword rec_flag separated_nonempty_list(AND, let_binding)
+      { $1 (bindings $3);
+        match bindings $3 with
         | [ ({ p = Pany; _ }, e) ] -> mkitem $sloc (Ieval e)
-        | bs -> mkitem $sloc (Ivalue ($2, bs, $4)) }
-  | EXTERNAL val_ident COLON core_type EQUAL STRING+ raises { raises $6 $7; mkitem $sloc (Iexternal ($2, $4, $6)) }
-  | TYPE type_declarations { mkitem $sloc (Itype $2) }
+        | bs -> mkitem $sloc (Ivalue ($2, bs, List.concat_map (fun (_, _, a) -> a) $3)) }
+  | EXTERNAL val_ident COLON core_type EQUAL STRING+ attribute* { raises $6 $7; mkitem $sloc (Iexternal ($2, $4, $6)) }
   /* mlpp: [@@deriving show] */
-  | TYPE type_declarations attribute { mkitem $sloc (Itype (with_attribute $2 $3)) }
+  | TYPE type_declarations attribute* { mkitem $sloc (Itype (with_attributes $2 $3)) }
   | EXCEPTION UIDENT constructor_arguments { mkitem $sloc (Iexception ($2, $3)) }
   | MODULE UIDENT module_binding { mkitem $sloc (Imodule ($2, $3)) }
   | OPEN mod_longident { mkitem $sloc (Iopen $2) }
 ;
-/* mlpp: */
+/* an item's attribute: type t = ... [@@deriving show], let f x = ...
+ * [@@tailrec], external remove : string -> unit = "sys_remove" [@@raise
+ * Sys_error], let show_int : int show = ... [@@instance] */
 attribute:
-  | DERIVING LIDENT* RBRACKET { { aname = "deriving"; aargs = $2; aloc = line $sloc; aend = snd (span $sloc) } }
-  | CLASS { { aname = "class"; aargs = []; aloc = line $sloc; aend = snd (span $sloc) } }
-;
-/* external remove : string -> unit = "sys_remove" [@@raise Sys_error] */
-raises:
-  | /* empty */ { [] }
-  | RAISES UIDENT RBRACKET raises { $2 :: $4 }
-;
-/* mlpp: let show_int : int show = ... [@@instance] */
-instance:
-  | /* empty */ { [] }
-  | INSTANCE { [ { aname = "instance"; aargs = []; aloc = line $sloc; aend = snd (span $sloc) } ] }
+  | ATTRIBUTE { attribute $sloc $1 }
 ;
 module_binding:
   | EQUAL module_expr { $2 }
@@ -231,11 +250,10 @@ signature_element:
   | signature_item SEMISEMI? { $1 }
 ;
 signature_item:
-  | VAL val_ident COLON core_type instance { mksig $sloc (Sval ($2, $4, $5)) }
-  | EXTERNAL val_ident COLON core_type EQUAL STRING+ raises { raises $6 $7; mksig $sloc (Sexternal ($2, $4, $6)) }
-  | TYPE type_declarations { mksig $sloc (Stype $2) }
+  | VAL val_ident COLON core_type attribute* { mksig $sloc (Sval ($2, $4, $5)) }
+  | EXTERNAL val_ident COLON core_type EQUAL STRING+ attribute* { raises $6 $7; mksig $sloc (Sexternal ($2, $4, $6)) }
   /* mlpp: */
-  | TYPE type_declarations attribute { mksig $sloc (Stype (with_attribute $2 $3)) }
+  | TYPE type_declarations attribute* { mksig $sloc (Stype (with_attributes $2 $3)) }
   | EXCEPTION UIDENT constructor_arguments { mksig $sloc (Sexception ($2, $3)) }
   | MODULE UIDENT COLON module_type { mksig $sloc (Smodule ($2, $4)) }
   | OPEN mod_longident { mksig $sloc (Sopen $2) }
@@ -269,9 +287,10 @@ expr:
         if Hashtbl.mem Annotations.tailcalls $1.espan then Hashtbl.replace Annotations.tailcalls e.espan ();
         e }
   | let_keyword rec_flag separated_nonempty_list(AND, let_binding) IN seq_expr
-      { $1 $3; mkexp $sloc (Elet ($2, $3, $5)) }
+      { $1 (bindings $3); mkexp $sloc (Elet ($2, bindings $3, $5)) }
   /* let* x = e in body: ( let* ) e (fun x -> body), whatever let* is where it is written */
-  | LETOP let_binding IN seq_expr { mkexp $sloc (Eapply (ident $sloc $1, [ snd $2; mkfun $sloc (fst $2) $4 ])) }
+  | LETOP let_binding IN seq_expr
+      { let p, e, _ = $2 in mkexp $sloc (Eapply (ident $sloc $1, [ e; mkfun $sloc p $4 ])) }
   | expr INFIXOP0 expr { infix $sloc $loc($2) $1 $2 $3 }
   | expr INFIXOP1 expr { infix $sloc $loc($2) $1 $2 $3 }
   | expr INFIXOP2 expr { infix $sloc $loc($2) $1 $2 $3 }
@@ -366,19 +385,13 @@ parameter:
   | TILDE LPAREN LIDENT COLON core_type RPAREN { mkpat $sloc (Plabel ($3, mkpat $sloc (Pconstraint (mkpat $sloc (Pvar $3), $5)))) }
   | LABEL simple_pattern { mkpat $sloc (Plabel ($1, $2)) }
 ;
+/* a binding and its attributes, what they mark recorded (annotate) */
 let_binding:
-  | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }
-  | val_ident fun_binding binding_annotation+
-      { List.iter (fun mark -> mark $2) $3; (mkpat $sloc (Pvar $1), $2) }
-  | pattern EQUAL seq_expr { ($1, $3) }
+  | let_binding_body attribute* { let p, e = $1 in annotate $2 e; (p, e, $2) }
 ;
-/* the checked annotations of a binding (Annotations.mli): what records
- * it, given the bound expression (a function's, or a float's) */
-binding_annotation:
-  | TAILREC { fun e -> Hashtbl.replace Annotations.tailrecs (marked_function e).espan () }
-  | ZERO_ALLOC { fun e -> Hashtbl.replace Annotations.zero_allocs (marked_function e).espan () }
-  | INLINE { fun e -> Hashtbl.replace Annotations.inlines (marked_function e).espan () }
-  | UNBOXED_FLOAT { fun e -> Hashtbl.replace Annotations.unboxed_floats e.espan () }
+let_binding_body:
+  | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }
+  | pattern EQUAL seq_expr { ($1, $3) }
 ;
 /* let, or let[@inline] (OCaml's place): what it does to the bindings,
  * the first one marked */

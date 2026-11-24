@@ -48,7 +48,7 @@ END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[32768];\nvalue space1[32768];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.s
 if ml_lib $W/lib && $TC -o $W/main.o $W/main.c && $TC -o $W/data.o $W/data.c \
-   && $TML -L $W/lib -o $W/pages.o $ROOT/tiny/TinyLibSystem/teststub/TinySystemTest.ml $ROOT/tiny/TinyLibSystem/teststub/TinyLibSystem.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $OFFICE $ROOT/tiny/TinyOffice.ml $T/Pages.ml \
+   && $TML -L $W/lib -o $W/pages.o $ROOT/tiny/TinyLibSystem/teststub/TinySystemTest.ml $ROOT/tiny/TinyLibSystem/teststub/TinyLibSystem.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $OFFICE $O/TinyOffice.ml $T/Pages.ml \
    && link_tm $W/pages.img $L/start.s $L/udivmod.s $W/exit.s $W/main.o $W/pages.o $W/data.o $LIB_O \
    && timeout 120 $CPU $W/pages.img > $W/tm.out 2>&1 && diff $T/pages.expected $W/tm.out > $W/tm.diff
 then echo "ok pages: by tiny-ml, on tiny-cpu"; else echo "FAIL pages: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi

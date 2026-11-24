@@ -2,10 +2,10 @@
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). Each user
 // program's main file. In ML, one line, TinyLibSystem.main running its
-// module's main (../TinyOffice.ml...), the same file on both systems: on
-// tiny-kernel linked with ../TinyLibSystem/tinykernel/, ../runtime/ml/
-// and ../TinyLibCore/ (../TinyKernel/Makefile), on the host built by
-// sdl/'s dune in a window (../TinyLibSystem/sdl/). In C, the whole
+// module's main (../TinyOffice/TinyOffice.ml...), the same file on
+// both systems: on tiny-kernel linked with ../TinyLibSystem/tinykernel/,
+// ../runtime/ml/ and ../TinyLibCore/ (../TinyKernel/Makefile), on the
+// host built by sdl/'s dune in a window (../TinyLibSystem/sdl/). In C, the whole
 // program (sh, get, put, ping, httpd, paint), linked with ../runtime/c/;
 // mltests.c is a test, off the map. cat, ls, wc and the other utilities
 // are ../TinyUtilities.ml's (bin/utils).
@@ -116,7 +116,7 @@ local wrapper(file, prog, role) = {
       ],
     },
     wrapper('emacs.ml', '../TinyEditorScreen.ml', 'the editor'),
-    wrapper('office.ml', '../TinyOffice.ml', 'the office'),
+    wrapper('office.ml', '../TinyOffice/TinyOffice.ml', 'the office'),
     wrapper('www.ml', '../TinyBrowser.ml', 'the browser'),
     wrapper('troff.ml', '../TinyTroff.ml', 'the typesetter'),
     wrapper('play.ml', '../TinyPlay.ml', 'the WAV player'),

@@ -1,6 +1,14 @@
-; TinyOffice.ml's parts (tiny-ml compiles them before it, for office on
-; tiny-kernel): the page's model, and each kind of box (its data, how it
-; is edited, how it is shown), and the file; tiny-troff's too
+; TinyOffice.ml, tiny-office's page and its parts, with no system under it
+; (tests/TinyOffice_tests/'s test types keys and moves the mouse at it)
+(library
+ (name tiny_office)
+ (wrapped false)
+ (modules TinyOffice)
+ (libraries fpath tiny_lib_gui tiny_office_parts))
+
+; its parts (tiny-ml compiles them before it, for office on tiny-kernel):
+; the page's model, and each kind of box (its data, how it is edited,
+; how it is shown), and the file; tiny-troff's too (../TinyTroff.ml)
 (library
  (name tiny_office_parts)
  (wrapped false)

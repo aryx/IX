@@ -332,10 +332,10 @@ OFFICE_PARTS = TinyOffice/Model.o TinyOffice/Text.o TinyOffice/Sheet.o \
 TinyOffice/&.o: TinyOffice/&.ml $STDLIB
 	$MLC $OFFICE_INCLUDES -o $target TinyOffice/$stem.ml
 
-OFFICE_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI $OFFICE_PARTS TinyOffice.o \
-    user/office.o
-TinyOffice.o: TinyOffice.ml $STDLIB
-	$MLC $OFFICE_INCLUDES -o $target TinyOffice.ml
+OFFICE_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI $OFFICE_PARTS \
+    TinyOffice/TinyOffice.o user/office.o
+user/office.o: user/office.ml $STDLIB
+	$MLC $OFFICE_INCLUDES -o $target user/office.ml
 office.start.o: $STDLIB $OFFICE_UNITS
 office: $CRT $MLRT office.start.o $STDLIB $OFFICE_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
@@ -543,7 +543,7 @@ depend:
 	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml user/*.ml > .depend
 	$ML -depend $INCLUDES $CC_INCLUDES TinyC/*.ml >> .depend
 	$ML -depend $INCLUDES $ML_INCLUDES TinyML/*.ml >> .depend
-	$ML -depend $INCLUDES $OFFICE_INCLUDES TinyOffice.ml TinyTroff.ml TinyOffice/*.ml >> .depend
+	$ML -depend $INCLUDES $OFFICE_INCLUDES TinyTroff.ml TinyOffice/*.ml user/office.ml >> .depend
 	$ML -depend $INCLUDES $WWW_INCLUDES TinyBrowser.ml TinyBrowser/*.ml >> .depend
 	@{ cd TinyLibCore && $BUILD ML=^$ML depend }
 	@{ cd TinyKernel && $BUILD ML=^$ML depend }

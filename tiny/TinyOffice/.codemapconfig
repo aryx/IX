@@ -1,13 +1,28 @@
 // tiny/TinyOffice/: what the code map says of it (the code map:
 // tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The shell,
-// tiny-office, is ../TinyOffice.ml; these are its parts: the model,
+// tiny-office, is TinyOffice.ml; the others are its parts: the model,
 // one module a kind of box, the file. TinyTroff reads a page with them.
 local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
-  summary: "tiny-office's parts: the page's model, each kind of box (its data a string, its keys, its view), the file in Markdown.",
+  summary: "tiny-office, TinyOffice.ml, and its parts: the page's model, each kind of box (its data a string, its keys, its view), the file in Markdown.",
   files: {
+    'TinyOffice.ml': { digest: '55b26688a262',
+      summary: "tiny-office's shell: a page of boxes, each a part of TinyOffice/; selecting, moving, menus, undo, the view.",
+      capitals: [{ at: 'def:command', say: "a menu's item or its keys: one place" }],
+      important: [
+        { at: 'def:commit', say: 'an edit a new page: undo is the pages before', weight: 2 },
+        { at: 'def:command', weight: 3 },
+        { at: 'def:key', say: 'the box being edited has the keys, else C-x', weight: 2 },
+        { at: 'def:page_mouse', say: 'select, drag, resize by a corner', weight: 2 },
+        { at: 'def:view', say: 'a box a group: run_canvas draws what changed', weight: 3 },
+      ],
+      related: ['Model.ml', '../user/office.ml', '../TinyLibGUI.ml', '../TinyTroff.ml', '../tests/TinyOffice_test.sh', '../../apps/office/'],
+    },
+    'TinyOffice.mli': { digest: '2357d2359850',
+      summary: "The compound document cut down: a shell, parts, and data that is always text; the file mini-troff's.",
+    },
     'Model.ml': { digest: 'a321dceefd6a',
       summary: "The page's objects, what the selected box is edited by, the office's record: the state every part changes.",
       capitals: [

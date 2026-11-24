@@ -3,9 +3,9 @@
 // docs/claude_notes/codemapconfig_guidelines.md there)
 //
 // A tiny program is one file, or a directory of its name holding its
-// main file and its parts (TinyKernel/, TinyC/, TinyML/; TinyOffice.ml
-// and TinyBrowser.ml are still beside theirs), each directory with its
-// own config: its skeleton is its own pipeline, from its main down to
+// main file and its parts (TinyKernel/, TinyC/, TinyML/, TinyOffice/;
+// TinyBrowser.ml is still beside its directory), each directory with
+// its own config: its skeleton is its own pipeline, from its main down to
 // the idea it keeps. All start at TinyLibSystem.main (the
 // host's Unix, or tiny-kernel's calls: [prog] below); the graphical
 // ones' main in their module, user/'s one line running it.
@@ -450,21 +450,6 @@ local prog(name, file, core) = chain(name, [
       summary: "www's idea: a page read once, as it arrives, straight to lines; no tree, a tag a row in a table.",
       important: [{ at: 'comment:"read only once, as it arrives"', say: 'the pipeline of the reading', weight: 3 }],
     },
-    'TinyOffice.ml': { digest: '55b26688a262',
-      summary: "tiny-office's shell: a page of boxes, each a part of TinyOffice/; selecting, moving, menus, undo, the view.",
-      capitals: [{ at: 'def:command', say: "a menu's item or its keys: one place" }],
-      important: [
-        { at: 'def:commit', say: 'an edit a new page: undo is the pages before', weight: 2 },
-        { at: 'def:command', weight: 3 },
-        { at: 'def:key', say: 'the box being edited has the keys, else C-x', weight: 2 },
-        { at: 'def:page_mouse', say: 'select, drag, resize by a corner', weight: 2 },
-        { at: 'def:view', say: 'a box a group: run_canvas draws what changed', weight: 3 },
-      ],
-      related: ['TinyOffice/', 'user/office.ml', 'TinyLibGUI.ml', 'TinyTroff.ml', 'tests/TinyOffice_test.sh', '../apps/office/'],
-    },
-    'TinyOffice.mli': { digest: '2357d2359850',
-      summary: "The compound document cut down: a shell, parts, and data that is always text; the file mini-troff's.",
-    },
     'TinyPlay.ml': { digest: '24cc0bcec2f8',
       summary: "tiny-play: a WAV file to the speaker a block at a time, each sample taken by Bresenham's stepping.",
       important: [
@@ -547,7 +532,7 @@ local prog(name, file, core) = chain(name, [
       ['TinyLibGUI.ml', 'widgets from the model; menus; a canvas'],
       ['TinyWindows.ml', 'windows: the machine again, in a box'],
       ['TinyAppTetris.ml', 'a game'],
-      ['TinyOffice.ml', 'a page of parts'],
+      ['TinyOffice/TinyOffice.ml', 'a page of parts'],
       ['TinyBrowser.ml', 'www'],
       ['TinyDebugger.ml', 'debug, its window on the GUI'],
       ['user/', "each program's one line, its module's main run"],
@@ -556,10 +541,10 @@ local prog(name, file, core) = chain(name, [
       ['TinyLibGUI.ml', 'TinyLibPlayground.ml', 'draws with'],
       ['TinyWindows.ml', 'TinyLibDraw.ml', 'parses, renumbers'],
       ['TinyAppTetris.ml', 'TinyLibPlayground.ml', 'a game value'],
-      ['TinyOffice.ml', 'TinyLibGUI.ml', 'run_canvas, menus'],
+      ['TinyOffice/TinyOffice.ml', 'TinyLibGUI.ml', 'run_canvas, menus'],
       ['TinyBrowser.ml', 'TinyLibGUI.ml', 'menus, a field'],
       ['TinyDebugger.ml', 'TinyLibGUI.ml', 'run_canvas'],
-      ['user/', 'TinyOffice.ml', 'runs'],
+      ['user/', 'TinyOffice/TinyOffice.ml', 'runs'],
     ]),
     // the toolchain
     prog('tiny-cc: parse, lower, emit', 'TinyC/TinyC.ml', [
@@ -884,24 +869,24 @@ local prog(name, file, core) = chain(name, [
       name: 'tiny-office: the shell over its parts',
       bones: [
         { at: 'user/office.ml', role: 'the program: a canvas of TinyLibGUI' },
-        { at: 'TinyOffice.ml:def:create', role: 'the office: its file read' },
-        { at: 'TinyOffice.ml:def:key', role: 'to the box edited, or a command' },
-        { at: 'TinyOffice.ml:def:mouse', role: 'the menus, or the page' },
-        { at: 'TinyOffice.ml:def:command', role: 'what a menu item asks' },
-        { at: 'TinyOffice.ml:def:commit', role: 'a new page; the old one for undo' },
-        { at: 'TinyOffice.ml:def:view', role: 'boxes as groups of shapes' },
+        { at: 'TinyOffice/TinyOffice.ml:def:create', role: 'the office: its file read' },
+        { at: 'TinyOffice/TinyOffice.ml:def:key', role: 'to the box edited, or a command' },
+        { at: 'TinyOffice/TinyOffice.ml:def:mouse', role: 'the menus, or the page' },
+        { at: 'TinyOffice/TinyOffice.ml:def:command', role: 'what a menu item asks' },
+        { at: 'TinyOffice/TinyOffice.ml:def:commit', role: 'a new page; the old one for undo' },
+        { at: 'TinyOffice/TinyOffice.ml:def:view', role: 'boxes as groups of shapes' },
         { at: 'TinyOffice/', role: 'the parts: text, sheet, drawing, paint, chart' },
       ],
       joints: [
-        { from: 'user/office.ml', to: 'TinyOffice.ml:def:create', say: 'the file' },
-        { from: 'user/office.ml', to: 'TinyOffice.ml:def:key', say: 'a key' },
-        { from: 'user/office.ml', to: 'TinyOffice.ml:def:mouse', say: 'the mouse' },
-        { from: 'TinyOffice.ml:def:key', to: 'TinyOffice.ml:def:command', say: 'C-x s, C-o' },
-        { from: 'TinyOffice.ml:def:mouse', to: 'TinyOffice.ml:def:command', say: 'an item' },
-        { from: 'TinyOffice.ml:def:command', to: 'TinyOffice.ml:def:commit', say: 'an edit done' },
-        { from: 'TinyOffice.ml:def:key', to: 'TinyOffice/', say: "a part's keys" },
-        { from: 'TinyOffice.ml:def:view', to: 'TinyOffice/', say: "a part's view" },
-        { from: 'user/office.ml', to: 'TinyOffice.ml:def:view', say: 'after each event' },
+        { from: 'user/office.ml', to: 'TinyOffice/TinyOffice.ml:def:create', say: 'the file' },
+        { from: 'user/office.ml', to: 'TinyOffice/TinyOffice.ml:def:key', say: 'a key' },
+        { from: 'user/office.ml', to: 'TinyOffice/TinyOffice.ml:def:mouse', say: 'the mouse' },
+        { from: 'TinyOffice/TinyOffice.ml:def:key', to: 'TinyOffice/TinyOffice.ml:def:command', say: 'C-x s, C-o' },
+        { from: 'TinyOffice/TinyOffice.ml:def:mouse', to: 'TinyOffice/TinyOffice.ml:def:command', say: 'an item' },
+        { from: 'TinyOffice/TinyOffice.ml:def:command', to: 'TinyOffice/TinyOffice.ml:def:commit', say: 'an edit done' },
+        { from: 'TinyOffice/TinyOffice.ml:def:key', to: 'TinyOffice/', say: "a part's keys" },
+        { from: 'TinyOffice/TinyOffice.ml:def:view', to: 'TinyOffice/', say: "a part's view" },
+        { from: 'user/office.ml', to: 'TinyOffice/TinyOffice.ml:def:view', say: 'after each event' },
       ],
     },
     {

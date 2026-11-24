@@ -675,7 +675,7 @@ README_TINY = [
     ("tiny-orrery", ["tiny/TinyAppOrrery."]),
     ("tiny-calculator", ["tiny/TinyAppCalculator."]),
     ("tiny-temperature", ["tiny/TinyAppTemperature."]),
-    ("tiny-office", ["tiny/TinyOffice.", "tiny/TinyOffice/"]),
+    ("tiny-office", ["tiny/TinyOffice/"]),
     ("tiny-troff", ["tiny/TinyTroff."]),
     ("tiny-browser", ["tiny/TinyBrowser.", "tiny/TinyBrowser/"]),
     # (not a program: tiny/README.md says their sum)

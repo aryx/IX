@@ -213,13 +213,7 @@
  (modules TinyAppTemperature)
  (libraries tiny_lib_gui))
 
-; TinyOffice.ml, tiny-office's page and its parts, with no system under it
-; (tests/TinyOffice_tests/'s test types keys and moves the mouse at it)
-(library
- (name tiny_office)
- (wrapped false)
- (modules TinyOffice)
- (libraries fpath tiny_lib_gui tiny_office_parts))
+; (tiny-office, its page and its parts: TinyOffice/)
 
 ; TinyTroff.ml, tiny-troff: a page of the office (or a Markdown file) as
 ; text or HTML (tests/TinyTroff_tests/'s test prints a page both ways)

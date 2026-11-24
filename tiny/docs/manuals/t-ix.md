@@ -98,12 +98,13 @@ one of them: OCaml never compiles `TinyKernel.ml`, tiny-ml does.
 ### 2.2 What a host program needs outside `tiny/`
 
 Each host program is one file, or a folder of its name with its main
-file and its parts (`TinyC/`, `TinyML/`; `TinyMachine/`, `TinyBrowser/`
-and `TinyOffice/` with their main file beside the folder), but not all
+file and its parts (`TinyC/`, `TinyML/`, `TinyOffice/`; `TinyMachine/`
+and `TinyBrowser/` with their main file beside the folder), but not all
 of them stand alone. This table says what
 each needs from outside `tiny/`, according to `tiny/dune` and the
 folders' own (`tiny/TinyC/dune`, `tiny/TinyML/dune`,
-`tiny/TinyKernel/steps/t6/dune` for tiny-mkfat):
+`tiny/TinyOffice/dune`, `tiny/TinyKernel/steps/t6/dune` for
+tiny-mkfat):
 
 | program | outside `tiny/` |
 |---|---|
@@ -1104,7 +1105,7 @@ by 4.
 
 ### 7.8 tiny-office: `office`
 
-`tiny/TinyOffice.ml`, with `tiny/user/office.ml` around it, is an
+`tiny/TinyOffice/TinyOffice.ml`, with `tiny/user/office.ml` around it, is an
 office suite in one program. A document is made of pages, each page
 holds boxes (the "parts"), and each box is a kind of document whose
 data is text.

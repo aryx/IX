@@ -23,8 +23,8 @@ and each stage is a function (`TinyAssembler.mli`, `TinyC.mli`,
 `TinyML.mli`). Once a program grows past about 700 lines, it becomes
 a directory of its name, its main file there and its parts beside it,
 each part a unit with its own `.mli`: `TinyKernel/`, where
-`TinyKernel.ml` boots the kernel, `TinyC/` and `TinyML/`.
-(`TinyOffice/`, `TinyBrowser/` and `TinyMachine/` still have their main
+`TinyKernel.ml` boots the kernel, `TinyC/`, `TinyML/` and
+`TinyOffice/`. (`TinyBrowser/` and `TinyMachine/` still have their main
 file beside the directory.)
 
 ## What is where
@@ -167,7 +167,7 @@ builds t-IX with them.
 | **tiny-tetris** | Tetris, in a window of tiny-windows | 320 | the playground's Tetris | [`TinyAppTetris.ml`](TinyAppTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppTetris.ml)) |
 | **tiny-orrery** | the Solar System seen from above, its planets turning from 2000-01-01, in a window of tiny-windows | 200 | the playground's SolarSystem | [`TinyAppOrrery.ml`](TinyAppOrrery.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppOrrery.ml)) |
 | **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 130, 70 | lib_gui's 7GUIs | [`TinyAppCalculator.ml`](TinyAppCalculator.ml), [`TinyAppTemperature.ml`](TinyAppTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppCalculator.ml)) |
-| **tiny-office** | an office suite in one program: a document of pages of boxes, each a text edited as it is shown (bold, italic, large), a sheet with its formulas, a drawing, a paint or a chart that follows its sheet; pull-down menus; its file Markdown with a few LaTeX commands | 2,230 | mini-office | [`TinyOffice.ml`](TinyOffice.ml), [`TinyOffice/`](TinyOffice/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyOffice.ml)) |
+| **tiny-office** | an office suite in one program: a document of pages of boxes, each a text edited as it is shown (bold, italic, large), a sheet with its formulas, a drawing, a paint or a chart that follows its sheet; pull-down menus; its file Markdown with a few LaTeX commands | 2,230 | mini-office | [`TinyOffice/`](TinyOffice/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyOffice/TinyOffice.ml)) |
 | **tiny-troff** | the office's documents, or Markdown, printed as text, a web page or PDF | 640 | mini-troff | [`TinyTroff.ml`](TinyTroff.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTroff.ml)) |
 | **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 2,380 | mini-netscape | [`TinyBrowser.ml`](TinyBrowser.ml), [`TinyBrowser/`](TinyBrowser/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
 
@@ -197,7 +197,7 @@ not have.
 | [tiny-utils](TinyUtilities.ml) `utils`<br>mini-cat, mini-ls... | one executable with a name per utility, BusyBox's way; the twins' output where it costs nothing | the walkers (du, rm, ls...) share one fold over the tree | most options, UTF-8, most of `ls -l`, each program's own wording of errors |
 | [tiny-editor](TinyEditorLine.ml) `ed`, `sam`<br>mini-ed, ed | sam's command language: dot a range of characters, loops over matches, changes in parallel | — | the screen, several files, the mark, `! < > \|`, cd |
 | [`emacs`](TinyEditorScreen.ml)<br>mini-emacs | Emacs's keys on one text in one window, the text its lines split at the cursor | — | several buffers and windows, undo, the region, query-replace, characters beyond ASCII |
-| [tiny-office](TinyOffice.ml) `office`<br>mini-office | a document of pages of boxes: texts, sheets, drawings, paints, charts; its file Markdown with a few LaTeX commands | a sheet computed again at each view, with no dependency graph, so a chart follows it for free | charts other than bars, floats and functions but sum, fonts, text flowing between boxes |
+| [tiny-office](TinyOffice/TinyOffice.ml) `office`<br>mini-office | a document of pages of boxes: texts, sheets, drawings, paints, charts; its file Markdown with a few LaTeX commands | a sheet computed again at each view, with no dependency graph, so a chart follows it for free | charts other than bars, floats and functions but sum, fonts, text flowing between boxes |
 | [`play`](TinyPlay.ml)<br>mini-play | a WAV to the speaker a block at a time, the kernel pacing it | the file decoded as it plays, where mini-play decodes it whole into floats first | MOD, MIDI, MP3, a WAV's other encodings |
 | [tiny-troff](TinyTroff.ml) `troff`<br>mini-troff | the office's documents, or Markdown, as text, HTML or PDF | one format, the office's, read by the office's own functions: no roff, no LaTeX | text flowing onto the next page, a paint as a real image, colours and fonts in HTML |
 | [tiny-cc](TinyC/TinyC.ml) `cc`<br>mini-cc; 5c, 7c | C's types (long 4 bytes, as Plan 9's), every operator and statement, `#include` and `#define` of a name | a stack machine in between, P-code's idea but compiled, its stack kept in registers, so the front end knows no instruction and the back end no C; types at parse time | floats, unions, bitfields, structs by value, goto, macros with arguments, `#if`, long long |

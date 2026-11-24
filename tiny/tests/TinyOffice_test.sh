@@ -18,7 +18,7 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 HOST=${HOST:-$ROOT/_build/default/tiny/tests/TinyOffice_tests/Pages.exe}
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
-TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
+TC=${TC:-$ROOT/_build/default/tiny/TinyC/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
 L=$ROOT/tiny/runtime/c

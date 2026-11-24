@@ -12,13 +12,7 @@
 ; The compilers
 ;*****************************************************************************
 
-; tiny-cc on its parts (TinyC/)
-(executable
- (name TinyC)
- (public_name tiny-cc)
- (package ix)
- (modules TinyC)
- (libraries ix_core fpath caps tiny_lib_system tiny_c_parts))
+; (tiny-cc, on its parts: TinyC/)
 
 ; tiny-ml on its parts (TinyML/)
 (executable

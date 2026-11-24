@@ -665,7 +665,7 @@ README_TINY = [
     ("tiny-db", ["tiny/TinyDatabase."]),
     ("tiny-vcs", ["tiny/TinyVCS."]),
     ("tiny-prof", ["tiny/TinyProfiler."]),
-    ("tiny-cc", ["tiny/TinyC.", "tiny/TinyC/"]),
+    ("tiny-cc", ["tiny/TinyC/"]),
     ("tiny-ml", ["tiny/TinyML.", "tiny/TinyML/"]),
     ("tiny-as, tiny-ld", ["tiny/TinyAssembler.", "tiny/TinyLinker."]),
     ("tiny-windows", ["tiny/TinyWindows."]),

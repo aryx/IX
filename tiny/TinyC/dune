@@ -1,7 +1,8 @@
-; TinyC.ml's parts, the compiler's passes (tiny-ml compiles them before
-; it, for cc on tiny-kernel)
-(library
- (name tiny_c_parts)
- (wrapped false)
- (modules Types Lexer Tree Lower Parser Machine)
- (libraries ix_core fpath tiny_lib_machine))
+; tiny-cc: TinyC.ml, the main, on its parts, the compiler's passes
+; (tiny-ml compiles them before it, for cc on tiny-kernel)
+(executable
+ (name TinyC)
+ (public_name tiny-cc)
+ (package ix)
+ (modules TinyC Types Lexer Tree Lower Parser Machine)
+ (libraries ix_core fpath caps tiny_lib_system tiny_lib_machine))

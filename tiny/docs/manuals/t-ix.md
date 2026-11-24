@@ -97,11 +97,13 @@ one of them: OCaml never compiles `TinyKernel.ml`, tiny-ml does.
 
 ### 2.2 What a host program needs outside `tiny/`
 
-Each host program is one file, or a file plus its parts in a folder
-of the same name (`TinyC/`, `TinyML/`, `TinyMachine/`, `TinyBrowser/`,
-`TinyOffice/`), but not all of them stand alone. This table says what
-each needs from outside `tiny/`, according to `tiny/dune` (and to
-`tiny/TinyKernel/steps/t6/dune` for tiny-mkfat):
+Each host program is one file, or a folder of its name with its main
+file and its parts (`TinyC/`; `TinyML/`, `TinyMachine/`, `TinyBrowser/`
+and `TinyOffice/` with their main file beside the folder), but not all
+of them stand alone. This table says what
+each needs from outside `tiny/`, according to `tiny/dune` and the
+folders' own (`tiny/TinyC/dune`, `tiny/TinyKernel/steps/t6/dune` for
+tiny-mkfat):
 
 | program | outside `tiny/` |
 |---|---|

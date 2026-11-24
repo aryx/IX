@@ -100,9 +100,6 @@ CC_INCLUDES=-I TinyC -I $D/cc
 $D/cc/%.$O: TinyC/%.ml
 	mkdir -p $D/cc
 	$ML $CC_INCLUDES $INCLUDES -o $target TinyC/$stem.ml
-$D/cc/TinyC.$O: TinyC.ml
-	mkdir -p $D/cc
-	$ML $CC_INCLUDES $INCLUDES -o $target TinyC.ml
 
 # (tiny-mkfat belongs to t6, a step before tiny-kernel, and its file is
 # there)
@@ -195,12 +192,12 @@ clean:V:
 # at the same time as one it uses, and inline that one's functions or
 # not depending on which ended first, so test-ix-fixpoint's builds would
 # differ, one time in two or three.
-# tiny-cc's units, TinyC.ml and TinyC/, are left out, because a unit is
+# tiny-cc's units, TinyC/, are left out, because a unit is
 # found by its name in the first directory that has it, and TinyC/'s
 # Lexer... have the same names as tiny-ml's. Their order is given by the
 # lines above.
 DEPOBJ=D
 DEPDIRS=. TinyMachine TinyBrowser TinyML TinyKernel TinyKernel/host TinyLibSystem/unix TinyKernel/steps/t6 $D
 DEPBROWSER=TinyBrowser/Strings.ml TinyBrowser/Url.ml TinyBrowser/Http.ml
-DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyKernel/KNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | grep -v '^TinyC\.ml$' | sed 's,.*/,,; s,\.ml$,,'}
+DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyKernel/KNetwork.ml TinyKernel/host/*.ml TinyLibSystem/unix/*.ml TinyKernel/steps/t6/TinyMkfat.ml | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

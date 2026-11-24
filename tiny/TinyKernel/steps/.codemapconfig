@@ -26,7 +26,7 @@
     {
       name: 'The steps before a kernel in ML, on the tiny tools',
       bones: [
-        { at: '../../TinyC.ml', role: 'the C compiler, -tm' },
+        { at: '../../TinyC/TinyC.ml', role: 'the C compiler, -tm' },
         { at: '../../runtime/', role: "the C runtime every program links (with start.s's calls)" },
         { at: '../../TinyCPU.ml', role: 'the bare CPU: hello' },
         { at: '../../TinyMachine.ml', role: 'the machine v0 and t6 run on' },
@@ -35,7 +35,7 @@
         { at: 't6/', role: 'a kernel in C: spawn, one stack, a FAT, a lottery' },
       ],
       joints: [
-        { from: '../../TinyC.ml', to: '../../runtime/', say: 'compiles' },
+        { from: '../../TinyC/TinyC.ml', to: '../../runtime/', say: 'compiles' },
         { from: 'hello.c', to: '../../runtime/', say: 'links' },
         { from: 't6/', to: '../../runtime/', say: 'its programs link' },
         { from: '../../TinyCPU.ml', to: 'hello.c', say: 'runs' },

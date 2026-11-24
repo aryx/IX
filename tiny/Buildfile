@@ -272,11 +272,9 @@ ar: $CRT $MLRT ar.start.o $STDLIB $AR_UNITS $MLEND
 
 CC_INCLUDES = -I TinyC
 CC_UNITS = $SYS $MACH TinyC/Types.o TinyC/Lexer.o TinyC/Tree.o \
-    TinyC/Lower.o TinyC/Parser.o TinyC/Machine.o TinyC.o
+    TinyC/Lower.o TinyC/Parser.o TinyC/Machine.o TinyC/TinyC.o
 TinyC/&.o: TinyC/&.ml $STDLIB
 	$MLC $CC_INCLUDES -o $target TinyC/$stem.ml
-TinyC.o: TinyC.ml $STDLIB
-	$MLC $CC_INCLUDES -o $target TinyC.ml
 cc.start.o: $STDLIB $CC_UNITS
 cc: $CRT $MLRT cc.start.o $STDLIB $CC_UNITS $MLEND
 	$LD -map -s -n -a 16 -o $target $prereq
@@ -545,7 +543,7 @@ boot.img: TinyKernel/kernel.img $BOOT
 # added.
 depend:
 	$ML -depend $INCLUDES *.ml TinyLibSystem/tinykernel/*.ml user/*.ml > .depend
-	$ML -depend $INCLUDES $CC_INCLUDES TinyC.ml TinyC/*.ml >> .depend
+	$ML -depend $INCLUDES $CC_INCLUDES TinyC/*.ml >> .depend
 	$ML -depend $INCLUDES $ML_INCLUDES TinyML.ml TinyML/*.ml >> .depend
 	$ML -depend $INCLUDES $OFFICE_INCLUDES TinyOffice.ml TinyTroff.ml TinyOffice/*.ml >> .depend
 	$ML -depend $INCLUDES $WWW_INCLUDES TinyBrowser.ml TinyBrowser/*.ml >> .depend

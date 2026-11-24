@@ -14,7 +14,7 @@
 # usage: TinyC_test.sh [prog.c...]
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
+TC=${TC:-$ROOT/_build/default/tiny/TinyC/TinyC.exe}
 TCPU=${TCPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
 CC=${CC:-cc}

@@ -283,7 +283,7 @@ let text_of (chan : Chan.i) = In_channel.input_all chan.ic
 (* the modules a source names, in their order: M of M.x, M.C, M.t and
  * M.( op ), of open M and include M, and of module A = M (as ocamldep
  * finds them); what -I reads the interfaces of. A's of module A = M
- * left out: the file's own name for M, not a unit (TinyC.ml's M,
+ * left out: the file's own name for M, not a unit (tiny-cc's M,
  * TinyLibMachine) *)
 let named_units (text : string) : string list =
   let toks = Array.map fst (Lexer.lex text) in

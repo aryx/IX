@@ -72,7 +72,7 @@ tiny-build|b||$T/TinyBuildSystem.ml|-I lib_crypto
 tiny-shell|b||$T/TinyShell.ml
 tiny-editor|b||$T/TinyEditorLine.ml
 tiny-utils|b||$T/TinyUtilities.ml
-tiny-cc|b||$T/TinyC.ml
+tiny-cc|b||$T/TinyC/TinyC.ml
 tiny-db|b||$T/TinyDatabase.ml
 tiny-vcs|b||$T/TinyVCS.ml|-I lib_crypto
 tiny-as|b||$T/TinyAssembler.ml

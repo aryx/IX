@@ -400,7 +400,7 @@ their free variables, since each needs the others.
 ## 10. The code
 
 `Gen` turns `Lambda`, closures made explicit, into instructions through
-a stack machine, as TinyC does (`tiny/TinyC.ml`): an expression pushes
+a stack machine, as TinyC does (`tiny/TinyC/TinyC.ml`): an expression pushes
 its value, an operator pops its operands. The machine's stack is kept
 in registers (depth d in a register of the machine record's list), so a
 push is a `MOVW` and `x + y` one `ADD`, as in Wirth's compilers.

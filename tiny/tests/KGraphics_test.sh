@@ -22,7 +22,7 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 B=$ROOT/_build/default/tiny
 TML=${TML:-$B/TinyML.exe}
-TC=${TC:-$B/TinyC.exe}
+TC=${TC:-$B/TinyC/TinyC.exe}
 MACHINE=${MACHINE:-$B/TinyMachine.exe}
 . $ROOT/tiny/tests/link.sh
 HOST=${HOST:-$B/tests/KGraphics_tests/Host.exe}

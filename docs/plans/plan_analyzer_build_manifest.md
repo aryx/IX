@@ -343,6 +343,24 @@ mini-yacc's, changes a recorded report.
    s a run, 2.5 more the first. Its paths are read from describe's root.
    From the project's root only: -r's default, analyzers/datalog, is
    relative.
+
+   Then -dead on one program reports its own files alone (the author: "I
+   ran ./bin/mini-analyze -dead tiny/TinyKernel/_make/src/build.manifest
+   and got lots of dead function reported in TinyLibSystem which is not
+   what we want; ideally we can detect from the manifest the files that
+   are pure "external" libraries vs the component of the program
+   analyzed, here just TinyBuildSystem.ml really"). The manifests say
+   it, no flag: a program's components are the files given to its link
+   that no other program of the build links (tiny-ld's: the manifests
+   beside it, TinyLibSystem/tinykernel in all 33; dune's: the stanza's
+   modules, a .cmxa's a library's). Ml_front.components, Dead_report
+   keeping those; a line under the report names them and where a
+   library's dead code is found (-dead its file, over its programs).
+   -dead alone: a bug or a capability in a library the program reaches
+   is one wherever it is (-bugs, -exn, -caps unchanged), and a run of a
+   merge (-summary: tiny_check.sh, -dead lib.ml) reports all, the merge
+   deciding. build: 47 dead reported before, all TinyLibSystem's, 0 of
+   TinyBuildSystem.ml now; ml's 9 components, 0.
 4. **mini-ml, mini-cc, mini-asm, mini-ar, mini-ld**: the record as a
    section of Asm's objects, the manifest beside each executable and the
    kernel. ix_check.sh, sweep.sh, kernel.sh on manifests; mk_units.sh

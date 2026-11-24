@@ -18,7 +18,11 @@ let dead_report (caps : < Cap.stdout; .. >) (p : D.t) (ml : bool) : (string * in
   let unit_of (f : string) : string =
     let stop c = match String.index_opt f c with Some i -> i | None -> String.length f in
     String.sub f 0 (min (stop ':') (stop '.')) in
-  let is_own (f : string) : bool = (not ml) || Hashtbl.mem Ml_front.own (unit_of f) in
+  let is_own (f : string) : bool =
+    (not ml)
+    || Hashtbl.mem Ml_front.own (unit_of f)
+       && (Hashtbl.length Ml_front.components = 0
+           || Hashtbl.mem Ml_front.components (unit_of f)) in
   let file_of u = match Hashtbl.find_opt Ml_front.files u with Some f -> f | None -> u in
   let shown (f : string) : string = if ml then ml_function f else f in
   let lines = Hashtbl.create 101 in

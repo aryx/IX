@@ -55,18 +55,28 @@ val to_string : manifest -> string
  * - the standard library (-L's): the first directory, from an archive
  *   member's up, with a units.txt (lib_core) or its own Stdlib.mli
  *   (tiny/TinyLibCore);
+ * - the program's components: the files given that no other program of
+ *   the build links (tiny/TinyBuildSystem.ml for build, not
+ *   TinyLibSystem/tinykernel's, which every program links), what -dead
+ *   reports on when the program is analyzed alone (Ml_front.components):
+ *   a library's function one program does not call is not dead, its
+ *   dead code is the merge's (mini-analyze -dead lib.ml, tiny_check.sh);
+ *   another program, for tiny-ld's, is a manifest beside this one;
  * - each linked ML unit's file, by the unit's name (Ml_front.linked). *)
 type program = {
   name : string;
   own : string list;
+  components : string list;
   own_dirs : string list;
   library : string option;
   units : (string * string) list;
 }
 
-(* [of_manifest caps m root]: its paths read against root *)
+(* [of_manifest caps m others root]: its paths read against root; others
+ * the build's other programs (their files the shared ones) *)
 val of_manifest :
-  < Cap.open_in; Cap.readdir; .. > -> manifest -> string -> program
+  < Cap.open_in; Cap.readdir; .. > -> manifest -> manifest list -> string ->
+  program
 
 (* [program caps file sources]: file a manifest; its paths read against
  * sources if given, else against the manifest's directory *)

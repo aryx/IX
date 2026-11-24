@@ -31,7 +31,8 @@ A program as its build linked it, its files and nothing else, the
 platform's among them, no -L or -own to give: dune's executable (dune
 describe and dune rules run, Dune_manifest), or tiny-ld's manifest (-map);
 -sources where a manifest's paths are read when the build ran in a copy
-(TinyKernel's):
+(TinyKernel's). -dead then says the program's own files' dead code alone,
+those no other program of the build links (a library's: -dead its file):
   mini-analyze -dead _build/default/tiny/TinyBuildSystem.exe
   mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src/build.manifest
 -dead: instead, what no run can reach (dead.dl), from main and the toplevels:
@@ -369,7 +370,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     Ml_front.own_dirs := !Ml_front.own_dirs @ List.map Fpath.v p.own_dirs;
     Option.iter (fun d -> if !lib = "" then lib := d) p.library;
     if !program = "" then program := p.name;
-    List.iter (fun (u, f) -> Hashtbl.replace Ml_front.linked u f) p.units in
+    List.iter (fun (u, f) -> Hashtbl.replace Ml_front.linked u f) p.units;
+    (* (-dead on the program alone: its components' dead code, not its
+     * libraries', which another program may call; a run of a merge,
+     * -summary's, all of it) *)
+    if !dead && !summary_file = "" then
+      List.iter (fun f -> Hashtbl.replace Ml_front.components (unit_of_file f) ()) p.components in
   let manifests = ref [] and exes = ref [] in
   let anon (f : string) =
     if Filename.check_suffix f ".manifest" then manifests := f :: !manifests
@@ -387,7 +393,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         (* (the root's paths, read from here: relative to it when here is
          * it, as the reports name them) *)
         let root = if root = FS.getcwd caps () then "." else root in
-        List.iter (fun (exe, m) -> linked exe (Tiny_manifest.of_manifest caps m root)) ms
+        List.iter (fun (exe, m) -> linked exe (Tiny_manifest.of_manifest caps m [] root)) ms
       end
     with
     | () -> false
@@ -550,6 +556,24 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           else if !exns then exn_report caps p
           else if !dead then begin
             let reports = dead_report caps p (ml <> []) in
+            if Hashtbl.length Ml_front.components > 0 then begin
+              (* (the units, wrapped within the console's 80 columns) *)
+              let units =
+                List.sort compare (Hashtbl.fold (fun u () acc -> u :: acc) Ml_front.components []) in
+              let line = Buffer.create 80 and lines = ref [] in
+              List.iter (fun (u : string) ->
+                  if Buffer.length line + String.length u > 72 then begin
+                    lines := Buffer.contents line :: !lines;
+                    Buffer.clear line
+                  end;
+                  Buffer.add_string line (" " ^ u))
+                units;
+              lines := Buffer.contents line :: !lines;
+              Console.print caps
+                ("(on the program's own files alone, not its libraries':\n"
+                 ^ String.concat "\n" (List.rev !lines)
+                 ^ "\n a library's dead code: mini-analyze -dead its file, over its programs)\n")
+            end;
             if !summary_file <> "" then
               summary caps !summary_file (if !program <> "" then !program else List.hd (List.rev !files))
                 (List.rev !files) reports

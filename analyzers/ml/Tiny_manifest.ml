@@ -35,13 +35,14 @@ let rec standard_library (caps : < Cap.open_in; .. >) (d : string) :
 type program = {
   name : string;
   own : string list;
+  components : string list;
   own_dirs : string list;
   library : string option;
   units : (string * string) list;
 }
 
 let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
-    (root : string) : program =
+    (others : manifest list) (root : string) : program =
   let at (p : string) : string =
     FS.cleanname (if Filename.is_relative p then Filename.concat root p else p) in
   (* (the ML units: a C or assembly file is the runtime's) *)
@@ -71,8 +72,16 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
   let own_member (f : string) : bool =
     (match part with Some p -> under p f | None -> false)
     && not (match library with Some l -> under l f | None -> false) in
+  (* (the files another program of the build links: a library's) *)
+  let shared = Hashtbl.create 64 in
+  List.iter (fun (o : manifest) ->
+      List.iter (fun (l : linked) ->
+          Option.iter (fun s -> Hashtbl.replace shared (at s) ()) l.l_source)
+        o.m_units)
+    others;
   { name = m.m_program;
     own = given;
+    components = List.filter (fun f -> not (Hashtbl.mem shared f)) given;
     own_dirs =
       List.sort_uniq compare
         (List.filter_map
@@ -84,5 +93,16 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
     (sources : string option) : program =
   let m = of_string (FS.read caps (Fpath.v file)) in
-  of_manifest caps m
+  (* (the build's other programs: the manifests beside it, tiny-ld's
+   * links writing each beside its program) *)
+  let dir = Filename.dirname file in
+  let others =
+    Array.to_list (CapSys.readdir caps dir)
+    |> List.filter (fun n ->
+           Filename.check_suffix n ".manifest" && n <> Filename.basename file)
+    |> List.filter_map (fun n ->
+           match of_string (FS.read caps (Fpath.v (Filename.concat dir n))) with
+           | o -> Some o
+           | exception Failure _ -> None) in
+  of_manifest caps m others
     (match sources with Some d -> d | None -> Filename.dirname file)

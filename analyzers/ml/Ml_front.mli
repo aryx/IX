@@ -38,6 +38,11 @@ val own_dirs : Fpath.t list ref
  * its interface is the .mli beside it, else the directories'. *)
 val linked : (string, string) Hashtbl.t
 
+(* the units of the program's components, a manifest's (Tiny_manifest):
+ * when it has any, -dead reports on them alone, not on the libraries
+ * the program links (Dead_report) *)
+val components : (string, unit) Hashtbl.t
+
 (* the library units that could not be read, why: what they call looks unused *)
 val unread : string list ref
 

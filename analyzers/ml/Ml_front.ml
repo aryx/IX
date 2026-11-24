@@ -235,6 +235,7 @@ let homes : (string, string list) Hashtbl.t = Hashtbl.create 64
 let alone : bool ref = ref false
 let own_dirs : Fpath.t list ref = ref []
 let linked : (string, string) Hashtbl.t = Hashtbl.create 64
+let components : (string, unit) Hashtbl.t = Hashtbl.create 16
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in

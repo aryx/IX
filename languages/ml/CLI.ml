@@ -175,7 +175,7 @@ let loader (caps : < caps; .. >) dirs : Scope.loader =
                Logs.info (fun m -> m "writing %s" (Fpath.to_string t));
                (* (a cache: where it cannot be written, -o /dev/null's
                 * /dev, the compile goes on without it) *)
-               (try FS.write caps t (tree_magic ^ digest ^ "\n" ^ Marshal.to_string s [ Marshal.No_sharing ])
+               (try FS.write caps t (tree_magic ^ digest ^ "\n" ^ Marshal_.to_string s [ Marshal.No_sharing ])
                 with Sys_error e -> Logs.info (fun m -> m "%s not kept: %s" (Fpath.to_string t) e))
            | _ -> ());
           Some src

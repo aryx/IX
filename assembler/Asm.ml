@@ -214,7 +214,7 @@ let stored (o : obj) = { s_arch = o.arch; s_file = o.file; s_items = o.items }
  * written even if empty: the same way, an object without them read) *)
 let history_bytes (o : obj) =
   if o.history = [] && o.acid = [] then ""
-  else Marshal.to_string o.history [ Marshal.No_sharing ] ^ (if o.acid = [] then "" else Marshal.to_string o.acid [ Marshal.No_sharing ])
+  else Marshal_.to_string o.history [ Marshal.No_sharing ] ^ (if o.acid = [] then "" else Marshal_.to_string o.acid [ Marshal.No_sharing ])
 
 (* the value at [pos], then the history and the declarations if there
  * are bytes after it *)
@@ -228,7 +228,7 @@ let with_history (b : string) pos (st : stored) : obj =
 (* the files through the capabilities
  * old: Marshal.to_string (version, o) [] *)
 let save caps file (o : obj) =
-  FS.write caps file (Marshal.to_string (version, stored o) [ Marshal.No_sharing ] ^ history_bytes o)
+  FS.write caps file (Marshal_.to_string (version, stored o) [ Marshal.No_sharing ] ^ history_bytes o)
 
 (* (a file that is not one, its header's magic number and size checked
  * first: Marshal.from_string's own errors are Invalid_argument, read as

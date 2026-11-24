@@ -220,7 +220,7 @@ let read_library caps f : member list =
   if v <> lib_version then error "%s: a library of another version (to make again: remove it)" (Fpath.to_string f);
   l
 
-let write_library caps out (l : member list) = FS.write caps out (Marshal.to_string (lib_version, l) [])
+let write_library caps out (l : member list) = FS.write caps out (Marshal_.to_string (lib_version, l) [])
 
 let read_members caps f = index (read_library caps f)
 

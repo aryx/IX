@@ -109,7 +109,7 @@ let magic = "mini-ml summary 3\n"
  * one block, which depends on the compiler that built mini-ml (as
  * Asm.save's objects; make self compares the card's with Linux's)
  * old: magic ^ Marshal.to_string s [] *)
-let to_string (s : t) = magic ^ Marshal.to_string s [ Marshal.No_sharing ]
+let to_string (s : t) = magic ^ Marshal_.to_string s [ Marshal.No_sharing ]
 
 let of_string (text : string) : t option =
   let n = String.length magic in

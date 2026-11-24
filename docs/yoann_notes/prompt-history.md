@@ -75728,3 +75728,15 @@ Claude added `timeout --foreground` to `tiny/TinyKernel/Makefile` so Ctrl-C can 
 Claude confirmed that t-ix's `make self` passed with that change in about 8 minutes.
 Claude said nothing in the t-ix half needed fixing, and left the change uncommitted.
 Claude also fixed the m-ix byte mismatch with a new `Marshal_` module, so `make self-quick-mix` passes.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 07:46
+
+**Yoann:**
+
+> ok commit the --foreground fix
+
+**Claude (summary):**
+
+Claude checked the Makefile diff and ran `make test`, which passed twice when run alone, so it judged the full-run failure flaky. Claude committed the Makefile alone, then found `prompt-history.md` was already staged, which its unstaged-only check had missed. Yoann's rule is to include that file in every commit, so Claude amended the commit to add it. Claude also noted that other sessions had committed since the last check.

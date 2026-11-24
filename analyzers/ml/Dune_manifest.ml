@@ -163,10 +163,22 @@ let links (rules : sexp list) : (string * string list) list =
  * else the build context's of describe (dune --build-dir's, not built) *)
 let source (caps : < Cap.open_in; .. >) (w : where) (p : string) : string =
   let r = rel w p in
-  let at (x : string) =
-    FS.read_opt caps (Fpath.v (Filename.concat w.root x)) <> None in
+  let read (x : string) = FS.read_opt caps (Fpath.v (Filename.concat w.root x)) in
   let built = Filename.concat "_build/default" r in
-  if at r then r else if at built then built else Filename.concat w.context r
+  (* (a copy dune made, copy_files#'s: its first line says the file it
+   * copied, tiny/user/sdl/emacs.ml's tiny/user/emacs.ml) *)
+  let original (x : string) : string =
+    match read x with
+    | Some text when prefix "# 1 \"" text -> (
+        match String.index_from_opt text 5 '"' with
+        | Some j ->
+            let o = String.sub text 5 (j - 5) in
+            if Filename.check_suffix o ".ml" && read o <> None then o else x
+        | None -> x)
+    | _ -> x in
+  if read r <> None then r
+  else if read built <> None then original built
+  else Filename.concat w.context r
 
 let manifest (caps : < Cap.open_in; .. >) (w : where) (d : described)
     ((exe, args) : string * string list) : M.manifest =

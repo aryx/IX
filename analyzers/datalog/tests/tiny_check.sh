@@ -10,14 +10,15 @@
 # build's manifest, made here: on tiny-kernel, tiny-ld's (-map's) of
 # t-IX's build; on the host, Dune_manifest's of dune's link (dune
 # describe and dune rules): its files as linked, its platform's among
-# them, nothing told. Ten host runs are given by their main file and
-# flags, the old way (the analyzer finds the units it names in the
-# project, Unit_finder, lib_core's by itself, an -I's read and not
-# reported on), their manifest's link being what the analyzer cannot
-# read: the 8 SDL windows' programs (tsdl), tiny-machine (dune's OCaml 5
-# links lib_core's Parallel on Domain), tiny-mkfs (its KRaw, host/, is
-# the SDL windows' memory too, whose uses are not read: its -I keeps it
-# a library, not reported on). -caps reads each on the host alone: the
+# them, nothing told (a library unit whose code mini-ml's dialect cannot
+# read, by its interface: lib_core's Parallel on OCaml 5's Domain, for
+# tiny-machine). Nine host runs are given by their main file and flags,
+# the old way (the analyzer finds the units it names in the project,
+# Unit_finder, lib_core's by itself, an -I's read and not reported on),
+# their manifest's link being what the analyzer cannot read: the 8 SDL
+# windows' programs (TinyLibSystem/sdl's lazy), tiny-mkfs (its KRaw,
+# host/, is the SDL windows' memory too, whose uses are not read: its -I
+# keeps it a library, not reported on). -caps reads each on the host alone: the
 # analyzer does not know tiny-kernel's calls' capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
 # does not read: tiny-machine-window, user/sdl/'s own TinyLibSystem,
 # stood for by the host's, whose code it includes), js_of_ocaml
@@ -84,7 +85,7 @@ tiny-ar|b|ar|$T/TinyArchiver.ml|dune
 tiny-cpu|h||$T/TinyCPU.ml|dune
 tiny-prof|b|prof|$T/TinyProfiler.ml|dune
 tiny-ml|b|ml|$T/TinyML/TinyML.ml|dune
-tiny-machine|h||$T/TinyMachine/TinyMachine.ml|-I lib_core/parallel
+tiny-machine|h||$T/TinyMachine/TinyMachine.ml|dune
 tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml|dune
 tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|dune
 tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml|dune

@@ -488,7 +488,8 @@ ml/, report/, manifest/'s .ml.
 | before the manifests | de9a26e5 | 166 | 95 | 89 | 124 | 37 | 3,968 |
 | manifests, library mode | 8baebe50 | 212 | 95 | 89 | 124 | 37 | 4,494 |
 | A, mini-analyze's part | 4ec6246f | 212 | 95 | 89 | 124 | 37 | 4,581 |
-| A, tiny_check.sh's merge | the next | 196 | 95 | 100 | 124 | 37 | 4,581 |
+| A, tiny_check.sh's merge | bab77cc3 | 196 | 95 | 100 | 124 | 37 | 4,581 |
+| C, interface alone; tiny-machine | the next | 197 | 95 | 100 | 124 | 37 | 4,632 |
 
 A, mini-analyze's part (2026-11-24): the reports return their lines
 (Caps_report, Exn_report, Bugs_report), every analysis's -summary has
@@ -526,3 +527,19 @@ fixed.) The author on where such logic goes: "in general we should aim
 to not abuse the use of scripts and shell wrappers over programs but
 instead improve the ergonomy of those programs; the same is true for
 the Buildfile/Makefile/... which should also remain simple and small".
+
+C, first part (2026-11-24): no stand-in interface needed. A manifest's
+library unit whose code mini-ml's dialect cannot read is read by its
+interface alone, an external, decided when its callers ask (has_body),
+before they are read, so the functions given to it count as called:
+its file does not parse, or it names a unit that has no file, code or
+interface (Unit_finder.names, moved from Caller_finder for the .NET
+road, a submodule's name, Fpath_.Operators's, no longer counted). lib_core's
+Parallel on OCaml 5's Domain is one: tiny-machine by dune's manifest,
+its report the old way's. Dune_manifest follows a copy's # 1 "file"
+line (copy_files#: tiny/user/sdl/emacs.ml is tiny/user/emacs.ml). Left:
+TinyLibSystem/sdl's lazy (mini-ml has none) made the SDL TinyLibSystem
+its interface alone, every program's main escaping into it, nothing
+dead: the 8 SDL programs and tiny-mkfs (KRaw, the SDL windows' memory)
+kept the old way; the author: "let's commit and use a ref None for sdl
+so we can also process those sdl progs".

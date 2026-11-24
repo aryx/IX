@@ -311,12 +311,46 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   (* (a unit's code: a file given, or an .ml found; asked as a unit's
    * calls are made, before the units it names are found) *)
   let bodies = Hashtbl.create 16 in
+  (* (a manifest's library unit whose code cannot be read is its
+   * interface alone, an external, decided before its callers are read:
+   * its file does not parse, mini-ml's dialect (TinyMachineSDL's
+   * polymorphic variants), or names a unit that has no file, code or
+   * interface (lib_core's Parallel on OCaml 5's Domain); else the
+   * functions given to it would look never called) *)
+  let readable (file : Fpath.t) (text : string) : bool =
+    let f = Fpath.to_string file in
+    match parse f text with
+    | Error m ->
+        Logs.warn (fun l -> l "%s: its interface alone (its code not read: %s)" f m);
+        false
+    | Ok _ ->
+        let local = Hashtbl.create 8 in
+        String.split_on_char '\n' text
+        |> List.iter (fun (l : string) ->
+               match String.split_on_char ' ' (String.trim l) with
+               | "module" :: m :: _ -> Hashtbl.replace local m ()
+               | _ -> ());
+        let missing =
+          Hashtbl.fold (fun (n : string) () acc ->
+              if Hashtbl.mem local n || List.mem_assoc n builtins
+                 || look f n [ ".mli"; ".ml" ] <> None then acc
+              else n :: acc)
+            (Unit_finder.names text) [] in
+        if missing <> [] then
+          Logs.warn (fun l ->
+              l "%s: its interface alone (it names %s, which has no file)" f
+                (String.concat ", " (List.sort compare missing)));
+        missing = [] in
   Closure_facts.has_body :=
     (fun (u : string) ->
       match Hashtbl.find_opt bodies u with
       | Some b -> b
       | None ->
-          let b = Hashtbl.mem own u || look "" u [ ".ml" ] <> None in
+          let b =
+            Hashtbl.mem own u
+            || (match look "" u [ ".ml" ] with
+                | None -> false
+                | Some (file, text) -> Hashtbl.length linked = 0 || readable file text) in
           Hashtbl.replace bodies u b;
           b);
   let read (file : Fpath.t) (text : string) (mine : bool) =
@@ -345,6 +379,9 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     if not (Hashtbl.mem files u) then begin
       Hashtbl.replace files u "";
       match look from u [ ".ml" ] with
+      | Some (f, _)
+        when not (mine (FS.cleanname (Fpath.to_string (Fpath.parent f))))
+             && not (!Closure_facts.has_body u) -> ()
       | Some (f, text) when mine (FS.cleanname (Fpath.to_string (Fpath.parent f))) ->
           (* (a unit of the program's: as a file given, marked before it
            * is read for Tree_facts) *)

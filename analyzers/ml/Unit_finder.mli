@@ -61,3 +61,10 @@ val part_dir : < Cap.readdir; .. > -> string -> string option
  * is not built yet. Such a unit is never taken from another directory of
  * the project: a Lexer elsewhere is another program's. *)
 val generated : < Cap.readdir; .. > -> t -> string -> string -> string option option
+
+(* [names text]: the unit names a text's code uses, each once: before a
+ * dot (not a submodule's, Fpath_.Operators's second), or after open,
+ * include or a module alias's =, not in a comment or a string
+ * (Caller_finder's search; Ml_front: a manifest's library unit naming
+ * one that has no file is its interface alone) *)
+val names : string -> (string, unit) Hashtbl.t

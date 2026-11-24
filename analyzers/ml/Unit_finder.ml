@@ -123,6 +123,72 @@ let is_ident (c : char) : bool =
 
 (* (a capitalized name before a dot: List.map's List, Lexer.token's Lexer;
  * a comment's or a string's too, which costs only a little precision) *)
+(* the word before [i] on its line, after blanks; and whether the line
+ * starts with module (module G = TinyLibGUI) *)
+let before (text : string) (i : int) : string * bool =
+  let k = ref (i - 1) in
+  while !k >= 0 && (text.[!k] = ' ' || text.[!k] = '\t') do decr k done;
+  let e = !k + 1 in
+  while !k >= 0 && (is_ident text.[!k] || text.[!k] = '=') do decr k done;
+  let word = String.sub text (!k + 1) (e - !k - 1) in
+  let start = ref i in
+  while !start > 0 && text.[!start - 1] <> '\n' do decr start done;
+  while !start < i && (text.[!start] = ' ' || text.[!start] = '\t') do incr start done;
+  (word, String.length text - !start >= 7 && String.sub text !start 7 = "module ")
+
+(* where a comment that starts at [i] ends, its nested ones in it *)
+let rec comment_end (text : string) (i : int) : int =
+  let n = String.length text in
+  let rec go (j : int) : int =
+    if j + 1 >= n then n
+    else if text.[j] = '*' && text.[j + 1] = ')' then j + 2
+    else if text.[j] = '(' && text.[j + 1] = '*' then go (comment_end text j)
+    else go (j + 1) in
+  go (i + 2)
+
+(* where a string that starts at [i] ends *)
+let string_end (text : string) (i : int) : int =
+  let n = String.length text in
+  let rec go (j : int) : int =
+    if j >= n then n else if text.[j] = '\\' then go (j + 2) else if text.[j] = '"' then j + 1 else go (j + 1) in
+  go (i + 1)
+
+(* The unit names a text's code uses, each once: a capitalized name
+ * before a dot (TinyLibGUI.run), or after open, include, or the = of a
+ * module alias (module G = TinyLibGUI). Not a comment's or a string's: a
+ * comment's TinyMachine.ml in a unit TinyMachine.ml names would make a
+ * cycle, which code cannot, and no main would be found. *)
+let names (text : string) : (string, unit) Hashtbl.t =
+  let h = Hashtbl.create 64 in
+  let n = String.length text in
+  let i = ref 0 in
+  while !i < n do
+    let c = text.[!i] in
+    if c = '(' && !i + 1 < n && text.[!i + 1] = '*' then i := comment_end text !i
+    else if c = '"' then i := string_end text !i
+    (* ('"', '\"': a character, not a string) *)
+    else if c = '\'' && !i + 2 < n && text.[!i + 2] = '\'' then i := !i + 3
+    else if c = '\'' && !i + 3 < n && text.[!i + 1] = '\\' && text.[!i + 3] = '\'' then i := !i + 4
+    else if c >= 'A' && c <= 'Z' && (!i = 0 || not (is_ident text.[!i - 1])) then begin
+      let j = ref !i in
+      while !j < n && is_ident text.[!j] do incr j done;
+      let w = String.sub text !i (!j - !i) in
+      let dotted = !j < n && text.[!j] = '.' in
+      (* (Fpath_.Operators: a unit, then its submodule) *)
+      let inner = !i > 0 && text.[!i - 1] = '.' in
+      if dotted && not inner then Hashtbl.replace h w ()
+      else if dotted then ()
+      else begin
+        match before text !i with
+        | ("open" | "include"), _ | "=", true -> Hashtbl.replace h w ()
+        | _ -> ()
+      end;
+      i := !j
+    end
+    else incr i
+  done;
+  h
+
 let mentions (t : t) (text : string) : unit =
   let n = String.length text in
   let i = ref 0 in

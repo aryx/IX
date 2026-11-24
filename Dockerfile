@@ -38,7 +38,11 @@ RUN sed -i -E "s,//(archive|security)\.ubuntu\.com/ubuntu/,//$APT_MIRROR/ubuntu/
 #   reference: a plain objdump knows only its host's
 # - bc for the tests' seconds
 # - qemu-user for the arm programs of the whole suite (qemu-arm)
-RUN apt-get update && apt-get install -y build-essential git opam 9base libsdl2-dev libffi-dev pkg-config python3 curl binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu bc qemu-user
+# - qemu-system-arm for make test's m-ix built in mini-9pi (QEMU's Pi 2:
+#   kernels/9pi/tests/smoke.sh; its kernel by ix's tools since 3fc9d624,
+#   no ocaml-light), and make self-mix's
+# (noninteractive: a package QEMU pulls in, tzdata, asks no question)
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git opam 9base libsdl2-dev libffi-dev pkg-config python3 curl binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu bc qemu-user qemu-system-arm
 
 # OCaml
 RUN opam init --disable-sandboxing -y  # (no sandboxing in Docker)
@@ -60,7 +64,7 @@ RUN eval $(opam env) && opam pin add -y -n caps ${CAPS}
 RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler js_of_ocaml ppx_deriving menhir
 
 # For make self (.github/workflows/self.yml, --build-arg SELF=tix or
-# mix): mix wants QEMU's Pi 2, gcc for arm, and sfdisk
+# mix): mix wants QEMU's Pi 2 (above), gcc for arm, and sfdisk
 # (kernels/9pi/tests/self.sh reads the card's partitions). mini-9pi is
 # built by ix's own tools, mini-ml and mini-cc (kernels/9pi/Makefile's
 # COMPILER=ix, the Pi 2's default): ix built by ix needs no ocaml-light.
@@ -70,7 +74,7 @@ RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest 
 ARG SELF=
 # (apt-get update again: the first layer's lists may be an old cache's)
 RUN if [ "$SELF" = mix ]; then apt-get update && \
-  DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-arm \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
     gcc-arm-linux-gnueabihf fdisk; fi
 # tix's make self runs tiny-kernel on four cores, each on an OCaml 5
 # domain (tiny/TinyKernel/Makefile's OCAML5, plan_tiny_self_speed.md's

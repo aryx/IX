@@ -19,7 +19,8 @@ path to the generated file".
 **Status: proposed (2026-11-24). Done: tiny/TinyLibExecutable.ml made
 from TinyLibMachine; tiny-ld -map writes out.manifest (step 2, its
 tiny-ld-only version); mini-analyze reads it, tiny_check.sh's tiny-kernel
-runs by manifests, K gone. Next: dune's manifests (step 3).**
+runs by manifests, K gone; dune's manifests (step 3), 17 of tiny_check.sh's
+27 host runs by them. Next: step 4, m-ix's toolchain.**
 
 ## The problem
 
@@ -293,6 +294,55 @@ mini-yacc's, changes a recorded report.
    TinyLibDraw's d_*.
 3. **dune**: the describe reader writes the host's manifests;
    tiny_check.sh's host runs (h and b) read them; the table goes.
+
+   Done 2026-11-24 (the author: "ok let's commit and move forward with
+   dune's manifests"). dune describe workspace alone is not enough: it
+   gives each library's and stanza's modules with their sources, but a
+   program's requirement on a virtual library (tiny_lib_system) without
+   the implementation it links, the platform, which -own said. dune
+   rules X.exe gives the link itself, ocamlopt's command line, the
+   .cmxa (tiny_lib_system_unix.cmxa among them) and the program's .cmx,
+   in order. analyzers/manifest/ (Dune_manifest) reads both answers and
+   writes tiny-ld's format: a local library's modules members of its
+   archive, the stanza's module of each .cmx given, opam's libraries
+   (no source) and dune__exe left out; a path the project's file, else
+   the one the build made, _build/default's (lib_core's Parallel, a
+   lexer). Both dune queries in a build directory of tiny_check.sh's
+   own (2.5 s, 31 MB), _build being another dune's.
+
+   The reader learned two things from dune's links. OCaml links an
+   archive's modules the program names, tiny-ld all of them (tiny-shell's
+   link has tiny_lib_regex.cmxa, which it does not name): so a member is
+   not read up front; the members in the program's part of the project,
+   not the standard library's, give their directories as -own's
+   (Tiny_manifest.own_dirs: TinyLibSystem/unix, tiny/'s TinyLib*). And
+   the standard library is the first directory up from a member with a
+   units.txt (lib_core) or a Stdlib.mli (TinyLibCore); a unit the build
+   took from outside the project (OCaml's List, Hashtbl) is read from
+   it, as before.
+
+   Against the old way, run by run (-dead): 17 of 19 host programs the
+   same, of 27 host runs 17 by manifests. Ten keep their main file and
+   flags, the old way: the 8 SDL windows' programs (tsdl, unread, and
+   dune's copy_files#); tiny-machine,
+   whose dune link (OCaml 5) has lib_core's Parallel on Domain, which
+   the analyzer cannot read (the old way read its .mli alone);
+   tiny-mkfs, whose host/KRaw.ml is also the SDL windows' memory: by its
+   manifest, KRaw is the program's part and 13 of its functions said
+   dead, used by the windows, which are not read (its KFS's 21 lines
+   the kernel's run merges away). Gone from tiny_check.sh: NET, the
+   graphics' and lib_crypto's -I's. The four recordings unchanged.
+
+   Then mini-analyze takes dune's executable itself (the author: "yes,
+   let mini-analyze take the .exe and run dune itself"):
+   mini-analyze -dead _build/default/tiny/TinyBuildSystem.exe (or
+   tiny/TinyBuildSystem.exe) runs dune describe and dune rules
+   (Dune_manifest.run, now in analyzers/ml/, the standalone
+   analyzers/manifest/ kept for tiny_check.sh's batch of 17), in a build
+   directory of the temporary directory's, one per project and kept: 2
+   s a run, 2.5 more the first. Its paths are read from describe's root.
+   From the project's root only: -r's default, analyzers/datalog, is
+   relative.
 4. **mini-ml, mini-cc, mini-asm, mini-ar, mini-ld**: the record as a
    section of Asm's objects, the manifest beside each executable and the
    kernel. ix_check.sh, sweep.sh, kernel.sh on manifests; mk_units.sh

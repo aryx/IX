@@ -35,17 +35,40 @@ type manifest = {
 (* raises Failure on a file that is not a manifest *)
 val of_string : string -> manifest
 
-(* What mini-analyze takes from one: its ML files given to tiny-ld, the
- * program's own, in the link's order; the directory of the archive its
- * ML members come from, the standard library (-L's); and each linked
- * ML unit's file, by the unit's name (Ml_front.linked). *)
+(* the file's bytes: what tiny-ld writes, for the manifests of the
+ * builds that are not tiny-ld's (Dune_manifest, dune's programs) *)
+val to_string : manifest -> string
+
+(* What mini-analyze takes from one:
+ * - the program's own files, read and reported on: the ML files given
+ *   to the linker, in the link's order;
+ * - the directories of an archive's members that are in the program's
+ *   part of the project (Unit_finder.part_dir) and not the standard
+ *   library's (Ml_front.own_dirs, -own's): their units reported on when
+ *   the program names them, tiny/TinyLibSystem/unix and tiny/'s
+ *   TinyLib*.ml libraries for a host program of tiny/, as -own and
+ *   Unit_finder had them. Not read up front: OCaml links an archive's
+ *   modules that the program names, not all of them as tiny-ld does
+ *   (tiny-shell's dune link has tiny_lib_regex.cmxa, which it does not
+ *   name). Another part's library (lib_crypto) is read when named, not
+ *   reported on;
+ * - the standard library (-L's): the first directory, from an archive
+ *   member's up, with a units.txt (lib_core) or its own Stdlib.mli
+ *   (tiny/TinyLibCore);
+ * - each linked ML unit's file, by the unit's name (Ml_front.linked). *)
 type program = {
   name : string;
   own : string list;
+  own_dirs : string list;
   library : string option;
   units : (string * string) list;
 }
 
+(* [of_manifest caps m root]: its paths read against root *)
+val of_manifest :
+  < Cap.open_in; Cap.readdir; .. > -> manifest -> string -> program
+
 (* [program caps file sources]: file a manifest; its paths read against
  * sources if given, else against the manifest's directory *)
-val program : < Cap.open_in; .. > -> string -> string option -> program
+val program :
+  < Cap.open_in; Cap.readdir; .. > -> string -> string option -> program

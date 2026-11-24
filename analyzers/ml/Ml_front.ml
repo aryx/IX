@@ -260,13 +260,15 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     || (List.exists is program_dirs && not (List.exists is library)) in
   (* (the generated units said once each, not built) *)
   let not_built : (string, unit) Hashtbl.t = Hashtbl.create 4 in
-  (* (a manifest's: a unit's code is the file linked, or none; its
-   * interface the .mli beside it, else the directories') *)
+  (* (a manifest's: a unit's code is the file linked, or, for a unit the
+   * build took from outside the project (dune's from OCaml's own
+   * library: List, Hashtbl), the standard library's (-L's), else none;
+   * its interface the .mli beside it, else the directories') *)
   let linked_look (name : string) (exts : string list) : (Fpath.t * string) option =
     let at =
       match Hashtbl.find_opt linked name with
       | Some f -> [ Fpath.parent (Fpath.v f) ]
-      | None -> [] in
+      | None -> library in
     let mli =
       if List.mem ".mli" exts then find caps (at @ dirs ()) name [ ".mli" ]
       else None in

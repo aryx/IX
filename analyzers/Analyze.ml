@@ -7,9 +7,9 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; Cap.exec; Cap.wait >
 
-let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... [-sources dir] file.c|file.ml|file.manifest...   (-h: how)"
+let usage = "usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... [-sources dir] file.c|file.ml|file.manifest|file.exe...   (-h: how)"
 
-let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... [-sources dir] file.c|file.ml|file.manifest...
+let help = {|usage: mini-analyze [-r rules-dir] [-Idir] [-own dir] [-Dname=value] [-L lib] [-facts | -flow | -flow-answers] [-dead | -caps | -exn | -bugs] [-root f]... [-sources dir] file.c|file.ml|file.manifest|file.exe...
 The C files read as one program, each call through a pointer said with the
 functions it may reach, by an analysis of where each pointer may point
 (points_to/'s: Andersen's first pass, then a context file, -context):
@@ -27,10 +27,13 @@ program's functions that its toplevel never reaches (calls.dl):
   Events.ml:15: in Events:fun at line 15, through h.on_key: Events.beep, Main:fun at line 4
   Events.ml:17: in Events.twice, through f: Events.log
   never reached: Events.unused (Events.ml:19)
-A program as its build linked it: tiny-ld's manifest (-map), its files and
-nothing else, the platform's among them, no -L or -own to give; -sources
-where its paths are read when the build ran in a copy (TinyKernel's):
-  mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src/rc.manifest
+A program as its build linked it, its files and nothing else, the
+platform's among them, no -L or -own to give: dune's executable (dune
+describe and dune rules run, Dune_manifest), or tiny-ld's manifest (-map);
+-sources where a manifest's paths are read when the build ran in a copy
+(TinyKernel's):
+  mini-analyze -dead _build/default/tiny/TinyBuildSystem.exe
+  mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src/build.manifest
 -dead: instead, what no run can reach (dead.dl), from main and the toplevels:
   dead.c:12: dead: unused, nothing names it
   dead.c:18: dead: hide, named only by dead code: unused
@@ -356,25 +359,37 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | [ f ] when !dead && Filename.check_suffix f ".ml" && !summary_file = "" && not !only ->
         Caller_finder.programs caps (List.map Fpath.to_string !Ml_front.own_dirs @ !incs) f
     | _ -> [] in
-  (* (a manifest's files: its ML units given to tiny-ld, its archive's
-   * directory the library, every linked unit's file) *)
-  let manifest (m : string) : unit =
-    let sources = if !sources = "" then None else Some !sources in
-    let p = Tiny_manifest.program caps m sources in
+  (* (a manifest's files: its ML units given to the linker, its
+   * archives' standard library, every linked unit's file) *)
+  let linked (what : string) (p : Tiny_manifest.program) : unit =
     Logs.info (fun l ->
-        l "%s: %d units, %d the program's own" m (List.length p.units)
+        l "%s: %d units, %d the program's own" what (List.length p.units)
           (List.length p.own));
     files := List.rev_append p.own !files;
+    Ml_front.own_dirs := !Ml_front.own_dirs @ List.map Fpath.v p.own_dirs;
     Option.iter (fun d -> if !lib = "" then lib := d) p.library;
     if !program = "" then program := p.name;
     List.iter (fun (u, f) -> Hashtbl.replace Ml_front.linked u f) p.units in
-  let manifests = ref [] in
+  let manifests = ref [] and exes = ref [] in
   let anon (f : string) =
     if Filename.check_suffix f ".manifest" then manifests := f :: !manifests
+    else if Filename.check_suffix f ".exe" then exes := f :: !exes
     else files := f :: !files in
-  (* (after the flags: -sources) *)
+  (* (after the flags: -sources; an .exe's manifest by dune itself, its
+   * paths from the project's root) *)
   let read_manifests () =
-    match List.iter manifest (List.rev !manifests) with
+    let sources = if !sources = "" then None else Some !sources in
+    match
+      List.iter (fun m -> linked m (Tiny_manifest.program caps m sources)) (List.rev !manifests);
+      if !exes <> [] then begin
+        let root, ms = Dune_manifest.run caps (List.rev !exes) in
+        let root = match sources with Some d -> d | None -> root in
+        (* (the root's paths, read from here: relative to it when here is
+         * it, as the reports name them) *)
+        let root = if root = FS.getcwd caps () then "." else root in
+        List.iter (fun (exe, m) -> linked exe (Tiny_manifest.of_manifest caps m root)) ms
+      end
+    with
     | () -> false
     | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); true in
   match Arg.parse_argv argv options anon usage with

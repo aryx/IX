@@ -6,14 +6,19 @@
 # it: on tiny-kernel, by tiny-ml on TinyLibCore and tiny-kernel's
 # TinyLibSystem (the Buildfile's programs); on the host, by OCaml on
 # lib_core and the host's TinyLibSystem (tiny/dune's tools, the windows'
-# programs of user/sdl/, tiny-machine...). On tiny-kernel, a program is
-# given by tiny-ld's manifest (-map's) of t-IX's build, made here: its
-# files as linked, its platform's among them. On the host, by its main
-# file alone: the analyzer finds the units it names in the project
-# (Unit_finder), its own, and lib_core's by itself; the other ix
-# libraries' are given by -I, read and not reported on. -caps reads
-# each on the host alone: the analyzer does not know tiny-kernel's calls'
-# capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
+# programs of user/sdl/, tiny-machine...). A program is given by its
+# build's manifest, made here: on tiny-kernel, tiny-ld's (-map's) of
+# t-IX's build; on the host, Dune_manifest's of dune's link (dune
+# describe and dune rules): its files as linked, its platform's among
+# them, nothing told. Ten host runs are given by their main file and
+# flags, the old way (the analyzer finds the units it names in the
+# project, Unit_finder, lib_core's by itself, an -I's read and not
+# reported on), their manifest's link being what the analyzer cannot
+# read: the 8 SDL windows' programs (tsdl), tiny-machine (dune's OCaml 5
+# links lib_core's Parallel on Domain), tiny-mkfs (its KRaw, host/, is
+# the SDL windows' memory too, whose uses are not read: its -I keeps it
+# a library, not reported on). -caps reads each on the host alone: the
+# analyzer does not know tiny-kernel's calls' capabilities yet. Not here: the SDL library (tsdl, which mini-analyze
 # does not read: tiny-machine-window, user/sdl/'s own TinyLibSystem,
 # stood for by the host's, whose code it includes), js_of_ocaml
 # (tiny-machine-web). The kernel is read as a program of tiny-kernel,
@@ -35,6 +40,7 @@
 cd "$(dirname "$0")/../../.."
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
+DUNE_MANIFEST=${DUNE_MANIFEST:-_build/default/analyzers/manifest/Main.exe}
 export LC_ALL=C
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
@@ -50,46 +56,44 @@ expected=analyzers/datalog/tests/$expected
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
 if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 T=tiny
-# How each program is read on the host: its platform, the one choice
-# the analyzer cannot make from a main file (TinyLibSystem's
-# implementations have the same names), as OCaml builds it, on lib_core
-# and the host's TinyLibSystem (O). On tiny-kernel, the manifest says it:
-# TinyLibCore's members of stdlib.a and tiny-kernel's TinyLibSystem.
-# (old: K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel" and the
-# main file, before tiny-ld's manifests)
+# How a program given by its main file is read on the host: its
+# platform, the one choice the analyzer cannot make from a main file
+# (TinyLibSystem's implementations have the same names), as OCaml builds
+# it, on lib_core and the host's TinyLibSystem (O). A manifest says it:
+# TinyLibCore's members of stdlib.a and tiny-kernel's TinyLibSystem;
+# lib_core and TinyLibSystem/unix in dune's link. (old, before the
+# manifests: K="-L $T/TinyLibCore -own $T/TinyLibSystem/tinykernel" and
+# each main file; the host's -I's, lib_crypto's, lib_networking's...)
 O="-L lib_core -own $T/TinyLibSystem/unix"
-NET="-I lib_networking/tcp -I lib_networking/tls -I lib_networking/http"
-NET="$NET -I lib_crypto -I lib_compression"
 # a program a line: its name; where it runs: k tiny-kernel alone (the
 # Buildfile's windows' programs), h the host alone (tiny-machine...,
 # mkfont, built by OCaml on lib_core), b both (the tools: tiny/dune's and
 # the Buildfile's; and the windows' programs of user/sdl/dune, whose
 # TinyLibSystem includes the host's, read here for it: the analyzer does
 # not read tsdl); its name in the Buildfile (its manifest's); its main
-# file; its flags on the host. One is given (-I) only to what the host
-# builds, as tiny/dune links it (tiny-build's and tiny-vcs's Sha1 is
-# lib_crypto's there, TinyLibCore's on tiny-kernel, the runtime's C)
+# file; on the host, dune (dune's manifest of the main's .exe) or the
+# flags beside O's of the old way, above
 programs() {
   cat <<EOF
-tiny-build|b|build|$T/TinyBuildSystem.ml|-I lib_crypto
-tiny-shell|b|rc|$T/TinyShell.ml
-tiny-editor|b|ed|$T/TinyEditorLine.ml
-tiny-utils|b|utils|$T/TinyUtilities.ml
-tiny-cc|b|cc|$T/TinyC/TinyC.ml
-tiny-db|b|db|$T/TinyDatabase.ml
-tiny-vcs|b|vcs|$T/TinyVCS.ml|-I lib_crypto
-tiny-as|b|as|$T/TinyAssembler.ml
-tiny-ld|b|ld|$T/TinyLinker.ml
-tiny-ar|b|ar|$T/TinyArchiver.ml
-tiny-cpu|h||$T/TinyCPU.ml
-tiny-prof|b|prof|$T/TinyProfiler.ml
-tiny-ml|b|ml|$T/TinyML/TinyML.ml
+tiny-build|b|build|$T/TinyBuildSystem.ml|dune
+tiny-shell|b|rc|$T/TinyShell.ml|dune
+tiny-editor|b|ed|$T/TinyEditorLine.ml|dune
+tiny-utils|b|utils|$T/TinyUtilities.ml|dune
+tiny-cc|b|cc|$T/TinyC/TinyC.ml|dune
+tiny-db|b|db|$T/TinyDatabase.ml|dune
+tiny-vcs|b|vcs|$T/TinyVCS.ml|dune
+tiny-as|b|as|$T/TinyAssembler.ml|dune
+tiny-ld|b|ld|$T/TinyLinker.ml|dune
+tiny-ar|b|ar|$T/TinyArchiver.ml|dune
+tiny-cpu|h||$T/TinyCPU.ml|dune
+tiny-prof|b|prof|$T/TinyProfiler.ml|dune
+tiny-ml|b|ml|$T/TinyML/TinyML.ml|dune
 tiny-machine|h||$T/TinyMachine/TinyMachine.ml|-I lib_core/parallel
-tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml
-tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|$NET -I lib_graphics/core -I lib_graphics/images
-tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml
+tiny-machine-socket|h||$T/TinyMachine/TinyMachineSocket.ml|dune
+tiny-machine-fetch|h||$T/TinyMachine/TinyMachineFetch.ml|dune
+tiny-mkfat|h||$T/TinyKernel/steps/t6/TinyMkfat.ml|dune
 tiny-mkfs|h||$T/TinyKernel/host/TinyMkfs.ml|-I $T/TinyKernel/host -I $T/TinyKernel
-mkfont|h||$T/TinyKernel/fonts/Mkfont.ml|-I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/fonts -I lib_graphics/software
+mkfont|h||$T/TinyKernel/fonts/Mkfont.ml|dune
 windows|k|windows|$T/user/windows.ml
 bigmem|k|bigmem|$T/user/bigmem.ml
 square|k|square|$T/user/square.ml
@@ -114,7 +118,13 @@ EOF
 # calls not yet).
 runs() {
   programs | while IFS='|' read -r name sys tix main host; do
-    if [ $flag = -caps ]; then echo "$name|$O $host|$main"; continue; fi
+    # (the host's: dune's manifest of its link, or the main file and O)
+    if [ "$host" = dune ]; then
+      hostrun="$name|-sources .|$W/dune/${main%.ml}.exe.manifest"
+    else
+      hostrun="$name|$O $host|$main"
+    fi
+    if [ $flag = -caps ]; then echo "$hostrun"; continue; fi
     # (tiny-kernel's: tiny-ld's manifest of the build below, its paths
     # read in tiny/, where the build's copy of tiny/ came from)
     if [ -n "$tix" ]; then
@@ -123,8 +133,8 @@ runs() {
     fi
     case $sys in
       k) echo "$tixrun";;
-      h) echo "$name|$O $host|$main";;
-      b) echo "$tixrun"; echo "$name-host|$O $host|$main";;
+      h) echo "$hostrun";;
+      b) echo "$tixrun"; echo "${hostrun/#$name|/$name-host|}";;
     esac
   done
 }
@@ -135,6 +145,15 @@ if [ $flag != -caps ]; then
   make -s -C $T/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
     { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
 fi
+# (the host's programs as dune links them: its modules' sources and each
+# link, in a build directory of its own, not _build's, which another
+# dune may hold; Dune_manifest makes their manifests, seconds)
+exes=$(programs |
+  awk -F'|' '$5 == "dune" { sub(/\.ml$/, ".exe", $4); print "./" $4 }')
+{ dune describe workspace --build-dir $W/dune-build > $W/describe.sexp &&
+  dune rules --build-dir $W/dune-build $exes > $W/rules.sexp &&
+  $DUNE_MANIFEST $W/describe.sexp $W/rules.sexp $W/dune; } > $W/dune.log 2>&1 ||
+  { tail -5 $W/dune.log; echo "tiny_check.sh: dune's manifests failed"; exit 2; }
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
 # (the programs at once, the analyses first: seconds, not a minute)

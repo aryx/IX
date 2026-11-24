@@ -16,7 +16,8 @@ and other flags from mini-analyzer?", "and maybe also the make generated
 target, we can remove, and use instead again the metadata to specify the
 path to the generated file".
 
-**Status: proposed (2026-11-24), nothing built.**
+**Status: proposed (2026-11-24); tiny/TinyLibExecutable.ml made from
+TinyLibMachine (where the type goes), no manifest yet.**
 
 ## The problem
 
@@ -199,8 +200,22 @@ In mini-analyze, given manifests:
   itself, as dead_of_callers already does for the programs that reach
   one file.
 - **Unit_finder's guessing and its tie warnings**, Caller_finder's
-  search for mains: the manifests list the programs. (Kept or not for
-  the case with no build, one file looked at: to decide.)
+  search for mains, when manifests are given: the manifests list the
+  programs. Both stay for a checkout with nothing built (the author:
+  "maybe the mini-analyzer could keep those Caller_finder.ml,
+  Unit_finder.ml so one can also call mini-analyzer on a fresh repo
+  without anything built; but we should probably focus now more on
+  using those manifest for precise set of files to analyze").
+
+A library's callers are not in its own manifest (an archive's, or none
+for a dune library or a TinyLib*.ml) but in the programs' (the author:
+"in any case, for the library, we still need to find the callers which
+are probably not in the library manifest; they are in the programs
+manifest instead"). So -dead on a library's file reads every program
+manifest of the build and keeps those that link the file: Caller_finder's
+question, answered by the build instead of by the names in the text.
+Each such program is run and the reports merged, as dead_of_callers does
+today; a library no program links is said so.
 
 In the scripts:
 
@@ -275,8 +290,16 @@ over a program, mini-analyze's side only. The manifest's writers are the
 toolchain, which reads no code that way, and would depend on lib_code/
 for one type.
 
-The t-IX side is tiny/'s own copy either way (TinyLibManifest.ml, or a
-part of TinyLibMachine.ml, which tiny-as, tiny-ld and tiny-ar share).
+The t-IX side is tiny/'s own copy, in **tiny/TinyLibExecutable.ml**
+(the author: "yes let's to TinyLibManifest.ml or TinyLibExecutable.ml
+maybe, and move stuff from TinyLibMachine.ml into it if needed"). Done
+first, 2026-11-24, without the manifest: TinyLibMachine's objects,
+archives and symbols moved there (to_object, of_object, plain, the
+archives; labels, find, address), TinyLibMachine keeping the
+instructions, the lines and their encoding. The two are lib_executable/
+and the machine's code, as in m-ix; the manifest's type and its
+to_manifest/of_manifest go beside to_object, which will carry the compile
+records.
 
 ## To decide
 
@@ -286,6 +309,4 @@ part of TinyLibMachine.ml, which tiny-as, tiny-ld and tiny-ar share).
   -map): always is nothing to forget; its cost is one small file.
 - The compile record inside the object, or beside it (x.o.json in
   clang -MJ's way): inside, an object copied keeps it.
-- Unit_finder and Caller_finder: kept for a single file with no build,
-  or removed (379 lines).
 - A test's kind: said by the build file (-kind test) or by its path.

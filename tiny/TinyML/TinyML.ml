@@ -9,6 +9,7 @@
 
 open Common
 module M = TinyLibMachine
+module E = TinyLibExecutable
 
 let usage = {|usage: tiny-ml [-L dir] [-S] [-o out.o] file.ml...
        | tiny-ml -c [-S] [-L dir] [-I dir]... [-o out.o] file.ml
@@ -209,8 +210,8 @@ let write_interface (old : before) (exports : (string * Compile.binding) list)
           Some (Types.qualify !Tree.unit_name x, bd, texpr_of_ty t)
       | _ -> None
     end) exports in
-  (* (M.plain: the bytes are not to say which OCaml wrote them) *)
-  M.plain (Marshal.to_string
+  (* (E.plain: the bytes are not to say which OCaml wrote them) *)
+  E.plain (Marshal.to_string
     { iunit = !Tree.unit_name, nglobals, !Machine.arities; icons = icons;
       ilabels = ilabels;
       iabbrevs =
@@ -368,7 +369,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
       let dir = Filename.dirname (Fpath.to_string f) in
       (* (not a library: tiny-ld says so) *)
       let members =
-        try TinyLibMachine.of_archive (TinyLibSystem.read_file caps f)
+        try TinyLibExecutable.of_archive (TinyLibSystem.read_file caps f)
         with Failure _ | TinyLibMachine.Error _ -> [] in
       List.concat_map (fun (name, _) ->
           beside (Fpath.v (Filename.concat dir
@@ -455,7 +456,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
    * text (-S) *)
   let made (ls : TinyLibMachine.line list) =
     if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
-    else TinyLibMachine.to_object (TinyLibMachine.assemble ls) in
+    else TinyLibExecutable.to_object (TinyLibMachine.assemble ls) in
   (* x.ml's x.o here (x.s by -S); a whole program's after its first
    * .ml, main.o when it has none *)
   let named f = Fpath.set_ext (if !text then ".s" else ".o") (Fpath.base f) in

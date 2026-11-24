@@ -680,7 +680,8 @@ README_TINY = [
     ("tiny-browser", ["tiny/TinyBrowser/"]),
     # (not a program: tiny/README.md says their sum)
     ("the libraries", ["tiny/TinyLibCore/", "tiny/TinyLibSystem/",
-                       "tiny/TinyLibMachine.", "tiny/TinyLibRegex.",
+                       "tiny/TinyLibMachine.", "tiny/TinyLibExecutable.",
+                       "tiny/TinyLibRegex.",
                        "tiny/TinyLibDraw."]),
     ("the runtimes", ["tiny/runtime/"]),
 ]

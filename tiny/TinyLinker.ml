@@ -6,6 +6,7 @@
 (* (|||: an option's value, or a default) *)
 open Common
 module M = TinyLibMachine
+module E = TinyLibExecutable
 module TSys = TinyLibSystem
 
 (* what tiny-ld asks for: the objects read, the image written *)
@@ -46,8 +47,8 @@ An error names the label: undefined label main
  * labels in their order, which is their addresses'), and where the data
  * starts (-n; 0 otherwise) *)
 type layout = {
-  labels : (M.label, address) Hashtbl.t;
-  order : (M.label * address) list;
+  labels : (E.label, address) Hashtbl.t;
+  order : (E.label * address) list;
   placed : (address * M.line) list;
   data_at : address;
 }
@@ -192,7 +193,7 @@ type sections = In_order | Text_first
  * the objects' order, the sections then ignored) *)
 type linked = {
   image : string;
-  addresses : (M.label * address) list;
+  addresses : (E.label * address) list;
   data_start : address option;
 }
 
@@ -260,7 +261,7 @@ let aout (memory : int) (l : linked) : string =
 type output = Image | Aout of int | Aout_labels of int
 
 (* the labels' lines, each its address in hexadecimal and its name *)
-let label_lines (ls : (M.label * address) list) : string =
+let label_lines (ls : (E.label * address) list) : string =
   String.concat ""
     (List.map (fun (l, a) -> Printf.sprintf "%x %s\n" a l) ls)
 
@@ -275,7 +276,7 @@ let contents (out : output) (l : linked) : string =
   | Aout_labels memory ->
       aout memory l
       ^ label_lines
-          (List.filter (fun (x, _) -> not (M.local x)) l.addresses)
+          (List.filter (fun (x, _) -> not (E.local x)) l.addresses)
 
 (* an object file's items (TinyLibMachine's of_object), each said with
  * -debug; an archive's objects, all of them, in its order, as if each
@@ -284,14 +285,14 @@ let read (chan : Chan.i) : M.line list list =
   let f = Chan.origin chan in
   let items name s =
     let items =
-      try M.of_object s with M.Error e -> M.error (name ^ ": " ^ e) in
+      try E.of_object s with M.Error e -> M.error (name ^ ": " ^ e) in
     List.iter (fun it ->
       Logs.debug (fun m -> m "%s: %s" name (M.show_line it))) items;
     items in
   let s = In_channel.input_all chan.ic in
-  if M.is_archive s then
+  if E.is_archive s then
     let members =
-      try M.of_archive s with M.Error e -> M.error (f ^ ": " ^ e) in
+      try E.of_archive s with M.Error e -> M.error (f ^ ": " ^ e) in
     List.map (fun (name, o) -> items (f ^ "(" ^ name ^ ")") o) members
   else [ items f s ]
 

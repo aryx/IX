@@ -4,6 +4,7 @@
  * See TinyArchiver.mli
  *)
 module M = TinyLibMachine
+module E = TinyLibExecutable
 module TSys = TinyLibSystem
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
@@ -26,7 +27,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   | [ "-t"; lib ] ->
       (try
          List.iter (fun (name, _) -> TSys.print caps (name ^ "\n"))
-           (M.of_archive (read (Fpath.v lib)));
+           (E.of_archive (read (Fpath.v lib)));
          Exit.OK
        with M.Error e -> Exit.Err (lib ^ ": " ^ e))
   | "-o" :: lib :: (_ :: _ as files) ->
@@ -35,7 +36,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
            List.map (fun f ->
              let p = Fpath.v f in
              Fpath.to_string (Fpath.base p), read p) files in
-         TSys.write_file caps (Fpath.v lib) (M.to_archive members);
+         TSys.write_file caps (Fpath.v lib) (E.to_archive members);
          Exit.OK
        with M.Error e -> Exit.Err e)
   | _ -> TSys.eprint caps (usage ^ "   (-h: how)\n"); Exit.Code 2

@@ -1,8 +1,9 @@
 (* tiny-machine's libmach: what every program that reads or writes the
  * machine's code shares. It plays the role of Plan 9's libmach, which
  * the debuggers and nm share (principia's debuggers/libmach: decoding
- * instructions, the format of executables, the symbol tables). This
- * module has four parts:
+ * instructions, the format of executables, the symbol tables): its
+ * instructions' part; the files, the objects, the archives and the
+ * symbols, are TinyLibExecutable's. This module has three parts:
  *
  *     the instructions     instr, and their words: encode, decode, and
  *                          their text and listing (tiny-cpu -l, debug)
@@ -10,11 +11,9 @@
  *                          (TinyC/Machine.ml, TinyML/Machine.ml) and
  *                          that tiny-as parses; print_line gives its
  *                          text (-S)
- *     the objects          the lines once encoded (assemble): what the
- *                          compilers and tiny-as write (to_object) and
- *                          tiny-ld reads (of_object)
- *     the symbols          a program's labels as tiny-ld writes them,
- *                          for tiny-prof and debug
+ *     the lines encoded    assemble: what the compilers and tiny-as
+ *                          write in an object (TinyLibExecutable's
+ *                          to_object) and tiny-ld reads
  *
  * Read TinyMachine/TinyMachineCPU.mli first: the machine, the format of
  * its words, and the design. The interpreter of the CPU is not here:
@@ -199,7 +198,7 @@ type line =
 val print_line : line -> string
 
 (*****************************************************************************)
-(* The objects *)
+(* The lines encoded *)
 (*****************************************************************************)
 
 (* A line becomes a Chunk with a reloc where a label's address goes; a
@@ -214,70 +213,4 @@ val assemble : line list -> line list
 
 (* The low byte comes first, as in memory. *)
 val word_bytes : word -> string
-
-(* to_object marshals the lines after a magic line; of_object raises
- * Error on bytes that are not an object, or on an object of an older
- * format. *)
-val to_object : line list -> string
-val of_object : string -> line list
-
-(* [plain bytes] is a marshalled value's bytes made the same whichever
- * Marshal wrote them: OCaml 5's sets two bits in a large block's
- * header that OCaml 4's and tiny-ml's leave clear, and they are
- * cleared. to_object's bytes are plain; tiny-ml uses it for a unit's
- * interface. So what the host's tools write and what the same tools
- * write on tiny-machine are the same bytes, with OCaml 4 and 5. *)
-val plain : string -> string
-
-(* An archive is a library: named objects in order, all of which tiny-ld
- * links. Error is raised when a member is not an object, a name has a
- * blank, or the bytes are not an archive. *)
-val is_archive : string -> bool
-val to_archive : (string * string) list -> string
-val of_archive : string -> (string * string) list
-
 val show_line : line -> string        (* as OCaml writes it, for -debug *)
-
-(*****************************************************************************)
-(* The symbols *)
-(*****************************************************************************)
-
-(* A program's labels, as tiny-ld writes them: "address label" lines,
- * the address in hexadecimal, in a map next to the image (-map, read by
- * tiny-prof) or after the image in an a.out (-s, read by debug, as in
- * Plan 9's a.out symbol table). tiny-prof names the function where an
- * instruction was counted; debug names where a program stopped and
- * finds where to set a breakpoint (b main).
- *
- * A label that a compiler makes inside a function (tiny-ml's
- * TinyBrowser.L12, tiny-cc's tm.L51) is left out: an address after it
- * belongs to the function before it. The labels of a loop in assembly
- * (row_copy2) are kept, as they tell which loop.
- *
- * mini-ld in m-ix writes no symbol table. Plan 9's 5l writes a binary
- * one (principia's linkers/5l, debugging.c): a value, a type letter (T,
- * D, B) and a name per symbol, then a table from pcs to source lines,
- * which libmach reads for db and acid. Here a label is a line of text,
- * with no kind and no source lines. *)
-
-type label = string
-type address = int                    (* from the start of the image *)
-type symbols = (label * address) array  (* sorted by address *)
-
-(* Whether a compiler made the label inside a function. *)
-val local : label -> bool
-
-(* Gives browse for TinyBrowser.f151_browse; an anonymous function keeps
- * its whole name. *)
-val clean : label -> string
-
-(* Reads the "address label" lines, leaving out the local labels. *)
-val labels : string -> symbols
-
-(* The function pc is in (the last label at or before it), its name
- * cleaned, and its address. *)
-val find : symbols -> address -> (string * address) option
-
-(* A label's address, found by its name or its cleaned name (main,
- * browse). *)
-val address : symbols -> string -> int option

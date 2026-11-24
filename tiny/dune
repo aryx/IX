@@ -111,14 +111,15 @@
  (modules TinyLibRegex))
 
 ; TinyLibMachine.ml, tiny-machine's libmach: the instructions and their
-; words, the lines of assembly the compilers make, the objects, a
+; words, the lines of assembly the compilers make; and
+; TinyLibExecutable.ml, the files: the objects, the archives, a
 ; program's labels; the toolchain's (the compilers, the assembler, the
 ; linker, tiny-prof, debug) and tiny-machine's (its CPU decodes the
 ; words). (old: TinyMachine/'s ISA and Asm, and TinyLibSymbols.ml)
 (library
  (name tiny_lib_machine)
  (wrapped false)
- (modules TinyLibMachine)
+ (modules TinyLibMachine TinyLibExecutable)
  ; (the objects' show_line, tiny-ld -debug's)
  (preprocess (pps ppx_deriving.show)))
 

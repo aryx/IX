@@ -34,7 +34,7 @@ $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/cc/TinyC.$O $D/TinyML
 
 # (tiny-ml's passes, in TinyML/: the lines below compile each one after
 # the ones before it, and after TinyLibMachine)
-MLC=TinyLibMachine Lexer Tree Formats Parser Types Machine Compile Link
+MLC=TinyLibMachine TinyLibExecutable Lexer Tree Formats Parser Types Machine Compile Link
 MLCO=${MLC:%=$D/%.$O}
 $D/Tree.$O: $D/Lexer.$O
 $D/Formats.$O: $D/Tree.$O
@@ -51,7 +51,7 @@ $D/TinyML.$O: $D/Link.$O
 # object goes there too, so that, for tests/depend_edges.sh, its
 # Lexer... are those of $D/cc)
 CCP=Types Lexer Tree Lower Parser Machine
-CCPO=$D/TinyLibMachine.$O ${CCP:%=$D/cc/%.$O}
+CCPO=$D/TinyLibMachine.$O $D/TinyLibExecutable.$O ${CCP:%=$D/cc/%.$O}
 $D/cc/Lexer.$O: $D/cc/Types.$O
 $D/cc/Tree.$O: $D/cc/Lexer.$O
 $D/cc/Lower.$O: $D/cc/Tree.$O
@@ -132,20 +132,20 @@ $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIB
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
 	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
 $D/tiny-cc: $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $LIBS
-	$START TinyLibSystem TinyLibMachine $CCP TinyC Std_exit -o $D/TinyC.start.$O
+	$START TinyLibSystem TinyLibMachine TinyLibExecutable $CCP TinyC Std_exit -o $D/TinyC.start.$O
 	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $STDEND
 $D/tiny-ml: $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $LIBS
 	$START TinyLibSystem $MLC TinyML Std_exit -o $D/TinyML.start.$O
 	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $STDEND
-$D/tiny-as: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyAssembler.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
-	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyAssembler.$O $STDEND
-$D/tiny-ld: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLinker.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyLinker Std_exit -o $D/TinyLinker.start.$O
-	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLinker.$O $STDEND
-$D/tiny-ar: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyArchiver.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyArchiver Std_exit -o $D/TinyArchiver.start.$O
-	$LINK -o $target $D/TinyArchiver.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyArchiver.$O $STDEND
+$D/tiny-as: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyAssembler.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
+	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyAssembler.$O $STDEND
+$D/tiny-ld: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyLinker.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyLinker Std_exit -o $D/TinyLinker.start.$O
+	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyLinker.$O $STDEND
+$D/tiny-ar: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyArchiver.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyArchiver Std_exit -o $D/TinyArchiver.start.$O
+	$LINK -o $target $D/TinyArchiver.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyArchiver.$O $STDEND
 $D/TinyDatabase.$O: $D/TinyLibSystem.$O TinyDatabase.ml
 $D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
 	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
@@ -168,11 +168,12 @@ $D/Parallel.$O: ../lib_core/parallel/host/single.ml.in ../lib_core/parallel/Para
 	cp ../lib_core/parallel/Parallel.mli $D/Parallel.mli
 	cp ../lib_core/parallel/host/single.ml.in $D/Parallel.ml
 	$ML $INCLUDES -o $target $D/Parallel.ml
-$D/TinyProfiler.$O $D/TinyLinker.$O $D/TinyArchiver.$O: $D/TinyLibMachine.$O
+$D/TinyLibExecutable.$O: $D/TinyLibMachine.$O TinyLibExecutable.ml
+$D/TinyProfiler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyAssembler.$O $D/TinyML.$O $D/cc/TinyC.$O: $D/TinyLibMachine.$O $D/TinyLibExecutable.$O
 $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
-$D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyProfiler.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
-	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyProfiler.$O $STDEND
+$D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyProfiler.$O $LIBS
+	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
+	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyProfiler.$O $STDEND
 $D/tiny-mkfat: $D/TinyLibSystem.$O $D/TinyMkfat.$O $LIBS
 	$START TinyLibSystem TinyMkfat Std_exit -o $D/TinyMkfat.start.$O
 	$LINK -o $target $D/TinyMkfat.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMkfat.$O $STDEND

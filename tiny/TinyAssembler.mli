@@ -161,7 +161,7 @@ val read : Chan.i -> (int * TinyLibMachine.line list) list
 val encode :
   string -> (int * TinyLibMachine.line list) list -> TinyLibMachine.line list
 
-(* The object is marshalled by TinyLibMachine.to_object, which is the
+(* The object is marshalled by TinyLibExecutable.to_object, which is the
  * form tiny-ld reads. *)
 val write : Chan.o -> TinyLibMachine.line list -> unit
 

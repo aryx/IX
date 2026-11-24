@@ -33,11 +33,12 @@ each part a unit with its own `.mli`: `TinyKernel/`, where
   below); `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`, for
   drawing, for a game's loop and for widgets; `TinyLibRegex`, Plan 9's
   regular expressions, for grep and the line editor; and
-  `TinyLibMachine`, which plays the role of Plan 9's libmach: it knows
-  the instructions, the objects and the labels, for the toolchain,
-  prof and debug. `TinyLibCore/` is tiny-ml's standard library. It has
-  OCaml's modules under the names a tiny program uses (`Stdlib`,
-  `List`, `Hashtbl`...), each a subset of OCaml's that OCaml checks.
+  `TinyLibMachine` and `TinyLibExecutable`, which play the role of
+  Plan 9's libmach: the instructions, and the files (the objects and
+  the labels), for the toolchain, prof and debug. `TinyLibCore/` is
+  tiny-ml's standard library. It has OCaml's modules under the names a
+  tiny program uses (`Stdlib`, `List`, `Hashtbl`...), each a subset of
+  OCaml's that OCaml checks.
 - `TinyAppXxx.ml` is an application written on the playground or on
   the widgets (`calc`, `temp`, `tetris`, `orrery`, `square`). `user/` has each
   program's main for tiny-kernel: one line for an ML program, the
@@ -114,8 +115,8 @@ A program's lines are all the lines of its files, its `.mli` and its
 directory of parts included, comments and blank lines too, but not the
 header comments, as `make loc` counts them (2026-11-13). The libraries
 the programs share (`TinyLibCore/`, `TinyLibSystem/`, `TinyLibMachine`,
-`TinyLibRegex`, `TinyLibDraw`) and the runtimes (`runtime/c/`,
-`runtime/ml/`) are not in a program's lines: about 6,000 more.
+`TinyLibExecutable`, `TinyLibRegex`, `TinyLibDraw`) and the runtimes
+(`runtime/c/`, `runtime/ml/`) are not in a program's lines: about 6,000 more.
 `make loc-readme` prints the lines of each row of these tables, and
 of those in the top README.md.
 
@@ -265,7 +266,7 @@ dropped:
   results into `/lib`.
 - **ELF.** mini-ld writes an ELF for Linux; tiny-ld writes only an
   a.out, whose header is three words. An object file is tiny-as's
-  items, marshalled (`TinyLibMachine`), not ELF.
+  items, marshalled (`TinyLibExecutable`), not ELF.
 - **Compatibility.** There is no POSIX: the system calls are the
   kernel's own, and the instructions are TinyCPU's. tiny-ml has no
   floats, functors, labeled arguments or objects (`TinyML.mli`).

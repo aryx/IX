@@ -51,7 +51,7 @@ by hand, use these tools:
 |---|---|
 | `tiny-cc f.c` | C to an object, `f.o` (`-S`: its assembly instead) |
 | `tiny-ml f.ml` | ML to an object, `f.o` (`-S`: its assembly instead) |
-| `tiny-as f.s` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibMachine.mli` has the object's format) |
+| `tiny-as f.s` | assembly written by hand to an object, `f.o` (`tiny/TinyAssembler.ml`; `tiny/TinyLibExecutable.mli` has the object's format) |
 | `tiny-ld [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
 | `tiny-ar -o lib.a f.o...` | objects kept in one file, a library, in their order (`tiny/TinyArchiver.ml`); tiny-ld links all its members, as if each were given; `-t lib.a` lists them |
 | `tiny-cpu image` | runs a program alone, the host answering its three system calls |

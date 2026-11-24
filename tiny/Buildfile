@@ -185,8 +185,8 @@ $STDLIB: stdlib
 # The libraries are:
 # - the system's calls, which are tiny-kernel's side of
 #   TinyLibSystem.mli (its unix/ side is the host's, built by dune);
-# - the machine's code (libmach: the instructions, the objects, the
-#   labels);
+# - the machine's code (libmach: the instructions, the lines of
+#   assembly) and its files (the objects, the archives, the labels);
 # - the regular expressions;
 # - the window's libraries: the picture's messages, the playground (a
 #   game's loop) and the widgets.
@@ -197,6 +197,7 @@ $STDLIB: stdlib
 # (one archive of them all would hide it).
 SYS = TinyLibSystem/tinykernel/TinyLibSystem.o
 MACH = TinyLibMachine.o
+EXEC = TinyLibExecutable.o
 REGEX = TinyLibRegex.o
 DRAWLIB = TinyLibDraw.o
 PLAYGROUND = TinyLibPlayground.o
@@ -255,23 +256,23 @@ build: $CRT $MLRT build.start.o $STDLIB $BUILD_UNITS $MLEND
 # as, ld, ar, cc and ml built all of this; prof shows where a profile's
 # instructions went; trace shows a program's calls; debug is a debugger.
 
-AS_UNITS = $SYS $MACH TinyAssembler.o
+AS_UNITS = $SYS $MACH $EXEC TinyAssembler.o
 as.start.o: $STDLIB $AS_UNITS
 as: $CRT $MLRT as.start.o $STDLIB $AS_UNITS $MLEND
 	$LD -map -s -n -a 32 -o $target $prereq
 
-LD_UNITS = $SYS $MACH TinyLinker.o
+LD_UNITS = $SYS $MACH $EXEC TinyLinker.o
 ld.start.o: $STDLIB $LD_UNITS
 ld: $CRT $MLRT ld.start.o $STDLIB $LD_UNITS $MLEND
 	$LD -map -s -n -a 64 -o $target $prereq
 
-AR_UNITS = $SYS $MACH TinyArchiver.o
+AR_UNITS = $SYS $MACH $EXEC TinyArchiver.o
 ar.start.o: $STDLIB $AR_UNITS
 ar: $CRT $MLRT ar.start.o $STDLIB $AR_UNITS $MLEND
 	$LD -map -s -n -a 4 -o $target $prereq
 
 CC_INCLUDES = -I TinyC
-CC_UNITS = $SYS $MACH TinyC/Types.o TinyC/Lexer.o TinyC/Tree.o \
+CC_UNITS = $SYS $MACH $EXEC TinyC/Types.o TinyC/Lexer.o TinyC/Tree.o \
     TinyC/Lower.o TinyC/Parser.o TinyC/Machine.o TinyC/TinyC.o
 TinyC/&.o: TinyC/&.ml $STDLIB
 	$MLC $CC_INCLUDES -o $target TinyC/$stem.ml
@@ -280,7 +281,7 @@ cc: $CRT $MLRT cc.start.o $STDLIB $CC_UNITS $MLEND
 	$LD -map -s -n -a 16 -o $target $prereq
 
 ML_INCLUDES = -I TinyML
-ML_UNITS = $SYS $MACH TinyML/Lexer.o TinyML/Tree.o TinyML/Formats.o \
+ML_UNITS = $SYS $MACH $EXEC TinyML/Lexer.o TinyML/Tree.o TinyML/Formats.o \
     TinyML/Parser.o TinyML/Types.o TinyML/Machine.o TinyML/Compile.o \
     TinyML/Link.o TinyML/TinyML.o
 TinyML/&.o: TinyML/&.ml $STDLIB
@@ -289,7 +290,7 @@ ml.start.o: $STDLIB $ML_UNITS
 ml: $CRT $MLRT ml.start.o $STDLIB $ML_UNITS $MLEND
 	$LD -map -s -n -a 32 -o $target $prereq
 
-PROF_UNITS = $SYS $MACH TinyProfiler.o
+PROF_UNITS = $SYS $MACH $EXEC TinyProfiler.o
 prof.start.o: $STDLIB $PROF_UNITS
 prof: $CRT $MLRT prof.start.o $STDLIB $PROF_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
@@ -299,7 +300,7 @@ trace.start.o: $STDLIB $TRACE_UNITS
 trace: $CRT $MLRT trace.start.o $STDLIB $TRACE_UNITS $MLEND
 	$LD -map -s -n -o $target $prereq
 
-DEBUG_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI $MACH TinyDebugger.o \
+DEBUG_UNITS = $SYS $DRAWLIB $PLAYGROUND $GUI $MACH $EXEC TinyDebugger.o \
     user/debug.o
 debug.start.o: $STDLIB $DEBUG_UNITS
 debug: $CRT $MLRT debug.start.o $STDLIB $DEBUG_UNITS $MLEND

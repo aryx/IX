@@ -4,7 +4,7 @@
 (* See TinyProfiler.mli *)
 
 module TSys = TinyLibSystem
-module M = TinyLibMachine
+module E = TinyLibExecutable
 
 let usage = {|usage: tiny-prof [-n count] [-diff base] [-base hex] profile
          [-k file.map...] [-u file.map...]|}
@@ -17,7 +17,7 @@ let usage = {|usage: tiny-prof [-n count] [-diff base] [-base hex] profile
  * window the machine ran in (a program's partition), the instruction's
  * address; the counts of a profile, by where *)
 type space = Kernel | User
-type spot = { space : space; base : M.address; pc : M.address }
+type spot = { space : space; base : E.address; pc : E.address }
 type counts = (spot, int) Hashtbl.t
 
 (* the letter of a space, as the profile and the report write it *)
@@ -52,10 +52,10 @@ let subtract (counts : counts) (base : counts) =
 
 (* the functions of tiny-ld's maps (-map: "address label" lines),
  * by address (TinyLibMachine's, as the function an address is in) *)
-let functions caps (files : Fpath.t list) : M.symbols =
-  M.labels (String.concat "\n" (List.map (TSys.read_file caps) files))
+let functions caps (files : Fpath.t list) : E.symbols =
+  E.labels (String.concat "\n" (List.map (TSys.read_file caps) files))
 let find funcs pc =
-  match M.find funcs pc with Some (f, _) -> f | None -> "?"
+  match E.find funcs pc with Some (f, _) -> f | None -> "?"
 
 (*****************************************************************************)
 (* The report *)
@@ -91,7 +91,7 @@ let sorted tbl = List.sort most (Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl
  * program's base (-base), the profile, the kernel's maps (-k) and the
  * program's (-u) *)
 type options = {
-  top : int; diff : Fpath.t option; named : M.address option;
+  top : int; diff : Fpath.t option; named : E.address option;
   profile : Fpath.t; kmaps : Fpath.t list; umaps : Fpath.t list;
 }
 

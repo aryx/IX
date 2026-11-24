@@ -5,6 +5,7 @@
 
 module TSys = TinyLibSystem
 module M = TinyLibMachine
+module E = TinyLibExecutable
 module P = TinyLibPlayground
 module GUI = TinyLibGUI
 
@@ -54,9 +55,9 @@ let word_hex (w : M.word) =
  * end *)
 type process = {
   trace : TSys.fd;
-  funcs : M.symbols;
-  mutable pc : M.address option;
-  mutable stops : M.address list;
+  funcs : E.symbols;
+  mutable pc : E.address option;
+  mutable stops : E.address list;
   mutable output : TSys.fd option;
 }
 
@@ -69,7 +70,7 @@ type process = {
 type stop =
   | Stepped
   | Breakpoint
-  | Fault of M.address
+  | Fault of E.address
   | Illegal of M.word
   | Exec
   | Other of string
@@ -81,7 +82,7 @@ let word_of s i =
 (* the program's labels, by address, from its file: after the image,
  * whose size the header says (none when it has no labels, or is not
  * read) *)
-let symbols caps (file : Fpath.t) : M.symbols =
+let symbols caps (file : Fpath.t) : E.symbols =
   (* (the header read, then a seek past the image: the image is not read,
    * the debugger's heap too small for a big program's whole file) *)
   match (try Some (TSys.open_in caps file) with Failure _ -> None) with
@@ -95,7 +96,7 @@ let symbols caps (file : Fpath.t) : M.symbols =
           let split = String.length h = 16 && word 0 = 0x7a0ce6 in
           if String.length h >= 12 && (word 0 = 0x7a0ce5 || split) then begin
             TSys.seek fd ((if split then 16 else 12) + word 4);
-            M.labels (TSys.read_all fd)
+            E.labels (TSys.read_all fd)
           end
           else Array.of_list []
         with Failure _ -> Array.of_list [] in
@@ -151,7 +152,7 @@ let stopped p =
 
 (* n bytes of the process at a, from the kernel's hexadecimal ("" when
  * outside it) *)
-let bytes p (a : M.address) n =
+let bytes p (a : E.address) n =
   let h = ask p ("m " ^ string_of_int a ^ " " ^ string_of_int n) in
   let digit c = if c <= '9' then Char.code c - 48 else Char.code c - 87 in
   String.init (String.length h / 2) (fun i ->
@@ -169,7 +170,7 @@ let instr s i : M.instr option =
 
 (* the process's word at a, read as an address (one past 2^30 is
  * none: no address of tiny-kernel's is), and as an instruction *)
-let address_at p a : M.address option =
+let address_at p a : E.address option =
   let s = bytes p a 4 in
   if String.length s < 4 || Char.code s.[3] >= 0x40 then None
   else Some (word_of s 0)
@@ -179,12 +180,12 @@ let instr_at p a : M.instr option =
 
 (* the start of the function an address is in *)
 let func_start p a =
-  match M.find p.funcs a with Some (_, b) -> Some b | None -> None
+  match E.find p.funcs a with Some (_, b) -> Some b | None -> None
 
 (* an address by its function, main+0x14 (in hexadecimal when there is
  * none) *)
 let name p a =
-  match M.find p.funcs a with
+  match E.find p.funcs a with
   | Some (f, b) when a = b -> f
   | Some (f, b) -> f ^ "+" ^ hex (a - b)
   | None -> Printf.sprintf "%x" a
@@ -223,7 +224,7 @@ let wait p = match stopped p with Some why -> show p why; true | None -> false
 
 (* the registers, as the kernel says them, "r1 v ... r15 v pc v": r1 to
  * r15 at their numbers in values (0 the zero register's), and the pc *)
-type registers = { values : int array; at : M.address }
+type registers = { values : int array; at : E.address }
 
 let registers p : registers option =
   let values = Array.make 16 0 in
@@ -253,7 +254,7 @@ let address p s =
     else
       match int_of_string_opt base with
       | Some a -> Some a
-      | None -> M.address p.funcs base in
+      | None -> E.address p.funcs base in
   match String.index_opt s '+' with
   | Some i ->
       (match at (String.sub s 0 i),
@@ -273,7 +274,7 @@ let step p =
   match p.pc with
   | None -> say "?\n"; true
   | Some _ -> put p.trace "s"; p.pc <- None; wait p
-let over p (at : M.address) =
+let over p (at : E.address) =
   let s = bytes p at 4 in
   let call =
     String.length s = 4
@@ -393,7 +394,7 @@ let backtrace p =
       let vs =
         if in_ml then regs.values.(vsp)
         else
-          match M.address p.funcs "ml_vsp" with
+          match E.address p.funcs "ml_vsp" with
           | Some a -> (match address_at p a with Some v -> v | None -> 0)
           | None -> 0 in
       go 0 at regs.values.(M.sp) vs

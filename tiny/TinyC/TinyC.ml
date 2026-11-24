@@ -5,6 +5,7 @@
  *)
 open Common
 module M = TinyLibMachine
+module E = TinyLibExecutable
 module TSys = TinyLibSystem
 
 let usage = "usage: tiny-cc [-S | -ir] [-I dir]... [-o out.o] file.c"
@@ -131,7 +132,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         let made =
           if !ir_only then Buffer.contents ir
           else if !text then String.concat "" (List.map M.print_line lines)
-          else M.to_object (M.assemble lines) in
+          else E.to_object (M.assemble lines) in
         (match !output with
          | None when !text || !ir_only -> TSys.print caps made
          | o ->

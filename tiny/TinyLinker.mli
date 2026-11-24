@@ -118,7 +118,7 @@ type address = int                    (* in the image, from 0 *)
  * unless the text comes first (-n). *)
 type linked = {
   image : string;
-  addresses : (TinyLibMachine.label * address) list;
+  addresses : (TinyLibExecutable.label * address) list;
   data_start : address option;
 }
 

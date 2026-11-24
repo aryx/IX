@@ -661,7 +661,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           0
       | Ok (text, Ast.Structure items) -> (
           let name = String.capitalize_ascii (Fpath.to_string (Fpath.rem_ext (Fpath.base file))) in
-          if not !listing then own_tree := Some (name, Fpath.parent (outfile file));
+          (* its tree kept only when its object is written: -M, -i and
+           * the dumps print and write nothing (the tree of a -M run
+           * without -o went to the current directory) *)
+          if not (!listing || !deps || !show_types || !dast || !dscope) then
+            own_tree := Some (name, Fpath.parent (outfile file));
           match classes caps (Fpath.parent file :: incs) ~lenient:false (Fpath.to_string file) text items with
           | exception Rejected m -> fail m
           | _, tree, items -> (

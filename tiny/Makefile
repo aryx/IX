@@ -14,9 +14,10 @@
 #                run, which builds the boot image)
 #   make run-window  does the same in a window (tiny-machine -window)
 #   make self-quick  has t-IX build a few of its own targets on
-#                tiny-kernel, and compares them with the host's (3 minutes)
+#                tiny-kernel, and compares them with the host's (25 s)
 #   make self    has t-IX build itself on tiny-kernel, and checks that the
-#                image is the same as the host's (about 50 minutes; both
+#                image is the same as the host's (6 minutes on the
+#                author's Mac, about 30 on a Neoverse N1; both
 #                targets are TinyKernel/'s, and O=dir builds in another
 #                directory than TinyKernel/_make)
 #   make check   checks t-IX's code with mini-analyze -caps, -dead, -bugs

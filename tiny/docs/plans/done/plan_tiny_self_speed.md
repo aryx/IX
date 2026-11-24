@@ -722,3 +722,52 @@ largest first, for a later plan:
 Outside this plan, the nightly workflow's other job, mix (m-IX built
 in mini-9pi under QEMU, about 93 minutes), failed every night of
 2026-11-11 to 15, and is now its longest.
+
+## Other hosts: the times are the Mac's (2026-11-24)
+
+The author: "under tiny/, on my macbook pro make self takes 6min; on
+this machine it takes 30min; something off is going on", "what is
+weird is that 'make test' under tiny/ takes the same time on this
+machine or on my macbook". The other machine is a Linux box with an
+Ampere Altra, 64 Neoverse N1 cores at 2.2 GHz. Nothing was wrong: the
+times in this plan and in the Makefiles are those of the author's Mac,
+an Apple M-series core, which runs tiny-machine about 4 times faster.
+
+| | Mac | Altra | slower |
+|---|---|---|---|
+| make self-quick, one core | 24.5 s | 92 s | 3.8 |
+| make self, one core (SELF_CORES= SELF_J=1) | 12 min | 47 min 7 s | 3.9 |
+| make self, four cores | 6 min | 29 min 24 s | 4.9 |
+
+What was ruled out, each by a run of make self on the Altra:
+
+- More work: the machine ran the same instructions as CI's nightly
+  job, about 54 billion (tiny-machine's "core N: ... M instructions"
+  lines at the halt: 13.8, 17.4, 12.8 and 10.0 billion on the Altra,
+  13.0, 17.1, 13.5 and 9.9 in CI, the cores' share changing from a run
+  to another). The Altra ran 12.5 million a second on each host core.
+- The compiler: both of its tiny-machines, _build5's and
+  _build_release's, were OCaml 5.5.1's (the author had made 5.5.1 the
+  default switch, which changed nothing either), native, without
+  flambda.
+- The collector: OCAMLRUNPARAM=o=1000 gave 29 min 36 s, the same;
+  v=0x400 said 15 major collections and 84,335 minor ones in the
+  half-hour, the heap at most 90 million words.
+
+So it is the core. An emulator's step is mostly indirect jumps and
+table lookups that depend on the guest's code, which a 2.2 GHz N1
+predicts and caches far worse than an M-series core does. make test
+and make check look the same on both machines only because they run
+many jobs at once, and 64 slower cores make up for fewer fast ones;
+make self is one emulator, its four cores at most.
+
+The four cores cost a little more on the Altra: 4,314 s of the host's
+CPU against 2,814 s on one core for the same build, 53% more, and the
+gap to the Mac grows from 3.9 to 4.9. Likely the cache lines that the
+cores share (the guest's memory, the interrupts' words) moving between
+host cores, which costs more there; not measured. The Altra had no
+perf, and a process cannot be attached by gdb (perf_event_paranoid 2,
+ptrace_scope 1).
+
+CI's x86-64 runner (4 vCPUs) is closer to the Mac: make self-tix,
+dune's build of the tree included, 9 min 17 s (2026-11-24's run).

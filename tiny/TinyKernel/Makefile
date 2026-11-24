@@ -101,8 +101,10 @@
 #                     It takes a few minutes.
 #   make self         has tiny-kernel build its image from its sources,
 #                     /src, on a disk, and checks that the image is the
-#                     host's, byte for byte (about 50 minutes)
-#   make self-quick   does the same for a few of its targets (3 minutes)
+#                     host's, byte for byte (6 minutes on the author's
+#                     Mac; a 2.2 GHz Neoverse N1 takes 4 to 5 times
+#                     longer: plan_tiny_self_speed.md, Other hosts)
+#   make self-quick   does the same for a few of its targets (25 s)
 #   MEMORY=segments   runs any of these with the processes in segments,
 #                     their text shared (plan_tiny_memory.md; partitions
 #                     are the default), with /boot/memory in the image,
@@ -512,7 +514,8 @@ $(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
 # code, the runtime, the kernel) is wrong. And each file that build
 # install put on the disk must be the host's, _make/system's. Its builds
 # run with -j 4 on four cores when tiny-machine has OCaml 5's domains
-# (SELF_CORES, above): about 6 minutes, 12 on one core (50 before
+# (SELF_CORES, above): on the author's Mac about 6 minutes, 12 on one
+# core (50 before
 # plan_tiny_self_speed.md), so it is not in check. None of these checks
 # depends on the order the recipes ran in, which the cores change.
 FSCAT = $(abspath ../../_build/default/tiny/tests/KFS_tests/Cat.exe)

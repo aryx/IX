@@ -46,3 +46,12 @@ val library : < Cap.readdir; .. > -> string -> string option
  * and TinyKernel/ too); another's (lib_crypto) is a library, read and
  * not reported on, as an -I's is *)
 val own : t -> string -> bool
+
+(* [generated caps t dir name]: whether the unit [name] of the program's
+ * directory [dir] is one its build makes, from a .mll (ocamllex's,
+ * mini-lex's) or a .mly (ocamlyacc's, menhir's, mini-yacc's) of its
+ * name there: None if not; Some (Some d) when d, dune's build directory
+ * of [dir] (the project's _build/default/dir), has it; Some None when it
+ * is not built yet. Such a unit is never taken from another directory of
+ * the project: a Lexer elsewhere is another program's. *)
+val generated : < Cap.readdir; .. > -> t -> string -> string -> string option option

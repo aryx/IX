@@ -201,3 +201,30 @@ let library (caps : < Cap.readdir; .. >) (file : string) : string option =
               m "library: %s, no -L: the nearest standard library to %s, then the shallowest%s" best file
                 (if rest = [] then "" else ", rather than " ^ String.concat ", " rest));
           Some best
+
+(* the units the build makes: a lexer from its .mll, a parser from its .mly *)
+let generated (caps : < Cap.readdir; .. >) (t : t) (dir : string) (name : string) : string option option =
+  let sources =
+    List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) [ ".mll"; ".mly" ] in
+  match List.find_opt (fun n -> CapSys.file_exists caps (Filename.concat dir n)) sources with
+  | None -> None
+  | Some source ->
+    (* (dune's build directory mirrors the sources: the project's
+     * _build/default, then the directory's path from the root) *)
+    let built =
+      match index t with
+      | None -> None
+      | Some _ ->
+          let d = FS.cleanname dir in
+          let rel =
+            if t.root = "." then Some d
+            else if String.starts_with ~prefix:(t.root ^ "/") d then
+              Some (String.sub d (String.length t.root + 1) (String.length d - String.length t.root - 1))
+            else None in
+          Option.map (fun r -> Filename.concat (Filename.concat t.root "_build/default") r) rel in
+    match built with
+    | Some b when List.exists (fun n -> CapSys.file_exists caps (Filename.concat b n))
+                    [ String.uncapitalize_ascii name ^ ".ml"; name ^ ".ml" ] ->
+        Logs.info (fun m -> m "unit %s: made by the build from %s, dune's in %s" name (Filename.concat dir source) b);
+        Some (Some b)
+    | _ -> Some None

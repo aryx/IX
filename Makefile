@@ -33,6 +33,14 @@ mix:
 install: all
 	dune install
 
+# generated makes alone the units the build makes, each .mll's lexer and
+# .mly's parser, in _build/default (make makes them too): where
+# mini-analyze finds them when a program's directory has the .mll or
+# .mly (Unit_finder.generated), for an analysis without the whole build.
+# (make check's own, of mini-lex's and mini-yacc's: generated.sh)
+generated:
+	dune build $(shell find . -mindepth 1 \( -name '_*' -o -name '.*' \) -prune -o \( -name '*.mll' -o -name '*.mly' \) -print | sed 's/\.ml[ly]$$/.ml/' | sort -u)
+
 clean:
 	dune clean
 	rm -rf _mk
@@ -404,7 +412,7 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all tix mix install website website-mini website-mini-js test \
+.PHONY: all tix mix install generated website website-mini website-mini-js test \
   check check-tix check-mix \
   test-vs-mk test-vs-goken test-vs-ocaml-light test-vs-chidb test-vs-qemu \
   clean loc loc-v loc-readme build-docker build-docker-ocaml5 build-docker-test-all \

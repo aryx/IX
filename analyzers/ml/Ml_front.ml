@@ -257,6 +257,8 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     List.exists is !own_dirs
     || (List.exists is !chosen && Unit_finder.own finder d)
     || (List.exists is program_dirs && not (List.exists is library)) in
+  (* (the generated units said once each, not built) *)
+  let not_built : (string, unit) Hashtbl.t = Hashtbl.create 4 in
   let look (from : string) (name : string) (exts : string list) : (Fpath.t * string) option =
     match find caps (dirs ()) name exts with
     | Some x -> Some x
@@ -264,6 +266,24 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
      * other code: TinyLibCore's Cap, lib_core/parallel's Parallel) *)
     | None when find caps (dirs ()) name [ ".mli"; ".ml" ] <> None -> None
     | None -> (
+      (* (a unit the build makes from a .mll or .mly in the program's
+       * directories: where dune put it, else said, never another
+       * directory's of its name) *)
+      match List.find_map (fun (d : Fpath.t) -> Unit_finder.generated caps finder (Fpath.to_string d) name)
+              (program_dirs @ !own_dirs) with
+      | Some (Some b) ->
+          let d = Fpath.v b in
+          if not (List.mem d !chosen) then chosen := !chosen @ [ d ];
+          find caps [ d ] name exts
+      | Some None ->
+          if not (Hashtbl.mem not_built name) then begin
+            Hashtbl.replace not_built name ();
+            Logs.warn (fun m ->
+                m "unit %s (named in %s): made by the build from a .mll or .mly, not found: build it (dune build), or -I where the build put it"
+                  name from)
+          end;
+          None
+      | None ->
         match Unit_finder.choose finder from name exts with
         | None -> None
         | Some d ->

@@ -160,7 +160,12 @@ program's library, lib_core's units it names, is read with it.
      already chosen for it, then the one with the most of the units
      its files name, then the nearest; a directory with its own
      `Stdlib` is another platform's library and never chosen. A unit
-     found in the first *file*'s top directory of the project is the
+     the build makes, from a `.mll` or `.mly` of its name in a
+     directory of the *files* (`Lexer.mll`, `Parser.mly`), is taken
+     from dune's build directory, the project's `_build/default`
+     (`make generated` makes them alone), and never from another
+     directory of the project; not built, a warning says so.
+     A unit found in the first *file*'s top directory of the project is the
      program's own (`tiny/` for `tiny/TinyBuildSystem.ml`), one found
      elsewhere a library's (`lib_crypto`). A program can so be given
      by its main file alone, `mini-analyze -dead tiny/TinyBuildSystem.ml`;

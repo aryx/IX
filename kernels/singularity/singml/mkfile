@@ -6,9 +6,9 @@ DIR=kernels/singularity/singml
 PROG=mini-singml
 SRC=Description Output Safe Manifest CLI Main
 GEN=
-LIBUNITS=Ast Parser Lexer
+LIBUNITS=Ast Annotations Parser Lexer
 LOCAL=`{ls *.ml *.mli}
 <$TOP/mkfiles/mkconfig
 LIBI=-I $TOP/languages/ml -I $B/languages/ml
-LIBOBJS=$B/languages/ml/Ast.$O $B/languages/ml/Parser.$O $B/languages/ml/Lexer.$O
+LIBOBJS=$B/languages/ml/Ast.$O $B/languages/ml/Annotations.$O $B/languages/ml/Parser.$O $B/languages/ml/Lexer.$O
 <$TOP/mkfiles/mkprog

@@ -146,8 +146,14 @@ $D/images.$O: $M/font1.bin $D/world.image mkfile
 
 # (l comes first, because its vectors are the image's first bytes.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/host.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
-$IMAGE: $OBJS
-	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+$IMAGE: $OBJS $D/stamp.$O
+	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS $D/stamp.$O
+# the kernel's stamp (machine.c's kernel_stamp, which /dev/osversion
+# says on mini-9pi): the checksum of its objects, as mkkernel's
+$D/stamp.$O: $OBJS
+	cat $OBJS | cksum | awk '{ printf "%08x", $1 }' > $D/stamp.txt
+	echo > $D/stamp.s
+	$AS -data kernel_stamp'='$D/stamp.txt -o $target $D/stamp.s
 
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic

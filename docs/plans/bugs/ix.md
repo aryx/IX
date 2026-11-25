@@ -683,3 +683,21 @@ function is reached; a global read only by dead code is still dead.
 analyzers/tests/dead/toplevel has both. Gone from dead_all_ix.txt:
 Mmu32.tlb_bits, Mmu64.tlb_bits (1 lsl tlb_bits), Tone.pairs (4 *
 pairs), all read at their toplevel.
+
+## oberon's and squeak's kernels, and mini-singml, no longer linked by mini-mk (2026-11-25, fixed)
+
+`cd kernels/oberon && mini-mk`: "mini-ld: machine/pi4/machine.c:1875:
+undefined: kernel_stamp" (squeak's the same); `cd
+kernels/singularity/singml && mini-mk`: "undefined:
+Annotations.tailcalls" (in languages/ml/Parser.ml). Seen when
+analyzers/datalog/tests/ix_check.sh read ix's build by its manifests
+(mini-ld -map) instead of the mkfiles: the mkfile route read these
+programs' sources without building them, so nothing saw that they no
+longer linked. The kernel's stamp came into the kernels' shared
+machine.c with 1aade157, made by mini-9pi's mkkernel and kernel.mk
+alone; mini-ml's Parser came to name Annotations, which singml's mkfile
+did not link (mini-emacs's mkfiles had the same break, ad93e2ae). Fixed
+the same day: oberon's and squeak's mkfiles make the stamp as mkkernel
+does; singml's links languages/ml's Annotations. Checked: the three
+built by ix; mini-singml's tests/check.sh. Not run: the two kernels'
+sessions under mini-qemu.

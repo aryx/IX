@@ -1,14 +1,6 @@
 ; debug/: what a debugger needs (plan_debugger.md), in the library
 (copy_files# debug/*.{ml,mli})
 
-; what a link took, written beside the program (-map): mini-analyze's
-; too (plan_analyzer_build_manifest.md)
-(library
- (name ix_ld_manifest)
- (wrapped false)
- (modules Manifest)
- (libraries ix_core))
-
 (library
  (name ix_ld)
  (wrapped false)
@@ -20,7 +12,7 @@
  (name ix_ld_cli)
  (wrapped false)
  (modules CLI)
- (libraries ix_ld ix_ld_manifest ix_ld_compat ix_core ix_asm fpath logs caps))
+ (libraries ix_ld ix_executable ix_ld_compat ix_core ix_asm fpath logs caps))
 
 (executable
  (name Main)

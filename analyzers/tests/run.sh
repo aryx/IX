@@ -36,13 +36,13 @@ if [ "${1:-}" = -record ]; then cp $W/callers.out $d/expected.out; echo "recorde
 elif cmp -s $W/callers.out $d/expected.out; then echo "ok mini-analyze: callers"
 else echo "FAIL mini-analyze: callers"; diff $d/expected.out $W/callers.out | head -10; failures=$((failures + 1)); fi
 # a manifest's types, declared twice, tiny-ld's (TinyLibExecutable) and
-# mini-ld's (linker/Manifest, mini-analyze's by Tiny_manifest's
+# mini-ld's (lib_executable/Manifest, mini-analyze's by Tiny_manifest's
 # equations): Marshal knows no type, the same text or a manifest misread
 types() { sed -n '/^type taken =/,/m_units/p' "$1"; }
 if [ -n "$(types tiny/TinyLibExecutable.mli)" ] &&
-   [ "$(types tiny/TinyLibExecutable.mli)" = "$(types linker/Manifest.mli)" ]
+   [ "$(types tiny/TinyLibExecutable.mli)" = "$(types lib_executable/Manifest.mli)" ]
 then echo "ok mini-analyze: a manifest's types, tiny-ld's the same as mini-ld's"
-else echo "FAIL mini-analyze: tiny-ld's manifest types (TinyLibExecutable.mli) differ from mini-ld's (linker/Manifest.mli)"; failures=$((failures + 1)); fi
+else echo "FAIL mini-analyze: tiny-ld's manifest types (TinyLibExecutable.mli) differ from mini-ld's (lib_executable/Manifest.mli)"; failures=$((failures + 1)); fi
 # models/: List's and Hashtbl's models (analyzers/ml/Models) against their
 # code as written (-no-models): for each function of Probe.ml, what may
 # escape it, and whether it is called (a function given a container's)

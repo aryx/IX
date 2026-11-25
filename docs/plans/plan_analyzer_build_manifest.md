@@ -579,7 +579,17 @@ alone). -v on tiny_check.sh and ix_check.sh: the directory each makes
 (its answer in it, no separate file), what it reads, its removal
 ("would be nice to show it by default ... it could be with a -v flag");
 mini-analyze -v says its own (a merge's runs, dune's manifests, dune's
-build directory kept between runs). make generated
+build directory kept between runs).
+
+The type in lib_executable (2026-11-25; the author, reviewing what
+differed from this plan: "For 1, why not lib_executable? Seems because
+of some constraints on lib_core, but maybe we could have removed this
+constraint", "ok I think it's worth fixing both. Let's start with 1"):
+lib_executable/Manifest, beside tiny's TinyLibExecutable, both what the
+tools read of an executable; linker/'s ix_ld_manifest gone. The
+constraint was mini-9pi's card build (kernels/9pi/tests/smoke.sh),
+which gave the linker lib_core alone: it builds lib_executable too now
+(five units). The linker's LIBDIRS lib_executable. make generated
 gone too ("is it still needed?"): dune build makes the lexers and
 parsers, and mini-analyze is dune's; its warning says dune build.
 

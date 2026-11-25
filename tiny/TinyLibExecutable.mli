@@ -104,7 +104,7 @@ val address : symbols -> string -> int option
  * TinyLibCore/List.ml); a start object (rc.start.o), which tiny-ml made
  * from the units' names, has none. No compile's flags: t-IX generates
  * no source and compiles each unit the same way (the Buildfile's MLC),
- * so the files are all a reader needs. linker/Manifest has the same
+ * so the files are all a reader needs. lib_executable/Manifest has the same
  * types, mini-ld's; the constructors and fields are prefixed,
  * tiny-ml's being one name space. *)
 

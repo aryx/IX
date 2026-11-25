@@ -3,9 +3,11 @@
 TOP=..
 DIR=linker
 PROG=mini-ld
-SRC=Manifest Program Debug_link Link Arm Arm64 Exe Symtab Follow CLI Main
+SRC=Program Debug_link Link Arm Arm64 Exe Symtab Follow CLI Main
 LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli debug/*.ml debug/*.mli}
 GEN=
+# (lib_executable: Manifest, -map's out.manifest)
+LIBDIRS=lib_executable
 # the assembler's objects are what it links: Asm, and Show_asm for its messages
 LIBI=-I ../assembler -I compat -I debug
 LIBUNITS=Asm Show_asm

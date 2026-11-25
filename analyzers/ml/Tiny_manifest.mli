@@ -4,7 +4,7 @@
  * them, instead of being told them (-L, -own, -I) or guessing them
  * (Module_finder).
  *
- * The types are mini-ld's (linker/Manifest), the same as tiny-ld's
+ * The types are mini-ld's (lib_executable/Manifest), the same as tiny-ld's
  * (TinyLibExecutable), declared again there: tiny/'s tools use no file
  * outside tiny/, and Marshal knows no type, so both declarations must be
  * the same, constructors in the same order (analyzers/tests/run.sh

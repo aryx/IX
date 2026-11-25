@@ -36,9 +36,11 @@ mk() { (cd $1 && NPROC=${NPROC:-32} mini-mk O=5 OS=plan9 B=$X "${@:2}") > $(log 
 K5=$D/mk/5
 (cd lib_core && NPROC=${NPROC:-32} mini-mk O=5 B=$K5) > $D/kernel-lib.log 2>&1 &
 kml=$!
-# (lib_core alone: these programs name no other library, LIBDIRS; old:
-# mk . libs, the 20 of the top mkfile, 31 s of which 27 for nothing)
+# (lib_core, and lib_executable for the linker's manifest: the only
+# libraries these programs name, LIBDIRS; old: mk . libs, the 20 of the
+# top mkfile, 31 s of which 27 for nothing)
 mk lib_core
+mk lib_executable
 mk assembler
 pids=()
 for d in shell linker languages/ml languages/c utilities/files utilities/misc \

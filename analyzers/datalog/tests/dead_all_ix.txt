@@ -646,7 +646,6 @@ linker/CLI.ml:114: dead field: l_source stored in unit_, nothing live reads it
 linker/CLI.ml:114: dead field: l_taken stored in unit_, nothing live reads it
 linker/CLI.ml:92: dead field: m_program stored in CLI.write_manifest, nothing live reads it
 linker/CLI.ml:92: dead field: m_units stored in CLI.write_manifest, nothing live reads it
-linker/Manifest.ml:17: dead: Manifest.of_string, nothing names it
 linker/tools/Nm.ml:55: never built: Data.0, matched in Nm:fun at line 55
 linker/tools/Nm.ml:55: never built: Text.0, matched in Nm:fun at line 55
 linker/tools/Nm.ml:59: never built: Globl.0, matched in Nm:fun at line 59

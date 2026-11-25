@@ -78210,3 +78210,268 @@ Claude noted that building against installed libraries would later remove the di
 **Yoann:**
 
 > we recently had to factorize those mkdir -p with MADE, but maybe this should go away; maybe we should rethink things and have the objects stored next to the source, which can simplify lots of things; this is to take into account in this plan
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:49
+
+**Yoann:**
+
+> ok there are a few things in the table that are questionable. Like we diverged from the original plan sometimes and I'm not sure why. For 1, why not lib_executable? Seems because of some constraints on lib_core, but maybe we could have removed this constraint; for 4, we do "differenttly", but why not record project path in object? maybe it was because of some byte-to-byte comparison thing, but with project path and not absolute path recorded, maybe things are more portable?
+
+**Claude (summary):**
+
+Claude explained that both table items were cheap shortcuts rather than fundamental constraints, and it set out the trade-offs for each.
+Claude recommended doing item 1 first: move the library type into lib_executable and add one `mk lib_executable` step to smoke.sh.
+Claude noted that the card build would then need seconds more, since it builds five units from lib_executable.
+Claude said it would update the linker's mkfile and dune file to use `LIBDIRS=lib_executable`, so the manifest sits beside TinyLibExecutable.
+Claude also proposed item 2 next, passing `-project` to mini-ml, mini-cc, and mini-asm, but did not change any files.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:08
+
+**Yoann:**
+
+> maybe it would be too big of a change, so maybe there are simpler things to do first maybe (but rethinking the whole thing is also a good idea if it's good)
+
+**Claude (summary):**
+
+Claude proposed committing the uncommitted docs/plans/plan_simpler_builds.md, then starting step 2.
+Step 2 gives each library directory a single rule, which removes the source search from the build.
+Claude estimated that the source search accounts for about 1,100 lines of build output.
+Claude placed step 2 before the rethink, since the rethink changes where installed libraries go.
+Claude also laid out six cheapest-first steps and kept the beside-the-sources rethink as an option.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:27
+
+**Yoann:**
+
+> ok I think it's worth fixing both. Let's start with 1.
+
+**Claude (summary):**
+
+Claude recommended fixing both issues in the ix project, starting with step 1 first.
+Claude moved `Manifest` into `lib_executable/Manifest`, next to tiny's `TinyLibExecutable`, and removed linker's separate library for it.
+Claude updated the linker's mkfile, the analyzer's dune file, `run.sh`'s type check, comments, and the plan to match.
+Claude verified that `make test` passes with 198 jobs and 0 failures, and started `make self-quick-mix` in the background.
+Claude flagged unrelated uncommitted changes from another session and planned to commit step 1 by pathspec.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:31
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude committed step 1 earlier as `723c5067`, and step 2 was left uncommitted when the answer ended.
+Claude rewrote `mkfiles/libs.rc` so a new `rules` function writes one pattern rule per directory in `DIRS`.
+Claude replaced mklib's directory search with those rules, keeping the old search as an `old:` comment and adding the explicit `$OBJS: $LOCAL $MLEXE` line.
+Claude gave lib_networking explicit Tcp and Udp rules for `tcp/plan9/` on Plan 9 and `tcp/` on Linux, plus a compile rule for troff's `Pic_parser`.
+Claude moved doom, quake, virtua and windows/desktop onto the shared rules, cutting the full build's output from 2,636 lines to 1,698.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:38
+
+**Yoann:**
+
+> ok let's commit. What is the next step?
+
+**Claude (summary):**
+
+Claude committed the work as `42097cb9`, leaving out two unrelated `tiny/` files, with `self-quick-mix` still pending.
+Claude proposed step 2: the compilers take a `-project` dir so each object records its source's project path.
+Claude planned to have mkconfig pass `-project $TOP` to ML, CC and AS, explicitly rather than inferred.
+Claude planned mini-ld to drop `-build` and write source paths, with install.rc reading project paths from the top.
+Claude flagged the card's `TOP` layout as the main risk, to match the host's top before object bytes change.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:49
+
+**Yoann:**
+
+> let's commit the plan and let's commit the progress
+
+**Claude (summary):**
+
+Claude committed step 2 as 7a7da7c5, noting that make self-quick-mix was not run.
+Claude picked step 4, one object per source, as the next step that doesn't depend on other work.
+Claude explained that step 4 turns each source group that two directories compile into a shared library.
+Claude proposed starting with lib_code's four units that mini-cc and mini-ml share, one commit per group.
+Claude will read the other session's f0601cfb commit first, since it overlaps step 3 on t-IX printing.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:50
+
+**Yoann:**
+
+> let's resume
+
+**Claude (summary):**
+
+Claude verified the change with `make self-quick-mix` and `make test`, both passing, and left it uncommitted.
+Claude replaced `-build` with `-project` in mini-ml, mini-cc and mini-asm, so each object records its source's project path.
+Claude set mkconfig to pass `-project $TOP` to all four tools and removed mini-ld's `-build` mirror rule.
+Claude cut mini-ld's manifest writer to about 25 lines, carrying each object's project path wherever it was compiled.
+Claude flagged that mini-asm and mini-cc use `Cap.readdir` where capabilities.dl says `Cap.env`, and left it unfixed.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 16:37
+
+**Yoann:**
+
+> let's commit. What do you think? Is it better that way? Anything remaining in the plan where we diverged from the original plan that we might want to fix? or other stuff we want to fix? Like right now maybe the manifest for C programs also work and we can analyze C programs too?
+
+**Claude (summary):**
+
+Claude committed the work as `20847f5f`, judging the manifest-based approach better because objects describe themselves.
+Claude flagged the one real regression: `-bugs`' `init` lost its start order when sweep.sh's `-start` was dropped.
+Claude proposed fixing it by having the manifest carry start order, read from mini-ml's start object or dune's link order.
+Claude also named the per-unit compile record (`-I`/`-D`) as the prerequisite for analyzing C, with C still out of scope for now.
+Claude's suggested order was 1, then 2, then 3, then closing the plan; Claude noted 4 and 5 as minor or to keep.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:51
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting step 4 with lib_code, which dune already treats as the `ix_code` library.
+Claude proposed a `lib_code/mkfile` using mklib, added to the top mkfile's `LIBS` and the compilers' and mini-emacs's `LIBDIRS`.
+The change would remove the copied per-file rules and lib_code entries in mini-cc, mini-ml, and mini-emacs, cutting 9 duplicate compile units.
+Claude also flagged the other shared groups for later (mini-ml Ast, prolog Prolog_read, the scheme and pascal interpreters, dotnet, linker, lib_terminal).
+
+------------------------------------------------------------------------
+
+## 2026-11-25 16:46
+
+**Yoann:**
+
+> why lib_code/ didn't have a mkfile in the first place? Anyway, yes let's do it! each lib should have its own mkfile, to follow principia's build system simplicity
+
+**Claude (summary):**
+
+Claude proposed giving lib_code its own mkfile and listing it in the top mkfile's libraries, so mini-cc, mini-ml and both mini-emacs mkfiles link it via LIBDIRS.
+Claude found the five lib_code units don't depend on one another, so their order doesn't matter.
+Claude reported the top-level build passed, with lib_code now built once and installed like the other libraries.
+Claude ran a dry run for mini-emacs's Plan 9 draw dependency, which only confirmed those libraries aren't built on Linux.
+Claude started `make test`, which stalled for over ten minutes, probably waiting on a dune lock held by another session.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 16:41
+
+**Yoann:**
+
+> ok let's do 1 then 2, and then 3. For 4, maybe we can better separate the 2 ways to extract the set of files of a whole program with the helper modules in separate dirs? manifest/ vs inferred/ (actually find a better name).
+
+**Claude (summary):**
+
+Claude suggested splitting the two ways of finding a program's files into `linked/` and `searched/` directories.
+Claude changed mini-ld's manifest to list archive members in link order, matching mkprog's start sequence.
+Claude made the analyzer take that order as `-start` for manifest-given programs, so `-bugs`' `init` sees it.
+Claude fixed `standard_library` to find `units.txt` one level up, after `lib_core/core` broke reading every program.
+Claude checked four m-ix analyses and tiny's `-bugs`, leaving item 1 uncommitted beside another session's edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 17:02
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended extracting dotnet's assembly writer units (Metadata, Signature, Il, Writer, Image) into their own library.
+Six programs compile that group today: mini-cc, mini-ml, mini-dotnet, csc, datalog, and tiger.
+Claude estimated that a library with its own mkfile would save about 20 compiles, and ranked it first.
+Each library change was planned as one commit, checked by a full ix build and `make test`.
+Earlier, lib_code was committed as f630b1f8, and `make test` was still waiting on dune's lock.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 17:15
+
+**Yoann:**
+
+> yes. Hopefully this will help reduce the self.yml workflow too as we will need to build less things
+
+**Claude (summary):**
+
+Claude edited the six program mkfiles to drop their hand-written unit lists, since the units form a chain.
+Claude moved the shared units, Metadata and Writer, into the new library so each compiles once instead of once per program.
+Claude confirmed the ix build passed, with Metadata and Writer each compiled a single time into the library.
+Claude checked tests/depend_edges.sh, cleared a hung dune lock by stopping its background tasks, and reran make test to a pass.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 17:34
+
+**Yoann:**
+
+> yes let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-25 17:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude made the flags change across mini-cc, mini-ld, tiny-cc, tiny-ld, and the manifest format, now format 3.
+Claude's flags-recording work changed the manifest to carry each unit's compile flags, so both linkers read them.
+Claude then rebuilt lib_core, tested hello-c, and confirmed tiny-cc resolves each object's -Iruntime/c correctly.
+Claude built 168 programs, ran the four m-ix analyses, and updated tiny, analyze(1), cc(1), and the plan docs.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 17:43
+
+**Yoann:**
+
+> is "manifest" the right name for what we do?
+
+**Claude (summary):**
+
+Claude said "manifest" is the right name, with one caveat: `.manifest` is already used by Singularity's application manifests in `kernels/singularity`. It listed alternatives it would pass on (link map, compilation database, build info, SBOM, link record). It recommended keeping "manifest" and calling it "link manifest" in the docs where it's defined. Claude also reported step 2 as ready but uncommitted, and asked whether to commit it with `self-quick-mix` noted as not run.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 18:18
+
+**Yoann:**
+
+> ah, regarding singularity, we can rename the file from .manifest to something else to make it easier for mini-analyze to recursively find all the appropriate program manifest; which might help remove some special case code around singularity. Also we have lots of manifest related code, so we might want to move some to analyzers/ml/manifest/ or something (and a similar dir for the other approach with Module_finder.ml and Caller_finder.ml)
+
+------------------------------------------------------------------------
+
+## 2026-11-25 18:18
+
+**Yoann:**
+
+> but let's commit first, even if some things fail, other session will fix it
+
+**Claude (summary):**
+
+Claude recommended splitting the pending work into two commits, with the Singularity rename first, carrying the walk and stamp fix.
+Claude proposed renaming Singularity's application manifests from `Main.app`, with mini-analyze's walk matching `.manifest` files by name alone.
+Claude proposed moving the analyzers into `analyzers/ml/linked/` (Tiny_manifest, Dune_manifest) and `analyzers/ml/searched/` (Module_finder, Caller_finder).
+Claude also updated the .NET road's script, its test, the man page paths, and dune's `copy_files#` rules for the new layout.
+Claude had earlier committed the prior work as `e69faa72`, and `make test` passed with 198 jobs.

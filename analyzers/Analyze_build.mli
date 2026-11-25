@@ -2,7 +2,7 @@
  * manifests, mini-ld's and tiny-ld's (-map; Tiny_manifest reads both),
  * dune's executables (Dune_manifest), or directories of either; each
  * read as linked, its platform's files among them, nothing told by -L,
- * -I, -own (docs/plans/plan_analyzer_build_manifest.md).
+ * -I, -own (docs/plans/done/plan_analyzer_build_manifest.md).
  *
  *     mini-analyze -caps _mk/7          ix's build, every program
  *     mini-analyze -dead tiny/TinyShell.exe
@@ -38,8 +38,10 @@
  * C file read with its compile's flags, -I and -D, which mini-cc and
  * tiny-cc record in the object and the linkers in the manifest (hello-c
  * with libc's members, tiny-cc's 7, the C kernels); found, libc's
- * functions no program calls. Left: an ML program's C (the runtime's)
- * not read with it. *)
+ * functions no program calls. And -bugs reads an ML program's C with
+ * it, its runtime's (the C given to the linker): bugs/raises.dl checks
+ * each external's [@@raise] against what its C raises, both languages'
+ * facts in one analysis. *)
 
 (* the directories given: the manifests under each, every one, or with
  * none the executables dune builds under it, each named by its path from

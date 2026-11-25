@@ -17,7 +17,7 @@
  * project paths (their -project; mini-ld's -build too); t-IX's build
  * runs in a copy of tiny/, which -project tiny names.
  *
- * docs/plans/plan_analyzer_build_manifest.md *)
+ * docs/plans/done/plan_analyzer_build_manifest.md *)
 
 type taken = Manifest.taken =
   | Command_line            (* given to the linker *)
@@ -76,6 +76,7 @@ type program = {
   library : string option;
   units : (string * string) list;
   c : (string * (string list * string list)) list;  (* each C file, its -D's, -I's *)
+  c_given : string list;  (* those given to the linker: the ML runtime's, a program's *)
 }
 
 (* [of_manifest caps m others root]: its paths read against root; others

@@ -134,12 +134,14 @@ let rule_files (f : F.t) ~(c : bool) ~(ml : bool) : string list =
   match f.analysis with
   | Dead -> points_to @ [ "points_to/insensitive.dl"; "dead.dl" ]
   | Caps -> points_to @ [ "points_to/insensitive.dl"; "dead.dl"; "capabilities.dl" ]
-  | Bugs when c && ml -> [ "bugs/raises.dl" ]
-  | Bugs when not c ->
+  | Bugs when not c || ml ->
+      (* (ML's bugs; and with C, raises.dl: each external's [@@raise]
+       * against what its C raises, the facts of both in one) *)
       points_to @ [ context; "exceptions.dl" ]
       @ List.map (fun b -> "bugs/" ^ b ^ ".dl")
-          [ "physeq"; "stack"; "swallowed"; "intwidth"; "order"; "init";
-            "races"; "pairs"; "unused"; "layout"; "evalorder" ]
+          ([ "physeq"; "stack"; "swallowed"; "intwidth"; "order"; "init";
+             "races"; "pairs"; "unused"; "layout"; "evalorder" ]
+           @ if c then [ "raises" ] else [])
   | Exn ->
       [ "points_to/instructions.dl"; "points_to/andersen.dl";
         "points_to/contexts.dl"; context; "exceptions.dl" ]
@@ -240,6 +242,10 @@ let analyze (caps : < F.caps; .. >) (f : F.t) : int =
         | None -> (f.defs, incs) in
       match C.C_front.file caps (defs, incs) (path file) with
       | Ok () -> ()
+      (* (an ML program's C, read for raises.dl: its externals not
+       * checked, the program's bugs the same) *)
+      | Error m when Hashtbl.mem f.extra_c file ->
+          Logs.warn (fun l -> l "%s: its C not read, its externals' raises not checked" m)
       | Error m -> failure m)
     c;
   if ml <> [] then
@@ -294,7 +300,7 @@ let analyze (caps : < F.caps; .. >) (f : F.t) : int =
           dead_reports := Dead_report.dead_report caps p (ml <> []);
           components_note caps;
           []
-      | Bugs when c <> [] && ml <> [] -> Bugs_report.raises_report caps p
+      | Bugs when c <> [] && ml <> [] -> Bugs_report.bugs_report caps p @ Bugs_report.raises_report caps p
       | Bugs when c = [] -> Bugs_report.bugs_report caps p
       | Bugs | Calls ->
           if c <> [] then C_report.report caps p;

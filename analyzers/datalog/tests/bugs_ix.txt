@@ -273,19 +273,40 @@ kernels/9pi/syscalls/Systab.ml:60: evalorder: operands at 60:30 and 60:38, both 
 kernels/9pi/syscalls/Systab.ml:62: evalorder: operands at 62:38 and 62:52, both with an effect: their order the compiler's
 kernels/9pi/syscalls/Usermem.ml:29: stack: go calls itself in a try's handler: no tail call by mini-ml
 kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+kernels/lib_machine/Machine.ml: raises: Machine.Phys.read's C (phys_read) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/lib_machine/Machine.ml: raises: Machine.io_read_fifo's C (io_read_fifo) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/lib_machine/Machine.ml: raises: Machine.stamp's C (machine_stamp) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/lib_machine/Machine.ml: raises: Machine.tf_bytes's C (tf_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/lib_machine/Machine.ml: raises: Machine.tf_slot_bytes's C (tf_slot_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
 kernels/lib_machine/Mmu.ml:177: stack: table calls itself, not a tail call, over a list
 kernels/oberon/Main.ml:126: evalorder: operands at 126:27 and 127:12, both with an effect: their order the compiler's
 kernels/oberon/display/MenuViewers.ml:181: evalorder: operands at 181:16 and 181:31, both with an effect: their order the compiler's
+kernels/oberon/machine/Machine.ml: raises: Machine.Phys.read's C (phys_read) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/oberon/machine/Machine.ml: raises: Machine.io_read_fifo's C (io_read_fifo) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/oberon/machine/Machine.ml: raises: Machine.stamp's C (machine_stamp) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/oberon/machine/Machine.ml: raises: Machine.tf_bytes's C (tf_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/oberon/machine/Machine.ml: raises: Machine.tf_slot_bytes's C (tf_slot_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
 kernels/oberon/system/System.ml:27: evalorder: operands at 27:19 and 27:51, both with an effect: their order the compiler's
 kernels/oberon/texts/Edit.ml:114: evalorder: operands at 114:13 and 114:27, both with an effect: their order the compiler's
 kernels/oberon/texts/Edit.ml:30: evalorder: operands at 30:31 and 30:79, both with an effect: their order the compiler's
 kernels/oberon/texts/Edit.ml:67: evalorder: operands at 67:8 and 67:33, both with an effect: their order the compiler's
 kernels/oberon/texts/Texts.ml:113: stack: Texts.split calls itself, not a tail call, over a list
+kernels/singularity/Abi.ml: raises: Abi.bytes's C (abi_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
 kernels/singularity/Abi.ml:180: crash: in Abi:fun at line 179, Contract.Bad caught by all, the handler raising Contract.Bad or Failure
 kernels/singularity/Exchange.ml:34: stack: take calls itself, not a tail call, over a list
 kernels/singularity/Exchange.ml:54: stack: put calls itself, not a tail call, over a list
+kernels/singularity/machine/Machine.ml: raises: Machine.Phys.read's C (phys_read) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/singularity/machine/Machine.ml: raises: Machine.io_read_fifo's C (io_read_fifo) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/singularity/machine/Machine.ml: raises: Machine.stamp's C (machine_stamp) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/singularity/machine/Machine.ml: raises: Machine.tf_bytes's C (tf_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/singularity/machine/Machine.ml: raises: Machine.tf_slot_bytes's C (tf_slot_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
 kernels/singularity/singml/Description.ml:124: evalorder: operands at 124:55 and 124:71, both with an effect: their order the compiler's
 kernels/singularity/singml/Safe.ml:118: stack: module_expr calls itself, not a tail call, over a list
+kernels/squeak/machine/Machine.ml: raises: Machine.Phys.read's C (phys_read) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/squeak/machine/Machine.ml: raises: Machine.io_read_fifo's C (io_read_fifo) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/squeak/machine/Machine.ml: raises: Machine.stamp's C (machine_stamp) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/squeak/machine/Machine.ml: raises: Machine.tf_bytes's C (tf_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+kernels/squeak/machine/Machine.ml: raises: Machine.tf_slot_bytes's C (tf_slot_bytes) may raise Invalid_argument, not said ([@@raise Invalid_argument])
 kernels/tools/Mkpixdata.ml:69: stack: Mkpixdata.take calls itself, not a tail call, over a list
 languages/c/Check.ml:414: evalorder: operands at 414:25 and 414:52, both with an effect: their order the compiler's
 languages/c/Check.ml:454: stack: go calls itself, not a tail call, over a list
@@ -496,6 +517,8 @@ lib_audio/formats/vorbis/Vorbis.ml:296: evalorder: operands at 296:10 and 296:21
 lib_audio/formats/vorbis/Vorbis.ml:296: evalorder: operands at 296:10 and 296:32, both with an effect: their order the compiler's
 lib_audio/formats/vorbis/Vorbis.ml:296: evalorder: operands at 296:21 and 296:32, both with an effect: their order the compiler's
 lib_audio/formats/vorbis/Vorbis.ml:310: evalorder: operands at 310:16 and 310:27, both with an effect: their order the compiler's
+lib_core/system/Sys.ml: raises: Sys.get_argv's C (sys_get_argv) may raise Invalid_argument, not said ([@@raise Invalid_argument])
+lib_core/system/Sys.ml: raises: Sys.readdir's C (sys_read_directory) may raise Invalid_argument, not said ([@@raise Invalid_argument])
 lib_crypto/Bignum.ml:424: evalorder: operands at 424:72 and 424:86, both with an effect: their order the compiler's
 lib_crypto/Chacha20.ml:74: int31: in Chacha20's toplevel, 0xffffffff: not on the Pi 1's 31 bits
 lib_crypto/Chacha20.ml:76: int31: in Chacha20.le32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits

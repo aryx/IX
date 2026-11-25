@@ -38,6 +38,7 @@ type program = {
   library : string option;
   units : (string * string) list;
   c : (string * (string list * string list)) list;
+  c_given : string list;
 }
 
 let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
@@ -132,6 +133,12 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
               let defs = List.filter_map (flag "-D") l.l_flags in
               let incs = List.map at (List.filter_map (flag "-I") l.l_flags) in
               Some (at s, (defs, incs))
+          | _ -> None)
+        m.m_units;
+    c_given =
+      List.filter_map (fun (l : linked) ->
+          match l.l_source, l.l_taken with
+          | Some (Ppath s), Command_line when Filename.check_suffix s ".c" -> Some (at s)
           | _ -> None)
         m.m_units }
 

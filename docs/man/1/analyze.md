@@ -128,10 +128,12 @@ programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without
      (`bugs/evalorder.dl`: OCaml right to left, mini-ml -dotnet left to
      right). C files: the
      report without an option, its `bug?` lines `bugs/pointers.dl`'s.
-     C files and ML ones (mini-ml's runtime and lib_core: what
-     `analyzers/datalog/tests/raises.sh` gives): each external's
-     `[@@raise E]` against what the C of its primitive raises,
-     `raises` (`bugs/raises.dl`), one analysis over two languages.
+     C files and ML ones, an ML program by its manifest its C given to
+     the linker too (mini-ml's runtime, a kernel's machine.c): each
+     external's `[@@raise E]` against what the C of its primitive
+     raises, `raises` (`bugs/raises.dl`), one analysis over two
+     languages, beside the ML's bugs; a C mini-cc's front end cannot
+     read (tiny's, tiny-cc's dialect) not read, said.
 
 **-facts**
 :    The facts, not the analysis: to write one's own rules

@@ -32,6 +32,8 @@ type t = {
   names : (string, string) Hashtbl.t;
   (* a C file's own -D's and -I's, its manifest's (mini-cc's): read so *)
   cflags : (string, string list * string list) Hashtbl.t;
+  (* an ML program's C, read for -bugs's raises.dl alone: not read, said *)
+  extra_c : (string, unit) Hashtbl.t;
   mutable project : string;  (* -project, "" none: found *)
   (* the command line's flags, not its programs nor files: the runs of a
    * merge given them again *)

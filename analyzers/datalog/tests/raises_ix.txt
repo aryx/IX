@@ -1,3 +1,0 @@
-bug? lib_core/system/Sys.ml: raises: Sys.get_argv's C (sys_get_argv) may raise Invalid_argument, not said ([@@raise Invalid_argument])
-bug? lib_core/system/Sys.ml: raises: Sys.readdir's C (sys_read_directory) may raise Invalid_argument, not said ([@@raise Invalid_argument])
-2 bugs? (raises 2)

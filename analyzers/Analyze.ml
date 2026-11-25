@@ -107,7 +107,7 @@ let home (caps : < Cap.readdir; .. >) : string =
 let main (caps : < F.caps; .. >) (argv : string array) : int =
   let f : F.t =
     { analysis = Calls; files = []; manifests = []; exes = []; dirs = [];
-      names = Hashtbl.create 64; cflags = Hashtbl.create 64; project = ""; args = []; home = "."; rules = "";
+      names = Hashtbl.create 64; cflags = Hashtbl.create 64; extra_c = Hashtbl.create 4; project = ""; args = []; home = "."; rules = "";
       lib = ""; incs = []; defs = []; roots = []; start = ""; context = "";
       library = false; summary = ""; program = ""; facts = false; flow = false;
       answers = false; fingerprint = false; jobs = 8 } in

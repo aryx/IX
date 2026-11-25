@@ -25,11 +25,16 @@ let linked (f : F.t) (what : string) (p : Tiny_manifest.program) : unit =
         (List.length p.own));
   f.files <- f.files @ p.own;
   (* (a C program: its C files, each read with its own flags; an ML
-   * program's C, the runtime's, not read yet) *)
-  if p.own = [] then
-    List.iter (fun ((c, fl) : string * (string list * string list)) ->
-        f.files <- f.files @ [ c ];
-        Hashtbl.replace f.cflags c fl)
+   * program's -bugs, its C given to the linker too, the runtime's:
+   * bugs/raises.dl's check of each external's [@@raise] against what its
+   * C raises, the facts of both languages in one analysis) *)
+  let c_read (c : string) (fl : string list * string list) : unit =
+    f.files <- f.files @ [ c ];
+    Hashtbl.replace f.cflags c fl in
+  if p.own = [] then List.iter (fun (c, fl) -> c_read c fl) p.c
+  else if f.analysis = Bugs then
+    List.iter (fun (c, fl) ->
+        if List.mem c p.c_given then (c_read c fl; Hashtbl.replace f.extra_c c ()))
       p.c;
   Ml_front.own_dirs := !Ml_front.own_dirs @ List.map Fpath.v p.own_dirs;
   (* (a link with no standard library of the project's, an archive's, is

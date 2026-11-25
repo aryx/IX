@@ -78475,3 +78475,153 @@ Claude proposed renaming Singularity's application manifests from `Main.app`, wi
 Claude proposed moving the analyzers into `analyzers/ml/linked/` (Tiny_manifest, Dune_manifest) and `analyzers/ml/searched/` (Module_finder, Caller_finder).
 Claude also updated the .NET road's script, its test, the man page paths, and dune's `copy_files#` rules for the new layout.
 Claude had earlier committed the prior work as `e69faa72`, and `make test` passed with 198 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 18:36
+
+**Yoann:**
+
+> exxcellent, let's commit
+
+**Claude (summary):**
+
+Claude reported committing two changes, `68ec3385` (Singularity manifests and kernel fix) and `80b75b29` (the `linked/` and `searched/` layout), with a clean tree apart from `prompt-history.md`.
+Claude listed four remaining items and asked whether to proceed with item 3.
+Item 3 is the `make self-quick-mix` rerun, which still needs a quieter machine because earlier runs failed on "can't exec mini-rc" before the card's comparison.
+Item 3 was the one Yoann picked, along with item 1 after it.
+Item 1 is merging `tiny_check.sh` and `ix_check.sh` into one script, since both now follow the same build, one `mini-analyze FLAG`, compare shape.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 18:37
+
+**Yoann:**
+
+> let's do 3 and then 1
+
+**Claude (summary):**
+
+Claude ran `make self-quick-mix` (step 3), which passed, confirming the 102 card-built objects match Linux byte for byte.
+Claude merged the two check scripts into `analyzers/datalog/tests/check.sh tiny|ix`, 91 lines, replacing tiny_check.sh and ix_check.sh.
+Claude renamed `dead_all_ix.txt` to `dead_ix.txt`, updated references, and kept the old name in finished plans and the bugs file.
+Claude extended `make check` to build mini-9pi, oberon, squeak and Singularity kernels, first-time analysis of Singularity.
+`make test` passes with 198 jobs and 0 failures, but nothing is committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 17:42
+
+**Yoann:**
+
+> let's commit the progress?
+
+**Claude (summary):**
+
+Claude ran `make test` and all m-ix jobs passed, with only the four known t-IX failures remaining.
+Claude committed the Lehmer split as `6218efcf`, making Lehmer its own library at `lib_playground/random`.
+Claude then read the four mkfiles compiling lib_terminal, noting leftover `T=` and a stale comment in mini-pascal.
+Claude added lib_terminal to the top mkfile's libraries, confirmed Vt and Tty_unix compile once, and ran tests.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:10
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude explained that the `tiny/TinyKernel/Makefile` diff held only its own one-line comment change, so it committed that line as `562b16a6`.
+Claude restored the other session's uncommitted output edits to the working file, leaving them for that session to commit.
+Claude listed what remains: an ML program's C (item 1), moving the plan to `docs/plans/done/`, dune workspaces, and the unread reports.
+Claude asked which of those to do next.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:13
+
+**Yoann:**
+
+> I don't fully understand 1, so maybe it's not super important, so let's close the plan if nothing is left to do
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:13
+
+**Yoann:**
+
+> ah I like this external @@raise check, let's do it then
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:14
+
+**Yoann:**
+
+> it's also nice to have a check that requires datalog facts about .ml and .c that are combined together in one analysis, so it's a multi-lang analysis
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:53
+
+**Yoann:**
+
+> it is subsumed by -bugs right? so no need to keep this adhoc raise.sh extra script?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:11
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude started turning languages/pascal into a library, with its six units compiled once and linked.
+Claude rewrote the pascal mkfile and checked the two turbopascal mkfile headers before building.
+Claude ran the full ix build, copying tools to a private bin because another session's dune kept replacing bin/.
+Claude got mini-pascal running (it prints 3) and built the libraries and turbopascal draw under O=5 OS=plan9.
+Claude ran make test: "ix built by ix" now passes, but the raises check fails due to another session's uncommitted analyzer edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:54
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:54
+
+**Yoann:**
+
+> is it another good side effect of the manifest based approach?
+
+**Claude (summary):**
+
+Claude explained that the manifests supply each program's C-to-ML pairing and C flags, so the `[@@raise]` check covers every program.
+Claude replaced raises.sh and raises_ix.txt with a `-bugs` run that reads each ML program's linker C and runs both reports.
+Claude skips C that mini-cc can't read, such as tiny's runtime, with a warning, and bugs_ix.txt now holds 23 `raises` lines.
+Claude moved the plan into docs/plans/done/, recording its divergences and the leftover work, all uncommitted.
+Claude reported `make test` passing with 197 jobs and zero failures, then proposed committing the work as two commits.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 19:54
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed the pending work as `52816d92`, noting the guard's remark concerned another session's file.
+Claude's scheme units use only lib_core, with CLI being the only consumer of Scheme_secd.
+So the library takes the nine units drscheme uses, while mini-scheme adds Scheme_secd, CLI and Main.
+Claude switched games/mkgames so drscheme links the library instead of compiling the units directly.
+Claude then confirmed mini-scheme runs and drscheme relinked, and is updating the plan before running `make test`.

@@ -265,16 +265,17 @@ kfont.s: $(FONT)
 # boot.img and kernel.img are made by the Buildfile, and copied out of
 # the build when they changed (so that what stands on them is not made
 # again). The same build installs the system in _make/system (its bin,
-# lib and examples).
+# lib and examples). The Makefile's own commands are not printed (@),
+# only tiny-build's, and a line for each file of _make that changed.
 $(O)/boot.img: kfont.s FORCE
-	mkdir -p $(O)
-	if [ $(S) != .. ]; then mkdir -p $(S) && (cd .. && $(SOURCES)) | tar -C .. -cf - -T - | tar -C $(S) -xf - && \
+	@mkdir -p $(O)
+	@if [ $(S) != .. ]; then mkdir -p $(S) && (cd .. && $(SOURCES)) | tar -C .. -cf - -T - | tar -C $(S) -xf - && \
 	  cp kfont.s $(S)/TinyKernel/kfont.s; fi
-	rm -rf $(SYSTEM)
-	cd $(S) && MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
+	@rm -rf $(SYSTEM)
+	@cd $(S) && MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
 	  $(BUILD) -j $(J) BIN=$(SYSTEM)/bin LIB=$(SYSTEM)/lib EXAMPLES=$(SYSTEM)/examples boot.img install
-	cmp -s $(S)/boot.img $(O)/boot.img || cp $(S)/boot.img $(O)/boot.img
-	cmp -s $(S)/TinyKernel/kernel.img $(O)/kernel.img || cp $(S)/TinyKernel/kernel.img $(O)/kernel.img
+	@cmp -s $(S)/boot.img $(O)/boot.img || { cp $(S)/boot.img $(O)/boot.img; echo "$(O)/boot.img: changed"; }
+	@cmp -s $(S)/TinyKernel/kernel.img $(O)/kernel.img || cp $(S)/TinyKernel/kernel.img $(O)/kernel.img
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where KFS.ml has its buffers"; rm $@; exit 1; }
 $(O)/kernel.img: $(O)/boot.img
 FORCE:
@@ -294,16 +295,16 @@ SYSTEM = $(abspath $(O))/system
 # web page fetches. For a run or a build on tiny-kernel, a copy is grown
 # to 64 by truncate -s (KFS.mli's fs_mount uses the disk whole).
 disk = cd $(1) && $(MKFS) -m $(2) $(abspath $(3)).new $$({ $(4); } | LC_ALL=C sort | sed 's|.*|&=&|') && \
-  cd $(CURDIR) && { cmp -s $(3).new $(3) && rm $(3).new || mv $(3).new $(3); }
+  cd $(CURDIR) && { cmp -s $(3).new $(3) && rm $(3).new || { mv $(3).new $(3); echo "$(3): changed"; }; }
 
 # disk.img holds the system, which build install put in _make/system:
 # /bin (where utils's names are its hard links), /lib and /examples
 $(O)/disk.img: $(O)/boot.img $(MKFSBIN) FORCE
-	$(call disk,$(SYSTEM),12,$@,find . -type f | sed 's|^\./||')
+	@$(call disk,$(SYSTEM),12,$@,find . -type f | sed 's|^\./||')
 # src.img holds tiny/'s sources (SOURCES, above) and the font the host
 # made; they are what tiny-kernel builds itself from
 $(O)/src.img: $(O)/boot.img $(MKFSBIN) FORCE
-	$(call disk,..,8,$@,$(SOURCES); echo TinyKernel/kfont.s)
+	@$(call disk,..,8,$@,$(SOURCES); echo TinyKernel/kfont.s)
 
 # A disk of 64 MB is one of the two disks, grown. It is used for a run
 # (run.img and runsrc.img: what is written there is kept from one run

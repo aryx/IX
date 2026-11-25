@@ -11,8 +11,8 @@ document recording your analysis and proposing a plan to simplify
 things for m-ix (and t-ix) when possible, cheapest first".
 
 **Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2
-(7a7da7c5); step 4's first groups. Step 3 is t-IX's session's (f0601cfb:
-t-IX built beside its sources). Done in step 4: lib_code,
+(7a7da7c5); step 4's first groups. Step 3 done, t-IX's session's (t-IX built
+beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
 languages/dotnet/assembly, lib_playground/random, lib_terminal. Next:
 the interpreters (scheme, pascal).**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
@@ -148,10 +148,12 @@ first requirement.
    tar of tiny/, the links ml, cc... to the tools) with absolute paths
    of 200 characters; a no-op could print tiny-build's lines alone. To
    do with the session reshaping tiny/Makefile (make host, make
-   building t-IX with its own tools). Half done (e10520b9, the build in
-   tiny/ itself): the sums, the tar and the links gone; the setup's
-   own lines (mkdir, the copy's test, rm, cd) still printed, about as
-   many lines.
+   building t-IX with its own tools). Done: the sums, the tar and the
+   links gone (e10520b9, the build in tiny/ itself), the Makefile's own
+   commands not printed (@), a line for a file of _make that changed. A
+   no-op prints 13 lines, down from 25, tiny-build's: its "up to date"
+   and build install's six (_make/system is emptied before each install,
+   so that a program removed goes; 1.4 s).
 
 4. **One object per source.** Measured on step 1's full build (703
    compiles; the `cd x && mini-mk` lines give each compile's

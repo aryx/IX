@@ -35,10 +35,11 @@ LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 # in ../../tests/frames.sh; mini-virtuaracing is the program's name)
 all:V: $D/mini-virtuaracing
 
-$D/%.$O: $LOCAL
-	f=()
-	for(d in $DIRS) if(~ $d/$stem.ml $LOCAL) f=$d/$stem.ml
-	$ML $INCLUDES -o $target $f
+# a unit: its directory's rule (mkfiles/libs.rc's rules), the sources
+# its prerequisites
+# old: $D/%.$O: $LOCAL, its recipe looking in DIRS for the unit's source
+<|. $TOP/mkfiles/libs.rc rules
+$LIBOBJS $D/Virtua.$O: $LOCAL
 
 $D/mini-virtuaracing: $D/virtua
 	cp $D/virtua $target

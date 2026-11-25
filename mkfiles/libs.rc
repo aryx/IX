@@ -10,12 +10,36 @@
 #   <|. $TOP/mkfiles/libs.rc libs   mklibs: LIBA, LIBSRC and LIBI, of
 #                                   LIBDIRS (and B, TOP, WALK)
 #   <|. $TOP/mkfiles/libs.rc lib    mklib: NEEDI and NEEDD, of NEEDS;
-#                                   LOCAL, of DIRS; and $D made
+#                                   LOCAL, of DIRS; the rules below;
+#                                   and $D made
+#   <|. $TOP/mkfiles/libs.rc rules  a program's mkfile of several
+#                                   directories (games/fps/doom): a
+#                                   rule for each of DIRS, compiling
+#                                   the units whose source is there
 
 # the -I of libraries (each library's as it wrote them beside its
 # archive, mkfiles/mklib's dirs), a directory once
 fn dirs {
 	{ for(d in $*) cat $B/$d/dirs >[2]/dev/null || echo 'mk: '^$d^'''s library not built: the libraries first (mini-mk libs at the top)' >[1=2] } | awk '!seen[$0]++'
+}
+
+# a rule for each directory, compiling the units whose source is there,
+# as principia's mkfiles and tiny/Buildfile have (user/&.o: user/&.ml);
+# the source alone a rule's prerequisite (the includer's line, as
+# $OBJS: $LOCAL, gives every unit the others: in the rules, every
+# directory's rule would apply, and mk refuse them); a unit in two
+# directories needs an explicit rule, which mk takes over these
+# (lib_networking's Tcp on Plan 9)
+# old: one rule, $D/%.$O, its recipe looking in each of DIRS for the
+# unit's source, printed for each unit with all of LOCAL (mklib, the
+# games of several directories; windows/desktop's by an ls in each)
+fn rules {
+	for(d in $DIRS){
+		s=$d/
+		if(~ $d .) s=''
+		echo '$D/%.$O: '^$s^'%.ml'
+		echo '	$ML $INCLUDES -o $target '^$s^'$stem.ml'
+	}
 }
 
 switch($1){
@@ -45,4 +69,7 @@ case lib
 	echo 'NEEDI='^$"i^'
 NEEDD='^$"n^'
 LOCAL='^$"l
+	rules
+case rules
+	rules
 }

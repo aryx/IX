@@ -6,10 +6,19 @@
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_networking
-# (Plan 9's Tcp and Udp use /net's files where Linux's use sockets;
-# their directory is found last, and so they are the ones taken)
+# (Plan 9's Tcp and Udp use /net's files where Linux's use sockets: a
+# rule each below, which mk takes over the rules of mklib for their two
+# directories, tcp/ and tcp/plan9/)
+# old: "their directory is found last, and so they are the ones taken",
+# by mklib's search of DIRS
 OSDIR=`{~ $OS plan9 && echo tcp/plan9}
+NETDIR=`{if(~ $OS plan9) echo tcp/plan9; if not echo tcp}
 DIRS=tcp tls http mail $OSDIR
 NEEDS=lib_crypto lib_compression
 UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls12 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client Mailto
 <$TOP/mkfiles/mklib
+
+$D/Tcp.$O: $NETDIR/Tcp.ml
+	$ML $INCLUDES -o $target $NETDIR/Tcp.ml
+$D/Udp.$O: $NETDIR/Udp.ml
+	$ML $INCLUDES -o $target $NETDIR/Udp.ml

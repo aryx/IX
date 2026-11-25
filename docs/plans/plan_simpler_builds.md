@@ -10,7 +10,8 @@ remove the needs for the complexity here?", "let's make it a plan
 document recording your analysis and proposing a plan to simplify
 things for m-ix (and t-ix) when possible, cheapest first".
 
-**Status: proposed (2026-11-25). Done: step 1 (233faef6). Next: step 2.**
+**Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2. Next:
+step 3.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -128,6 +129,15 @@ first requirement.
    removed. Output: about 1,500 lines for a full build. Beside the
    sources (the rethink) the rules would be t-IX's,
    `core/%.$O: core/%.ml`: the same loop, other words.
+   Done: libs.rc's rules, used by mklib and by the four programs that
+   had the same search in their mkfiles (doom, quake, virtua, and
+   windows/desktop, whose search ran an ls in each directory); a rule's
+   prerequisite its source alone, the others every unit's by one line
+   (`$OBJS: $LOCAL $MLEXE`, mkprog's way: with them in the rules, every
+   directory's rule applied, and mk refused them). A full build: 1,698
+   lines before the four programs, down from 2,636. lib_core's rules
+   left as written: lib_core is no mklib library. An object names its
+   source as compiled, `Helpers.ml`, no longer `./Helpers.ml`.
 
 3. **t-IX's printing.** TinyKernel/Makefile's build prints 30 lines
    when nothing changed, most of them its setup's (the tools' sums, the

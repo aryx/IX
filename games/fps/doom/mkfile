@@ -36,10 +36,11 @@ LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 # in ../../tests/frames.sh; mini-doom is the program's name)
 all:V: $D/mini-doom
 
-$D/%.$O: $LOCAL
-	f=()
-	for(d in $DIRS) if(~ $d/$stem.ml $LOCAL) f=$d/$stem.ml
-	$ML $INCLUDES -o $target $f
+# a unit: its directory's rule (mkfiles/libs.rc's rules), the sources
+# its prerequisites
+# old: $D/%.$O: $LOCAL, its recipe looking in DIRS for the unit's source
+<|. $TOP/mkfiles/libs.rc rules
+$LIBOBJS $D/Doom.$O: $LOCAL
 
 $D/mini-doom: $D/doom
 	cp $D/doom $target

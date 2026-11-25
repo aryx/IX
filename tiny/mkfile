@@ -8,6 +8,7 @@
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/tiny
+MADE=`{mkdir -p $D}
 LIBDIRS=lib_crypto
 <$TOP/mkfiles/mklibs
 # (tiny/, where TinyLibSystem.mli is, comes before its Unix
@@ -25,7 +26,6 @@ all:V: ${PROGS:%=$D/%}
 # and TinyMachine name their libraries, and TinyMachine names KNetwork,
 # the other end of its wire)
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyLibMachine.ml
@@ -70,24 +70,19 @@ $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/KNetwork.ml Tiny
 # has its own: tiny-machine's here
 MACHINE_INCLUDES=-I TinyMachine -I TinyKernel -I TinyBrowser
 $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
-	mkdir -p $D
 	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine/TinyMachine$stem.ml
 $D/TinyCPU.$O: TinyCPU.ml
-	mkdir -p $D
 	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyCPU.ml
 $D/TinyMachine.$O: TinyMachine/TinyMachine.ml
-	mkdir -p $D
 	$ML $INCLUDES $MACHINE_INCLUDES -o $target TinyMachine/TinyMachine.ml
+
 # (TinyBrowser's units that tiny-machine uses: its end of the wire reads
 # the addresses and the HTTP that www sends with www's own code)
 $D/%.$O: TinyBrowser/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target TinyBrowser/$stem.ml
 $D/KNetwork.$O: TinyKernel/KNetwork.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/KNetwork.ml
 $D/%.$O: TinyML/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target TinyML/$stem.ml
 
 # (tiny-cc's directories come before INCLUDES' $D, where tiny-ml's
@@ -100,31 +95,32 @@ $D/cc/%.$O: TinyC/%.ml
 # (tiny-mkfat belongs to t6, a step before tiny-kernel, and its file is
 # there)
 $D/TinyMkfat.$O: TinyKernel/steps/t6/TinyMkfat.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfat.ml
 
 $D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
 $D/tiny-build: $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyLibSystem TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
 	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
+
 # (The shell's system is the host's, TinyLibSystem/unix/TinyLibSystem.ml.
 # TinyLibSystem/tinykernel/TinyLibSystem.ml is tiny-machine's, and
 # tiny-ml compiles it. The file is not beside TinyShell.ml, because
 # mini-ml looks for a module in the directory of the file it compiles
 # before any -I.)
 $D/TinyLibSystem.$O: TinyLibSystem/unix/TinyLibSystem.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target TinyLibSystem/unix/TinyLibSystem.ml
 $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
 	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND
+
 # (the utilities use the same TinyLibSystem as the shell, and
 # TinyLibRegex for grep)
 $D/TinyUtilities.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyUtilities.ml
 $D/tiny-utils: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
 	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
+
 # (the line editor uses the same TinyLibSystem as the shell and the
 # same TinyLibRegex as grep; it is also tiny-kernel's ed and sam)
 $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
@@ -160,11 +156,11 @@ $D/tiny-cpu: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/Ti
 $D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
 	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices KNetwork Strings Url Http TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
 	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
+
 # (Parallel runs on the host's cores where OCaml has domains, for
 # -cores-parallel. mini-ml has none, so this is lib_core/parallel's file
 # for OCaml 4.14, which dune chooses by the compiler's version.)
 $D/Parallel.$O: ../lib_core/parallel/host/single.ml.in ../lib_core/parallel/Parallel.mli
-	mkdir -p $D
 	cp ../lib_core/parallel/Parallel.mli $D/Parallel.mli
 	cp ../lib_core/parallel/host/single.ml.in $D/Parallel.ml
 	$ML $INCLUDES -o $target $D/Parallel.ml

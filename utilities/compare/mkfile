@@ -3,13 +3,13 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/compare
+MADE=`{mkdir -p $D}
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-cmp
 
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-cmp: $D/Cmp.$O $LIBS
 	$ML -start $STD $COMMONS Cmp Std_exit -o $D/Cmp.start.$O

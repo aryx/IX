@@ -8,6 +8,7 @@
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 D=$B/apps/media/play
+MADE=`{mkdir -p $D}
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_audio lib_networking lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
@@ -24,7 +25,6 @@ LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/mini-play $D/mpg_bench
 
 $D/%.$O: $LOCAL
-	mkdir -p $D
 	for(d in $DIRS) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f
 

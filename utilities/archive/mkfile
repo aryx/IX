@@ -4,6 +4,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/archive
+MADE=`{mkdir -p $D}
 LIBDIRS=lib_compression
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . $LIBI $STDI
@@ -12,7 +13,6 @@ LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/mini-tar $D/mini-gzip $D/mini-gunzip
 
 $D/%.$O: %.ml $LIBSRC
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-tar: $D/Tar.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Tar Std_exit -o $D/Tar.start.$O

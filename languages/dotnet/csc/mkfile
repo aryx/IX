@@ -18,25 +18,19 @@ LIBOBJS=
 
 $D/Csc_lexer.$O: $D/Csc_lexer.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Csc_lexer.ml
+
 # languages/dotnet's units, by their names
 $D/Metadata.$O: $N/assembly/Metadata.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/assembly/Metadata.ml
 $D/Image.$O: $N/assembly/Image.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/assembly/Image.ml
 $D/Signature.$O: $N/assembly/Signature.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/assembly/Signature.ml
 $D/Il.$O: $N/assembly/Il.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/assembly/Il.ml
 $D/Value.$O: $N/runtime/Value.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/runtime/Value.ml
 $D/Library.$O: $N/runtime/Library.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/runtime/Library.ml
 $D/Writer.$O: $N/assembly/Writer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/assembly/Writer.ml

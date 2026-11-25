@@ -5,6 +5,7 @@
 TOP=../../../..
 <$TOP/mkfiles/mkconfig
 D=$B/languages/smalltalk/hosts/draw
+MADE=`{mkdir -p $D}
 ST=$B/languages/smalltalk
 G=$TOP/lib_graphics
 INCLUDES=-I . -I $G -I ../.. -I ../../compiler -I ../../vm -I ../../graphics -I $ST $STDI
@@ -17,13 +18,10 @@ LOCAL=`{ls *.ml *.mli ../../*.ml ../../*.mli ../../compiler/*.ml* ../../vm/*.ml*
 all:V: $D/squeak
 
 $D/%.$O: $G/%.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/$stem.ml
 $D/Window.$O: Window.ml $LOCAL $STOBJS
-	mkdir -p $D
 	$ML $INCLUDES -o $target Window.ml
 $D/Main.$O: Main.ml $LOCAL $D/Window.$O
-	mkdir -p $D
 	$ML $INCLUDES -o $target Main.ml
 $D/squeak: $D/Main.$O $D/Window.$O $LIBOBJS $STOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $LIB $SMALLTALK Window Main Std_exit -o $D/Main.start.$O

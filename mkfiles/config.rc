@@ -32,14 +32,19 @@ case system
 	ldh=-H7
 	b=$TOP/_mk/$O-$OS
 	unixdir=system
+	sysdirs=system
 	p9dir=commons
-	if(~ $OS plan9){ ldh=-H2; unixdir=system/plan9; p9dir=system/plan9 }
+	if(~ $OS plan9){
+		ldh=-H2; unixdir=system/plan9; p9dir=system/plan9
+		sysdirs=(system/plan9 system)
+	}
 	if(~ $OS linux) b=$TOP/_mk/$O
 	# (rc's glob, not an ls)
 	rtsrc=($TOP/languages/ml/runtime/*.[ch])
 	echo 'LDH='^$ldh^'
 B='^$b^'
 UNIXDIR='^$unixdir^'
+SYSDIRS='^$"sysdirs^'
 P9DIR='^$p9dir^'
 RTSRC='^$"rtsrc
 }

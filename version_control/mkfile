@@ -25,19 +25,14 @@ DEPMORE=Diffmain Merge3main
 # mkprog's). Each unit gets its own recipe, so that .depend orders each
 # one. The folders: repo objects diff commands wire
 $D/%.$O: repo/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target repo/$stem.ml
 $D/%.$O: objects/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target objects/$stem.ml
 $D/%.$O: diff/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target diff/$stem.ml
 $D/%.$O: commands/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target commands/$stem.ml
 $D/%.$O: wire/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target wire/$stem.ml
 
 # the two other programs, which have the same units, each with its own

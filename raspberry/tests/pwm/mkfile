@@ -5,19 +5,17 @@ TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/raspberry/tests/pwm
+MADE=`{mkdir -p $D}
 S=$TOP/kernels/steps/step0
 IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
 
 all:V: $D/tone.img
 
 $D/l.$O: $S/${P}l.s
-	mkdir -p $D
 	$AS -o $target $prereq
 $D/shim.$O: $S/shim.c
-	mkdir -p $D
 	$CC $CINC -o $target $S/shim.c
 $D/tone.$O: tone.c
-	mkdir -p $D
 	$CC $CINC -o $target tone.c
 $D/tone.img: $D/l.$O $D/shim.$O $D/tone.$O $L/libc.a
 	$IMAGE -o $target $D/l.$O $D/shim.$O $D/tone.$O $L/libc.a

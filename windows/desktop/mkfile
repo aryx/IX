@@ -8,6 +8,7 @@ TOP=../..
 LIBDIRS=lib_compression
 <$TOP/mkfiles/mklibs
 D=$B/windows/desktop
+MADE=`{mkdir -p $D}
 G=../../lib_graphics
 DIRS=. lib $G $G/core $G/images
 INCLUDES=-I . -I lib -I $G -I $G/core -I $G/images $LIBI $STDI
@@ -32,7 +33,6 @@ all:V: $D/panel $D/startmenu $D/desk $D/settings $D/expose
 
 # a unit from the last of DIRS that has it (the loop keeps the last)
 $D/%.$O: $LOCAL
-	mkdir -p $D
 	for(d in $DIRS) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f
 

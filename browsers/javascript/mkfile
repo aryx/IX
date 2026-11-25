@@ -24,7 +24,6 @@ WHOLE=$D/Js_quicken.$O $D/Js_compile.$O
 all:V: $D/mini-node
 
 $D/CLI.$O: CLI.ml CLI.mli $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target CLI.ml
 $D/Main.$O: Main.ml $D/CLI.$O
 	$ML $INCLUDES -I . -o $target Main.ml

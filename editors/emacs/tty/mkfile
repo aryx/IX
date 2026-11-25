@@ -20,198 +20,136 @@ GEN=$B/editors/emacs/tty/Lexer_ml.ml $B/editors/emacs/tty/Lexer_c.ml $B/editors/
 
 # the other directories' units, each by its name
 $D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Line_discipline.ml
 $D/Vt.$O: $T/Vt.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Vt.ml
 $D/Curses.$O: $T/Curses.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Curses.ml
 $D/Tui.$O: $T/Tui.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Tui.ml
 $D/Tty_unix.$O: $T/unix/Tty_unix.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/unix/Tty_unix.ml
 $D/Text.$O: ../core/Text.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Text.ml
 $D/Efuns.$O: ../core/Efuns.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Efuns.ml
 $D/Globals.$O: ../core/Globals.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Globals.ml
 $D/Keymap.$O: ../core/Keymap.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Keymap.ml
 $D/Action.$O: ../core/Action.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Action.ml
 $D/Ebuffer.$O: ../core/Ebuffer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Ebuffer.ml
 $D/Frame.$O: ../core/Frame.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Frame.ml
 $D/Window.$O: ../core/Window.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Window.ml
 $D/Top_window.$O: ../core/Top_window.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../core/Top_window.ml
 $D/Move.$O: ../features/Move.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Move.ml
 $D/Edit.$O: ../features/Edit.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Edit.ml
 $D/Scroll.$O: ../features/Scroll.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Scroll.ml
 $D/Multi_buffers.$O: ../features/Multi_buffers.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Multi_buffers.ml
 $D/Minibuffer.$O: ../features/Minibuffer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Minibuffer.ml
 $D/Interactive.$O: ../features/Interactive.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Interactive.ml
 $D/Multi_frames.$O: ../features/Multi_frames.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Multi_frames.ml
 $D/Copy_paste.$O: ../features/Copy_paste.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Copy_paste.ml
 $D/Search.$O: ../features/Search.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Search.ml
 $D/Config.$O: ../Config.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../Config.ml
 $D/Highlight_code.$O: $TOP/lib_code/Highlight_code.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/lib_code/Highlight_code.ml
 $D/Token_ml.$O: $TOP/languages/ml/highlight/Token_ml.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Token_ml.ml
 $D/Highlight_ml.$O: $TOP/languages/ml/highlight/Highlight_ml.ml $LOCAL $GEN
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Highlight_ml.ml
 $D/Token_c.$O: $TOP/languages/c/highlight/Token_c.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/c/highlight/Token_c.ml
 $D/Highlight_c.$O: $TOP/languages/c/highlight/Highlight_c.ml $LOCAL $GEN
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/c/highlight/Highlight_c.ml
 $D/Highlight_asm.$O: $TOP/assembler/highlight/Highlight_asm.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/assembler/highlight/Highlight_asm.ml
 $D/Highlight_st.$O: $TOP/languages/smalltalk/highlight/Highlight_st.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/smalltalk/highlight/Highlight_st.ml
 $D/Highlight_scheme.$O: $TOP/languages/scheme/highlight/Highlight_scheme.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/scheme/highlight/Highlight_scheme.ml
 $D/Highlight_pascal.$O: $TOP/languages/pascal/highlight/Highlight_pascal.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/pascal/highlight/Highlight_pascal.ml
 $D/Highlight_prolog.$O: $TOP/languages/prolog/highlight/Highlight_prolog.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/prolog/highlight/Highlight_prolog.ml
 $D/Lexer_ml.ml: $TOP/languages/ml/highlight/Lexer_ml.mll
-	mkdir -p $D
 	$LEX -o $target $TOP/languages/ml/highlight/Lexer_ml.mll
 $D/Lexer_ml.$O: $D/Lexer_ml.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $D/Lexer_ml.ml
 $D/Lexer_c.ml: $TOP/languages/c/highlight/Lexer_c.mll
-	mkdir -p $D
 	$LEX -o $target $TOP/languages/c/highlight/Lexer_c.mll
 $D/Lexer_c.$O: $D/Lexer_c.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $D/Lexer_c.ml
 $D/Highlight.$O: ../features/Highlight.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Highlight.ml
 $D/Indent.$O: ../features/Indent.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Indent.ml
 $D/Paren_mode.$O: ../modes/Paren_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Paren_mode.ml
 $D/Ocaml_mode.$O: ../modes/Ocaml_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Ocaml_mode.ml
 $D/C_mode.$O: ../modes/C_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/C_mode.ml
 $D/Asm_mode.$O: ../modes/Asm_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Asm_mode.ml
 $D/Smalltalk_mode.$O: ../modes/Smalltalk_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Smalltalk_mode.ml
 $D/Scheme_mode.$O: ../modes/Scheme_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Scheme_mode.ml
 $D/Pascal_mode.$O: ../modes/Pascal_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Pascal_mode.ml
 $D/Prolog_mode.$O: ../modes/Prolog_mode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Prolog_mode.ml
 $D/Transform.$O: ../features/Transform.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Transform.ml
 $D/Macros.$O: ../features/Macros.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Macros.ml
 $D/Dired.$O: ../modes/Dired.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Dired.ml
 $D/Buffer_menu.$O: ../modes/Buffer_menu.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../modes/Buffer_menu.ml
 $D/Config_pad.$O: ../Config_pad.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../Config_pad.ml
 
 # mini-ml's tree, its parser (mini-yacc's) and its lexer
 $D/Ast.$O: $TOP/languages/ml/Ast.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/Ast.ml
+
 # (the checked annotations that the parser records; see Annotations.mli)
 $D/Annotations.$O: $TOP/languages/ml/Annotations.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/Annotations.ml
 $D/Parser.ml: $TOP/languages/ml/Parser.mly
-	mkdir -p $D
 	$YACC -b $D/Parser $TOP/languages/ml/Parser.mly
 $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.ml: $TOP/languages/ml/Lexer.mll
-	mkdir -p $D
 	$LEX -o $target $TOP/languages/ml/Lexer.mll
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
 $D/Names_ml.$O: $TOP/languages/ml/highlight/Names_ml.ml $LOCAL $GEN
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/languages/ml/highlight/Names_ml.ml
 $D/Emouse.$O: ../features/Emouse.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../features/Emouse.ml
 $D/Start.$O: ../Start.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../Start.ml
 $D/Font_default.$O: $TOP/lib_graphics/Font_default.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/lib_graphics/Font_default.ml
 $D/Cells.$O: $T/hosts/Cells.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/Cells.ml
 $D/Picture.$O: $T/hosts/Picture.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/Picture.ml

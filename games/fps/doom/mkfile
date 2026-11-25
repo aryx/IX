@@ -12,6 +12,7 @@ TOP=../../..
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/games/fps/doom$BESIDE
+MADE=`{mkdir -p $D}
 # (each library comes after the ones it names)
 # (the playground's apis, Audio, Audio3d and Ai, come with what they
 # stand on, as in ../../mkgames)
@@ -36,7 +37,6 @@ LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/mini-doom
 
 $D/%.$O: $LOCAL
-	mkdir -p $D
 	f=()
 	for(d in $DIRS) if(~ $d/$stem.ml $LOCAL) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f

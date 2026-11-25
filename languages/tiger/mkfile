@@ -19,18 +19,14 @@ $D/Tiger_parser.$O: $D/Tiger_parser.ml $LOCAL
 $D/Tiger_lexer.$O: $D/Tiger_lexer.ml $D/Tiger_parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Tiger_lexer.ml
 $D/Tiger_emit.$O: dotnet/Tiger_emit.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target dotnet/Tiger_emit.ml
+
 # languages/dotnet's units, by their names
 $D/Metadata.$O: $N/Metadata.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/Metadata.ml
 $D/Signature.$O: $N/Signature.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/Signature.ml
 $D/Il.$O: $N/Il.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/Il.ml
 $D/Writer.$O: $N/Writer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $N/Writer.ml

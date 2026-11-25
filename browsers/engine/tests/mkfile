@@ -4,6 +4,7 @@
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/engine/tests
+MADE=`{mkdir -p $D}
 LIBDIRS=browsers/html browsers/css browsers/engine
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . $LIBI $STDI
@@ -12,7 +13,6 @@ LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/boxes
 
 $D/Boxes.$O: Boxes.ml $LIBSRC
-	mkdir -p $D
 	$ML $INCLUDES -o $target Boxes.ml
 $D/boxes: $D/Boxes.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Boxes Std_exit -o $D/Boxes.start.$O

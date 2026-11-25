@@ -29,6 +29,8 @@ BD=$M/$BOARD
 # includes l.s, while the Pi 4's l.s is complete by itself.
 LS=`{case $O in 5) echo l1.s;; 7) echo l.s;; esac}
 D=$B/$DIR
+# ($D made once, as the mkfile is read: mkfiles/mkprog; MADE is below)
+DMADE=`{mkdir -p $D}
 
 # the kernel's modules, in the order they start, after the machine's
 KERNEL=Contract Programs Exchange Channel Process Abi Main
@@ -93,18 +95,16 @@ all:V: $IMAGE
 LOCAL=`{ls *.ml *.mli}
 MSRC=`{ls $M/*.ml $M/*.mli}
 $D/Machine.$O: $MSRC
-	mkdir -p $D
 	$ML $MLI -o $target $M/Machine.ml
 $D/%.$O: %.ml $LOCAL $MSRC
-	mkdir -p $D
 	$ML $MLI -o $target $stem.ml
+
 # The programs, as the kernel sees them: the names in PROGRAMS, as an
 # OCaml array, and for each program what its manifest asks of the
 # machine. mini-singml reads the manifest, programs/x/Main.manifest; a
 # program without one asks for nothing.
 MANIFESTS=`{ls programs/*/Main.manifest}
 $D/Programs.$O: mkfile $MANIFESTS
-	mkdir -p $D
 	manifest() { m=programs/$1/Main.manifest; [ -f $m ] || m=/dev/null; echo $m; }
 	(echo "(* the mkfile's PROGRAMS, and their manifests *)"
 	 echo 'type grant = Registers of int * int | Interrupt of int'
@@ -112,35 +112,26 @@ $D/Programs.$O: mkfile $MANIFESTS
 	 echo 'let grants : grant list array = [|'; for p in $PROGRAMS; do echo "  `mini-singml -grants \`manifest $p\``;"; done; echo '|]') > $D/Programs.ml
 	$ML $MLI -o $target $D/Programs.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
-	mkdir -p $D
 	$ML -start $STD $UNITS Std_exit -o $target
 
 # the C and the assembly
 $D/rt.$O: $RTSRC mkfile
-	mkdir -p $D
 	$CC $CINC $HEAP -o $target $RT/runtime.c
 $D/kruntime.$O: $M/runtime.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $M/runtime.c
 $D/usb_c.$O: $M/usb.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $M/usb.c
 $D/machine_c.$O: $BD/machine.c $M/machine.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $BD/machine.c
 $D/shim.$O: $M/shim.c $BD/board.h
-	mkdir -p $D
 	$CC $KINC -o $target $M/shim.c
 $D/l.$O: $BD/$LS $BD/l.s
-	mkdir -p $D
 	$AS -o $target $BD/$LS
 
 # the crossing, on the kernel's side
 $D/cross.$O: cross.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target cross.c
 $D/crossl.$O: cross_$ARCH.s
-	mkdir -p $D
 	$AS -o $target cross_$ARCH.s
 
 # A process's program: its Main comes after the standard library and
@@ -150,33 +141,28 @@ $D/crossl.$O: cross_$ARCH.s
 # its slot's address, with the start first, because the image's first
 # bytes are its entry.
 $D/sipl.$O: lib/start_$ARCH.s
-	mkdir -p $D
 	$AS -o $target lib/start_$ARCH.s
 $D/sip.$O: lib/sip.c
-	mkdir -p $D
 	$CC $CINC -I$RT -o $target lib/sip.c
+
 # (The kernel uses this malloc too, because the C library's has 64 MB
 # of bss.)
 $D/malloc.$O: lib/malloc.c
-	mkdir -p $D
 	$CC $CINC -o $target lib/malloc.c
+
 # (The kernel uses this Contract too, so there is one description of a
 # contract.)
 $D/Contract.$O: lib/Contract.ml lib/Contract.mli
-	mkdir -p $D
 	$ML $PMLI -o $target lib/Contract.ml
 $D/Sip.$O: lib/Sip.ml lib/Sip.mli lib/Contract.mli
-	mkdir -p $D
 	$ML $PMLI -o $target lib/Sip.ml
 CSRC=`{ls contracts/*}
 CMADE=${MADE:%=$D/%.ml}
 ${HAND:%=$D/%.$O}: $CSRC lib/Sip.mli lib/Contract.mli
-	mkdir -p $D
 	for t in $target; do
 		$ML $PMLI -o $t contracts/`basename $t .$O`.ml || exit 1
 	done
 $CMADE: $CSRC
-	mkdir -p $D
 	for t in $target; do
 		mini-singml -o $D contracts/`basename $t .ml`.contract || exit 1
 	done
@@ -185,10 +171,8 @@ ${MADE:%=$D/%.$O}: $CMADE $CSRC lib/Sip.mli lib/Contract.mli
 		$ML $PMLI -o $t $D/`basename $t .$O`.ml || exit 1
 	done
 $D/prt.$O: $RTSRC mkfile
-	mkdir -p $D
 	$CC $CINC $PHEAP -o $target $RT/runtime.c
 $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
-	mkdir -p $D
 	$ML -start $STD Contract Sip $CONTRACTS Given Main Std_exit -o $target
 PMLI=-I lib -I contracts -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
 POBJS=$D/sipl.$O $D/sip.$O $D/malloc.$O $D/pstart.$O $STDOBJS $D/Contract.$O $D/Sip.$O ${CONTRACTS:%=$D/%.$O}
@@ -205,7 +189,6 @@ $D/g_%.given: programs/%/Main.ml lib/Sip.mli $MANIFESTS mkfile
 	mini-singml -given -o $D/g_$stem $m
 	$ML $PMLI -o $target $D/g_$stem/Given.ml
 $D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC $CMADE $D/g_%.given
-	mkdir -p $D
 	mini-singml -safe -allow Given `for c in $CONTRACTS; do echo -allow $c; done` programs/$stem/Main.ml
 	$ML -I $D/g_$stem $PMLI -o $target programs/$stem/Main.ml
 $D/p_%.img: $D/p_%.sip $D/g_%.given $POBJS $PEND mkfile
@@ -220,7 +203,6 @@ $D/p_%.img: $D/p_%.sip $D/g_%.given $POBJS $PEND mkfile
 # This kernel has none, so it is one word, and its size is 0.
 PIMAGES=${PROGRAMS:%=$D/p_%.img}
 $D/images.$O: $M/font1.bin $PIMAGES mkfile
-	mkdir -p $D
 	word() { echo "DATA	$1+$(($2 * $WORD))(SB)/$WORD, \$$3"; }
 	(echo "GLOBL	fs_image+0(SB), \$$WORD"
 	 word fs_image_size 0 0; echo "GLOBL	fs_image_size+0(SB), \$$WORD"

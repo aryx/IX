@@ -4,48 +4,38 @@
 # mini-asm and kept by mini-ar).
 TOP=..
 <$TOP/mkfiles/mkconfig
+MADE=`{mkdir -p $L}
 
 all:V: $STDOBJS $STDEND
 
 # a unit is in one of these directories, and the rule whose source is
 # there makes it
 $L/%.$O: core/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target core/$stem.ml
 $L/%.$O: base/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target base/$stem.ml
 $L/%.$O: collections/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target collections/$stem.ml
 $L/%.$O: printing/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target printing/$stem.ml
 $L/%.$O: parsing/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target parsing/$stem.ml
 $L/%.$O: system/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target system/$stem.ml
 $L/%.$O: concurrency/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target concurrency/$stem.ml
 $L/%.$O: commons/%.ml
-	mkdir -p $L
 	$ML $STDI -o $target commons/$stem.ml
 
 # (the system's Unix, from mkconfig's UNIXDIR)
 $L/Unix.$O: $UNIXDIR/Unix.ml
-	mkdir -p $L
 	$ML $STDI -o $target $UNIXDIR/Unix.ml
 
 # (Source is the file of mini-ml's threads, not commons/'s, which is
 # OCaml's)
 $L/Source.$O: concurrency/Source.ml
-	mkdir -p $L
 	$ML $STDI -o $target concurrency/Source.ml
 $L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
-	mkdir -p $L
 	$ML $STDI -o $target $P9DIR/Sys_plan9.ml
 
 # each unit is made again when an older compiler made it (MLEXE:
@@ -55,7 +45,7 @@ $STDUNITS: $MLEXE
 # the units' order (mkfiles/mkdepend)
 INCLUDES=$STDI
 DEPOBJ=L
-DEPDIRS=concurrency $UNIXDIR $P9DIR $STDDIRS
+DEPDIRS=concurrency $SYSDIRS $P9DIR $STDDIRS
 # (concurrency comes first, because Source is its file, not commons's,
 # which is P9DIR on Linux. With concurrency after it, Source would not
 # be made after the Printf it names.)
@@ -73,7 +63,6 @@ CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH 
 # with registers (-simple -O -ssa, plan_cc_ssa.md), which makes gc.c's
 # scan as fast as it was when written by hand in assembly
 $L/runtime.$O: $RTSRC
-	mkdir -p $L
 	$CC -O3 $CINC -o $target $TOP/languages/ml/runtime/runtime.c
 
 # The C library is goken's (libc/, with its LICENSE). Here are the files

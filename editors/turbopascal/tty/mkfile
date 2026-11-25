@@ -22,71 +22,48 @@ LIBOBJS=
 
 # the other directories' units, each by its name
 $D/Lehmer.$O: $R/Lehmer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $R/Lehmer.ml
 $D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Line_discipline.ml
 $D/Vt.$O: $T/Vt.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Vt.ml
 $D/Talk.$O: $T/Talk.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Talk.ml
 $D/Curses.$O: $T/Curses.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Curses.ml
 $D/Tui.$O: $T/Tui.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Tui.ml
 $D/Tty_unix.$O: $T/unix/Tty_unix.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/unix/Tty_unix.ml
 $D/Pcode.$O: $PAS/Pcode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pcode.ml
 $D/Pascal_lexer.$O: $PAS/Pascal_lexer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pascal_lexer.ml
 $D/Pascal_compile.$O: $PAS/Pascal_compile.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pascal_compile.ml
 $D/Pmachine.$O: $PAS/Pmachine.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pmachine.ml
 $D/Pdebug.$O: $PAS/Pdebug.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pdebug.ml
 $D/Pascal_disk.$O: $PAS/Pascal_disk.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pascal_disk.ml
 $D/Turbo_edit.$O: $KIT/Turbo_edit.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_edit.ml
 $D/Turbo_debug.$O: $KIT/Turbo_debug.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_debug.ml
 $D/Turbo_menus.$O: $KIT/Turbo_menus.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_menus.ml
 $D/Turbo_update.$O: $KIT/Turbo_update.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_update.ml
 $D/Turbo_view.$O: $KIT/Turbo_view.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_view.ml
 $D/Tui_turbo.$O: $KIT/Tui_turbo.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Tui_turbo.ml
 $D/Keys.$O: ../Keys.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../Keys.ml
 $D/Font_default.$O: $TOP/lib_graphics/Font_default.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/lib_graphics/Font_default.ml
 $D/Cells.$O: $T/hosts/Cells.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/Cells.ml
 $D/Picture.$O: $T/hosts/Picture.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/Picture.ml

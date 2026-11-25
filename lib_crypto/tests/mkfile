@@ -4,6 +4,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_crypto/tests
+MADE=`{mkdir -p $D}
 LIBDIRS=lib_crypto
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . $LIBI $STDI
@@ -12,7 +13,6 @@ LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig mkfile
 all:V: $D/vectors $D/speed
 
 $D/%.$O: %.ml $LIBSRC
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/vectors: $D/Vectors.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Vectors Std_exit -o $D/Vectors.start.$O

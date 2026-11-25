@@ -27,6 +27,7 @@ PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # beside the other: games/puzzle-soft)
 BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/$DIR$BESIDE
+MADE=`{mkdir -p $D}
 # (each after the ones it names)
 LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
@@ -110,7 +111,6 @@ $QO/%.$O: $LOCAL
 # a game: its unit (Tetris.ml), the program its name in small letters
 # (tetris); Tetris.linked says it is made
 $D/%.$O: %.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/%.linked: $D/%.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB $stem Std_exit -o $D/$stem.start.$O

@@ -3,13 +3,13 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/byte
+MADE=`{mkdir -p $D}
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-xd
 
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-xd: $D/Xd.$O $LIBS
 	$ML -start $STD $COMMONS Xd Std_exit -o $D/Xd.start.$O

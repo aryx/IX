@@ -7,6 +7,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/apps/files
+MADE=`{mkdir -p $D}
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
@@ -19,7 +20,6 @@ LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/files $D/open
 
 $D/%.$O: %.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
 $D/files: $D/Files.$O $LIBS

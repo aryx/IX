@@ -17,22 +17,17 @@ GEN=$B/database/Parser.ml $B/database/Lexer.ml
 # mkprog's). Each unit gets its own recipe, so that .depend orders each
 # one. The folders: storage dbm sql
 $D/%.$O: storage/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target storage/$stem.ml
 $D/%.$O: dbm/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target dbm/$stem.ml
 $D/%.$O: sql/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target sql/$stem.ml
 
 # the lexer and the grammar, which are in sql/ (mkprog's rules are for
 # this directory's files)
 $D/Parser.ml: sql/Parser.mly
-	mkdir -p $D
 	$YACC -b $D/Parser sql/Parser.mly
 $D/Lexer.ml: sql/Lexer.mll
-	mkdir -p $D
 	$LEX -o $target sql/Lexer.mll
 
 # the units that mini-yacc and mini-lex made, each by its name

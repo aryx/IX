@@ -22,42 +22,41 @@ $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
+
 # lib_code's units (Dominators Braun Liveness Coloring, SSA's algorithms,
 # which mini-cc uses too), with one recipe each, so that .depend orders
 # each one
 $D/%.$O: $TOP/lib_code/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $TOP/lib_code/$stem.ml
+
 # pp/'s units (Bits Derive Pp), with one recipe each, so that .depend
 # orders each one
 $D/%.$O: pp/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target pp/$stem.ml
+
 # simple/'s units (Ir Summary Fold Lower Gen), with one recipe each, so
 # that .depend orders each one
 $D/%.$O: simple/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target simple/$stem.ml
 $D/Gas.$O: compat/Gas.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target compat/Gas.ml
 $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target opti/Opti.ml
+
 # ssa/'s units (Ssa Ssa_build Unbox Untag Cse Licm Alloc Emit), with one
 # recipe each, so that .depend orders each one
 $D/%.$O: ssa/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target ssa/$stem.ml
+
 # debug/'s units (Lines_ml Acid_ml), with one recipe each, so that
 # .depend orders each one
 $D/%.$O: debug/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target debug/$stem.ml
+
 # dotnet/'s units (Il_code Il_types Il_functions Il_patterns Il_externals
 # Il_printf Il_prims Il_exprs Lower_il), and mini-dotnet's writer of
 # assemblies (Metadata Signature Il Writer), by their names
 $D/%.$O: dotnet/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target dotnet/$stem.ml
 $D/%.$O: ../dotnet/assembly/%.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../dotnet/assembly/$stem.ml

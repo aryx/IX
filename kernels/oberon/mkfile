@@ -28,6 +28,7 @@ BD=$M/$BOARD
 # includes l.s, while the Pi 4's l.s is complete by itself.
 LS=`{case $O in 5) echo l1.s;; 7) echo l.s;; esac}
 D=$B/$DIR
+MADE=`{mkdir -p $D}
 
 # Oberon's modules, in the order they start, after the machine's. From
 # the language, they use the standard library and not ix's own library
@@ -78,35 +79,26 @@ all:V: $IMAGE
 SRC=`{ls *.ml */*.ml */*.mli}
 MACHINE=Machine Usbhost
 ${MACHINE:%=$D/%.$O} ${OBERON:%=$D/%.$O} ${APPS:%=$D/%.$O}: $SRC
-	mkdir -p $D
 	for t in $target; do
 		$ML $MLI -o $t */`basename $t .$O`.ml || exit 1
 	done
 $D/Main.$O: $SRC
-	mkdir -p $D
 	$ML $MLI -o $target Main.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
-	mkdir -p $D
 	$ML -start $STD $UNITS Std_exit -o $target
 
 # the C and the assembly
 $D/rt.$O: $RTSRC mkfile
-	mkdir -p $D
 	$CC $CINC $HEAP -o $target $RT/runtime.c
 $D/kruntime.$O: $M/runtime.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $M/runtime.c
 $D/usb_c.$O: $M/usb.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $M/usb.c
 $D/machine_c.$O: $BD/machine.c $M/machine.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $BD/machine.c
 $D/shim.$O: $M/shim.c $BD/board.h
-	mkdir -p $D
 	$CC $KINC -o $target $M/shim.c
 $D/l.$O: $BD/$LS $BD/l.s
-	mkdir -p $D
 	$AS -o $target $BD/$LS
 
 # The disk holds its files one after the other, each after a line with
@@ -115,14 +107,12 @@ $D/l.$O: $BD/$LS $BD/l.s
 DISKFILES=`{ls disk/*.Fnt disk/*.Tool disk/*.Text}
 DISK=$D/disk.img
 $DISK: $DISKFILES mkfile
-	mkdir -p $D
 	(for f in $DISKFILES; do echo `basename $f` `wc -c < $f | tr -d ' '`; cat $f; done; echo) > $target
 
 # The disk and the console's font go inside the kernel, and mini-asm
 # -data puts each file's bytes in one DATA. The disk's size is one line
 # of assembly text.
 $D/images.$O: $DISK $M/font1.bin
-	mkdir -p $D
 	(echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $DISK | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
 	$AS -data fs_image=$DISK -data font_image=$M/font1.bin -o $target $D/images.s
 
@@ -131,6 +121,7 @@ $D/images.$O: $DISK $M/font1.bin
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS $D/stamp.$O
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS $D/stamp.$O
+
 # the kernel's stamp (machine.c's kernel_stamp, which /dev/osversion
 # says on mini-9pi): the checksum of its objects, as mkkernel's
 $D/stamp.$O: $OBJS

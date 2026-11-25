@@ -3,6 +3,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/lynx
+MADE=`{mkdir -p $D}
 LIBDIRS=lib_crypto lib_compression lib_networking browsers/html
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . $LIBI $STDI
@@ -11,7 +12,6 @@ LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/mini-lynx
 
 $D/%.$O: %.ml $LIBSRC
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-lynx: $D/Lynx.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Lynx Std_exit -o $D/Lynx.start.$O

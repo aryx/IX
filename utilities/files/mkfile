@@ -3,13 +3,13 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/files
+MADE=`{mkdir -p $D}
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-cat $D/mini-ls $D/mini-pwd $D/mini-mkdir $D/mini-rm $D/mini-cp $D/mini-mv $D/mini-touch $D/mini-chmod $D/mini-mtime $D/mini-walk
 
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-cat: $D/Cat.$O $LIBS
 	$ML -start $STD $COMMONS Cat Std_exit -o $D/Cat.start.$O

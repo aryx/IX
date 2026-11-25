@@ -30,6 +30,7 @@ ARCH=arm64
 M=machine
 BD=$M/$BOARD
 D=$B/$DIR
+MADE=`{mkdir -p $D}
 # The system to start: Quiet (Squeak's, with nothing that moves by
 # itself, so a pass of its world takes 5,000 bytecodes), Squeak (with
 # the atoms and the car driving, 88,000 bytecodes a pass, which is a
@@ -85,43 +86,33 @@ SRC=`{ls *.ml *.mli machine/*.ml machine/*.mli}
 # comes from, so that another SYSTEM, DEPTH or FROM remakes Which and
 # the image.)
 $D/system.$SYSTEM.$DEPTH.$FROM:
-	mkdir -p $D
 	rm -f $D/system.*
 	touch $target
 $D/Which.ml: $D/system.$SYSTEM.$DEPTH.$FROM mkfile
 	(echo "let system = Squeak.$SYSTEM"; echo "let depth = $DEPTH") > $target
 ${LOCALUNITS:%=$D/%.$O}: $SRC $D/Which.ml ${SMALLTALK:%=$ST/%.$O}
-	mkdir -p $D
 	for t in $target; do
 		u=`basename $t .$O`
 		f=$u.ml; [ -f $f ] || f=$M/$u.ml; [ -f $f ] || f=$D/$u.ml
 		$ML $MLI -o $t $f || exit 1
 	done
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
-	mkdir -p $D
 	$ML -start $STD $UNITS Std_exit -o $target
 
 # the C and the assembly
 $D/rt.$O: $RTSRC mkfile
-	mkdir -p $D
 	$CC $CINC $HEAP -o $target $RT/runtime.c
 $D/kruntime.$O: $M/runtime.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $M/runtime.c
 $D/usb_c.$O: $M/usb.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $M/usb.c
 $D/machine_c.$O: $BD/machine.c $M/machine.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target $BD/machine.c
 $D/shim.$O: $M/shim.c $BD/board.h
-	mkdir -p $D
 	$CC $KINC -o $target $M/shim.c
 $D/host.$O: host.c $KH
-	mkdir -p $D
 	$CC $KINC -o $target host.c
 $D/l.$O: $BD/l.s
-	mkdir -p $D
 	$AS -o $target $BD/l.s
 
 # Smalltalk's image: mini-smalltalk starts the system as a host starts
@@ -130,7 +121,6 @@ $D/l.$O: $BD/l.s
 # the one mini-ml builds would. With FROM=text there is no image, only
 # an empty file.
 $D/world.image: $D/system.$SYSTEM.$DEPTH.$FROM ${SMALLTALK:%=$ST/%.$O}
-	mkdir -p $D
 	if [ $FROM = image ]; then mini-smalltalk -k `echo $SYSTEM | tr A-Z a-z` -world 1 -o $target > /dev/null; else : > $target; fi
 
 # The console's font and Smalltalk's image go inside the kernel, and
@@ -139,7 +129,6 @@ $D/world.image: $D/system.$SYSTEM.$DEPTH.$FROM ${SMALLTALK:%=$ST/%.$O}
 # it). When there is no image, its size is 0, and fs_image is a word of
 # nothing.
 $D/images.$O: $M/font1.bin $D/world.image mkfile
-	mkdir -p $D
 	(echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $D/world.image | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD"
 	 [ -s $D/world.image ] || echo "GLOBL	fs_image+0(SB), \$$WORD") > $D/images.s
 	$AS -data font_image=$M/font1.bin `[ -s $D/world.image ] && echo -data fs_image=$D/world.image` -o $target $D/images.s
@@ -148,6 +137,7 @@ $D/images.$O: $M/font1.bin $D/world.image mkfile
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/host.$O $D/images.$O $D/start.$O $STDOBJS $D/Machine.$O $D/Usbhost.$O ${SMALLTALK:%=$ST/%.$O} $D/Which.$O $D/Host.$O $D/Main.$O $L/std_exit.$O $D/rt.$O $L/libc.a
 $IMAGE: $OBJS $D/stamp.$O
 	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS $D/stamp.$O
+
 # the kernel's stamp (machine.c's kernel_stamp, which /dev/osversion
 # says on mini-9pi): the checksum of its objects, as mkkernel's
 $D/stamp.$O: $OBJS

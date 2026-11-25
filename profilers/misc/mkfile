@@ -4,6 +4,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/profilers/misc
+MADE=`{mkdir -p $D}
 G=../../lib_graphics
 M=../../machine
 MI=-I $M/core -I $M/arm32 -I $M/arm64 -I $M/process -I $M/compat
@@ -18,29 +19,23 @@ MLOCAL=`{ls $M/*/*.ml $M/*/*.mli}
 all:V: $D/mini-prof $D/mini-stats
 
 $D/%.$O: $G/%.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/$stem.ml
 
 # machine's units, named in full (mk refuses a second rule with %),
 # each found by its name in machine's folders
 $MACHOBJS: $MLOCAL
-	mkdir -p $D
 	for(t in $target) $ML $INCLUDES -o $t $M/*/^`{basename $t .$O}^.ml || exit 1
 
 $D/Profiler.$O: Profiler.ml $LOCAL $MLOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Profiler.ml
 $D/Prof.$O: Prof.ml $LOCAL $MLOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Prof.ml
 $D/mini-prof: $MACHOBJS $D/Profiler.$O $D/Prof.$O $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $MACH Profiler Prof Std_exit -o $D/Prof.start.$O
 	$LD $LDH -nofollow -o $target $D/Prof.start.$O $STDOBJS $MACHOBJS $D/Profiler.$O $D/Prof.$O $STDEND
 $D/Sysinfo.$O: Sysinfo.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Sysinfo.ml
 $D/Stats.$O: Stats.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Stats.ml
 $D/mini-stats: $D/Sysinfo.$O $D/Stats.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $LIB Sysinfo Stats Std_exit -o $D/Stats.start.$O

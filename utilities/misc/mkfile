@@ -3,13 +3,13 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/misc
+MADE=`{mkdir -p $D}
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-echo $D/mini-basename $D/mini-wc $D/mini-seq $D/mini-cleanname $D/mini-du $D/mini-test
 
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-echo: $D/Echo.$O $LIBS
 	$ML -start $STD $COMMONS Echo Std_exit -o $D/Echo.start.$O
@@ -20,6 +20,7 @@ $D/mini-basename: $D/Basename.$O $LIBS
 $D/mini-wc: $D/Wc.$O $LIBS
 	$ML -start $STD $COMMONS Wc Std_exit -o $D/Wc.start.$O
 	$LD $LDH -nofollow -o $target $D/Wc.start.$O $STDOBJS $D/Wc.$O $STDEND
+
 # (Seq_, because Seq is the standard library's)
 $D/mini-seq: $D/Seq_.$O $LIBS
 	$ML -start $STD $COMMONS Seq_ Std_exit -o $D/Seq_.start.$O

@@ -15,6 +15,7 @@ TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step1
+MADE=`{mkdir -p $D}
 EXPECTED=`{if(~ $O 5) echo expected; if not if(~ $O 7) echo expected-pi4}
 # The heap has two halves of 4M words (32 MB each), and the value stack
 # has 1 MB. The words are quoted because, after a variable's =, mk reads
@@ -24,30 +25,24 @@ HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 all:V: $D/kernel8.img
 
 $D/Main.$O: Main.ml
-	mkdir -p $D
 	$ML $STDI -o $target Main.ml
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig
-	mkdir -p $D
 	$ML -start $STD $COMMONS Main Std_exit -o $target
 $D/runtime.$O: $RTSRC mkfile
-	mkdir -p $D
 	$CC $CINC $HEAP -o $target $TOP/languages/ml/runtime/runtime.c
 $D/l.$O: ../step0/${P}l.s
-	mkdir -p $D
 	$AS -o $target $prereq
 $D/shim.$O: ../step0/shim.c
-	mkdir -p $D
 	$CC $CINC -o $target ../step0/shim.c
+
 # memmove and memset come from port's C, a byte at a time, and not from
 # libc's arm64 assembly (9front's). That assembly moves pairs of words,
 # which fault at an address that is not aligned when the MMU is off, as
 # it is here (QEMU raises the alignment fault; mini-qemu does not
 # check). With libc's, the kernel does not boot under QEMU.
 $D/memmove.$O: $TOP/lib_core/libc/port/memmove.c
-	mkdir -p $D
 	$CC $CINC -o $target $prereq
 $D/memset.$O: $TOP/lib_core/libc/port/memset.c
-	mkdir -p $D
 	$CC $CINC -o $target $prereq
 
 OBJS=$D/l.$O $D/shim.$O $D/start.$O $STDOBJS $D/Main.$O $L/std_exit.$O \

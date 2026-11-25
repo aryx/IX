@@ -3,13 +3,13 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/time
+MADE=`{mkdir -p $D}
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-date $D/mini-cal
 
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-date: $D/Date.$O $LIBS
 	$ML -start $STD $COMMONS Date Std_exit -o $D/Date.start.$O

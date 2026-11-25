@@ -14,6 +14,7 @@ TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step0
+MADE=`{mkdir -p $D}
 IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
 # (the board's expected lines, such as pi1/expected-s on the Pi 1)
 EXPECTED=${P}expected
@@ -22,16 +23,12 @@ all:V: $D/hello-s.img $D/hello-c.img
 
 # (The assembly is the board's own, and the C is for both boards.)
 $D/hello.$O: ${P}hello.s
-	mkdir -p $D
 	$AS -o $target $prereq
 $D/l.$O: ${P}l.s
-	mkdir -p $D
 	$AS -o $target $prereq
 $D/shim.$O: shim.c
-	mkdir -p $D
 	$CC $CINC -o $target shim.c
 $D/helloc.$O: hello.c
-	mkdir -p $D
 	$CC $CINC -o $target hello.c
 
 $D/hello-s.img: $D/hello.$O

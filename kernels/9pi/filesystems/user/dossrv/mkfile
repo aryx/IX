@@ -12,16 +12,12 @@ LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 $D/P9.$O: ../../../../../lib_networking/9p/P9.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9.ml
 $D/P9_wire.$O: ../../../../../lib_networking/9p/P9_wire.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9_wire.ml
 $D/P9_server.$O: ../../../../../lib_networking/9p/P9_server.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../../../../../lib_networking/9p/P9_server.ml
 
 # (Fat is the kernel's too, in Kdos.)
 $D/Fat.$O: ../../lib_fat/Fat.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../../lib_fat/Fat.ml

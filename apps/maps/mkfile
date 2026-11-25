@@ -8,6 +8,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/apps/maps
+MADE=`{mkdir -p $D}
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # (each library comes after the ones it names)
 LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_gui \
@@ -25,12 +26,10 @@ LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/mini-maps
 
 $D/%.$O: %.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
 # the worker, a thread of lib_core's, a large one (Worker_spawn.mli)
 $D/Worker_spawn.$O: $TOP/browsers/netscape/spawn/large_threads.ml $TOP/browsers/netscape/Worker_spawn.mli
-	mkdir -p $D
 	cp $TOP/browsers/netscape/Worker_spawn.mli $D/Worker_spawn.mli
 	cp $TOP/browsers/netscape/spawn/large_threads.ml $D/Worker_spawn.ml
 	$ML $INCLUDES -o $target $D/Worker_spawn.ml

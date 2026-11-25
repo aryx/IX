@@ -69,7 +69,6 @@ all:V: $IMAGE
 # kernel's by the next rule.
 LIBSRC=`{ls $KLIB/*.ml $KLIB/*.mli $BD/*.ml}
 ${LIB_ML:%=$D/%.$O}: $LIBSRC
-	mkdir -p $D
 	for(t in $target){
 		u=`{basename $t .$O}
 		f=$KLIB/$u.ml; if(! ls $f >/dev/null >[2=1]) f=$BD/$u.ml
@@ -85,7 +84,6 @@ KSRC=${KML:%=%.ml}
 # made the units out of date one after the other, whatever NPROC
 <|$RC $KLIB/units.rc $KML
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
-	mkdir -p $D
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
 
 # The C and the assembly, by their names. mini-cc compiles the C with
@@ -93,23 +91,17 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 # compat's back end instead, with 5c -O0's code.
 COPT=-O3
 $D/rt.$O: $RTSRC $KLIB/mkkernel
-	mkdir -p $D
 	$CC $COPT $CINC $HEAP -DTRACING -o $target $RT/runtime.c
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
 $D/kruntime.$O: $KLIB/runtime.c $KH
-	mkdir -p $D
 	$CC $COPT $KINC $KFLAGS -o $target $KLIB/runtime.c
 $D/usb_c.$O: $KLIB/usb.c $KH
-	mkdir -p $D
 	$CC $COPT $KINC -o $target $KLIB/usb.c
 $D/machine_c.$O: $BD/machine.c $KLIB/machine.c $KH
-	mkdir -p $D
 	$CC $COPT $KINC $KFLAGS -o $target $BD/machine.c
 $D/shim.$O: $KLIB/shim.c $BD/board.h
-	mkdir -p $D
 	$CC $COPT $KINC -o $target $KLIB/shim.c
 $D/l.$O: $BD/$LS $BD/l.s
-	mkdir -p $D
 	$AS -o $target $BD/$LS
 
 # The disk image and the font inside the kernel. Each file's bytes are
@@ -119,7 +111,6 @@ $D/l.$O: $BD/$LS $BD/l.s
 # which mini-asm took 23 s to read:
 #   fn data { od -An -v -tx$WORD $2 | awk ... printf "DATA\t%s+%d(SB)/%d, $0x%s\n" ... }
 $D/images.$O: $FS $KLIB/font1.bin
-	mkdir -p $D
 	{ echo 'DATA	fs_image_size+0(SB)/'^$WORD^', $'^`{wc -c < $FS | tr -d ' '}; echo 'GLOBL	fs_image_size+0(SB), $'^$WORD } > $D/images.s
 	$AS -data fs_image'='$FS -data font_image'='$KLIB/font1.bin -o $target $D/images.s
 

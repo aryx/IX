@@ -61,11 +61,15 @@ STD=Stdlib Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Filena
 # file is: commons/ but Sys_plan9's on Plan 9 (P9DIR), and Source's,
 # which is concurrency/Source.ml: commons/Source.ml is OCaml's threads')
 COMMONS=Common I64 Binary Utf8 Console Logging Procs Json Set_ Map_ Marshal_ Regex Sys_plan9 Exception Exit Arg_ Fpath_ Chan FS Source
-STDDIRS=core base collections printing parsing system concurrency commons
+STDDIRS=core base collections printing parsing concurrency commons
 # (Unix is the system's: Linux's in system/, Plan 9's in system/plan9/,
-# with an interface of its own, found first: UNIXDIR; and Sys_plan9,
-# Plan 9's own for ix's programs, nothing elsewhere: P9DIR)
-STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
+# with an interface of its own, found first: UNIXDIR, and SYSDIRS, it
+# then system/ on Plan 9, system/ alone on Linux, once: no file of
+# system/ is in STDDIRS'; and Sys_plan9, Plan 9's own for ix's
+# programs, nothing elsewhere: P9DIR)
+# old: STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%},
+# system in STDDIRS: on Linux -I system twice in every compile's line
+STDI=${SYSDIRS:%=-I $TOP/lib_core/%} ${STDDIRS:%=-I $TOP/lib_core/%}
 # and their summaries (X.inline: mini-ml's .cmx), for their constants
 # (Sys.word_size): in a mkfile's INCLUDES only if it has a .depend
 # (mkfiles/mkdepend: mkprog's, mklib's), whose lines on them make a

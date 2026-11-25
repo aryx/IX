@@ -4,6 +4,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_graphics/tests
+MADE=`{mkdir -p $D}
 INCLUDES=-I . -I .. $STDI
 LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 LIBOBJS=${LIB:%=$D/%.$O}
@@ -13,16 +14,12 @@ LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $D/hellodraw $D/hellomenu $D/hellokbd
 
 $D/%.$O: ../%.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../$stem.ml
 $D/Hellodraw.$O: Hellodraw.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Hellodraw.ml
 $D/Hellomenu.$O: Hellomenu.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Hellomenu.ml
 $D/Hellokbd.$O: Hellokbd.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target Hellokbd.ml
 $D/hellokbd: $D/Hellokbd.$O $LIBS
 	$ML -start $STD $COMMONS $LIB Hellokbd Std_exit -o $D/Hellokbd.start.$O

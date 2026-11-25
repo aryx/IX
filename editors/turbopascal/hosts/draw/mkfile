@@ -22,89 +22,60 @@ LIBOBJS=
 
 # the other directories' units, each by its name
 $D/Lehmer.$O: $R/Lehmer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $R/Lehmer.ml
 $D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Line_discipline.ml
 $D/Vt.$O: $T/Vt.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Vt.ml
 $D/Talk.$O: $T/Talk.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Talk.ml
 $D/Curses.$O: $T/Curses.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Curses.ml
 $D/Tui.$O: $T/Tui.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Tui.ml
 $D/Pcode.$O: $PAS/Pcode.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pcode.ml
 $D/Pascal_lexer.$O: $PAS/Pascal_lexer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pascal_lexer.ml
 $D/Pascal_compile.$O: $PAS/Pascal_compile.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pascal_compile.ml
 $D/Pmachine.$O: $PAS/Pmachine.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pmachine.ml
 $D/Pdebug.$O: $PAS/Pdebug.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pdebug.ml
 $D/Pascal_disk.$O: $PAS/Pascal_disk.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $PAS/Pascal_disk.ml
 $D/Turbo_edit.$O: $KIT/Turbo_edit.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_edit.ml
 $D/Turbo_debug.$O: $KIT/Turbo_debug.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_debug.ml
 $D/Turbo_menus.$O: $KIT/Turbo_menus.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_menus.ml
 $D/Turbo_update.$O: $KIT/Turbo_update.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_update.ml
 $D/Turbo_view.$O: $KIT/Turbo_view.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Turbo_view.ml
 $D/Tui_turbo.$O: $KIT/Tui_turbo.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $KIT/Tui_turbo.ml
 $D/Keys.$O: ../../Keys.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target ../../Keys.ml
 $D/Point.$O: $G/Point.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Point.ml
 $D/Rectangle.$O: $G/Rectangle.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Rectangle.ml
 $D/Display.$O: $G/Display.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Display.ml
 $D/Draw.$O: $G/Draw.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Draw.ml
 $D/Font_default.$O: $G/Font_default.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Font_default.ml
 $D/Font.$O: $G/Font.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Font.ml
 $D/Mouse.$O: $G/Mouse.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Mouse.ml
 $D/Keyboard.$O: $G/Keyboard.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $G/Keyboard.ml
 $D/Cells.$O: $T/hosts/Cells.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/Cells.ml
 $D/Window_draw.$O: $T/hosts/draw/Window_draw.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/hosts/draw/Window_draw.ml

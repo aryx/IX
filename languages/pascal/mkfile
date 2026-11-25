@@ -18,14 +18,10 @@ LIBOBJS=
 
 # the libraries' units, by their names
 $D/Lehmer.$O: $R/Lehmer.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $R/Lehmer.ml
 $D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Line_discipline.ml
 $D/Vt.$O: $T/Vt.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Vt.ml
 $D/Talk.$O: $T/Talk.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target $T/Talk.ml

@@ -4,6 +4,7 @@
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/networking
+MADE=`{mkdir -p $D}
 # (mini-httpd uses sockets, so it is Linux's only)
 PROGS=`{if(~ $OS plan9) echo '$D/mini-curl $D/mini-timesync'; if not echo '$D/mini-curl $D/mini-timesync $D/mini-httpd'}
 LIBDIRS=lib_crypto lib_compression lib_networking
@@ -14,7 +15,6 @@ LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 all:V: $PROGS
 
 $D/%.$O: %.ml $LIBSRC
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-curl: $D/Curl.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Curl Std_exit -o $D/Curl.start.$O

@@ -16,14 +16,11 @@ LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
 # compat/'s unit, named in full (mk refuses a second rule with % for
 # every unit)
 $D/Follow.$O: compat/Follow.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target compat/Follow.ml
 
 # debug/'s units (what a debugger needs: plan_debugger.md), named in
 # full too
 $D/Debug_link.$O: debug/Debug_link.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target debug/Debug_link.ml
 $D/Symtab.$O: debug/Symtab.ml $LOCAL
-	mkdir -p $D
 	$ML $INCLUDES -o $target debug/Symtab.ml

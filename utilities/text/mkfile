@@ -3,13 +3,13 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/utilities/text
+MADE=`{mkdir -p $D}
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-grep $D/mini-uniq $D/mini-tr $D/mini-sed $D/mini-sort
 
 $D/%.$O: %.ml
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-grep: $D/Grep.$O $LIBS
 	$ML -start $STD $COMMONS Grep Std_exit -o $D/Grep.start.$O

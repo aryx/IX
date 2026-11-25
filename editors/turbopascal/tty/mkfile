@@ -1,39 +1,26 @@
 # mini-turbopascal in a terminal, built by ix's tools: the IDE
 # (../editor), a session with no screen (../Keys), and its screen as a
 # picture (lib_terminal/hosts: Cells, Picture, with lib_graphics's
-# font), over mini-pascal (languages/pascal), whose units are taken from
-# their directories, each by its name, and the library lib_terminal
-# with its Tty_unix.
+# font), whose units are taken from their directories, each by its
+# name; over the libraries languages/pascal (mini-pascal's) and
+# lib_terminal, with its Tty_unix.
 TOP=../../..
 DIR=editors/turbopascal/tty
 PROG=mini-turbopascal-tty
 T=$TOP/lib_terminal
-PAS=$TOP/languages/pascal
 KIT=../editor
-SRC=Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Font_default Cells Picture Main
-LOCAL=`{ls *.ml ../*.ml ../*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/Font_default.ml ../editor/*.ml ../editor/*.mli ../../../languages/pascal/*.ml ../../../languages/pascal/*.mli}
+SRC=Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Font_default Cells Picture Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/Font_default.ml ../editor/*.ml ../editor/*.mli}
 GEN=
-LIBI=-I .. -I ../editor -I ../../../lib_terminal/hosts -I ../../../lib_graphics -I ../../../languages/pascal
+LIBI=-I .. -I ../editor -I ../../../lib_terminal/hosts -I ../../../lib_graphics
 LIBUNITS=
 # (lib_terminal, with Tty_unix; Lehmer, the numbers its Talk draws)
-LIBDIRS=lib_playground/random lib_terminal
+LIBDIRS=lib_playground/random lib_terminal languages/pascal
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
 # the other directories' units, each by its name
-$D/Pcode.$O: $PAS/Pcode.ml $LOCAL
-	$ML $INCLUDES -o $target $PAS/Pcode.ml
-$D/Pascal_lexer.$O: $PAS/Pascal_lexer.ml $LOCAL
-	$ML $INCLUDES -o $target $PAS/Pascal_lexer.ml
-$D/Pascal_compile.$O: $PAS/Pascal_compile.ml $LOCAL
-	$ML $INCLUDES -o $target $PAS/Pascal_compile.ml
-$D/Pmachine.$O: $PAS/Pmachine.ml $LOCAL
-	$ML $INCLUDES -o $target $PAS/Pmachine.ml
-$D/Pdebug.$O: $PAS/Pdebug.ml $LOCAL
-	$ML $INCLUDES -o $target $PAS/Pdebug.ml
-$D/Pascal_disk.$O: $PAS/Pascal_disk.ml $LOCAL
-	$ML $INCLUDES -o $target $PAS/Pascal_disk.ml
 $D/Turbo_edit.$O: $KIT/Turbo_edit.ml $LOCAL
 	$ML $INCLUDES -o $target $KIT/Turbo_edit.ml
 $D/Turbo_debug.$O: $KIT/Turbo_debug.ml $LOCAL

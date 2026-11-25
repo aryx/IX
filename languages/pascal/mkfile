@@ -1,16 +1,25 @@
-# mini-pascal, built by ix's tools. The P-machine talks (lib_terminal's
-# Talk, with what it stands on) and draws its numbers from Lehmer
-# (lib_playground/random): two libraries.
+# languages/pascal as a library (mkfiles/mklib): mini-pascal's compiler
+# and P-machine, for both turbopascals too, which compiled them each
+# from here before (plan_simpler_builds.md, step 4); and mini-pascal,
+# its CLI and Main linked with that library. The P-machine talks
+# (lib_terminal's Talk) and draws its numbers from Lehmer
+# (lib_playground/random).
 TOP=../..
-DIR=languages/pascal
-PROG=mini-pascal
-SRC=Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk CLI Main
-LOCAL=`{ls *.ml *.mli}
-GEN=
-LIBI=
-LIBUNITS=
-# (lib_terminal: Talk, with what it stands on; Lehmer, its numbers)
-LIBDIRS=lib_playground/random lib_terminal
-LIBOBJS=
 <$TOP/mkfiles/mkconfig
-<$TOP/mkfiles/mkprog
+LIB=languages/pascal
+DIRS=.
+NEEDS=lib_playground/random lib_terminal
+UNITS=Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk
+# (mini-pascal's two units come after the library's units they name)
+DEPMORE=CLI Main
+<$TOP/mkfiles/mklib
+
+LIBDIRS=lib_playground/random lib_terminal
+<$TOP/mkfiles/mklibs
+all:V: $D/mini-pascal
+
+# (CLI and Main: libs.rc's rule for ., as the library's units)
+$D/CLI.$O $D/Main.$O: $LOCAL $MLEXE
+$D/mini-pascal: $D/CLI.$O $D/Main.$O $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA $D/lib.a} CLI Main Std_exit -o $D/mini-pascal.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-pascal.start.$O $STDOBJS $LIBA $D/lib.a $D/CLI.$O $D/Main.$O $STDEND

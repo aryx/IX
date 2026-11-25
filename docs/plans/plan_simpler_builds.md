@@ -13,8 +13,8 @@ things for m-ix (and t-ix) when possible, cheapest first".
 **Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2
 (7a7da7c5); step 4's first groups. Step 3 done, t-IX's session's (t-IX built
 beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
-languages/dotnet/assembly, lib_playground/random, lib_terminal. Next:
-the interpreters (scheme, pascal).**
+languages/dotnet/assembly, lib_playground/random, lib_terminal,
+languages/pascal. Next: languages/scheme.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -191,6 +191,10 @@ first requirement.
    turbopascals and mini-emacs-tty. Left of lib_terminal: hosts/
    (Cells, Picture), over lib_graphics's Font_default, which emacs and
    turbopascal compile themselves.
+   Done: languages/pascal (Pcode Pascal_lexer Pascal_compile Pmachine
+   Pdebug Pascal_disk), a library and mini-pascal in one mkfile, as
+   browsers/javascript and mini-node: both turbopascals link it, their
+   six rules gone; it moves from the top mkfile's BOTH to its libraries.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

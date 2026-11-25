@@ -13,9 +13,9 @@
  *
  * A source is a project path, read against the project's top: -project,
  * else the first directory up from the manifest with a dune-project, as
- * git finds its root, else the current directory. mini-ld's are project
- * paths (its -project, -build); tiny-ld's are still as it was given
- * them, in the build's copy of tiny/, which -project tiny names.
+ * git finds its root, else the current directory. Both linkers' are
+ * project paths (their -project; mini-ld's -build too); t-IX's build
+ * runs in a copy of tiny/, which -project tiny names.
  *
  * docs/plans/plan_analyzer_build_manifest.md *)
 
@@ -87,10 +87,11 @@ val of_manifest :
 val program :
   < Cap.open_in; Cap.readdir; .. > -> string -> string option -> program
 
-(* [linking manifest_file m sources file]: when the manifest links file
- * (a library's, tiny/TinyLibGUI.ml), the directory its paths are read
- * in for one of them to be file: sources if given, else the manifest's
- * directory, else the one that makes the manifest's path (TinyLibGUI.ml)
- * the file's, the build having run in a copy (tiny/TinyKernel/_make/src
- * of tiny); None when it does not link it *)
-val linking : string -> manifest -> string option -> string -> string option
+(* [root caps file project]: the project a manifest's paths are from:
+ * project if given, else the first directory up from the manifest with
+ * a dune-project, as git finds its root, else the current directory *)
+val root : < Cap.readdir; .. > -> string -> string option -> string
+
+(* [linking m root file]: whether the manifest links file (a library's,
+ * tiny/TinyLibGUI.ml), its paths read against root *)
+val linking : manifest -> string -> string -> bool

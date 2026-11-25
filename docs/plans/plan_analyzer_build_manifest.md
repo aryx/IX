@@ -537,6 +537,19 @@ init: no -start (the link's order is not the start's): the library's
 units start before the program's. Timing: -caps 40 s, -dead 37 s, -bugs
 66 s, -exn 101 s on the whole build.
 
+tiny-ld's project paths (2026-11-25; the author: "I like consistency
+and uniformity", "and simplicity"): tiny-ld -project, the project's top
+from where it runs (. by default; the kernel's link, in TinyKernel/,
+-project ..), each source written from it, as mini-ld's: both linkers'
+manifests read the same way, root and path. Gone from mini-analyze: the
+"shallowest manifest's directory" rule of several programs (the kernel's
+manifest one directory deeper, its paths from there) and the suffix
+matching of the library mode (a manifest's path the tree's, the build
+having run in a copy); one function, Tiny_manifest.root, says a
+manifest's project for both. tiny_check.sh the same (-project tiny: the
+copy of tiny/ has no project mark, and none is wanted); the library mode
+on t-IX's manifests says -project tiny too.
+
 ### The ledger
 
 Lines (wc -l), at each step; the analyzer's: analyzers/Analyze.ml,
@@ -558,7 +571,8 @@ ml/, report/, manifest/'s .ml.
 | a toplevel's global read (dead.dl) | e01478d6 | 56 | 95 | 92 | 124 | 37 | 4,940 |
 | E, rules and lib_core from mini-analyze's tree | 7f84bdc0 | 56 | 95 | 92 | 124 | 37 | 4,974 |
 | 4a, mini-ld's manifests, project paths | 16e614d6 | 56 | 95 | 92 | 124 | 37 | 5,004 |
-| 4b, ix_check.sh on ix's build | the next | 56 | 81 | 92 | 124 | 37 | 5,108 |
+| 4b, ix_check.sh on ix's build | 46fcd0f6 | 56 | 81 | 92 | 124 | 37 | 5,108 |
+| tiny-ld's project paths | the next | 56 | 81 | 92 | 124 | 37 | 5,081 |
 
 (4b: mk_units.sh and generated.sh no longer ix_check.sh's; caps_types.sh,
 dynamic.sh and sweep.sh, run by hand, still use them.)

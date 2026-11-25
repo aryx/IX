@@ -95,15 +95,17 @@ val address : symbols -> string -> int option
  * tiny-ld writes it with its map (-map: out.manifest), marshalled after
  * a magic line, as an object.
  *
- * The paths are as tiny-ld was given them, relative to the directory it
- * ran in, where the Buildfile's links put the program and its manifest.
- * A source is found beside its object, x.o's x.ml, x.c or x.s, and an
+ * An object's path is as tiny-ld was given it; a source is a project
+ * path, from the project's top (-project: where it is from tiny-ld's
+ * directory, . by default; the kernel's link, in TinyKernel/, says ..),
+ * as mini-ld's are. A source is found beside its object, x.o's x.ml,
+ * x.c or x.s, and an
  * archive member's beside the archive (TinyLibCore/stdlib.a's List.o is
  * TinyLibCore/List.ml); a start object (rc.start.o), which tiny-ml made
  * from the units' names, has none. No compile's flags: t-IX generates
  * no source and compiles each unit the same way (the Buildfile's MLC),
- * so the files are all a reader needs. mini-analyze will have its own
- * copy of these types; the constructors and fields are prefixed,
+ * so the files are all a reader needs. linker/Manifest has the same
+ * types, mini-ld's; the constructors and fields are prefixed,
  * tiny-ml's being one name space. *)
 
 type taken =

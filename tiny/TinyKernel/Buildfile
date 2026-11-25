@@ -64,7 +64,7 @@ UNITS = KRaw.o KGraphics.o KNetwork.o \
 kernel.start.o: $STDLIB $UNITS
 kernel.img: kentry.o udivmod.o kruntime.o kdraw.o kcopy.o kfont.o \
     kernel.start.o $STDLIB $UNITS kend.o
-	$LD -map -o $target $prereq
+	$LD -map -project .. -o $target $prereq
 
 # the units' dependencies, written by ml -depend
 depend:

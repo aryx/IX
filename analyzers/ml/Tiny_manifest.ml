@@ -123,6 +123,21 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
     library;
     units = List.map (fun (f, _) -> (unit_of f, f)) ml }
 
+let root (caps : < Cap.readdir; .. >) (file : string) (project : string option) : string =
+  match project with
+  | Some d -> d
+  | None ->
+      (* (the first directory up with a dune-project, as git finds its
+       * root; a build outside every project's, here's) *)
+      let rec top (d : string) : string option =
+        if CapSys.file_exists caps (Filename.concat d "dune-project") then Some d
+        else if Filename.dirname d = d then None
+        else top (Filename.dirname d) in
+      let cwd = FS.getcwd caps () in
+      let dir = Filename.dirname file in
+      let abs = if Filename.is_relative dir then Filename.concat cwd dir else dir in
+      (match top (FS.cleanname abs) with Some d -> d | None -> cwd)
+
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
     (project : string option) : program =
   let m = of_string (FS.read caps (Fpath.v file)) in
@@ -137,39 +152,13 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
            match of_string (FS.read caps (Fpath.v (Filename.concat dir n))) with
            | o -> Some o
            | exception Failure _ -> None) in
-  (* (the project: the first directory up with a dune-project, as git
-   * finds its root; a build outside every project's, here's) *)
-  let rec top (d : string) : string option =
-    if CapSys.file_exists caps (Filename.concat d "dune-project") then Some d
-    else if Filename.dirname d = d then None
-    else top (Filename.dirname d) in
-  let found () =
-    let cwd = FS.getcwd caps () in
-    let abs = if Filename.is_relative dir then Filename.concat cwd dir else dir in
-    match top (FS.cleanname abs) with Some d -> d | None -> cwd in
-  of_manifest caps m others (match project with Some d -> d | None -> found ())
+  of_manifest caps m others (root caps file project)
 
-let linking (manifest_file : string) (m : manifest) (sources : string option)
-    (file : string) : string option =
+let linking (m : manifest) (root : string) (file : string) : bool =
   let file = FS.cleanname file in
-  let ends_with (s : string) : string option =
-    (* (file is the tree's s: the build ran in a copy of the rest) *)
-    let n = String.length file - String.length s in
-    if file = s then Some "."
-    else if n > 0 && file.[n - 1] = '/' && String.sub file n (String.length s) = s
-    then Some (String.sub file 0 (n - 1))
-    else None in
-  List.find_map (fun (l : linked) ->
+  List.exists (fun (l : linked) ->
       match l.l_source with
-      | None -> None
       | Some (Ppath s) ->
-          let at (d : string) : string =
-            FS.cleanname (if Filename.is_relative s then Filename.concat d s else s) in
-          match sources with
-          | Some d -> if at d = file then Some d else None
-          | None ->
-              let d = Filename.dirname manifest_file in
-              if at d = file then Some d
-              else if Filename.is_relative s then ends_with (FS.cleanname s)
-              else None)
+          FS.cleanname (if Filename.is_relative s then Filename.concat root s else s) = file
+      | None -> false)
     m.m_units

@@ -122,18 +122,18 @@ let dune_runs (caps : < F.caps; .. >) (f : F.t) :
 
 let library (caps : < F.caps; .. >) (f : F.t) : int =
   let file = List.hd f.files in
-  let links (given : string option) (m : string) : string option =
-    let read = Tiny_manifest.of_string (FS.read caps (Fpath.v m)) in
-    Tiny_manifest.linking m read given file in
+  (* (a manifest that links the file, its paths read against its project) *)
+  let links (m : string) (root : string) : bool =
+    Tiny_manifest.linking (Tiny_manifest.of_string (FS.read caps (Fpath.v m))) root file in
   match
     let dune, gone = dune_runs caps f in
     let mains =
       List.filter_map (fun (m : string) ->
-          Option.map (fun (root : string) -> ("", m, [ "-project"; root ]))
-            (links (project f) m))
+          let root = Tiny_manifest.root caps m (project f) in
+          if links m root then Some ("", m, [ "-project"; root ]) else None)
         f.manifests
       @ List.filter (fun ((_, m, extra) : string * string * string list) ->
-          links (Some (List.nth extra 1)) m <> None) dune in
+          links m (List.nth extra 1)) dune in
     let st =
       if mains = [] then
         said caps (Printf.sprintf "mini-analyze: no program given links %s" file)
@@ -159,24 +159,8 @@ let several (caps : < F.caps; .. >) (f : F.t) : int =
       Console.eprint caps
         (Printf.sprintf "mini-analyze: no ML unit, not read: %s\n"
            (String.concat " " others));
-    (* (-project: the shallowest manifest's directory's, a deeper one's
-     * below it as the manifest is below that one: tiny/TinyKernel for
-     * _make/src/TinyKernel's kernel.img.manifest) *)
-    let dirs = List.map (fun m -> FS.cleanname (Filename.dirname m)) ms in
-    let top =
-      List.fold_left (fun a d -> if String.length d < String.length a then d else a)
-        (match dirs with d :: _ -> d | [] -> ".") dirs in
-    let project_of (m : string) : string list =
-      if f.project = "" then []
-      else
-        let d = FS.cleanname (Filename.dirname m) in
-        let below =
-          if d <> top && String.starts_with ~prefix:(top ^ "/") d then
-            let n = String.length top + 1 in
-            String.sub d n (String.length d - n)
-          else "" in
-        let dir = if below = "" then f.project else Filename.concat f.project below in
-        [ "-project"; dir ] in
+    let project_of (_ : string) : string list =
+      if f.project = "" then [] else [ "-project"; f.project ] in
     let named (m : string) : string =
       match Hashtbl.find_opt f.names m with Some n -> n | None -> "" in
     let st =

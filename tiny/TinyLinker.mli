@@ -106,7 +106,7 @@
  * makes the two the same: the assembler encodes, and the linker's only
  * way to fill a place is to call the encoder. *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.env; Cap.stdout; Cap.stderr >
 
 (* In_order keeps the objects' order, ignoring .text and .data;
  * Text_first (-n) puts all the text first, then all the data. *)

@@ -58,7 +58,7 @@ program of the build links. Several programs, or a directory of them,
 are each run and merged: **-dead** keeps what every program that has
 the file says (`dead_all.dl`), the others every program's reports
 (`said_all.dl`). A library's file and programs, manifests or `.exe`,
-`mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest`,
+`mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest`,
 say its dead code over those that link it; the file alone, over the
 programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build, the
 *files* given are the program (**-L**, **-I**, **-own** below).
@@ -148,9 +148,9 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
 :    The project's top, which a manifest's sources are paths from
      (mini-ld's: `assembler/Asm.ml`); without it, the first directory
      above the manifest with a `dune-project`, as git finds its root,
-     else the current directory. t-IX's build runs in a copy of `tiny`
-     (`tiny/TinyKernel/_make/src`), its paths as tiny-ld was given them
-     there: **-project** `tiny`, whose files the reports then name.
+     else the current directory. tiny-ld's are project paths too; t-IX's
+     build runs in a copy of `tiny` (`tiny/TinyKernel/_make/src`):
+     **-project** `tiny`, whose files the reports then name.
 
 **-r** *rules*
 :    The directory of the `.dl` files and `points_to/`; by default

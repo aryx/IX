@@ -10,13 +10,13 @@ module E = TinyLibExecutable
 module TSys = TinyLibSystem
 
 (* what tiny-ld asks for: the objects read, the image written *)
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.env; Cap.stdout; Cap.stderr >
 
 (* an address in the image, from 0 *)
 type address = int
 
 let usage =
-  "usage: tiny-ld [-a megabytes] [-n] [-s] [-map] [-debug] -o out file.o|lib.a..."
+  "usage: tiny-ld [-a megabytes] [-n] [-s] [-map [-project dir]] [-debug] -o out file.o|lib.a..."
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 
@@ -29,7 +29,8 @@ text's size in a fourth word (another magic number): tiny-kernel's segments
 share the text between the runs of a program. With -s, an executable too (of 1 MB unless -a says), with its
 labels after the image, but the compilers' local ones (what debug reads). With
 -map, out.map too: each label's address, by address (what tiny-prof reads);
-and out.manifest: the objects linked and their sources (for mini-analyze).
+and out.manifest: the objects linked and their sources, from the project's top
+(-project: where it is from here, . by default; for mini-analyze).
 With -debug, each object's items said (-v, -quiet: TSys.logging's).
 A library, tiny-ar's archive (lib.a), is its objects, all linked, in its order.
 A label's line is its address in hexadecimal and its name. In
@@ -312,11 +313,33 @@ let source (caps : < Cap.open_in; .. >) (o : string) (t : E.taken) :
   List.find_opt (fun f -> TSys.exists caps (Fpath.v f))
     (List.map file [ ".ml"; ".c"; ".s" ])
 
+(* a path with its . and .. gone: TinyKernel/../TinyLibCore/List.ml is
+ * TinyLibCore/List.ml *)
+let clean_path (p : string) : string =
+  let step (acc : string list) (c : string) : string list =
+    match c, acc with
+    | ("" | "."), _ -> acc
+    | "..", x :: rest when x <> ".." -> rest
+    | _ -> c :: acc in
+  let parts = List.rev (List.fold_left step [] (String.split_on_char '/' p)) in
+  (if p <> "" && p.[0] = '/' then "/" else "") ^ String.concat "/" parts
+
+(* where here is in the project whose top is [top] (-project, from here):
+ * TinyKernel for .., "" for . *)
+let in_project (caps : < Cap.env; .. >) (top : string) : string =
+  let here = clean_path (Fpath.to_string (TSys.getcwd caps)) in
+  let top = clean_path (if Filename.is_relative top then here ^ "/" ^ top else top) in
+  let n = String.length top + 1 in
+  if String.length here >= n && String.sub here 0 n = top ^ "/" then
+    String.sub here n (String.length here - n)
+  else ""
+
 type options = {
   megabytes : int option;
   sections : sections;
   symbols : bool;
   map : bool;
+  project : string;  (* -project: the project's top, from here *)
 }
 
 (* -a's and -s's output *)
@@ -338,11 +361,13 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     | "-n" :: r -> args { o with sections = Text_first } r
     | "-s" :: r -> args { o with symbols = true } r
     | "-map" :: r -> args { o with map = true } r
+    | "-project" :: d :: r -> args { o with project = d } r
     | "-o" :: out :: files when files <> [] ->
         Some (o, Fpath.v out, Fpath_.of_strings files)
     | _ -> None in
   let none =
-    { megabytes = None; sections = In_order; symbols = false; map = false } in
+    { megabytes = None; sections = In_order; symbols = false; map = false;
+      project = "." } in
   match List.tl (Array.to_list argv) with
   | ("-h" | "--help") :: _ -> TSys.print caps help; Exit.OK
   | l ->
@@ -358,10 +383,16 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             write out (contents (output o) linked);
             if o.map then begin
               write (Fpath.v (Fpath.to_string out ^ ".map")) (map linked);
+              (* (each source from the project's top, as mini-ld's) *)
+              let at = in_project caps o.project in
+              let from_top (o : string) (t : E.taken) : string option =
+                match source caps o t with
+                | Some f -> Some (clean_path (if at = "" then f else at ^ "/" ^ f))
+                | None -> None in
               write (Fpath.v (Fpath.to_string out ^ ".manifest"))
                 (E.to_manifest
                    (E.manifest (Filename.basename (Fpath.to_string out))
-                      (List.map fst objects) (source caps)))
+                      (List.map fst objects) from_top))
             end;
             Exit.OK
           with M.Error e -> Exit.Err e

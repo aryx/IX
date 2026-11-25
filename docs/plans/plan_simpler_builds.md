@@ -11,8 +11,9 @@ document recording your analysis and proposing a plan to simplify
 things for m-ix (and t-ix) when possible, cheapest first".
 
 **Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2
-(7a7da7c5); step 4, lib_code. Step 3 is t-IX's session's (f0601cfb:
-t-IX built beside its sources). Next: step 4's other groups.**
+(7a7da7c5); step 4's first groups. Step 3 is t-IX's session's (f0601cfb:
+t-IX built beside its sources). Done in step 4: lib_code,
+languages/dotnet/assembly. Next: lib_terminal.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -169,6 +170,13 @@ first requirement.
    2026-10-29 by a rule in each compiler's mkfile): its mkfile, in the
    top mkfile's LIBS, in LIBDIRS of mini-cc, mini-ml and both
    mini-emacs; 9 compiles fewer in a full build.
+   Done: languages/dotnet/assembly (Metadata Image Signature Il Listing
+   Writer), which mini-dotnet, mini-cc, mini-ml, mini-csc, mini-tiger
+   and mini-datalog each compiled (6 mkfiles' rules); a library of its
+   own mkfile in its directory, as browsers/html's. kernels/9pi/tests/
+   smoke.sh builds the two libraries for its part of ix, and
+   languages/ml/dotnet/tests/run.sh takes mini-cc's libraries' units
+   (LIBDIRS's UNITS) before its SRC, as its link does.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

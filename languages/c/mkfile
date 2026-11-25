@@ -7,13 +7,14 @@ DIR=languages/c
 PROG=mini-cc
 SRC=Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lexer \
  Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Ssa Ssa_build Alloc Ssa_gen \
- Metadata Signature Il Writer Cil_types Cil_strings Cil_exprs Lower_cil CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli}
-LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I dotnet -I ../dotnet/assembly
+ Cil_types Cil_strings Cil_exprs Lower_cil CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli dotnet/*.ml dotnet/*.mli}
+LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I dotnet
 LIBUNITS=Asm Show_asm
 # (lib_code: the SSA form's algorithms, Dominators Braun Liveness
-# Coloring, which mini-ml links too)
-LIBDIRS=lib_code
+# Coloring, which mini-ml links too; languages/dotnet/assembly: the
+# writer of assemblies, Writer and what it stands on)
+LIBDIRS=lib_code languages/dotnet/assembly
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
@@ -52,10 +53,7 @@ $D/%.$O: opti/%.ml
 $D/%.$O: ssa/%.ml
 	$ML $INCLUDES -o $target ssa/$stem.ml
 
-# dotnet/'s units (Cil_types Cil_strings Cil_exprs Lower_cil), and
-# mini-dotnet's writer of assemblies (Metadata Signature Il Writer), by
-# a % rule for each folder
+# dotnet/'s units (Cil_types Cil_strings Cil_exprs Lower_cil), by a %
+# rule
 $D/%.$O: dotnet/%.ml
 	$ML $INCLUDES -o $target dotnet/$stem.ml
-$D/%.$O: ../dotnet/assembly/%.ml
-	$ML $INCLUDES -o $target ../dotnet/assembly/$stem.ml

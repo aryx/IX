@@ -1,16 +1,18 @@
 # mini-csc, built by ix's tools: its lexer by mini-lex, and the units of
-# languages/dotnet it stands on (the library's description, the
-# writer), by their names. (Csc_ast comes first, so that a unit of this
+# languages/dotnet it stands on: runtime/'s, by their names, and
+# assembly/, a library. (Csc_ast comes first, so that a unit of this
 # directory is compiled first and tests/depend_edges.sh looks for CLI
 # here before it looks in .., which has mini-dotnet's.)
 TOP=../../..
 DIR=languages/dotnet/csc
 PROG=mini-csc
 N=..
-SRC=Csc_ast Metadata Image Signature Il Value Library Writer Csc_lexer Csc_parser Csc_types Csc_emit Csc_compile CLI Main
-LOCAL=`{ls *.ml *.mli *.mll ../assembly/Metadata.ml* ../assembly/Image.ml* ../assembly/Signature.ml* ../assembly/Il.ml* ../runtime/Value.ml* ../runtime/Library.ml* ../assembly/Writer.ml*}
-LIBI=-I ../assembly -I ../runtime
+SRC=Csc_ast Value Library Csc_lexer Csc_parser Csc_types Csc_emit Csc_compile CLI Main
+LOCAL=`{ls *.ml *.mli *.mll ../runtime/Value.ml* ../runtime/Library.ml*}
+LIBI=-I ../runtime
 LIBUNITS=
+# (the assembly's writer, Writer and what it stands on)
+LIBDIRS=languages/dotnet/assembly
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/dotnet/csc/Csc_lexer.ml
 LIBOBJS=
@@ -20,17 +22,7 @@ $D/Csc_lexer.$O: $D/Csc_lexer.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Csc_lexer.ml
 
 # languages/dotnet's units, by their names
-$D/Metadata.$O: $N/assembly/Metadata.ml $LOCAL
-	$ML $INCLUDES -o $target $N/assembly/Metadata.ml
-$D/Image.$O: $N/assembly/Image.ml $LOCAL
-	$ML $INCLUDES -o $target $N/assembly/Image.ml
-$D/Signature.$O: $N/assembly/Signature.ml $LOCAL
-	$ML $INCLUDES -o $target $N/assembly/Signature.ml
-$D/Il.$O: $N/assembly/Il.ml $LOCAL
-	$ML $INCLUDES -o $target $N/assembly/Il.ml
 $D/Value.$O: $N/runtime/Value.ml $LOCAL
 	$ML $INCLUDES -o $target $N/runtime/Value.ml
 $D/Library.$O: $N/runtime/Library.ml $LOCAL
 	$ML $INCLUDES -o $target $N/runtime/Library.ml
-$D/Writer.$O: $N/assembly/Writer.ml $LOCAL
-	$ML $INCLUDES -o $target $N/assembly/Writer.ml

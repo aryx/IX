@@ -7,11 +7,13 @@ DIR=languages/datalog
 PROG=mini-datalog
 PL=$TOP/languages/prolog
 SRC=Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval \
- Metadata Signature Il Writer Compile_il CLI Main
-LOCAL=`{ls *.ml *.mli ../prolog/Prolog.ml ../prolog/Prolog.mli ../prolog/Prolog_read.ml ../prolog/Prolog_read.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli}
+ Compile_il CLI Main
+LOCAL=`{ls *.ml *.mli ../prolog/Prolog.ml ../prolog/Prolog.mli ../prolog/Prolog_read.ml ../prolog/Prolog_read.mli dotnet/*.ml dotnet/*.mli}
 GEN=
-LIBI=-I ../prolog -I dotnet -I ../dotnet/assembly
+LIBI=-I ../prolog -I dotnet
 LIBUNITS=
+# (the writer of assemblies, Writer and what it stands on)
+LIBDIRS=languages/dotnet/assembly
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
@@ -31,9 +33,6 @@ $D/Parallel.$O: $TOP/lib_core/parallel/host/single.ml.in $TOP/lib_core/parallel/
 	cp $TOP/lib_core/parallel/host/single.ml.in $D/Parallel.ml
 	$ML $INCLUDES -o $target $D/Parallel.ml
 
-# dotnet/'s unit (Compile_il), and mini-dotnet's writer of assemblies
-# (Metadata Signature Il Writer), by their names
+# dotnet/'s unit (Compile_il), by its name
 $D/Compile_il.$O: dotnet/Compile_il.ml $LOCAL
 	$ML $INCLUDES -o $target dotnet/Compile_il.ml
-$D/%.$O: ../dotnet/assembly/%.ml
-	$ML $INCLUDES -o $target ../dotnet/assembly/$stem.ml

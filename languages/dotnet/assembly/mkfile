@@ -1,0 +1,17 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# languages/dotnet/assembly, a library of ix's tools (mkfiles/mklib): a
+# .NET assembly's file, its tables' shapes (Metadata), its bytes read
+# (Image), its signatures and IL (Signature, Il), printed (Listing) and
+# written (Writer). mini-dotnet reads assemblies with it; mini-cc,
+# mini-ml, mini-csc, mini-tiger and mini-datalog write theirs. Each
+# compiled its own copy of the units before, by rules in its mkfile
+# (plan_simpler_builds.md, step 4).
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+LIB=languages/dotnet/assembly
+DIRS=.
+NEEDS=
+UNITS=Metadata Image Signature Il Listing Writer
+<$TOP/mkfiles/mklib

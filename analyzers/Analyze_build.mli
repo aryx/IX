@@ -39,7 +39,9 @@
 
 (* the directories given: the manifests under each, every one, or with
  * none the executables dune builds under it, each named by its path from
- * the directory; true when one could not be read, said *)
+ * the directory; a directory of dune's build, _build/default/tiny, the
+ * executables alone (tiny/ may hold t-IX's manifests, built beside its
+ * sources); true when one could not be read, said *)
 val expand_dirs : < Analyze_flags.caps; .. > -> Analyze_flags.t -> bool
 
 (* one program, its manifest's or its executable's: its files, standard

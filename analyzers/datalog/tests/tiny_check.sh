@@ -5,10 +5,13 @@
 # mini-analyze FLAG on tiny/'s programs, each read as each system builds
 # it, by one mini-analyze call over both builds:
 # - tiny-kernel's: t-IX's build, made here as TinyKernel/Makefile makes
-#   it, in a copy of tiny/, each program's manifest (tiny-ld -map's), its
-#   paths read in tiny/ (-project); the kernel's among them;
-# - the host's: the executables dune builds under tiny/, their manifests
-#   made by mini-analyze from dune's own answers (Dune_manifest).
+#   it, in a copy of tiny/'s sources (O=, a build of its own), each
+#   program's manifest (tiny-ld -map's), its paths read in tiny/
+#   (-project); the kernel's among them;
+# - the host's: the executables dune builds under tiny/, given by dune's
+#   build directory, _build/default/tiny (tiny/ itself may hold t-IX's
+#   manifests, built there by make), their manifests made by
+#   mini-analyze from dune's own answers (Dune_manifest).
 # mini-analyze runs each program as linked, its platform's files among
 # them, and merges their reports (-dead's: what every program that has
 # the file says, so a library's function one program does not call is
@@ -45,7 +48,7 @@ if [ -z "$out" ]; then show=1; out=$W/out; fi
 notes=$(notes_of $expected)
 make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
   { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
-$ANALYZE $flag -project tiny $W/tix/src tiny > $W/answer 2> $W/err ||
+$ANALYZE $flag -project tiny $W/tix/src _build/default/tiny > $W/answer 2> $W/err ||
   { grep -v WARNING $W/err | tail -5; echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; exit 1; }
 # (the reports, not the programs' list under them)
 sed '/^[0-9]* reports, over the/,$d' $W/answer |

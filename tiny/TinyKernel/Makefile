@@ -121,7 +121,8 @@
 #   line and its bytes (a hard link is a name and a line "link bin/utils",
 #   since utils is cat, ls, wc...), with an empty line at the end;
 # - and the system, /bin, /lib and /examples, by build install.
-# This Makefile runs that build in a copy of tiny/ (see the build,
+# This Makefile runs that build in tiny/ itself, as ../Makefile's make
+# does (or in a copy of its sources, for another O: see the build,
 # below), and makes two disks: the system's, disk.img, and the
 # sources', src.img. Then it runs the machine on them, and its tests.
 #
@@ -133,11 +134,11 @@
 # ../TinyLibSystem/tinykernel/TinyLibSystem.ml, which sits beside the
 # other systems' TinyLibSystem (../TinyLibSystem/README.md).
 #
-# What is built goes to _make/ and nowhere else, so that this directory
-# shows only the sources. _make/ holds:
-# - src, the copy that is built in;
-# - system, what the copy's build install put there;
-# - boot.img and kernel.img, copied out of the copy;
+# What the build makes goes beside the sources, in tiny/, as in /src
+# under t-IX (../.gitignore lists it), and what this Makefile makes
+# goes to _make/. _make/ holds:
+# - system, what the build's install put there;
+# - boot.img and kernel.img, copied out of the build;
 # - disk.img and src.img, the two disks, and their grown copies that
 #   the runs and the tests use (run.img, runsrc.img, check/...).
 # make clean removes it.
@@ -146,18 +147,13 @@
 export PATH := $(abspath ../../bin):$(PATH)
 
 # Each tool is given by its path, the one in ix's bin/ when it is
-# there. This is so that what a tool makes is made again when the tool
-# changes (the build below starts afresh when a tool's sum changed: a
-# new tiny-ml remakes the units, and a new tiny-as remakes the
-# objects), and so that make 3.81 (macOS's), which runs a command
-# without a shell from the PATH it started with, not the one exported
-# above, finds the tool.
+# there, so that make 3.81 (macOS's), which runs a command without a
+# shell from the PATH it started with, not the one exported above,
+# finds the tool. A tool changed does not make anything again (the
+# build's digests are of the recipes and the sources, not of the tools,
+# and t-IX does not imitate m-IX's dependencies on its tools, for
+# simplicity): after a change to tiny-ml, tiny-as..., make clean.
 tool = $(firstword $(wildcard $(abspath ../../bin)/$(1)) $(1))
-TML = $(call tool,tiny-ml)
-TC = $(call tool,tiny-cc)
-AS = $(call tool,tiny-as)
-LD = $(call tool,tiny-ld)
-AR = $(call tool,tiny-ar)
 MKFS = $(call tool,tiny-mkfs)
 MACHINE = $(call tool,tiny-machine)
 # GNU timeout puts itself and the machine in a process group of their
@@ -227,31 +223,39 @@ MEMSIZE = $(if $(filter segments,$(MEMORY)),9,6)
 T = ../tests/TinyKernel_tests
 
 # The build is ../Buildfile, t-IX's build by tiny-build, the same one
-# that tiny-kernel runs in /src (make self). It runs here in a copy of
-# tiny/, _make/src (its outputs go beside its sources, as in /src),
-# with the host's tools under tiny-kernel's names in _make/tools (ml,
-# cc, as, ld, ar, build, and tiny-shell for rc). The copy is made again
-# at each make, and tiny-build makes again what changed (by its
-# digests). Before the build, the file that the host alone makes is put
-# in the copy: TinyKernel/kfont.s, the font's bytes.
-BUILD = $(call tool,tiny-build)
-RC = $(call tool,tiny-shell)
-S = $(O)/src
-# tiny/, without tests/ (it is not the system's) and without what is
-# built from it: the build directories and the outputs
-COPY = --exclude ./tests --exclude '_make*' --exclude '_mk*' --exclude '*.o' \
-  --exclude '*.tmi' --exclude '*.a' --exclude .tiny-build --exclude '*.img' \
-  --exclude '*.map' --exclude '*.manifest'
+# that tiny-kernel runs in /src (make self), with the host's tools by
+# their names there after tiny- (TINY=tiny-: tiny-ml...). For _make, it
+# runs in tiny/ itself, as ../Makefile's make does: what it makes goes
+# beside the sources, and tiny-build makes again what changed (by its
+# digests). Another O is a build of its own (make test's and
+# tiny_check.sh's, which run beside the sessions' and each other's;
+# MEMORY's), so it runs in O/src, a copy of tiny/'s sources made at each
+# make, kept between them.
+BUILD = $(call tool,tiny-build) TINY=tiny-
+S = $(if $(filter _make,$(O)),..,$(O)/src)
+
+# tiny/'s sources, the files that git knows or would know (not
+# ignored), without the ones deleted and without tests/ (they are not
+# the system's), as a list. They cannot be told from tiny/ by its
+# directories alone, since tiny/ also holds what make built there,
+# beside them: rc, ml... and the .o, which are not sources. src.img is
+# the example: it is /src, which make self builds from, so it must
+# hold the sources alone (the programs built here would not even fit
+# in its 8 MB). ../.gitignore says what the build makes, so this list
+# follows it.
+# (run in tiny/)
+SOURCES = { git ls-files -co --exclude-standard; git ls-files -d; } | \
+  LC_ALL=C sort | uniq -u | grep -v '^tests/'
 
 all: $(O)/boot.img $(O)/disk.img $(O)/src.img
 
 # The font's bytes: k_font() says where they are, and k_font_size() how
 # many there are (as ML integers). The font is Plan 9's default font
 # (FONT=fonts/grey.font gives Ubuntu Mono, with two bits a pixel; see
-# fonts/README.md).
+# fonts/README.md). The host alone makes it, beside the kernel's
+# sources (it is in /src as it is, and the Buildfile takes it so).
 FONT = fonts/plan9.font
-$(O)/kfont.s: $(FONT)
-	@mkdir -p $(@D)
+kfont.s: $(FONT)
 	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\n' > $@
 	printf 'k_font_size:\n\tla\tr13, font_end\n\tla\tr12, font\n' >> $@
 	printf '\tsub\tr13, r13, r12\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\nfont:\n' >> $@
@@ -259,21 +263,16 @@ $(O)/kfont.s: $(FONT)
 	printf 'font_end:\n\t.align\t4\n' >> $@
 
 # boot.img and kernel.img are made by the Buildfile, and copied out of
-# the copy when they changed (so that what stands on them is not made
+# the build when they changed (so that what stands on them is not made
 # again). The same build installs the system in _make/system (its bin,
 # lib and examples).
-$(O)/boot.img: $(O)/kfont.s FORCE
-	mkdir -p $(O)/tools
-	for t in $(TML) $(TC) $(AS) $(LD) $(AR) $(BUILD) $(RC); do cksum < $$(command -v $$t); done > $(O)/tools.new
-	cmp -s $(O)/tools.new $(O)/tools.sum || rm -rf $(S); mv $(O)/tools.new $(O)/tools.sum
-	mkdir -p $(S)
-	tar -C .. $(COPY) -cf - . | tar -C $(S) -xf -
-	cp $(O)/kfont.s $(S)/TinyKernel/kfont.s
-	for t in ml:$(TML) cc:$(TC) as:$(AS) ld:$(LD) ar:$(AR) build:$(BUILD) tiny-shell:$(RC); do \
-	  ln -sf $$(command -v $${t#*:}) $(O)/tools/$${t%%:*}; done
+$(O)/boot.img: kfont.s FORCE
+	mkdir -p $(O)
+	if [ $(S) != .. ]; then mkdir -p $(S) && (cd .. && $(SOURCES)) | tar -C .. -cf - -T - | tar -C $(S) -xf - && \
+	  cp kfont.s $(S)/TinyKernel/kfont.s; fi
 	rm -rf $(SYSTEM)
-	cd $(S) && PATH=$(abspath $(O)/tools):$$PATH MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
-	  build -j $(J) BIN=$(SYSTEM)/bin LIB=$(SYSTEM)/lib EXAMPLES=$(SYSTEM)/examples boot.img install
+	cd $(S) && MEMORY=$(MEMORY) MEMSIZE=$(MEMSIZE) \
+	  $(BUILD) -j $(J) BIN=$(SYSTEM)/bin LIB=$(SYSTEM)/lib EXAMPLES=$(SYSTEM)/examples boot.img install
 	cmp -s $(S)/boot.img $(O)/boot.img || cp $(S)/boot.img $(O)/boot.img
 	cmp -s $(S)/TinyKernel/kernel.img $(O)/kernel.img || cp $(S)/TinyKernel/kernel.img $(O)/kernel.img
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where KFS.ml has its buffers"; rm $@; exit 1; }
@@ -285,30 +284,26 @@ SYSTEM = $(abspath $(O))/system
 # (TinyKernel/host/TinyMkfs.ml), as m-ix's machine has its boot.img and
 # its card.img. They are given to the machine by -d: the first is the
 # root, in a union with the image's files (/boot), and the second is
-# /src. Each disk holds a directory's files, in the order of their
-# names, so that the same files make the same disk. A disk is made at
-# each make, as the image is (a program of the disk can change while
-# the image does not), and kept when its bytes are the same:
-#     $(call disk,directory,megabytes,disk)
+# /src. Each disk holds files of a directory, listed by a command, in
+# the order of their names, so that the same files make the same disk.
+# A disk is made at each make, as the image is (a program of the disk
+# can change while the image does not), and kept when its bytes are the
+# same:
+#     $(call disk,directory,megabytes,disk,list)
 # A disk has the fewest megabytes that hold its files, which is what a
 # web page fetches. For a run or a build on tiny-kernel, a copy is grown
 # to 64 by truncate -s (KFS.mli's fs_mount uses the disk whole).
-disk = cd $(1) && $(MKFS) -m $(2) $(abspath $(3)).new $$(find . -type f | sed 's|^\./||' | LC_ALL=C sort | sed 's|.*|&=&|') && \
+disk = cd $(1) && $(MKFS) -m $(2) $(abspath $(3)).new $$({ $(4); } | LC_ALL=C sort | sed 's|.*|&=&|') && \
   cd $(CURDIR) && { cmp -s $(3).new $(3) && rm $(3).new || mv $(3).new $(3); }
 
 # disk.img holds the system, which build install put in _make/system:
 # /bin (where utils's names are its hard links), /lib and /examples
 $(O)/disk.img: $(O)/boot.img $(MKFSBIN) FORCE
-	$(call disk,$(SYSTEM),12,$@)
-# src.img holds the copy's sources, tiny/'s and the font the host made,
-# as the build read them here; they are what tiny-kernel builds itself
-# from
+	$(call disk,$(SYSTEM),12,$@,find . -type f | sed 's|^\./||')
+# src.img holds tiny/'s sources (SOURCES, above) and the font the host
+# made; they are what tiny-kernel builds itself from
 $(O)/src.img: $(O)/boot.img $(MKFSBIN) FORCE
-	rm -rf $(O)/srcdisk; mkdir -p $(O)/srcdisk
-	tar -C .. $(COPY) -cf - . | tar -C $(O)/srcdisk -xf -
-	cp $(O)/kfont.s $(O)/srcdisk/TinyKernel/kfont.s
-	$(call disk,$(O)/srcdisk,8,$@)
-	rm -rf $(O)/srcdisk
+	$(call disk,..,8,$@,$(SOURCES); echo TinyKernel/kfont.s)
 
 # A disk of 64 MB is one of the two disks, grown. It is used for a run
 # (run.img and runsrc.img: what is written there is kept from one run
@@ -542,8 +537,11 @@ self-quick: $(O)/boot.img $(O)/disk.img $(O)/src.img
 	sed -E $(MASK) $(O)/self-quick.out | diff $(T)/self-quick.expected -
 	rm $(O)/self-quick.img $(O)/self-quicksrc.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
 
+# (tiny/'s build too: what it made beside the sources, and the font)
 clean:
 	rm -rf $(O)
+	cd .. && $(BUILD) clean
+	rm -f kfont.s
 
 .PHONY: all run run-window check check-parts self self-quick clean FORCE
 .SECONDARY:

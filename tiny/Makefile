@@ -37,11 +37,15 @@
 #   make clean   removes what the targets above wrote here: build clean's
 #                files, TinyKernel/'s builds, the steps' builds, and
 #                tiny-build's digests (dune's _build belongs to the whole
-#                tree, so ../Makefile's clean removes it)
+#                tree, so ../Makefile's clean removes it). To run after a
+#                change to a tool, tiny-ml, tiny-as...: the digests are
+#                of the recipes and the sources, not of the tools (t-IX
+#                does not imitate m-IX's dependencies on its tools, for
+#                simplicity)
 #
 # The tiny programs that ix builds are built by the mkfile (mini-mk).
 # tiny-kernel has its own Makefile (TinyKernel/: make run, make check),
-# which builds again in a copy of tiny/, for its images.
+# which runs the same build here for its images.
 
 # The tools by their names on the host, tiny-ml... (../bin is dune's),
 # tiny-shell running the recipes
@@ -59,9 +63,9 @@ all: host TinyKernel/kfont.s
 	$(MAKE) host TinyKernel/kfont.s
 	$(BUILD) $@
 # The font's pixels, which the Buildfile takes as they are (in /src
-# under t-IX): TinyKernel/Makefile's rule, made here and not in _make
+# under t-IX): TinyKernel/Makefile's rule
 TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
-	$(MAKE) -C TinyKernel O=. kfont.s
+	$(MAKE) -C TinyKernel kfont.s
 host:
 	dune build
 test:
@@ -74,8 +78,6 @@ check: host
 loc:
 	cd .. && scripts/stats/loc.py -t
 clean:
-	$(BUILD) clean
-	rm -f TinyKernel/kfont.s
 	$(MAKE) -C TinyKernel clean
 	$(MAKE) -C TinyKernel/steps clean
 	find . -name .tiny-build -type f -exec rm -f {} +

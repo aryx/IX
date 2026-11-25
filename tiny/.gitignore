@@ -8,7 +8,7 @@
 *.map
 *.manifest
 .tiny-build
-/kernel.img
+/TinyKernel/kernel.img
 /boot.img
 /sh
 /rc

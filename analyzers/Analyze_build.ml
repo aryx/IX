@@ -82,21 +82,35 @@ let rec under (caps : < Cap.open_in; Cap.readdir; .. >) (d : string) : string li
          else if Filename.check_suffix n ".manifest" && ours caps p then [ p ]
          else [])
 
+(* a directory of dune's build, _build/default/tiny, as the source
+ * directory dune is asked about, tiny (_build/default alone: .) *)
+let dune_source (d : string) : string option =
+  let rec go (acc : string list) (l : string list) : string option =
+    match l with
+    | "_build" :: _context :: rest ->
+        Some (match List.rev_append acc rest with [] -> "." | l -> String.concat "/" l)
+    | x :: rest -> go (x :: acc) rest
+    | [] -> None in
+  go [] (String.split_on_char '/' (FS.cleanname d))
+
 let expand_dirs (caps : < F.caps; .. >) (f : F.t) : bool =
   let from (d : string) (p : string) : string =
     let n = String.length (FS.cleanname d) + 1 and p = FS.cleanname p in
     String.sub p n (String.length p - n) in
   match
     let source_dirs =
-      List.filter (fun (d : string) ->
+      List.filter_map (fun (d : string) ->
+          match dune_source d with
+          | Some s -> Some s
+          | None ->
           match under caps d with
-          | [] -> true
+          | [] -> Some d
           | ms ->
               List.iter (fun m ->
                   Hashtbl.replace f.names m (Filename.chop_suffix (from d m) ".manifest"))
                 ms;
               f.manifests <- f.manifests @ ms;
-              false)
+              None)
         f.dirs in
     if source_dirs <> [] then begin
       let es = Dune_manifest.executables caps source_dirs in

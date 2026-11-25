@@ -20,9 +20,9 @@ What a C or ML program may do, by its facts and analyzers/datalog's rules
 A program is best given by its build: a dune executable, a tiny-ld
 manifest (-map's), a directory of either; its files as linked, its
 platform's, no -L, -I, -own to give; several, each run and merged:
-  mini-analyze -dead -project tiny tiny/TinyKernel/_make/src tiny
+  mini-analyze -dead -project tiny tiny  (t-IX's, make built in tiny/)
 A library's file and its programs (or the file alone: those naming it):
-  mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest
+  mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/*.manifest
 Or by its files, the library found or given (-L), the rest found too.
 The rules and lib_core are mini-analyze's tree's: it runs from anywhere.
 Flags:|}

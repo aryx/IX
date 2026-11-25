@@ -45,8 +45,8 @@ An ML program is best given by its build, which knows its files: an
 whose link mini-analyze asks dune for (`dune describe`, `dune rules`,
 in a build directory of its own: `analyzers/ml/Dune_manifest.ml`); a
 *`.manifest`*, what tiny-ld **-map** writes beside the program it
-links, each unit and its source (t-IX's build writes one for each
-program, `tiny/TinyKernel/_make/src/temp.manifest`); a directory, the
+links, each unit and its source (t-IX's build, make in `tiny`, writes
+one beside each program, `tiny/temp.manifest`); a directory, the
 manifests under it, or with none the executables dune builds under it,
 those of tests' directories left out. The program is then read as
 linked, its platform's files among them, and nothing is told by
@@ -58,7 +58,7 @@ program of the build links. Several programs, or a directory of them,
 are each run and merged: **-dead** keeps what every program that has
 the file says (`dead_all.dl`), the others every program's reports
 (`said_all.dl`). A library's file and programs, manifests or `.exe`,
-`mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest`,
+`mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/*.manifest`,
 say its dead code over those that link it; the file alone, over the
 programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build, the
 *files* given are the program (**-L**, **-I**, **-own** below).
@@ -149,7 +149,7 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
      (mini-ld's: `assembler/Asm.ml`); without it, the first directory
      above the manifest with a `dune-project`, as git finds its root,
      else the current directory. tiny-ld's are project paths too; t-IX's
-     build runs in a copy of `tiny` (`tiny/TinyKernel/_make/src`):
+     build runs in `tiny`, or in a copy of its sources (tiny_check.sh's):
      **-project** `tiny`, whose files the reports then name.
 
 **-r** *rules*
@@ -392,17 +392,19 @@ is a `String.map`, whose new string's primitive may refuse its length
 out, not those of the library's other units.
 
 A t-IX program, by the manifest its build wrote (tiny-ld **-map**),
-its paths read in `tiny/`, which the build copied:
+its paths read in `tiny/`, where the build ran:
 
 ```
-% make -C tiny/TinyKernel
-% mini-analyze -dead -project tiny tiny/TinyKernel/_make/src/build.manifest
+% make -C tiny
+% mini-analyze -dead -project tiny tiny/build.manifest
 ```
 
 says what is dead in `TinyBuildSystem.ml`, the one file no other
-program links; `mini-analyze -dead -project tiny tiny/TinyKernel/_make/src tiny`,
-every t-IX program and every one dune builds under `tiny/`, merged
-(`analyzers/datalog/tests/tiny_check.sh`).
+program links; `mini-analyze -dead -project tiny tiny`, every t-IX
+program, merged. `analyzers/datalog/tests/tiny_check.sh` merges them
+with every program dune builds under `tiny/`, its build in a copy of
+`tiny`'s sources (`$W/tix/src tiny`: in `tiny`, the manifests would
+hide dune's programs).
 
 One of ix's programs, all its units, in ix's root (a second):
 

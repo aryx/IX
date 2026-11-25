@@ -132,6 +132,6 @@
  * principia's compilers book (Compiler.nw) and xix's compiler, the
  * same program explained in C, and in OCaml. *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 val main : < caps; .. > -> string array -> int

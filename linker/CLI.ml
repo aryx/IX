@@ -25,7 +25,7 @@ type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0] [-T address] [-R n] [-nofollow] [-v] [-map] [-project dir] [-build dir] [-g|-s] [-E entry] [-o out] files...
+let help = {|usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0] [-T address] [-R n] [-nofollow] [-v] [-map] [-project dir] [-g|-s] [-E entry] [-o out] files...
 5l and 7l's twin (-m 5: arm, the default; 7: arm64): mini-asm's and mini-cc's
 objects, and libraries, linked into an executable, a.out by default (-o:
 another), goken's bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6), or no
@@ -35,9 +35,9 @@ out.aout beside it, the same as Plan 9's a.out with its tables, for mini-where).
 in an a.out (-m 5 -H2), 5l's without -s; -s (5l's) leaves them out, as without
 -g for now. The entry is _main (-E: another); -v lists each instruction, its address and word;
 -map writes out.map, each function's address and name (scripts/where.sh), and
-out.manifest, each object taken and its source's path in the project (-project:
-its top, else the first directory up with a dune-project; -build: where its
-objects are made, its tree mirrored, mkconfig's $B), what mini-analyze reads;
+out.manifest, each object taken and its source's path in the project, as the
+compilers' -project wrote it in the object (-project: the top, else the first
+directory up with a dune-project), what mini-analyze reads;
 -nofollow lays the code in the objects' order, not along its flow as 5l: the
 same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
   mini-asm -m 5 hello_linux_arm.s
@@ -76,48 +76,30 @@ let map = ref false
  * (plan_debugger.md, decision 1) *)
 let symbols = ref false
 
-(* -project, -build: the project's top (by default the first directory up
- * from here with a dune-project, as git finds its root, else here), and
- * where its objects are made (mkconfig's $B), the project's tree
- * mirrored: an object or an archive in build/x/ was compiled in x/ *)
+(* -project: the project's top (by default the first directory up from
+ * here with a dune-project, as git finds its root, else here) *)
 let project = ref ""
-let build = ref ""
 
 (* -map's manifest, out.manifest: what load took, each source a project
- * path. An object names its source as its compiler was given it, from
- * the directory it compiled in: the one its place in -build mirrors,
- * else here for an object, its own for an archive's member. A source
- * not there has none (an installed library's: its sources elsewhere). *)
+ * path, as its object names it (the compilers' -project: mkconfig gives
+ * them and this one the same $TOP); a source not there has none (an
+ * object compiled without -project, an installed library's) *)
 let write_manifest (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : Fpath.t)
     (taken : (string * string * string option) list) : unit =
   let cwd = FS.getcwd caps () in
   let absolute (p : string) : string =
     FS.cleanname (if Filename.is_relative p then Filename.concat cwd p else p) in
-  let under (d : string) (p : string) : string option =
-    let d = d ^ "/" and n = String.length d + 1 in
-    if String.length p >= n && String.sub p 0 n = d then Some (String.sub p n (String.length p - n))
-    else if p ^ "/" = d then Some "" else None in
   let rec top (d : string) : string =
     if CapSys.file_exists caps (Filename.concat d "dune-project") then d
     else if Filename.dirname d = d then cwd
     else top (Filename.dirname d) in
   let project = if !project = "" then top cwd else absolute !project in
-  let compiled (file : string) (default : string) : string =
-    let d = Filename.dirname (absolute file) in
-    match if !build = "" then None else under (absolute !build) d with
-    | Some x -> Filename.concat project x
-    | None -> default in
-  let ppath (dir : string) (s : string) : Manifest.ppath option =
-    let s = absolute (if Filename.is_relative s then Filename.concat dir s else s) in
-    if not (CapSys.file_exists caps s) then None
-    else Some (Manifest.Ppath (match under project s with Some p -> p | None -> s)) in
+  let ppath (s : string) : Manifest.ppath option =
+    let file = if Filename.is_relative s then Filename.concat project s else s in
+    if CapSys.file_exists caps file then Some (Manifest.Ppath s) else None in
   let unit_ ((obj, source, archive) : string * string * string option) : Manifest.linked =
-    match archive with
-    | Some a ->
-        let dir = compiled a (Filename.dirname (absolute a)) in
-        { l_object = obj; l_source = ppath dir source; l_taken = Manifest.Archive_member a }
-    | None ->
-        { l_object = obj; l_source = ppath (compiled obj cwd) source; l_taken = Manifest.Command_line } in
+    { l_object = obj; l_source = ppath source;
+      l_taken = (match archive with Some a -> Manifest.Archive_member a | None -> Manifest.Command_line) } in
   let units = List.map unit_ taken in
   let m : Manifest.manifest =
     { m_program = Filename.basename (Fpath.to_string out); m_units = units } in
@@ -215,7 +197,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-quiet" :: rest -> Logs.set_level None; args rest
     | "-map" :: rest -> map := true; args rest
     | "-project" :: d :: rest -> project := d; args rest
-    | "-build" :: d :: rest -> build := d; args rest
     | "-nofollow" :: rest -> follow := false; args rest
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()
@@ -224,7 +205,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = List.rev !files in
   match files with
   | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
-  | [] -> eprint caps "usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0] [-T address] [-R n] [-nofollow] [-v] [-map] [-project dir] [-build dir] [-g|-s] [-E entry] [-o out] files...   (-h: how)\n"; 1
+  | [] -> eprint caps "usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0] [-T address] [-R n] [-nofollow] [-v] [-map] [-project dir] [-g|-s] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match FS.path s with Ok p -> p | Error m -> failwith m in

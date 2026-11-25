@@ -25,12 +25,15 @@
 # (MLOPT: mini-ml's optimizations, config.rc's: -O3 unless MLOPT is set)
 # (TIMES: what goes before each compile and link, nothing, or time:
 # mini-mk TIMES=time says each one's time, on mini-9pi its kernel's)
-ML=$TIMES ${MINI}ml -m $O $MLOPT
+# (-project: the tools' top, an object naming its source by its path in
+# ix, the same wherever the tree and the build are, as mini-ld -map's
+# manifest says it; make self's card computes the same paths)
+ML=$TIMES ${MINI}ml -m $O -project $TOP $MLOPT
 # (MLEXE, the compiler's file, config.rc's: what the objects depend on)
-CC=$TIMES ${MINI}cc -m $O
-AS=$TIMES ${MINI}asm -m $O
+CC=$TIMES ${MINI}cc -m $O -project $TOP
+AS=$TIMES ${MINI}asm -m $O -project $TOP
 AR=$TIMES ${MINI}ar
-LD=$TIMES ${MINI}ld -m $O -map
+LD=$TIMES ${MINI}ld -m $O -map -project $TOP
 LEX=${MINI}lex
 YACC=${MINI}yacc
 # (for the shell's commands: walk, Plan 9's find; rc, for mkfiles/units.rc;
@@ -47,9 +50,6 @@ MK=${MINI}mk
 # beside Linux's (_mk/5-plan9). UNIXDIR, P9DIR and RTSRC: below.
 <|. $TOP/mkfiles/config.rc system
 L=$B/lib_core
-# (-map's manifest names each source by its path in ix: the project's
-# top, and B, its tree mirrored, where an object was compiled from)
-LD=$LD -project $TOP -build $B
 
 # the stdlib's units, in the order they are linked and initialized
 # (lib_core/units.txt's), and ix's own library's

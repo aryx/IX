@@ -589,7 +589,29 @@ lib_executable/Manifest, beside tiny's TinyLibExecutable, both what the
 tools read of an executable; linker/'s ix_ld_manifest gone. The
 constraint was mini-9pi's card build (kernels/9pi/tests/smoke.sh),
 which gave the linker lib_core alone: it builds lib_executable too now
-(five units). The linker's LIBDIRS lib_executable. make generated
+(five units). The linker's LIBDIRS lib_executable.
+
+Project paths in the objects (2026-11-25; the author: "for 4, we do
+'differently', but why not record project path in object? maybe it was
+because of some byte-to-byte comparison thing, but with project path
+and not absolute path recorded, maybe things are more portable?"): the
+compilers (mini-ml, mini-cc, mini-asm) take -project, the project's top
+from where they run, mkconfig passing $TOP, and an object's file is its
+source's project path (Asm.in_project); mini-ld -map writes it, its
+-build and the "B mirrors the tree" rule gone, an object compiled
+elsewhere (mkprog's LIBOBJS, std_exit) said too. The first try had
+failed on the top found by walking up to lib_core/units.txt, absent on
+the card's test tree; said, -project is the same on both sides: the
+card's commands (kernels/9pi/tests/smoke.sh) say -project /src, the test
+at its place in ix (/src/kernels/9pi/tests/self), and make self's /src
+is ix's tree. install.rc reads an archive's members as project paths.
+Every object's bytes changed once; the recordings, on a build made
+anew, gave back every report (the new ones: tiny-cc's move to
+tiny/TinyC and TinyLibSystem's exit codes, other sessions' commits).
+caps_ix.txt: mini-asm's and mini-cc's functions now holding Cap.readdir
+for the current directory, "may not need" it (FS.getcwd's type says
+readdir, capabilities.dl's the directory env: Lines_ml.source's line
+already). make generated
 gone too ("is it still needed?"): dune build makes the lexers and
 parsers, and mini-analyze is dune's; its warning says dune build.
 

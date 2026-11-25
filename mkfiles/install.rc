@@ -12,9 +12,9 @@
 #                      its .ml when it has none: ml -I reads either) and
 #                      summary (.inline); lib_core's has std_exit and
 #                      the runtime too, what ends a program
-# An archive lists its units' sources (ar t), from the library's
-# directory. mk's variables are the environment (TOP, B, L, O, AR,
-# LIBDIR).
+# An archive lists its units' sources (ar t), by their path in ix (the
+# compilers' -project). mk's variables are the environment (TOP, B, L,
+# O, AR, LIBDIR).
 # usage: $RC mkfiles/install.rc c | <a library's directory>
 d=$1
 if(~ $d c){
@@ -41,7 +41,7 @@ mkdir -p $t
 f=()
 for(u in `{$AR t $B/$d/$a | sed 's/\.ml$//'}){
 	s=$u
-	if(! ~ $u /*) s=$TOP/$d/$u
+	if(! ~ $u /*) s=$TOP/$u
 	# (the unit's files: X.ml, X.mli, a grammar's X.mly)
 	x=($s.ml*)
 	if(~ $s.mli $x) f=($f $s.mli)

@@ -9,7 +9,7 @@ cc – the C compiler, for arm and arm64
 [ **-S** ]
 [ **-x** ]
 [ **-a** | **-aa** [ **-n** ] ]
-[ **-o** *out* ]
+[ **-o** *out* ] [ **-project** *dir* ]
 [ **-I** *dir* ]
 [ **-D** *name*[=*value*] ]
 [ **-v** | **-debug** | **-quiet** ]
@@ -31,6 +31,13 @@ nothing.
 
 **-o** *out*
 :    The object is *out*.
+
+**-project** *dir*
+:    The project's top, from here (mkconfig gives its `$TOP`): the
+     object names its source by its path from there
+     (`assembler/Asm.ml`), the same wherever it was compiled and the
+     tree is, which \man{ld}{1}'s **-map** manifest says. Without it,
+     the source as given.
 
 **-I** *dir*
 :    An `#include` is looked for in *dir* too.

@@ -327,6 +327,10 @@ let gas = ref false
 (* -g: the values' types described in the object, for mini-acid *)
 let debug = ref false
 
+(* -project: the project's top, from here (mkconfig's $TOP): the object
+ * names its source by its path from there (Asm.in_project) *)
+let project = ref ""
+
 let output (caps : < caps; .. >) mach ~listing ~out ~file ~acid text =
   if listing then print caps text
   else
@@ -335,7 +339,9 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file ~acid text =
      * check /src's copy by (Lines_ml.source) *)
     let name = if !debug then Lines_ml.source caps file else Fpath.to_string file in
     let acid = if !debug then acid @ [ Acid_ml.source name (Digest.to_hex (Digest.string (FS.read caps file))) ] else acid in
-    let obj = { (Lines_ml.add caps file name text obj) with acid } in
+    let obj =
+      { (Lines_ml.add caps file name text obj) with
+        acid; file = Asm.in_project caps !project file } in
     Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
     if !gas then FS.write caps out (Gas.obj obj) else Asm.save caps out obj
 
@@ -453,6 +459,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let options = Logging.flags @ [
     "-m", Arg.String (function "5" -> mach := Gen.arm | "7" -> mach := Gen.arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
     "-o", Arg.Set_string out, " out: the object's name";
+    "-project", Arg.Set_string project, " dir: the project's top, the object naming its source from it";
     "-I", Arg.String (fun d -> incs := d :: !incs), " dir: where the other units' interfaces are";
     (* mlpp: for a dune file, whose -pp of a unit with classes needs them all *)
     "-L", Arg.String (fun d -> libs := d :: !libs), " dir: ix's lib_core: -I its stdlib's directories (units.txt) and commons/";

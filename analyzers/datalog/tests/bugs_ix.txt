@@ -385,7 +385,7 @@ languages/ml/CLI.ml:268: evalorder: operands at 268:10 and 268:78, both with an 
 languages/ml/CLI.ml:290: evalorder: operands at 293:17 and 293:49, both with an effect: their order the compiler's
 languages/ml/CLI.ml:290: evalorder: operands at 293:17 and 293:77, both with an effect: their order the compiler's
 languages/ml/CLI.ml:290: evalorder: operands at 293:49 and 293:77, both with an effect: their order the compiler's
-languages/ml/CLI.ml:563: stack: order calls itself, not a tail call, over a list
+languages/ml/CLI.ml:570: stack: order calls itself, not a tail call, over a list
 languages/ml/Resolve.ml:318: evalorder: operands at 318:29 and 318:48, both with an effect: their order the compiler's
 languages/ml/Resolve.ml:431: stack: Resolve.subst calls itself, not a tail call, over a list
 languages/ml/Resolve.ml:583: stack: Resolve.rename calls itself, not a tail call, over a list
@@ -521,7 +521,7 @@ lib_gui/examples/BigBangWorm.ml:24: int31: in BigBangWorm.next_seed, 0x41c64e6d;
 lib_terminal/hosts/draw/Window_draw.ml:129: evalorder: operands at 130:6 and 131:6, both with an effect: their order the compiler's
 lib_terminal/hosts/draw/Window_draw.ml:131: evalorder: operands at 131:6 and 132:6, both with an effect: their order the compiler's
 linker/Arm.ml:795: stack: bcases calls itself, not a tail call, over a list
-linker/CLI.ml:135: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 bits
+linker/CLI.ml:117: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 bits
 linker/Exe.ml:210: int31: in Exe.macho, 0x80000022; 0x80000028; x lsr 32 and 1 more: not on the Pi 1's 31 bits
 machine/CLI.ml:124: stack: go calls itself in a try's handler: no tail call by mini-ml
 machine/CLI.ml:127: stack: run calls itself in a try's handler: no tail call by mini-ml
@@ -588,6 +588,15 @@ shell/Eval.ml:188: evalorder: operands at 188:41 and 188:57, both with an effect
 shell/Eval.ml:189: evalorder: operands at 189:45 and 189:61, both with an effect: their order the compiler's
 shell/Glob.ml:83: stack: literal calls itself, not a tail call, over a list
 shell/Parser.ml:148: evalorder: operands at 148:8 and 148:14, both with an effect: their order the compiler's
+tiny/TinyC/Lower.ml:220: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:224: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:229: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:236: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Lower.ml:246: stack: Lower.lower calls itself, not a tail call, over a list
+tiny/TinyC/Parser.ml:173: stack: Parser.declarator calls itself, not a tail call, over a list
+tiny/TinyC/Parser.ml:176: stack: Parser.declarator3 calls itself, not a tail call, over a list
+tiny/TinyC/Parser.ml:337: stack: Parser.call_args calls itself, not a tail call, over a list
+tiny/TinyC/Types.ml:50: stack: Types.size calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:169: evalorder: operands at 169:13 and 170:13, both with an effect: their order the compiler's
 tiny/TinyDatabase.ml:173: stack: TinyDatabase.ins calls itself, not a tail call, over a list
 tiny/TinyDatabase.ml:186: evalorder: operands at 186:17 and 188:17, both with an effect: their order the compiler's

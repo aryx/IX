@@ -641,11 +641,11 @@ lib_terminal/Vt.ml:350: dead: Vt.cursor_visible, nothing names it
 lib_terminal/Vt.ml:351: dead: Vt.bells, nothing names it
 lib_terminal/Vt.ml:353: dead: Vt.rtrim, in init but no call goes through the pointer
 lib_terminal/Vt.ml:360: dead: Vt.text, nothing names it
-linker/CLI.ml:114: dead field: l_object stored in unit_, nothing live reads it
-linker/CLI.ml:114: dead field: l_source stored in unit_, nothing live reads it
-linker/CLI.ml:114: dead field: l_taken stored in unit_, nothing live reads it
-linker/CLI.ml:92: dead field: m_program stored in CLI.write_manifest, nothing live reads it
-linker/CLI.ml:92: dead field: m_units stored in CLI.write_manifest, nothing live reads it
+linker/CLI.ml:100: dead field: l_object stored in unit_, nothing live reads it
+linker/CLI.ml:100: dead field: l_source stored in unit_, nothing live reads it
+linker/CLI.ml:100: dead field: l_taken stored in unit_, nothing live reads it
+linker/CLI.ml:88: dead field: m_program stored in CLI.write_manifest, nothing live reads it
+linker/CLI.ml:88: dead field: m_units stored in CLI.write_manifest, nothing live reads it
 linker/tools/Nm.ml:55: never built: Data.0, matched in Nm:fun at line 55
 linker/tools/Nm.ml:55: never built: Text.0, matched in Nm:fun at line 55
 linker/tools/Nm.ml:59: never built: Globl.0, matched in Nm:fun at line 59
@@ -724,6 +724,7 @@ tiny/TinyLibSystem/unix/TinyLibSystem.ml:183: dead: TinyLibSystem.seed, nothing 
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:195: dead: TinyLibSystem.ready, nothing names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:204: dead: TinyLibSystem.box, nothing names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:285: dead: TinyLibSystem.dial, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:30: never built: ExitCode.0, matched in TinyLibSystem:fun at line 30
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:78: dead: TinyLibSystem.raw_console, nothing names it
 tiny/TinyMachine/TinyMachine.ml:681: dead: TinyMachine:fun at line 681, nothing names it
 tiny/TinyMachine/TinyMachineDevices.ml:252: dead: TinyMachineDevices.nearest, nothing names it

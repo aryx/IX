@@ -3,7 +3,7 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 let print = Console.print and eprint = Console.eprint
 
@@ -128,6 +128,10 @@ let prelude : (string * string) option ref = ref None
 (* -a: the declarations, no code *)
 let acid_only = ref false
 
+(* -project: the project's top, from here (mkconfig's $TOP): the object
+ * names its source by its path from there (Asm.in_project) *)
+let project = ref ""
+
 let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(dump, listing) ~out (defs, incs) file =
   Tree_helpers.mach := Some mach;
   Tree_helpers.init_types ();
@@ -161,7 +165,8 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
                if listing then print caps (be.listing ());
                if be.saved then begin
                  Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
-                 Asm.save caps out (be.obj file)
+                 let obj = be.obj file in
+                 Asm.save caps out { obj with file = Asm.in_project caps !project obj.file }
                end;
                Ok ()
            | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m))
@@ -194,6 +199,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     (* (the declarations in the object too, for mini-ld -g) *)
     | "-g" :: rest -> Acid.level := 1; args rest
     | "-o" :: o :: rest -> out := o; args rest
+    | "-project" :: d :: rest -> project := d; args rest
     | "-S" :: rest -> listing := true; args rest
     | "-I" :: d :: rest -> incs := d :: !incs; args rest
     | "-D" :: d :: rest -> defs := d :: !defs; args rest

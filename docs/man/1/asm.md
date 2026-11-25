@@ -6,7 +6,7 @@ asm – the assembler, for arm and arm64
 # SYNOPSIS
 **asm**
 [ **-m** *arch* ]
-[ **-o** *out* ]
+[ **-o** *out* ] [ **-project** *dir* ]
 [ **-v** | **-debug** | **-quiet** ]
 *file*`.s`
 
@@ -25,6 +25,13 @@ instruction not known is said by the linker, with its file and line.
 
 **-o** *out*
 :    The object is *out*.
+
+**-project** *dir*
+:    The project's top, from here (mkconfig gives its `$TOP`): the
+     object names its source by its path from there
+     (`assembler/Asm.ml`), the same wherever it was compiled and the
+     tree is, which \man{ld}{1}'s **-map** manifest says. Without it,
+     the source as given.
 
 **-h**
 :    How, by examples.

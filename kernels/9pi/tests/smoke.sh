@@ -67,26 +67,28 @@ NPROC=${NPROC:-32} make -s -C kernels/9pi BOARD=pi2 COMPILER=ix IXB=$K5 B=$D/k I
 # object it writes, and inlines from it with -O3: Hello.ml's object is
 # another when Stdlib.inline is beside it); a script on the card,
 # one line typed (old: its 24 lines typed, each after a second of quiet
-# at the prompt, 20 s of the session's 42)
+# at the prompt, 20 s of the session's 42); -project /src, as mkconfig's
+# $TOP on the host: each object names its source by its path in ix, the
+# test's files at their place in it
 cat > $D/smoke.rc <<'END'
 l=/tmp/lib; s=/tmp/self; h=/host; L=/src/lib_core
 I=(); for(d in system/plan9 core base collections printing parsing system concurrency commons) I=($I -I $L/$d)
 C=(-I$L/libc/include -I$L/libc/include/utf -I$L/libc -I$L/libc/include/arch/arm -Darm -Dplan9)
 cd $L
-ml -m 5 -O3 $I -o $l/Stdlib.5 core/Stdlib.ml
+ml -m 5 -O3 -project /src $I -o $l/Stdlib.5 core/Stdlib.ml
 cmp $l/Stdlib.5 $h/Stdlib.5 && echo Stdlib: the host
 cmp $l/Stdlib.inline $h/Stdlib.inline && echo Stdlib.inline: the host
 # (-O3: as lib_core's mkfile builds the libc)
-cc -m 5 -O3 $C -o $l/pow.5 libc/port/pow.c
+cc -m 5 -O3 -project /src $C -o $l/pow.5 libc/port/pow.c
 cmp $l/pow.5 $h/pow.5 && echo pow: the host
-cd /src/self
-cc -m 5 $C -o $s/hello.5 hello.c
+cd /src/kernels/9pi/tests/self
+cc -m 5 -project /src $C -o $s/hello.5 hello.c
 ld -m 5 -H2 -nofollow -o $s/hello-c $s/hello.5 $h/libc.a
 $s/hello-c
 cmp $s/hello-c $h/hello-c && echo hello-c: the host
-ml -m 5 -O3 -start Stdlib Hello Std_exit -o $s/start.5
+ml -m 5 -O3 -project /src -start Stdlib Hello Std_exit -o $s/start.5
 cmp $s/start.5 $h/start.5 && echo start: the host
-ml -m 5 -O3 $I -o $s/Hello.5 Hello.ml
+ml -m 5 -O3 -project /src $I -o $s/Hello.5 Hello.ml
 cmp $s/Hello.5 $h/Hello.5 && echo Hello: the host
 ld -m 5 -H2 -nofollow -o $s/hello-ml $s/start.5 $l/Stdlib.5 $s/Hello.5 $h/std_exit.5 $h/runtime.5 $h/libc.a
 $s/hello-ml
@@ -102,8 +104,8 @@ printf 'bind -a /root/progs/toolchain /bin\nbind -a /root/progs/misc /bin\n' > $
 files=(progs/toolchain/ml=$X/languages/ml/mini-ml progs/toolchain/cc=$X/languages/c/mini-cc
   progs/toolchain/asm=$X/assembler/mini-asm progs/toolchain/ld=$X/linker/mini-ld
   progs/misc/cmp=$U/compare/mini-cmp lib/namespace=$D/namespace
-  src/self/hello.c=kernels/9pi/tests/self/hello.c
-  src/self/Hello.ml=kernels/9pi/tests/self/Hello.ml
+  src/kernels/9pi/tests/self/hello.c=kernels/9pi/tests/self/hello.c
+  src/kernels/9pi/tests/self/Hello.ml=kernels/9pi/tests/self/Hello.ml
   host/Stdlib.5=$L/Stdlib.5 host/Stdlib.inline=$L/Stdlib.inline
   host/pow.5=$L/libc/port/pow.5
   host/libc.a=$L/libc.a host/runtime.5=$L/runtime.5 host/std_exit.5=$L/std_exit.5

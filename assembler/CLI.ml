@@ -3,7 +3,7 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 let eprint = Console.eprint
 
@@ -40,7 +40,7 @@ let data_items (caps : < caps; .. >) (datas : (string * string) list) : (Asm.ite
     datas
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let arch = ref Asm.Arm and out = ref "" and files = ref [] and datas = ref [] in
+  let arch = ref Asm.Arm and out = ref "" and files = ref [] and datas = ref [] and project = ref "" in
   let data (s : string) =
     match String.index_opt s '=' with
     | Some i -> datas := (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1)) :: !datas
@@ -48,6 +48,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let options = Logging.flags @ [
     "-m", Arg.String (function "5" -> arch := Asm.Arm | "7" -> arch := Asm.Arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
     "-o", Arg.Set_string out, " out: the object's name";
+    "-project", Arg.Set_string project, " dir: the project's top, the object naming its source from it";
     "-data", Arg.String data, " name=file: the file's bytes as name's data";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] in
@@ -70,7 +71,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           (* (after the file's: a branch's Target is an index of its items) *)
           let items = Array.append obj.items (Array.of_list (data_items caps (List.rev !datas))) in
           Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
-          Asm.save caps out { obj with items };
+          Asm.save caps out { obj with items; file = Asm.in_project caps !project obj.file };
           0
       | exception Parser_asm.Error (l, m) -> eprint caps (Printf.sprintf "%s:%d: %s\n" (Fpath.to_string file) l m); 1
       | exception Sys_error m -> eprint caps (m ^ "\n"); 1)

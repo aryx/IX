@@ -225,6 +225,24 @@ let with_history (b : string) pos (st : stored) : obj =
   let acid = if next < String.length b then (Marshal.from_string b next : string list) else [] in
   { arch = st.s_arch; file = st.s_file; items = st.s_items; history; acid }
 
+(* [in_project caps project file]: an object's source by its path in the
+ * project, from its top (the compilers' -project, from here: mkconfig's
+ * $TOP), so that the object says its source wherever it was compiled
+ * and the tree is (mini-ld -map's manifest reads it; make self compares
+ * the card's objects with the host's); as given when no project is said.
+ * A file outside the project (a build's lexer outside the tree) by its
+ * absolute path. *)
+let in_project (caps : < Cap.readdir; .. >) (project : string) (file : Fpath.t) : Fpath.t =
+  if project = "" then file
+  else
+    let cwd = FS.getcwd caps () in
+    let absolute (p : string) : string =
+      FS.cleanname (if Filename.is_relative p then Filename.concat cwd p else p) in
+    let top = absolute project ^ "/" and f = absolute (Fpath.to_string file) in
+    let n = String.length top in
+    if String.length f > n && String.sub f 0 n = top then Fpath.v (String.sub f n (String.length f - n))
+    else Fpath.v f
+
 (* the files through the capabilities
  * old: Marshal.to_string (version, o) [] *)
 let save caps file (o : obj) =

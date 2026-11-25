@@ -8,7 +8,7 @@ ml – the OCaml compiler, for arm and arm64
 [ **-m** *arch* ]
 [ **-S** | **-gas** ]
 [ **-v** | **-debug** | **-quiet** ]
-[ **-o** *out* ]
+[ **-o** *out* ] [ **-project** *dir* ]
 [ **-I** *dir* ]
 [ **-i** ]
 [ **-M** ]
@@ -44,6 +44,13 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
 
 **-o** *out*
 :    The object is *out*.
+
+**-project** *dir*
+:    The project's top, from here (mkconfig gives its `$TOP`): the
+     object names its source by its path from there
+     (`assembler/Asm.ml`), the same wherever it was compiled and the
+     tree is, which \man{ld}{1}'s **-map** manifest says. Without it,
+     the source as given.
 
 **-I** *dir*
 :    The units are looked for in *dir* too.

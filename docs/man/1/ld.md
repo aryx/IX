@@ -10,7 +10,7 @@ ld – the linker, for arm and arm64
 [ **-nofollow** ]
 [ **-v** ]
 [ **-debug** | **-quiet** ]
-[ **-map** [ **-project** *dir* ] [ **-build** *dir* ] ]
+[ **-map** [ **-project** *dir* ] ]
 [ **-g** | **-s** ]
 [ **-E** *entry* ]
 [ **-o** *out* ]
@@ -70,13 +70,10 @@ the library that it uses.
 **-map**
 :    *out*`.map` is written too: each function's address and name; and
      *out*`.manifest`, what was linked: each object taken, in order, and
-     its source's path in the project (\man{analyze}{1} reads it). An
-     object names its source as its compiler was given it; **-build**
-     says where the project's objects are made, its tree mirrored
-     (mkconfig's `$B`: `$B/assembler/Asm.5` was compiled in
-     `assembler/`), **-project** the project's top (by default the first
-     directory up with a `dune-project`). A source not found there has
-     none.
+     its source's path in the project (\man{analyze}{1} reads it), as
+     the object names it (the compilers' **-project**); **-project** the
+     project's top (by default the first directory up with a
+     `dune-project`). A source not found there has none.
 
 **-h**
 :    How, by examples.

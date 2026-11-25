@@ -1,3 +1,9 @@
+; a program's files, two ways: linked/, what its build linked (the
+; linkers' manifests, dune's); searched/, what a search by the names
+; finds, for a tree not built
+(copy_files# linked/*.{ml,mli})
+(copy_files# searched/*.{ml,mli})
+
 ; mini-analyze's ML front end: mini-ml's into Closure_facts (Ml_front:
 ; mini-ml's parse, Resolve, Typing); a library, apart from c/'s wrapped
 ; copy of mini-cc (both compilers have a Parser and a Lexer), as c/ is:

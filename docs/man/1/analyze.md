@@ -43,7 +43,7 @@ program's library, lib_core's units it names, is read with it.
 An ML program is best given by its build, which knows its files: an
 *`.exe`* dune builds (`tiny/TinyShell.exe`, or `_build/default`'s),
 whose link mini-analyze asks dune for (`dune describe`, `dune rules`,
-in a build directory of its own: `analyzers/ml/Dune_manifest.ml`); a
+in a build directory of its own: `analyzers/ml/linked/Dune_manifest.ml`); a
 *`.manifest`*, what tiny-ld **-map** writes beside the program it
 links, each unit and its source (t-IX's build, make in `tiny`, writes
 one beside each program, `tiny/temp.manifest`); a directory, the
@@ -60,7 +60,7 @@ the file says (`dead_all.dl`), the others every program's reports
 (`said_all.dl`). A library's file and programs, manifests or `.exe`,
 `mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/*.manifest`,
 say its dead code over those that link it; the file alone, over the
-programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build, the
+programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without a build, the
 *files* given are the program (**-L**, **-I**, **-own** below).
 
 **-dead**
@@ -191,7 +191,7 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
      A unit in none of these directories, the **-I**'s and the
      library's is looked for in the project, the first directory above
      the first *file* with a `dune-project`
-     (`analyzers/ml/Module_finder.ml`). Where several directories have a
+     (`analyzers/ml/searched/Module_finder.ml`). Where several directories have a
      file of its name, the program as a whole decides: a directory
      already chosen for it, then the one with the most of the units
      its files name, then the nearest; a directory with its own

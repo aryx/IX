@@ -629,7 +629,21 @@ files each with its own (hello-c and libc's members, tiny-cc's 7
 programs with -Iruntime/c, the C kernels). Found: tiny's C library's
 d_ellipse, malloc, free... no t-IX C program calls; 29 of libc's
 functions no m-ix C program does. Left: an ML program's C (the runtime,
-bugs/raises.dl's) not read with it. make generated
+bugs/raises.dl's) not read with it.
+
+Singularity's application manifests renamed Main.app, and the layout
+(2026-11-25; the author: "regarding singularity, we can rename the file
+from .manifest to something else to make it easier for mini-analyze to
+recursively find all the appropriate program manifest", "we might want
+to move some to analyzers/ml/manifest/ or something (and a similar dir
+for the other approach with Module_finder.ml and Caller_finder.ml)"):
+kernels/singularity's Main.manifest (mini-singml -given, -grants) is
+Main.app, and the walk of a directory takes a .manifest by its name,
+its magic line no longer read (the special case gone). Singularity's
+kernel had the stamp bug oberon's and squeak's had (fixed). The two ways
+of finding a program's files in two directories: analyzers/ml/linked/
+(Tiny_manifest, Dune_manifest) and analyzers/ml/searched/ (Module_finder,
+Caller_finder), dune's copy_files#. make generated
 gone too ("is it still needed?"): dune build makes the lexers and
 parsers, and mini-analyze is dune's; its warning says dune build.
 

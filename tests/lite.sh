@@ -242,7 +242,8 @@ family "t-ix builds part of itself" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
 # by cc, its object the host's (read from the disk by
-# KFS_tests' Cat); Stdlib.ml by ml -c, its interface the host's
+# KFS_tests' Cat; compiled in /src, as the host's in tiny/, since the
+# object records its -I); Stdlib.ml by ml -c, its interface the host's
 # (its object is in /lib/ml/stdlib.a: make self-quick compares that); and
 # a program without libc linked by ld and run. 22 s
 tiny_self() {
@@ -253,8 +254,9 @@ tiny_self() {
   cp $o/src.img $o/selfsrc.img; truncate -s 64M $o/selfsrc.img
   timeout 120 $m -d $o/self.img -d $o/selfsrc.img $o/boot.img > $o/self.out <<'END'
 rc
-mkdir q; cd q
-cc -I /src/runtime/c -o ping.o /src/user/ping.c
+mkdir q; cd /src
+cc -I runtime/c -o /usr/glenda/q/ping.o user/ping.c
+cd /usr/glenda/q
 ml -c -o Stdlib.o /src/TinyLibCore/Stdlib.ml
 cmp Stdlib.tmi /lib/ml/Stdlib.tmi && echo Stdlib.tmi: the host
 echo 'int main(void) { return 6 * 7; }' > m.c
@@ -634,9 +636,20 @@ job -after-ix "each unit compiled after those it inlines (else builds differ)" e
 group t-ix
 family "ix's code by its analyses: no new report" check
 job "mini-analyze -caps on tiny/'s programs dune links: no report but the recorded ones (caps_tiny.txt)" analyzers/datalog/tests/check.sh tiny -caps -check
-job "mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/check.sh tiny -dead -check
-job "mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/check.sh tiny -bugs -check
-job "mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/check.sh tiny -exn -check
+# -dead, -bugs and -exn are recorded on OCaml 5's build: on 4.14's, dune
+# links Parallel's single.ml.in, whose spawn calls nothing, and
+# mini-analyze, reading it, finds tiny-machine's cores' loop dead (on
+# OCaml 5 Parallel is read by its interface alone: mini-ml has no Domain)
+t_dead="mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no dead code but the recorded (dead_tiny.txt)"
+t_bugs="mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)"
+t_exn="mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)"
+case $(ocamlc -version) in
+  5.*) job "$t_dead" analyzers/datalog/tests/check.sh tiny -dead -check
+       job "$t_bugs" analyzers/datalog/tests/check.sh tiny -bugs -check
+       job "$t_exn" analyzers/datalog/tests/check.sh tiny -exn -check;;
+  *) for t in "$t_dead" "$t_bugs" "$t_exn"; do
+       skip "$t" "recorded on OCaml 5's build"; done;;
+esac
 group m-ix
 # (check.sh ix reads ix's build as mini-ld linked it, its manifests: the
 # one above, the programs it has; make check's, all of _mk/7. old: the

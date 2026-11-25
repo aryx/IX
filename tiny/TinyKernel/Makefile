@@ -242,9 +242,15 @@ S = $(if $(filter _make,$(O)),..,$(O)/src)
 # the example: it is /src, which make self builds from, so it must
 # hold the sources alone (the programs built here would not even fit
 # in its 8 MB). ../.gitignore says what the build makes, so this list
-# follows it.
+# follows it. A tree without its .git (Docker's copy, .dockerignore) is
+# asked the same through a git directory made for the occasion, empty:
+# every file not ignored is then "other" (-o).
 # (run in tiny/)
-SOURCES = { git ls-files -co --exclude-standard; git ls-files -d; } | \
+SOURCES = { if git rev-parse --git-dir > /dev/null 2>&1; then \
+    git ls-files -co --exclude-standard; git ls-files -d; \
+  else g=$$(mktemp -d) && git init -q $$g && \
+    GIT_DIR=$$g/.git GIT_WORK_TREE=$$(cd .. && pwd) \
+      git ls-files -o --exclude-standard; rm -rf $$g; fi; } | \
   LC_ALL=C sort | uniq -u | grep -v '^tests/'
 
 all: $(O)/boot.img $(O)/disk.img $(O)/src.img

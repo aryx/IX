@@ -77276,3 +77276,937 @@ Claude planned to rewrite tiny_check.sh so one mini-analyze call with -caps on t
 Claude noted that -exn program names change from tiny-build to build, so exn_tiny.txt needs re-recording with names only.
 Claude closed out with make test, a ledger row, and a commit covering the uncommitted steps.
 Claude had also finished directory-argument support and fixes, and its one-call run matched the dead and bugs recordings.
+
+------------------------------------------------------------------------
+
+## 2026-11-24 22:48
+
+**Yoann:**
+
+> let's commit and do 1 and 2, and let's wait for step D to restore the programs. and 3.
+
+**Claude (summary):**
+
+Claude committed the work as `71ca99b5` after running `make test`, leaving `todo.org` out and applying the `con:At.0` doc fix.
+Claude ran step 1: `-caps` on dune's programs alone, which shrank the comparison from 190 lines to 76.
+The `-bugs` check showed 19 new findings against 18 gone, so one line is genuinely new.
+Claude removed the standalone tool and its now-unused `Dune_manifest.main` entry point, updating the interface header to match.
+All four checks passed together under `make test`, with the private build directories cleaned up.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 06:23
+
+**Yoann:**
+
+> let's do step D
+
+------------------------------------------------------------------------
+
+## 2026-11-25 06:24
+
+**Yoann:**
+
+> it's a bit sad though that the LOC of the analyzer grew so much; we added 700 LOC of ocaml and removed 115 LOC of shell; it's weird.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 06:27
+
+**Yoann:**
+
+> also at this point it might be useful to have analyzers/examples/ slightly adapted to also generate manifest and run.sh adapted too so we use the new way to run an analyzer
+
+------------------------------------------------------------------------
+
+## 2026-11-25 06:27
+
+**Yoann:**
+
+> (and maybe also the old way; both can be useful)
+
+**Claude (summary):**
+
+Claude asked whether to commit step D first, as its own separate commit, before the examples work.
+Claude planned to adapt analyzers/examples and its run.sh so every example runs both ways.
+Claude's plan had each example run from its build's manifest, and again the old flag-based way.
+Before that, Claude finished step D: capabilities.dl now covers tiny-kernel's 30 calls, and make test passed.
+Claude noted that nothing was committed yet, and the examples work had not started.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 07:50
+
+**Yoann:**
+
+> let's commit and do the examples
+
+**Claude (summary):**
+
+Claude finished the examples work: a new dune file, a rewritten run.sh and expected.out, and analyze.md updates.
+Claude noted that step D was committed as 3152ebc6, but the examples and man page changes were still uncommitted.
+Claude proposed committing the examples and man page changes next, then starting the size cuts.
+Claude named two size cuts: having library mode reuse merged_runs, and dropping the dune describe targets call.
+Claude asked Yoann to confirm the commit before starting on those cuts.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:04
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:04
+
+**Yoann:**
+
+> note that make check in tiny/  is reporting -dead only for TinyLibGUI.ml, why? why this special treatment for this library?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:05
+
+**Yoann:**
+
+> there are many libraries under tiny/
+
+**Claude (summary):**
+
+Claude explained that TinyLibGUI.ml is not special in reporting; the main `-dead` check covers all 55 programs.
+Claude said the TinyLibGUI line is a second test of library mode, chosen because it is the only library with dead lines.
+Claude recommended moving that test out of tiny_check.sh into a small fixture under `analyzers/tests/`, with one dead function and two manifests.
+Claude also proposed a renamed in-script check, but said looping over all libraries would be too slow for `make test`.
+Claude offered to do the fixture move first, then the Dune_manifest cut, and asked for confirmation.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:06
+
+**Yoann:**
+
+> I'm gonna fix soon all those dead function, so we probably need an external test for this instead (or maybe there is one already)
+
+**Claude (summary):**
+
+Claude checked whether analyzers/tests already covered library mode, then found a toy test in `analyzers/tests/callers/`.
+Claude added a `callers/dune` build and extended `run.sh` to check `mini-analyze -dead` on CallersLib with CallersA.exe and CallersB.exe.
+Claude let library mode accept dune `.exe` files too, moving the shared manifest code into a `dune_runs` helper, and updated the man page and `-h`.
+Claude cut the TinyLibGUI check from tiny_check.sh (69 to 56 lines); `make test` passes with 198 jobs and 0 failures, uncommitted.
+Claude flagged a suspected false positive: CallersA.a and CallersB.b are reported dead though read by `exit 1` checks, not yet investigated.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:26
+
+**Yoann:**
+
+> let's commit. then I saw some dune related code in Analyze.ml; would be better to move that in a separate module for better separation of concern, probably close to Dune_manifest.ml or inside Dune_manifest.ml itself
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:27
+
+**Yoann:**
+
+> Analyze.ml is also far too long, especially its main function is incomprehensible
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:27
+
+**Yoann:**
+
+> its help also far too long
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:29
+
+**Yoann:**
+
+> also its analyzers/Main.ml is a single very long line; we should aim for no more than 80 column in general (it's not a hard limit for now, but let's not abuse and have more than 100 columns for sure
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:35
+
+**Yoann:**
+
+> let's rename Unit_finder.ml to Module_finder.ml (In the past I use Unit_xxx for unit testing modules)
+
+**Claude (summary):**
+
+Claude confirmed the rename of Unit_finder.ml to Module_finder.ml, touching code, dune, the .NET test list, man page, Makefile comment and plan.
+Claude's tests passed after the rename and split: `make test` ran 198 jobs with 0 failures.
+Claude split Analyze.ml into Analyze, Analyze_flags, Analyze_one, Analyze_merge and Analyze_build, each with an .mli.
+Claude also shortened help and wrapped lines to 80 columns, growing the total to 4,940 lines, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:42
+
+**Yoann:**
+
+> let's commit. I think the code is cleaner now
+
+**Claude (summary):**
+
+Claude committed the work as `c5c0ae77`, leaving the already-staged `docs/yoann_notes/prompt-history.md` out of it.
+Claude proposed four follow-ups, ranked by usefulness, starting with the Dune_manifest cut.
+The cut uses `dune rules @dir/all` to list every built `.exe`, replacing `dune describe targets` and the stanza walk in `executables`.
+That would also drop `Procs.create_process_stderr` and should save roughly 25 to 30 lines.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:44
+
+**Yoann:**
+
+> ok let's do 1
+
+**Claude (summary):**
+
+Claude replaced the stanza walk and `dune describe targets` in Dune_manifest with one call, `dune rules @dir/all`.
+Claude said that call returns the link rule for every executable dune builds under the directory, skipping js `.bc.js` outputs and test directories.
+Claude kept `Procs.create_process_stderr` as the fallback for when another dune holds the build directory, changing only its comment.
+Claude cut Dune_manifest from 355 to 332 lines, kept the same 28 programs under `tiny/`, and left the change uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:50
+
+**Yoann:**
+
+> hmm but calling dune rules @tiny/all seems very t-ix specific? Will this work on other projects too using dune?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:50
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude fixed mini-analyze's paths from subdirectories, converting executables to be relative to the current directory via `dune describe workspace`.
+Claude replaced the merged-runs guessing, so `-r datalog` now keeps `datalog` by recording which words Arg read as programs or files.
+Claude noted two remaining limits: reports from subdirectories name absolute paths, and only the first build context of a `dune-workspace` is read.
+Claude confirmed `make test`, the analyzer tests, the examples and the four tiny_check analyses all pass, and the changes are uncommitted.
+Claude proposed committing these fixes and then moving on to the dead-global false positive, which Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 08:56
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude fixed the dead-global false positive so `make test` passes with 198 jobs and no failures.
+The fix has Closure_facts emit a `read_global` fact per global read, and dead.dl counts that read when the reading function is reached.
+Claude added the test `analyzers/tests/dead/toplevel/Top.ml`, where `limit` is not dead and `unread` still is.
+Three false reports in `dead_all_ix.txt` are gone, and FACTS.md documents the new relation; the bug is recorded in `docs/plans/bugs/ix.md`.
+Claude had not committed the change, and asked whether to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 09:31
+
+**Yoann:**
+
+> yes let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the work as `e01478d6` and listed four follow-ups, ranked by usefulness.
+Claude recommended doing step E first: rules found from the analyzer's own path, so `-r` is never needed.
+That change is about 10 lines and would shorten the examples' old-way commands.
+Claude then suggested step 1, m-ix manifests, which would remove `mk_units.sh` and `generated.sh` and most of `ix_check.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 09:32
+
+**Yoann:**
+
+> let's do 2 first, then 1
+
+**Claude (summary):**
+
+Claude implemented step E so mini-analyze finds its rules and libraries from its own executable's location.
+Claude added a home field searched upward from the resolved executable path for analyzers/datalog, so the bin/ symlink works.
+Claude checked it from a scratch directory outside ix and removed -r and -L from the examples, man page, and help.
+Claude ran make test (198 jobs, 0 failures) and tried to commit E before step 1, but the commit was blocked, so E is uncommitted.
+Claude noted the analyzer grew to 4,974 lines and asked whether to commit E and then start step 1.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 09:43
+
+**Yoann:**
+
+> yes let's commit and do 1
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:47
+
+**Yoann:**
+
+> I don't understand fully the issue. What did we do for t-ix? It worked, we managed to get the manifest generated for a program
+
+**Claude (summary):**
+
+Claude explained that tiny-ld finds sources beside their objects, which works because tiny's build keeps each `x.ml` next to its `x.o`.
+Claude found that m-ix's objects sit in a separate `$B` tree, so mini-ld sees `Asm.ml` and cannot locate it in `assembler/`.
+Claude recommended one flag telling mini-ld the `$B` root, passed by mkconfig's `LD` line, so it maps `$B/assembler/Asm.7` back to `assembler/`.
+Claude said that flag would also cover archives, making mini-ar's recorded directory unnecessary, and asked whether to proceed.
+Claude did not propose copying sources next to objects, and it did not change any files.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:49
+
+**Yoann:**
+
+> could we just also copy the source next to the object? so we could reuse the "next to it"? In fact that's also what dune does in its _build no? What do you think?
+
+**Claude (summary):**
+
+Claude recommended against copying sources next to objects, since the mapping back to the tree would still be needed.
+Claude argued that Dune copies because it owns every rule, while mk copies nothing today.
+Copying would add disk and build-time cost on every build, and editors might open the copy and lose edits.
+Claude recommended a flag instead, so the archive names the tree's files directly, dropping mini-ar's archive record.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:51
+
+**Yoann:**
+
+> ok let's do the flag then, so the archive stores "readable path" (not sure what is the right name) or "project path", that is path relative to the top of the project; maybe that's a good choice
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:52
+
+**Yoann:**
+
+> in ~/osemgrep/ we had lots of different path: Fpath, PPath, Rpath, etc.
+
+**Claude (summary):**
+
+Claude recommended adopting osemgrep's path vocabulary: Fpath, Ppath (project path), and Rpath for the ix tools.
+Claude proposed that the manifest store project paths like `assembler/Asm.ml` rather than paths relative to the manifest's directory.
+mini-ld would take the build directory and project top from a flag on mkconfig's `LD` line.
+mini-analyze would take a `-project` root, defaulting to the project around the current directory, replacing `-sources`.
+tiny-ld would use the same convention, dropping the "shallowest manifest's directory" rule in Analyze_build, and asked for approval.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:54
+
+**Yoann:**
+
+> what do you think? Does it simplify things?
+
+**Claude (summary):**
+
+Claude recommended doing step 1 first: mini-ld and m-ix, with project paths and a flag.
+Claude proposed a flag in mkconfig so mini-ld reads manifest paths from the project root.
+Claude proposed dropping mini-ar's archive record, since the flag already covers archives.
+Claude noted m-ix defaults its root to the project around the current directory, which ix_check.sh needs.
+Claude deferred tiny-ld and the shallowest-manifest rule to step 2, after step 1.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:56
+
+**Yoann:**
+
+> ok let's do step 1
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:57
+
+**Yoann:**
+
+> ideally we can have more precise path that string to indicate that something is a project path vs other path
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:57
+
+**Yoann:**
+
+> not sure we want the full PPath.ml way, but might be useful to have clearer types
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:57
+
+**Yoann:**
+
+> note that in many case the proejct dir could be inferred when passing a file argument
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:58
+
+**Yoann:**
+
+> just like we can infer the git root of a path
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:59
+
+**Yoann:**
+
+> let's pause maybe a take a step back? Are we overcomplicating this whole mini-analyzer thing?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 10:59
+
+**Yoann:**
+
+> was the previous approach simpler in the end?
+
+**Claude (summary):**
+
+Claude compared sizes: tiny_check.sh fell from 166 to 56 lines, while manifest analysis added about 750.
+Claude argued the manifests bought reads exactly as linked, with no hand-kept program table to drift.
+Claude said the cost sits mostly in Dune_manifest (349 lines), while t-IX's side is about 187.
+Claude suggested shrinking Dune_manifest rather than removing it, since manifests remain worth it for tiny.
+Claude recommended reverting today's uncommitted m-ix work, and asked Yoann whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 11:03
+
+**Yoann:**
+
+> I like that we analyze things the ways it's linked, to avoid duplicate work that invetability get out of sync. I like manifests. I like that for t-ix we did analyze more files, find more bugs, got more precise by using manifest instead of name heuristic when we can.
+
+**Claude (summary):**
+
+Claude recommended m-ix adopt manifests too, since singml's mkfile already broke from unit-list drift.
+Claude reported that the uncommitted step 1 is nearly done, with mini-ld writing project paths into manifests.
+Claude planned to finish step 1 by having the analyzer read those project paths, inferring each project from its manifest.
+Claude would version the manifest format at 2 with a ppath type, run make test, then commit, leaving mini-ml and mini-ar unchanged.
+Claude left steps 2 through 4, including ix_check.sh manifests and the three hard programs, for after step 1.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 11:04
+
+**Yoann:**
+
+> yes let's continue with 1
+
+------------------------------------------------------------------------
+
+## 2026-11-25 11:05
+
+**Yoann:**
+
+> I care about the ergonomy of mini-analyzer, and make it easy to use on programs, not being specific to t-ix or m-ix. It's also nice to not have long adhoc script to run mini-analyzer, because it's a sign that I will not be able so easily to call myself mini-analyzer on a program on the command line because of all those stuff done in the script, before, and after the mini-analyzer run (filter and what's not)
+
+**Claude (summary):**
+
+Claude recommended option 1: ix_check.sh inside make test reads the manifests of make test's own ix build, covering about 25 of 44 programs.
+Claude rejected option 2 because having ix_check.sh build the 44 directories itself needs the directory table that tiny_check.sh dropped.
+Claude kept the full ix_check outside make test, since a full build of 140 programs takes 4 min 43 s.
+Claude asked whether to commit step 1, the mini-ld manifest and mini-analyze -project work, which passes make test with 198 jobs.
+Claude also reported that singml's mkfile no longer links and that the oberon and squeak kernels build only through make.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:10
+
+**Yoann:**
+
+> yes. Also make check should build the whole thing if needed
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:11
+
+**Yoann:**
+
+> or maybe it should check just the dune manifest
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:11
+
+**Yoann:**
+
+> so the programs are already built
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:13
+
+**Yoann:**
+
+> so in make test and make check we could just run mini-analyze on the dune programs (host), be it the m-ix and t-ix programs host programs, and so rely just on the dune manifest. Then in other targets we could also exercise the mini-ld and tiny-ld manifests
+
+**Claude (summary):**
+
+Claude recommended keeping ix's own build for make check, running mini-analyze on _mk/7 after make ix.
+Claude advised that make test read its own build's manifests, covering about 25 programs at no extra cost.
+Claude rejected dune's build as the default, since its generated lexers and parsers would lose analysis.
+Claude kept dune's route only as a command-line option, mini-analyze -caps ., for anyone who wants it.
+Claude also made one fix, skipping foreign .manifest files like Singularity's in kernels/singularity.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:15
+
+**Yoann:**
+
+> pause
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:15
+
+**Yoann:**
+
+> what's the final plan?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:15
+
+**Yoann:**
+
+> I'm confused about the pro and cons
+
+**Claude (summary):**
+
+Claude recommended keeping tiny_check.sh unchanged for t-IX, since both of its builds already work.
+Claude recommended making m-ix's make check depend on make ix and read the _mk/7 manifests.
+Claude recommended that m-ix's make test read its own partial ix build, covering fewer programs at no extra cost.
+Claude kept dune's mini-analyze -caps route available from the command line, but not as the reference.
+Claude also weighed fidelity against build cost, and noted the quoted-string fix works while the ocamllex test needs narrowing.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:20
+
+**Yoann:**
+
+> let's follow your recommendation for now
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:35
+
+**Yoann:**
+
+> why the reports looks quite different than before?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:40
+
+**Yoann:**
+
+> what were doing the tiny_check.sh and ix_check.sh a week ago? their coverage were actually low? They didn't analyze everything? Did we make progress in the last 2 days/
+
+**Claude (summary):**
+
+Claude proposed three steps before committing the m-ix step, and Yoann approved them.
+Claude planned to check the 30 gone bugs lines, 87 gone dead lines, and 11 gone exn lines.
+Claude planned to rerun make test against the corrected recordings to confirm nothing regressed.
+Claude planned to update the plan and its ledger once those three checks were finished.
+Claude had also explained the partial coverage of tiny_check.sh and ix_check.sh, and m-ix reaching 160 programs.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:50
+
+**Yoann:**
+
+> yes go ahead with those three
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:50
+
+**Yoann:**
+
+> ok so it sounds like progress
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:50
+
+**Yoann:**
+
+> let's build oberon and squeak then?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 12:51
+
+**Yoann:**
+
+> please at the end make me a summary of what kind of mini-analyzer approach is used in make test, make check, etc. and whether it use manifest-based approach or else, with which build system/linker generating the manifest, and eventually holes and special cases
+
+**Claude (summary):**
+
+Claude left everything uncommitted and asked Yoann whether to commit the progress.
+The uncommitted set covers the analyzer changes, ix_check.sh (95 to 81 lines), the Makefile, and the make test jobs.
+It also includes the re-recorded `*_ix.txt` files, three mkfile fixes, and the docs, with the bugs file updated.
+The mkfile fixes address oberon's and squeak's kernels and mini-singml, which had stopped linking with mini-mk after a stale unit list.
+Claude also summarized the analysis approach, and make test passed with 198 jobs and 0 failures.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:38
+
+**Yoann:**
+
+> ok let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the work in two commits, the three build fixes first and then the m-ix check.
+Commit `0ec44057` relinks the oberon and squeak kernels and mini-singml against mini-mk, with details in the bugs file.
+Commit `46fcd0f6` makes ix_check.sh read ix's build through its manifests, so `make check` builds ix first.
+Claude listed what remains open, including reading the new m-ix reports and running `make check` against `_mk/7`.
+Step 2 for tiny-ld, which removes `-project tiny`, the shallowest-directory rule and suffix matching, is still pending.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:40
+
+**Yoann:**
+
+> ok let's do step 2; it simplifies things? it reduces tiny_check.sh again?
+
+**Claude (summary):**
+
+Claude explained that the step would not shrink tiny_check.sh, since `-project tiny` must stay for the build copy of tiny/.
+Claude listed the trade-off: the analyzer's shallowest-manifest rule (about 15 lines) and the suffix matching in `Tiny_manifest.linking` (about 10 lines) would go away.
+Claude noted a `-project` flag in tiny-ld and the Buildfile change would add roughly as many lines back, so there is no net simplification.
+Claude recommended skipping step 2 for now and instead reading the ~840 new m-ix reports or moving mini-9pi's kernel to a manifest.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:41
+
+**Yoann:**
+
+> I like consistency and uniformity
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:41
+
+**Yoann:**
+
+> and simplicity
+
+**Claude (summary):**
+
+Claude proposed committing the tiny-ld and mini-analyze changes once the background `make self-quick-tix` run passed.
+Claude had started that run in the background because tiny-ld now runs `getcwd` on t-IX.
+Claude noted nothing was committed yet, with the run expected to take about six minutes.
+Claude had made tiny-ld take `-project dir`, unified manifest roots in `Tiny_manifest.root`, and updated docs.
+Claude reported `make test` passing with 198 jobs and zero failures, after the analyzer shrank by 27 lines.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:49
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude listed mk_units.sh, generated.sh and sweep.sh as deletable once caps_types.sh and dynamic.sh read manifests too.
+Those two scripts must switch to manifests before the three support scripts can be removed.
+Claude noted that kernel.sh still reads mini-9pi's mkfile for -bugs, another remaining dependency.
+Claude confirmed the analyzer now reads every manifest as root plus path, after the tiny-ld change.
+Earlier, Claude committed step 2 as a3b44d79 after make self-quick-tix passed, removing 27 lines.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:51
+
+**Yoann:**
+
+> ok let's delete the mk_units.sh and other support script that are not needed anymore now that we use the manifest approach to get the source files to analyze! Finally a payoff for all this work
+
+**Claude (summary):**
+
+Claude removed mk_units.sh, generated.sh, sweep.sh, triage.sh and dead_ix.txt, about 300 lines in all.
+Claude moved dynamic.sh, caps_types.sh and measure.sh onto manifests, with dynamic.sh giving mini-dc's exact 121,072 facts.
+Claude kept kernel.sh reading its mkfile, since kernel.mk writes no manifest, and kept the two-line `make generated` target.
+Claude fixed an awk ordering bug in measure.sh by writing the facts to a file before analysis.
+Claude reported `make test` passing with 198 jobs and 0 failures, nothing committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:56
+
+**Yoann:**
+
+> we might get rid of the generated: toplevel target too? is it still needed?
+
+**Claude (summary):**
+
+Claude removed the `generated` Makefile target and its `.PHONY` entry, and confirmed the Makefile still parses.
+Claude updated the man page and plan to drop the `generated` target, since `dune build` now produces the lexers and parsers.
+Claude noted that Module_finder still finds dune's lexers in `_build/default`, so a plain `dune build` covers that need.
+Claude listed the uncommitted cleanup: five deleted files, three scripts moved to manifests, the target removal, and docs.
+Claude reported `make test` passed before the last Makefile and docs change, then asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:57
+
+**Yoann:**
+
+> finally some payoff for those 1000 LOC added to mini-analyzer and code added to mini-ld, tiny-ld, etc.
+
+**Claude (summary):**
+
+Claude weighed the cleanup: about 380 lines of shell removed against about 1,360 lines of OCaml added.
+Claude listed coverage gains: m-ix went from 44 programs to all 163, and t-IX reached 55 programs on their real platforms.
+Claude said precision improved, ending misreadings like KRaw read from the wrong file and TinyMachineWindow going missing.
+Claude reported bugs found: three non-linking programs, a dead-global false positive, and about 850 new reports still to read.
+Claude described one mini-analyze FLAG command with no drift, leaving mini-9pi's kernel and tiny-cc's C programs unanalyzed.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 13:59
+
+**Yoann:**
+
+> ok I like this "What it bought" analysis; maybe we should store it in one of mini-analyzer file dealing with this manifest-based approach, so we remember what it bought us
+
+**Claude (summary):**
+
+Claude recommended putting the "What it bought" analysis in Analyze_build.mli, the module describing the manifest approach.
+Claude added a history note to its header covering the old route, the line cost, and what manifests bought: coverage, precision, bugs found, no drift, one command.
+The note also lists three usage examples and what remains: mini-9pi's kernel and tiny-cc's C programs.
+Claude fixed a stale comment about the shallowest-directory rule that step 2 had removed.
+Uncommitted changes include the note plus deletion of 5 mkfile scripts, and Claude asked whether to commit them together as "the mkfile scripts gone".
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:00
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the cleanup as `93803576`, removing the five mkfile scripts, lists, and the `generated` target.
+Claude noted that tiny_check.sh, ix_check.sh, and the analysis tools now read programs from build manifests.
+Claude flagged that mini-9pi's kernel still lacks a manifest, so kernel.sh still reads its mkfile.
+Claude suggested adding `-map` and the two flags from `kernel.mk` so kernel.sh could be retired.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:01
+
+**Yoann:**
+
+> let's pass -map and retire kernel.sh too
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:06
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:11
+
+**Yoann:**
+
+> if some script (like tiny_check.sh) create some dirs to store data and what's not, would be nice to show it by default, so we know when we're using external data in /tmp for instance
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:11
+
+**Yoann:**
+
+> and nice to show also when you delete it
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:14
+
+**Yoann:**
+
+> du returns a big number; this repo use lots of space. Where is it?
+
+**Claude (summary):**
+
+Claude reported that the repo's 2.0 GB is mostly the stale worktree at `.claude/worktrees/agent-aa8ff6ad28900d2fa/`, 1.4 GB of dune `_build/` output.
+Claude noted that worktree also holds uncommitted edits to `languages/ml/simple/Gen.ml`, `Lower.ml`, `Lower.mli`, `ssa/Emit.ml`, and a new test.
+Claude offered two options: delete only `_build/`, or remove the worktree and its `worktree-agent-aa8ff6ad28900d2fa` branch.
+Claude also flagged three prunable stale worktree entries from an old `/tmp` session, which take no space.
+Claude deleted nothing and asked Yoann to choose.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:17
+
+**Yoann:**
+
+> delete the worktree; I don't remember this work nayway and unlikely to resume it
+
+**Claude (summary):**
+
+Claude deleted the worktree and its branch `worktree-agent-aa8ff6ad28900d2fa` at commit `31f3c030`.
+That commit was already in `main`, so only the uncommitted edits in that worktree were lost.
+Claude also pruned the three stale worktree entries, leaving only `main` in `git worktree list`.
+This cut the repo from 2.0 GB to 637 MB.
+What remains is mostly `.git` (418 MB) and untracked kernel images in `kernels/9pi/` (143 MB).
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:11
+
+**Yoann:**
+
+> it could be with a -v flag for verbose
+
+**Claude (summary):**
+
+Claude's answer centered on the kernel and the `-bugs` analysis, which Yoann followed up on by approving the commit.
+Claude reported that mini-9pi's kernel needed no change, since mkkernel already links with mkconfig's `$LD` passing `-map -project -build`.
+Claude found the kernel's `-bugs` results reproduce every kernel.sh line in project paths, plus extra Fault, guard, and Mmu reports.
+Claude noted kernel.sh had read the 32-bit Pi 2 kernel, while the manifest covers the 64-bit Pi 4 kernel in `_mk/7`.
+Claude added `kernels/9pi/syscalls/arm64` to `bugs/intwidth.dl`'s 64-bit-only directories, and retired kernel.sh; `make test` passes, uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:19
+
+**Yoann:**
+
+> make ix  shows a very long output; it looks very complicate; we should aim to simplify the Makefile and script and what's not to perform what make ix is supposed to do. Also would be nice to have an equivalent target in tiny/Makefile that would also build tix; I'm not sure about the name, because from tiny/Makefile we usually use the shorter version, not a tix-something. What do you think? (note that we recently went to simplify mini-analyzer and removed the need for many scripts or simplified scripts and Makefile, so we should aim the same here)
+
+**Claude (summary):**
+
+Claude ran `make ix` and got 5,431 lines of output over 5m22s, because lib_core had changed.
+Claude then started reading the mkfiles to trace where that noisy output comes from.
+Claude next checked what a no-op `make ix` prints and how long it takes to run.
+Claude noted that both builds ran, with no tiny/Makefile target added yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:34
+
+**Yoann:**
+
+> yes, let's commit. Anything else from the plan? Can we close it?
+
+**Claude (summary):**
+
+Claude committed the plan's work as `31c3dc9c` and laid out the six steps, with their status, in a table.
+Claude said step 1 put the type in `linker/Manifest` rather than `lib_executable`, since the card's build gives the linker `lib_core` alone.
+Claude said step 4 kept the objects unchanged and used mini-ld's `-project`/`-build` flags instead of a record in each object.
+Claude listed what remains open, including the removal of flags in step 5 and the unmerged `tiny_check.sh` and `ix_check.sh`.
+Claude proposed moving the plan to `docs/plans/done/` with an updated Status, and asked whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:38
+
+**Yoann:**
+
+> ok let's do 1 first
+
+**Claude (summary):**
+
+Yoann's reaction centers on the `-I lib_core/system` change, which he chose to proceed with ("let's do 1 first"), so the summary leads with that.
+Claude moved the Plan 9-only `-I` into a `SYSDIRS` value in `mkfiles/config.rc`, dropping the duplicate `lib_core/system` entry.
+Claude checked that no file in `system/` shares a name with the other stdlib directories, so the compiler finds the same files.
+Claude removed 420 `mkdir -p $D` recipe lines across 60 mkfiles and added a `MADE=` line where needed.
+Claude added blank lines before 36 comment blocks in 17 files so comments no longer leak into recipes.
+Claude ran `make test`: all m-ix jobs passed, but three t-IX analysis jobs failed and were under investigation.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:51
+
+**Yoann:**
+
+> excellent, first let's commit this
+
+**Claude (summary):**
+
+Claude said every hunk in the touched files was its own, so it would commit them by pathspec.
+Claude chose to leave out `tiny/Makefile` and `prompt-history.md`, since those belong to another session.
+Claude then stated it was committing the remaining changes now, with no further detail in that message.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:56
+
+**Yoann:**
+
+> I think it's fine to depend on mini-ml date for now. For 1, I don't fully understand the issue
+
+**Claude (summary):**
+
+Claude explained that mklib's single pattern rule searches each library directory for the source file at run time, so mk prints bloated four-line recipes.
+Claude proposed moving the source lookup into `mkfiles/libs.rc`, which already computes `$LOCAL`, and writing one explicit rule per unit such as `$D/Sha1.$O: ./Sha1.ml`.
+The simplified recipe would be a single `$ML ... -o $target $prereq-source` line, with generated units keeping a `$D/%.ml` rule.
+The change would cut a full build's printed output from 2,636 lines to about 1,500, at a cost of about ten lines in `libs.rc`.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 14:57
+
+**Yoann:**
+
+> I still don't fully understand. Why those mklib and mkfile needs those libs.rc? Why we don't have this complexity in ~/principia/ ? What we do in principia that helps remove thhe needs for the complexity here?
+
+**Claude (summary):**
+
+Claude compared ix's build with principia's mkfiles, which keep objects beside sources and use one mkfile per directory.
+Claude found the source search in mklib exists because libraries like lib_graphics span nine directories.
+Claude proposed listing each unit's directory in the mkfile, such as UNITS=core/Color geometry/Point images/Png.
+That would turn mklib's rule into mkprog's single line, $D/%.$O: %.ml, and remove the search entirely.
+Claude noted that building against installed libraries would later remove the dirs files and most of libs.rc.
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:05
+
+**Yoann:**
+
+> I like this comparison with principia; let's make it a plan document recording your analysis and proposing a plan to simplify things for m-ix (and t-ix) when possible, cheapest first
+
+------------------------------------------------------------------------
+
+## 2026-11-25 15:07
+
+**Yoann:**
+
+> we recently had to factorize those mkdir -p with MADE, but maybe this should go away; maybe we should rethink things and have the objects stored next to the source, which can simplify lots of things; this is to take into account in this plan

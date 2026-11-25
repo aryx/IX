@@ -2,11 +2,11 @@
 # Prelude
 ###############################################################################
 
-# The usual entry points, where dune does the work: make, and make test,
-# which you run before each commit and which takes two minutes
-# (docs/testing.md). Below them are the targets that build ix by ix
-# (make ix, make test-ix...) and the one that tests everything (make
-# test-all).
+# The usual entry points: make, which builds ix by ix (make host first,
+# dune's build of the tools), and make test, which you run before each
+# commit and which takes two minutes (docs/testing.md). Below them are
+# the targets that check ix built by ix (make test-ix...) and the one
+# that tests everything (make test-all).
 
 ###############################################################################
 # Main targets
@@ -15,7 +15,17 @@
 # (the mkfiles' recipes are rc scripts, run by mini-rc: see
 # mkfiles/mkconfig)
 export MINI = mini-
-all:
+# make builds ix by ix, as on m-IX itself: make host, then mini-mk over
+# the mkfiles (the top mkfile's all), into _mk/7. Any other target is
+# the top mkfile's, make libs, make lib_core.dir, make install, make
+# depend, as mk libs... in /src on mini-9pi's card (make ix: make's old
+# name). make host is dune's build of everything, the tools of ix's
+# first build among them (bin/): a convenience, fast, with recent
+# OCaml compilers and OCaml 5's domains for some programs, ix built by
+# ix being the way to build it.
+all: host
+	$(IXPATH) mini-mk
+host:
 	dune build
 # tix builds t-IX alone (tiny/) and mix builds m-IX (the rest), as
 # test-tix and test-mix do. When nothing changed, they take 0.6 s and
@@ -27,10 +37,11 @@ MIX_DIRS = $(filter-out tiny/ docs/ bin/ _%, $(wildcard */))
 mix:
 	dune build $(MIX_DIRS:%/=./%)
 
-# install puts the mini- and tiny- programs in opam's bin, for the
-# mkfiles (when ix is built by ix, with mini-mk and then
-# mkfiles/check.sh) and for use anywhere.
-install: all
+# host-install puts the mini- and tiny- programs in opam's bin, for
+# the mkfiles (when ix is built by ix, with mini-mk and then
+# mkfiles/check.sh) and for use anywhere. (make install is the top
+# mkfile's: the libraries where examples/ links them.)
+host-install: host
 	dune install
 
 # What the builds make, and who makes it (rm -rf of what is not there
@@ -64,7 +75,7 @@ TINY_W = /tmp/ix-tiny
 # sounds), the decoders on random words and on their system
 # instructions (docs/plans/done/plan_tests.md), and make check.
 test: test-lite
-test-long: all
+test-long: host
 	./tiny/tests/TinyDatabase_test.sh 20
 	./version_control/tests/query.py 10
 	./version_control/tests/session.py 10
@@ -163,7 +174,7 @@ website-mini: website-mini-js
 # test-vs-mk runs the same corpus through plan9port's (9base) mk and
 # xix's omk too, when they are installed; see
 # builder/tests/differential.sh.
-test-vs-mk: all
+test-vs-mk: host
 	./builder/tests/differential.sh live
 
 # The toolchain against goken (~/goken, built, with its libcs). C
@@ -174,7 +185,7 @@ test-vs-mk: all
 # programs; see languages/c/tests/ (and MINICC=1 linker/tests/libc.sh
 # for the executables that mini-cc and mini-ld make).
 GOKEN_W = /tmp/ix-goken
-test-vs-goken: all
+test-vs-goken: host
 	./linker/tests/libc.sh 5 $(GOKEN_W)/libc5 $(HOME)/goken/tests/c/hello_libc/*.c
 	./linker/tests/libc.sh 7 $(GOKEN_W)/libc7 $(HOME)/goken/tests/c/hello_libc/*.c
 	./languages/c/tests/listing.sh 5 $(GOKEN_W)/listing5 $(HOME)/goken/tests/c/hello_libc/*.c languages/c/tests/c/*.c
@@ -202,7 +213,7 @@ test-vs-goken: all
 # is an exception, and \b and \r are allowed in an escaped string;
 # tests/modern/later_stdlib.ml checks those.)
 OCAML_LIGHT_TESTS = $(addprefix $(HOME)/ocaml-light/test/,fib.ml takc.ml taku.ml sieve.ml quicksort.ml soli.ml bdd.ml boyer.ml nucleic.ml KB Moretest/letstar.ml Moretest/bigints.ml Moretest/equality.ml Moretest/signals.ml Moretest/wc.ml Moretest/testrandom.ml)
-test-vs-ocaml-light: all
+test-vs-ocaml-light: host
 	mkdir -p $(GOKEN_W)/tinyml && ./tiny/tests/TinyML_fuzz.py $(GOKEN_W)/tinyml 100
 	./languages/ml/tests/corpus.sh
 	./languages/ml/tests/types.sh
@@ -216,7 +227,7 @@ test-vs-ocaml-light: all
 # there), the SQL corpus (comparing stdout, stderr, the file, and SQLite
 # reading it), the B-trees alone, and random sessions; see
 # database/tests/.
-test-vs-chidb: all
+test-vs-chidb: host
 	./_build/default/database/tests/Test.exe
 	./database/tests/differential.sh
 	./database/tests/btree_differential.sh
@@ -227,7 +238,7 @@ test-vs-chidb: all
 # output; every file of ix is compiled (compile_ix.sh); and the
 # preprocessor is tested. (The true | is there because a test asks
 # whether its input is a file.)
-test-vs-ocaml: all
+test-vs-ocaml: host
 	true | ./languages/ml/tests/modern.sh
 	./languages/ml/tests/compile_ix.sh
 	./languages/ml/tests/pp.sh
@@ -241,7 +252,7 @@ test-vs-ocaml: all
 # and the QEMUs (see raspberry/tests/). With XV6_USERTESTS=-u, it also
 # runs the Pi1 ports' full usertests.
 # (They run side by side in tests/pi.sh, which has the list.)
-test-vs-qemu: all
+test-vs-qemu: host
 	./tests/pi.sh $(XV6_USERTESTS)
 
 # Speed regressions. test-speed times the build when nothing changed
@@ -254,7 +265,7 @@ test-speed:
 
 # mini-git over the Internet: mini-git clones ix from GitHub (https,
 # through curl), and git fsck and walk check the clone.
-test-vs-github: all
+test-vs-github: host
 	rm -rf /tmp/ix-github && ./_build/default/version_control/Main.exe clone https://github.com/aryx/IX /tmp/ix-github
 	git --git-dir=/tmp/ix-github/.git fsck --strict
 	cd /tmp/ix-github && $(CURDIR)/_build/default/version_control/Main.exe walk -q
@@ -264,14 +275,14 @@ test-vs-github: all
 ###############################################################################
 
 # ix built by ix (docs/plans/plan_mkfiles.md): mini-mk runs over the
-# mkfiles, with the programs that dune built (./bin) the first time.
+# mkfiles, with the programs that dune built (./bin) the first time;
+# make does it (all, above), and make ix, its old name.
 # What is made goes under _mk/7 (arm64) and _mk/5 (arm). There is no
 # OCaml from INRIA, no gcc and no GNU binutils in it, only mini-ml,
 # mini-lex, mini-yacc, mini-cc, mini-asm, mini-ar and mini-ld.
 IXPATH = PATH=$(CURDIR)/bin:$$PATH
 ix: all
-	$(IXPATH) mini-mk
-ix-arm: all
+ix-arm: host
 	$(IXPATH) mini-mk O=5
 # the kernels built by ix's tools, for the Pi 4
 # (docs/plans/done/plan_kernel_mini_ml.md; they take xv6's disk image and
@@ -298,22 +309,22 @@ kernels-ix: ix ix-arm
 #   expects each file to be the host's (tiny/TinyKernel's make self,
 #   kernels/9pi's). It takes hours. self-quick builds a part of each,
 #   in a few minutes.
-test-ix: all
+test-ix: host
 	true | ./mkfiles/check.sh
-test-ix-fixpoint: all
+test-ix-fixpoint: host
 	./mkfiles/fixpoint.sh
-test-ix-arm: all
+test-ix-arm: host
 	true | ./mkfiles/check_arm.sh
-test-ix-fixpoint-arm: all
+test-ix-fixpoint-arm: host
 	./mkfiles/fixpoint.sh 5
-test-ix-kernels: all
+test-ix-kernels: host
 	./tests/kernels_ix.sh
 
 self self-quick:
 	$(MAKE) --no-print-directory -j2 $@-tix $@-mix
-self-tix self-quick-tix: all
+self-tix self-quick-tix: host
 	$(MAKE) -C tiny/TinyKernel $(@:-tix=)
-self-mix self-quick-mix: all
+self-mix self-quick-mix: host
 	$(MAKE) -C kernels/9pi $(@:-mix=)
 
 # m-ix by hand: mini-9pi on the card that make self builds on (the Pi 2
@@ -321,7 +332,7 @@ self-mix self-quick-mix: all
 # the terminal (Ctrl-A x quits), or the screen in a window, for rio.
 # cd /src; mk self-quick is what make self-quick-mix runs. SMP=1 for
 # the four cores. (t-ix's: make -C tiny run, run-window.)
-run run-window: all
+run run-window: host
 	$(MAKE) -C kernels/9pi $(patsubst run%,run-self%,$@)
 
 ###############################################################################
@@ -423,11 +434,20 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all tix mix install website website-mini website-mini-js test \
-  check check-tix check-mix \
-  test-vs-mk test-vs-goken test-vs-ocaml-light test-vs-chidb test-vs-qemu \
-  clean loc loc-v loc-readme build-docker build-docker-ocaml5 build-docker-test-all \
-  test-vs-ocaml ix ix-arm kernels-ix test-ix test-ix-fixpoint test-ix-arm \
-  test-ix-fixpoint-arm test-ix-kernels self self-quick self-tix \
-  self-quick-tix self-mix self-quick-mix test-all test-lite test-tix \
-  test-mix hooks test-long test-speed test-vs-github visual visual-all
+PHONY = all host tix mix host-install website website-mini website-mini-js test \
+  check check-tix check-mix test-vs-mk test-vs-goken test-vs-ocaml-light \
+  test-vs-chidb test-vs-qemu clean loc loc-v loc-readme build-docker \
+  build-docker-ocaml5 build-docker-test-all test-vs-ocaml ix ix-arm \
+  kernels-ix test-ix test-ix-fixpoint test-ix-arm test-ix-fixpoint-arm \
+  test-ix-kernels self self-quick self-tix self-quick-tix self-mix \
+  self-quick-mix test-all test-lite test-tix test-mix hooks test-long \
+  test-speed test-vs-github visual visual-all run run-window
+# Any other target given is the top mkfile's (make libs, make
+# lib_core.dir, make install: all, above), a rule for each, not
+# .DEFAULT, which a target named as a file, examples/, would not reach
+MK_GOALS = $(filter-out $(PHONY),$(MAKECMDGOALS))
+ifneq ($(MK_GOALS),)
+$(MK_GOALS): host
+	$(IXPATH) mini-mk $@
+endif
+.PHONY: $(PHONY) $(MK_GOALS)

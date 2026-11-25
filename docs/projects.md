@@ -169,7 +169,7 @@ globals) is not told apart by piece.
 ## Two kinds of code
 
 - **Host programs, in OCaml.** Every executable ix builds with dune
-  (`make`, then `bin/`): the mini programs, the tiny programs, the
+  (`make host`, then `bin/`): the mini programs, the tiny programs, the
   emulators themselves. They run on Linux.
 - **Guest code.** What an emulated machine runs: ARM executables for
   mini-5i and mini-qemu, from ix's own toolchain (mini-ml, mini-cc,

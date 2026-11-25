@@ -57,11 +57,6 @@ KERNEL_TARGETS = run run-window self self-quick
 
 all: host TinyKernel/kfont.s
 	$(BUILD)
-# Any target not below is the Buildfile's. (.DEFAULT's prerequisites
-# are not made, hence the make in its recipe.)
-.DEFAULT:
-	$(MAKE) host TinyKernel/kfont.s
-	$(BUILD) $@
 # The font's pixels, which the Buildfile takes as they are (in /src
 # under t-IX): TinyKernel/Makefile's rule
 TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
@@ -82,4 +77,13 @@ clean:
 	$(MAKE) -C TinyKernel/steps clean
 	find . -name .tiny-build -type f -exec rm -f {} +
 
-.PHONY: all host test $(KERNEL_TARGETS) check loc clean
+PHONY = all host test $(KERNEL_TARGETS) check loc clean
+# Any other target given is the Buildfile's (make rc, make boot.img), a
+# rule for each, not .DEFAULT, which a target that is a file, rc once
+# built, would not reach
+BUILD_GOALS = $(filter-out $(PHONY) TinyKernel/kfont.s,$(MAKECMDGOALS))
+ifneq ($(BUILD_GOALS),)
+$(BUILD_GOALS): host TinyKernel/kfont.s
+	$(BUILD) $@
+endif
+.PHONY: $(PHONY) $(BUILD_GOALS)

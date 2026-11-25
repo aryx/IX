@@ -246,7 +246,7 @@ machines (real ARM, or our own) and what runs on each.
 ## Bootstrapping
 
 IX builds itself. The first build needs a compiler from outside:
-`make` uses dune, OCaml 4.14 and, under OCaml, gcc. After that first
+`make host` uses dune, OCaml 4.14 and, under OCaml, gcc. After that first
 build, IX's own tools are enough. mini-mk runs the mkfiles; mini-ml,
 mini-lex and mini-yacc compile the OCaml code; mini-cc and mini-asm
 compile the C library and mini-ml's runtime; and mini-ar and mini-ld
@@ -254,8 +254,8 @@ link. No OCaml compiler, gcc, GNU binutils or glibc is run or linked,
 and the results are under `_mk/`.
 
 ```bash
-make                   # stage 0: IX built by OCaml and dune (bin/)
-make ix                # stage 1: IX built by stage 0's tools, for arm64 (make ix-arm: for arm)
+make host              # stage 0: IX built by OCaml and dune (bin/)
+make                   # stage 1: IX built by stage 0's tools, for arm64 (make ix-arm: for arm)
 make test-ix-fixpoint  # stage 2: IX built by stage 1's tools: the same files
 make kernels-ix        # mini-xv6 and mini-9pi for the Pi 4, the same way
 make test-ix           # each program of stage 1 against dune's build of it

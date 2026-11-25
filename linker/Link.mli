@@ -131,8 +131,13 @@ val sym_of : 'm t -> int -> Asm.name -> sym
  * objects that define what is still undefined, until nothing new is
  * defined (5l's objfile, loadlib and ldobj; xix's Load). [needs] gives
  * the names that the machine's rewriting will call, which the libraries
- * must define too (5l's needsdiv). *)
-val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> needs:('m prog list -> string list) -> Fpath.t list -> unit
+ * must define too (5l's needsdiv). What it took, in its order: each
+ * object (a member by its name), the source it names, as its compiler
+ * was given it, and the archive a member came from (-map's manifest). *)
+val load :
+  < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) ->
+  needs:('m prog list -> string list) -> Fpath.t list ->
+  (string * string * string option) list
 
 (* loads objects already in memory, and only them. It is for
  * mini-dotnet's JIT, which assembles its text and encodes it with the
@@ -156,6 +161,7 @@ val member_file : member -> string
  * ar) *)
 val index : member list -> (string * string list) list
 val read_library : < Cap.open_in; .. > -> Fpath.t -> member list
+
 val write_library : < Cap.open_out; .. > -> Fpath.t -> member list -> unit
 
 (* Sets the branch targets: a BL f(SB) goes to f's TEXT, and a branch

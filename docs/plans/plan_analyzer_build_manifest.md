@@ -481,6 +481,35 @@ scripts into mini-analyze, Datalog or the manifest generation.
   followed), its rules and its lib_core (the library of none found)
   that tree's; no -r nor -L in the examples.
 
+4a, mini-ld's manifests (2026-11-25): mini-ld -map writes out.manifest
+too, tiny-ld's format (linker/Manifest, the same text as
+TinyLibExecutable's, run.sh's check; Tiny_manifest's types equations to
+it), each source a project path (type ppath = Ppath of string, osemgrep's
+Ppath without its module: from the project's top, the same wherever the
+tree and the build are; format 2). The author: "ideally we can have more
+precise path that string", "not sure we want the full PPath.ml way". Its
+-project (the top, else the first directory up with a dune-project, as
+git finds its root) and -build (mkconfig's B, the tree mirrored: an
+object or an archive in B/x was compiled in x/), mkconfig's LD passing
+both. Not in the objects: make self compares the card's objects with the
+host's byte for byte, and install.rc reads an archive's members' names
+as sources from the library's directory (a first try, mini-ml naming its
+objects' sources by their path in ix, broke both; a second, mini-ar
+recording its directory in the archive, did not cover mkprog's LIBOBJS,
+objects compiled elsewhere: both dropped). A source not there has none
+(an installed library's). mini-analyze -sources renamed -project, by
+default the project above the manifest; a unit the link did not take,
+named for its types alone (troff's Rgba_image), its interface found in
+the project; a command-line unit of the standard library's members'
+directories is the library's (mkprog's std_exit). On a scratch build of
+the 44 programs (41 built by mini-mk alone; oberon's and squeak's kernels
+need make's kernel_stamp, singml's mkfile misses Annotations, as
+mini-emacs's did in ad93e2ae): mini-analyze -caps on it reads 47
+programs in 17 s, every report of caps_ix.txt and 42 more, the code the
+mkfiles' -I made a library's (version_control's, lib_graphics' Cursor
+and Display), and the linker's tools sweep.sh skipped. A full ix build
+for the host: 283 s, 140 programs.
+
 ### The ledger
 
 Lines (wc -l), at each step; the analyzer's: analyzers/Analyze.ml,
@@ -500,7 +529,8 @@ ml/, report/, manifest/'s .ml.
 | Analyze.ml split, 80 columns | c5c0ae77 | 56 | 95 | 92 | 124 | 37 | 4,940 |
 | dune's executables by dune rules @dir/all | 9e216fac | 56 | 95 | 92 | 124 | 37 | 4,933 |
 | a toplevel's global read (dead.dl) | e01478d6 | 56 | 95 | 92 | 124 | 37 | 4,940 |
-| E, rules and lib_core from mini-analyze's tree | the next | 56 | 95 | 92 | 124 | 37 | 4,974 |
+| E, rules and lib_core from mini-analyze's tree | 7f84bdc0 | 56 | 95 | 92 | 124 | 37 | 4,974 |
+| 4a, mini-ld's manifests, project paths | the next | 56 | 95 | 92 | 124 | 37 | 5,004 |
 
 (D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
 420 to 488.)

@@ -3,25 +3,17 @@
 
 (* See Tiny_manifest.mli *)
 
-type taken = Command_line | Archive_member of string
-type linked = {
+type taken = Manifest.taken = Command_line | Archive_member of string
+type ppath = Manifest.ppath = Ppath of string
+type linked = Manifest.linked = {
   l_object : string;
-  l_source : string option;
+  l_source : ppath option;
   l_taken : taken;
 }
-type manifest = { m_program : string; m_units : linked list }
+type manifest = Manifest.manifest = { m_program : string; m_units : linked list }
 
-(* (TinyLibExecutable's) *)
-let magic = "tiny-manifest 1\n"
-
-let of_string (s : string) : manifest =
-  let n = String.length magic in
-  if String.length s < n || String.sub s 0 n <> magic then
-    failwith "not a manifest of this tiny-ld's (tiny-manifest 1): link again";
-  Marshal.from_string s n
-
-let to_string (m : manifest) : string =
-  magic ^ Marshal.to_string m [ Marshal.No_sharing ]
+let of_string = Manifest.of_string
+let to_string = Manifest.to_string
 
 (* (the first directory up from d with a units.txt or a Stdlib.mli) *)
 let rec standard_library (caps : < Cap.open_in; .. >) (d : string) :
@@ -43,19 +35,23 @@ type program = {
 
 let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
     (others : manifest list) (root : string) : program =
+  (* (relative to here when under it: a build outside the tree, make
+   * test's, names the tree's files as a build inside it does) *)
+  let here = FS.getcwd caps () ^ "/" in
   let at (p : string) : string =
-    FS.cleanname (if Filename.is_relative p then Filename.concat root p else p) in
+    let p = FS.cleanname (if Filename.is_relative p then Filename.concat root p else p) in
+    let n = String.length here in
+    if String.length p > n && String.sub p 0 n = here then String.sub p n (String.length p - n)
+    else p in
   (* (the ML units: a C or assembly file is the runtime's) *)
   let ml =
     List.filter_map (fun (l : linked) ->
         match l.l_source with
-        | Some s when Filename.check_suffix s ".ml" -> Some (at s, l.l_taken)
+        | Some (Ppath s) when Filename.check_suffix s ".ml" -> Some (at s, l.l_taken)
         | _ -> None)
       m.m_units in
   let unit_of (f : string) : string =
     String.capitalize_ascii (Filename.remove_extension (Filename.basename f)) in
-  let given =
-    List.filter_map (fun (f, t) -> if t = Command_line then Some f else None) ml in
   let members =
     List.filter_map (fun (f, t) ->
         match t with Archive_member _ -> Some f | Command_line -> None)
@@ -65,6 +61,21 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
   let under (d : string) (f : string) : bool =
     let d = d ^ "/" in
     String.length f > String.length d && String.sub f 0 (String.length d) = d in
+  (* (the files given to the linker, but the standard library's: mkprog
+   * gives lib_core's std_exit.7 after the program's units, from one of
+   * the directories of its archive's members; lib_core's own tests are
+   * programs) *)
+  let library_dirs =
+    List.filter_map (fun f ->
+        match library with
+        | Some l when under l f -> Some (Filename.dirname f)
+        | _ -> None)
+      members in
+  let given =
+    List.filter_map (fun (f, t) ->
+        if t = Command_line && not (List.mem (Filename.dirname f) library_dirs)
+        then Some f else None)
+      ml in
   let part =
     match given with
     | f :: _ -> Module_finder.part_dir caps f
@@ -76,7 +87,7 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
   let shared = Hashtbl.create 64 in
   List.iter (fun (o : manifest) ->
       List.iter (fun (l : linked) ->
-          Option.iter (fun s -> Hashtbl.replace shared (at s) ()) l.l_source)
+          Option.iter (fun (Ppath s) -> Hashtbl.replace shared (at s) ()) l.l_source)
         o.m_units)
     others;
   { name = m.m_program;
@@ -91,7 +102,7 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
     units = List.map (fun (f, _) -> (unit_of f, f)) ml }
 
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
-    (sources : string option) : program =
+    (project : string option) : program =
   let m = of_string (FS.read caps (Fpath.v file)) in
   (* (the build's other programs: the manifests beside it, tiny-ld's
    * links writing each beside its program) *)
@@ -104,7 +115,17 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (file : string)
            match of_string (FS.read caps (Fpath.v (Filename.concat dir n))) with
            | o -> Some o
            | exception Failure _ -> None) in
-  of_manifest caps m others (match sources with Some d -> d | None -> dir)
+  (* (the project: the first directory up with a dune-project, as git
+   * finds its root; a build outside every project's, here's) *)
+  let rec top (d : string) : string option =
+    if CapSys.file_exists caps (Filename.concat d "dune-project") then Some d
+    else if Filename.dirname d = d then None
+    else top (Filename.dirname d) in
+  let found () =
+    let cwd = FS.getcwd caps () in
+    let abs = if Filename.is_relative dir then Filename.concat cwd dir else dir in
+    match top (FS.cleanname abs) with Some d -> d | None -> cwd in
+  of_manifest caps m others (match project with Some d -> d | None -> found ())
 
 let linking (manifest_file : string) (m : manifest) (sources : string option)
     (file : string) : string option =
@@ -119,7 +140,7 @@ let linking (manifest_file : string) (m : manifest) (sources : string option)
   List.find_map (fun (l : linked) ->
       match l.l_source with
       | None -> None
-      | Some s ->
+      | Some (Ppath s) ->
           let at (d : string) : string =
             FS.cleanname (if Filename.is_relative s then Filename.concat d s else s) in
           match sources with

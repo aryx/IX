@@ -20,7 +20,7 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-alone** ]
 [ **-no-models** ]
 [ **-fingerprint** ]
-[ **-sources** *dir* ]
+[ **-project** *dir* ]
 [ **-v** | **-debug** | **-quiet** ]
 *program*`.exe` ... | *program*`.manifest` ... | *dir* ... |
 *file*`.c` ... | *file*`.ml` ...
@@ -144,11 +144,13 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
      answers on those facts, their liveness and dominators, as facts:
      what the rules must find (the tests compare them).
 
-**-sources** *dir*
-:    Where a manifest's paths are read, the build having run in a copy
-     of *dir* (t-IX's, in `tiny/TinyKernel/_make/src` of `tiny`); the
-     reports then name *dir*'s files; without it, a manifest's paths
-     are read in its directory.
+**-project** *dir*
+:    The project's top, which a manifest's sources are paths from
+     (mini-ld's: `assembler/Asm.ml`); without it, the first directory
+     above the manifest with a `dune-project`, as git finds its root,
+     else the current directory. t-IX's build runs in a copy of `tiny`
+     (`tiny/TinyKernel/_make/src`), its paths as tiny-ld was given them
+     there: **-project** `tiny`, whose files the reports then name.
 
 **-r** *rules*
 :    The directory of the `.dl` files and `points_to/`; by default
@@ -394,11 +396,11 @@ its paths read in `tiny/`, which the build copied:
 
 ```
 % make -C tiny/TinyKernel
-% mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src/build.manifest
+% mini-analyze -dead -project tiny tiny/TinyKernel/_make/src/build.manifest
 ```
 
 says what is dead in `TinyBuildSystem.ml`, the one file no other
-program links; `mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src tiny`,
+program links; `mini-analyze -dead -project tiny tiny/TinyKernel/_make/src tiny`,
 every t-IX program and every one dune builds under `tiny/`, merged
 (`analyzers/datalog/tests/tiny_check.sh`).
 

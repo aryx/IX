@@ -3,7 +3,7 @@
 TOP=..
 DIR=linker
 PROG=mini-ld
-SRC=Program Debug_link Link Arm Arm64 Exe Symtab Follow CLI Main
+SRC=Manifest Program Debug_link Link Arm Arm64 Exe Symtab Follow CLI Main
 LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli debug/*.ml debug/*.mli}
 GEN=
 # the assembler's objects are what it links: Asm, and Show_asm for its messages

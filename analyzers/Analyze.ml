@@ -20,7 +20,7 @@ What a C or ML program may do, by its facts and analyzers/datalog's rules
 A program is best given by its build: a dune executable, a tiny-ld
 manifest (-map's), a directory of either; its files as linked, its
 platform's, no -L, -I, -own to give; several, each run and merged:
-  mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src tiny
+  mini-analyze -dead -project tiny tiny/TinyKernel/_make/src tiny
 A library's file and its programs (or the file alone: those naming it):
   mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest
 Or by its files, the library found or given (-L), the rest found too.
@@ -38,8 +38,8 @@ let options (caps : < Cap.open_in; .. >) (f : F.t) :
        " whether ML's functions hold the capabilities they need");
       ("-exn", set Exn, " the exceptions ML's toplevels may let escape");
       ("-bugs", set Bugs, " the bugs an ML program may have");
-      ("-sources", str (fun d -> f.sources <- d),
-       " dir: a manifest's paths read there, the build having run in a copy");
+      ("-project", str (fun d -> f.project <- d),
+       " dir: the project a manifest's paths are from (found above it if not said)");
       ("-r", str (fun d -> f.rules <- d),
        " dir: the rules (mini-analyze's tree's analyzers/datalog)");
       ("-L", str (fun d -> f.lib <- d),
@@ -105,7 +105,7 @@ let home (caps : < Cap.readdir; .. >) : string =
 let main (caps : < F.caps; .. >) (argv : string array) : int =
   let f : F.t =
     { analysis = Calls; files = []; manifests = []; exes = []; dirs = [];
-      names = Hashtbl.create 64; sources = ""; args = []; home = "."; rules = "";
+      names = Hashtbl.create 64; project = ""; args = []; home = "."; rules = "";
       lib = ""; incs = []; defs = []; roots = []; start = ""; context = "";
       library = false; summary = ""; program = ""; facts = false; flow = false;
       answers = false; fingerprint = false } in

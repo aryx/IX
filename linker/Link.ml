@@ -236,15 +236,23 @@ let load caps t ~decode ~needs files =
   let version = ref 0 in
   let next () = incr version; !version in
   let libs = ref [] in
+  (* (what was taken, in its order: each object, the source it names as
+   * its compiler was given it, from the directory it compiled in, and
+   * the archive it came from; -map's manifest, CLI's) *)
+  let taken = ref [] in
+  let took (obj : string) (o : Asm.obj) (archive : string option) : unit =
+    taken := (obj, Fpath.to_string o.file, archive) :: !taken in
   List.iter (fun f ->
     if Fpath.has_ext ".a" f then begin
       Logs.info (fun m -> m "library %a" Fpath.pp f);
       (* ar's index lists the objects last first *)
-      libs := !libs @ [ Array.of_list (List.rev (read_members caps f)) ]
+      libs := !libs @ [ (Fpath.to_string f, Array.of_list (List.rev (read_members caps f))) ]
     end
     else begin
       Logs.info (fun m -> m "object %a" Fpath.pp f);
-      add_object t (next ()) (Asm.load caps f)
+      let o : Asm.obj = Asm.load caps f in
+      took (Fpath.to_string f) o None;
+      add_object t (next ()) o
     end) files;
   (* 5l's loadlib: take the members that define an undefined name, until
    * no library adds one *)
@@ -259,12 +267,13 @@ let load caps t ~decode ~needs files =
    * once taken, and its bytes kept in the library's list *)
   let rec again () =
     let added = ref false in
-    List.iter (fun lib ->
+    List.iter (fun (a, lib) ->
       Array.iteri (fun mi (bytes, names) ->
         if bytes <> "" && List.exists (wanted t) names
         then begin
           lib.(mi) <- ("", names);
-          let o = member bytes in
+          let o : Asm.obj = member bytes in
+          took (Filename.basename (Fpath.to_string o.file)) o (Some a);
           Logs.info (fun m -> m "from a library: %a, for %s" Fpath.pp o.file
             (String.concat " " (List.filter (wanted t) names)));
           add_object t (next ()) o;
@@ -277,7 +286,8 @@ let load caps t ~decode ~needs files =
   List.iter (fun n -> ignore (lookup t n 0)) (needs (List.rev t.progs));
   again ();
   (* (the first instruction first, from here on: see add_object) *)
-  t.progs <- List.rev t.progs
+  t.progs <- List.rev t.progs;
+  List.rev !taken
 
 let load_objects t ~decode objs =
   let decode_op = shared_decode decode in

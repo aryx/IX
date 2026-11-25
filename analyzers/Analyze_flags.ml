@@ -30,7 +30,7 @@ type t = {
   mutable exes : string list;
   mutable dirs : string list;
   names : (string, string) Hashtbl.t;
-  mutable sources : string;  (* -sources, "" none *)
+  mutable project : string;  (* -project, "" none: found *)
   (* the command line's flags, not its programs nor files: the runs of a
    * merge given them again *)
   mutable args : string list;

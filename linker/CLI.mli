@@ -96,6 +96,6 @@
  * "The loader"; John R. Levine, Linkers and Loaders (2000), the book on
  * the subject, for all that is not here; principia's linkers/5l and its
  * book, and xix's linker. *)
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 val main : < caps; .. > -> string array -> int

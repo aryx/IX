@@ -286,8 +286,23 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     match mli with
     | Some x -> Some x
     | None -> if List.mem ".ml" exts then find caps at name [ ".ml" ] else None in
+  (* (in the project, Module_finder's: a unit no directory given has) *)
+  let in_project (from : string) (name : string) (exts : string list) =
+    match Module_finder.choose finder from name exts with
+    | None -> None
+    | Some d ->
+        let d = Fpath.v d in
+        if not (List.mem d !chosen) then chosen := !chosen @ [ d ];
+        find caps [ d ] name exts in
   let look (from : string) (name : string) (exts : string list) : (Fpath.t * string) option =
-    if Hashtbl.length linked > 0 then linked_look name exts else
+    if Hashtbl.length linked > 0 then
+      (* (a unit the link did not take, named for its types alone,
+       * troff's Rgba_image: its interface found in the project) *)
+      match linked_look name exts with
+      | Some x -> Some x
+      | None when Hashtbl.mem linked name -> None
+      | None -> in_project from name exts
+    else
     match find caps (dirs ()) name exts with
     | Some x -> Some x
     (* (a unit the directories know otherwise, by its .mli alone, has no
@@ -311,13 +326,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
                   name from)
           end;
           None
-      | None ->
-        match Module_finder.choose finder from name exts with
-        | None -> None
-        | Some d ->
-            let d = Fpath.v d in
-            if not (List.mem d !chosen) then chosen := !chosen @ [ d ];
-            find caps [ d ] name exts) in
+      | None -> in_project from name exts) in
   (* (a unit's code: a file given, or an .ml found; asked as a unit's
    * calls are made, before the units it names are found) *)
   let bodies = Hashtbl.create 16 in

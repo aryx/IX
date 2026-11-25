@@ -117,16 +117,16 @@ let file_of (w : string) (name : string) (ext : string) : string =
   Filename.concat w (String.map (fun c -> if c = '/' then '_' else c) name ^ ext)
 
 (* each main run, at once, by mini-analyze itself: the flags given but
- * -sources (each run's its own), then its extra flags and -summary; its
+ * -project (each run's its own), then its extra flags and -summary; its
  * name given, or its main's, made unique *)
 let start (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
     (w : string) (mains : (string * string * string list) list) : run list =
-  let rec without_sources (l : string list) : string list =
+  let rec without_project (l : string list) : string list =
     match l with
-    | "-sources" :: _ :: rest -> without_sources rest
-    | a :: rest -> a :: without_sources rest
+    | "-project" :: _ :: rest -> without_project rest
+    | a :: rest -> a :: without_project rest
     | [] -> [] in
-  let flags = without_sources f.args in
+  let flags = without_project f.args in
   let names = Hashtbl.create 16 in
   List.map
     (fun ((given, main, extra) : string * string * string list) ->

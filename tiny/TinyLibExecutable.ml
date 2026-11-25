@@ -179,9 +179,10 @@ let address funcs name =
 (*****************************************************************************)
 
 type taken = Command_line | Archive_member of string
+type ppath = Ppath of string
 type linked = {
   l_object : string;
-  l_source : string option;
+  l_source : ppath option;
   l_taken : taken;
 }
 type manifest = { m_program : string; m_units : linked list }
@@ -191,10 +192,12 @@ let manifest (program : string) (objects : (string * taken) list)
   { m_program = program;
     m_units =
       List.map (fun (o, t) ->
-        { l_object = o; l_source = source o t; l_taken = t })
+        { l_object = o;
+          l_source = (match source o t with Some s -> Some (Ppath s) | None -> None);
+          l_taken = t })
         objects }
 
-(* (as an object's: 1, its format's version) *)
-let manifest_magic = "tiny-manifest 1\n"
+(* (as an object's: 2, its format's version: a source a ppath since 2) *)
+let manifest_magic = "tiny-manifest 2\n"
 let to_manifest (m : manifest) =
   manifest_magic ^ plain (Marshal.to_string m [ Marshal.No_sharing ])

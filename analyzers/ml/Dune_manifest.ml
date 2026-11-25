@@ -187,7 +187,7 @@ let manifest (caps : < Cap.open_in; .. >) (w : where) (d : described)
     else if Filename.check_suffix arg ".cmxa" then
       let name = Filename.chop_suffix (Filename.basename arg) ".cmxa" in
       List.map (fun (m, ml) ->
-          { M.l_object = m ^ ".cmx"; l_source = Some (source caps w ml);
+          { M.l_object = m ^ ".cmx"; l_source = Some (M.Ppath (source caps w ml));
             l_taken = M.Archive_member arg })
         (found (Hashtbl.find_opt d.libraries name))
     else
@@ -202,7 +202,7 @@ let manifest (caps : < Cap.open_in; .. >) (w : where) (d : described)
       if base = "dune__exe" then []
       else
         [ { M.l_object = arg;
-            l_source = Option.map (source caps w) (List.assoc_opt m modules);
+            l_source = Option.map (fun x -> M.Ppath (source caps w x)) (List.assoc_opt m modules);
             l_taken = M.Command_line } ] in
   let exe = rel w exe in
   { M.m_program = Filename.chop_suffix (Filename.basename exe) ".exe";

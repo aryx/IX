@@ -47,6 +47,9 @@ MK=${MINI}mk
 # beside Linux's (_mk/5-plan9). UNIXDIR, P9DIR and RTSRC: below.
 <|. $TOP/mkfiles/config.rc system
 L=$B/lib_core
+# (-map's manifest names each source by its path in ix: the project's
+# top, and B, its tree mirrored, where an object was compiled from)
+LD=$LD -project $TOP -build $B
 
 # the stdlib's units, in the order they are linked and initialized
 # (lib_core/units.txt's), and ix's own library's

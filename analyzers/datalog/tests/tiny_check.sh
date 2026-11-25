@@ -6,7 +6,7 @@
 # it, by one mini-analyze call over both builds:
 # - tiny-kernel's: t-IX's build, made here as TinyKernel/Makefile makes
 #   it, in a copy of tiny/, each program's manifest (tiny-ld -map's), its
-#   paths read in tiny/ (-sources); the kernel's among them;
+#   paths read in tiny/ (-project); the kernel's among them;
 # - the host's: the executables dune builds under tiny/, their manifests
 #   made by mini-analyze from dune's own answers (Dune_manifest).
 # mini-analyze runs each program as linked, its platform's files among
@@ -42,7 +42,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 notes=$(notes_of $expected)
 make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
   { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
-$ANALYZE $flag -sources tiny $W/tix/src tiny > $W/answer 2> $W/err ||
+$ANALYZE $flag -project tiny $W/tix/src tiny > $W/answer 2> $W/err ||
   { grep -v WARNING $W/err | tail -5; echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; exit 1; }
 # (the reports, not the programs' list under them)
 sed '/^[0-9]* reports, over the/,$d' $W/answer |

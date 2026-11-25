@@ -10,8 +10,8 @@ let said (caps : < Cap.stderr; .. >) (m : string) : int =
   Console.eprint caps (m ^ "\n");
   1
 
-let sources (f : F.t) : string option =
-  if f.sources = "" then None else Some f.sources
+let project (f : F.t) : string option =
+  if f.project = "" then None else Some f.project
 
 (*****************************************************************************)
 (* One program *)
@@ -42,11 +42,11 @@ let linked (f : F.t) (what : string) (p : Tiny_manifest.program) : unit =
 
 let read (caps : < F.caps; .. >) (f : F.t) : bool =
   match
-    List.iter (fun m -> linked f m (Tiny_manifest.program caps m (sources f)))
+    List.iter (fun m -> linked f m (Tiny_manifest.program caps m (project f)))
       f.manifests;
     if f.exes <> [] then begin
       let root, ms = Dune_manifest.run caps f.exes in
-      let root = match sources f with Some d -> d | None -> root in
+      let root = match project f with Some d -> d | None -> root in
       List.iter (fun (exe, m) ->
           linked f exe (Tiny_manifest.of_manifest caps m [] root))
         ms
@@ -111,7 +111,7 @@ let dune_runs (caps : < F.caps; .. >) (f : F.t) :
       match Hashtbl.find_opt f.names exe with
       | Some n -> n
       | None -> Filename.chop_suffix exe ".exe" in
-    (List.map (fun (exe, file) -> (name exe, file, [ "-sources"; root ])) files, gone)
+    (List.map (fun (exe, file) -> (name exe, file, [ "-project"; root ])) files, gone)
 
 let library (caps : < F.caps; .. >) (f : F.t) : int =
   let file = List.hd f.files in
@@ -122,8 +122,8 @@ let library (caps : < F.caps; .. >) (f : F.t) : int =
     let dune, gone = dune_runs caps f in
     let mains =
       List.filter_map (fun (m : string) ->
-          Option.map (fun (root : string) -> ("", m, [ "-sources"; root ]))
-            (links (sources f) m))
+          Option.map (fun (root : string) -> ("", m, [ "-project"; root ]))
+            (links (project f) m))
         f.manifests
       @ List.filter (fun ((_, m, extra) : string * string * string list) ->
           links (Some (List.nth extra 1)) m <> None) dune in
@@ -140,7 +140,7 @@ let library (caps : < F.caps; .. >) (f : F.t) : int =
 (* (a program with no ML unit, tiny-cc's: not read) *)
 let has_ml (caps : < Cap.open_in; .. >) (m : string) : bool =
   List.exists (fun (l : Tiny_manifest.linked) ->
-      match l.l_source with Some s -> Filename.check_suffix s ".ml" | None -> false)
+      match l.l_source with Some (Ppath s) -> Filename.check_suffix s ".ml" | None -> false)
     (Tiny_manifest.of_string (FS.read caps (Fpath.v m))).m_units
 
 let several (caps : < F.caps; .. >) (f : F.t) : int =
@@ -152,15 +152,15 @@ let several (caps : < F.caps; .. >) (f : F.t) : int =
       Console.eprint caps
         (Printf.sprintf "mini-analyze: no ML unit, not read: %s\n"
            (String.concat " " others));
-    (* (-sources: the shallowest manifest's directory's, a deeper one's
+    (* (-project: the shallowest manifest's directory's, a deeper one's
      * below it as the manifest is below that one: tiny/TinyKernel for
      * _make/src/TinyKernel's kernel.img.manifest) *)
     let dirs = List.map (fun m -> FS.cleanname (Filename.dirname m)) ms in
     let top =
       List.fold_left (fun a d -> if String.length d < String.length a then d else a)
         (match dirs with d :: _ -> d | [] -> ".") dirs in
-    let sources_of (m : string) : string list =
-      if f.sources = "" then []
+    let project_of (m : string) : string list =
+      if f.project = "" then []
       else
         let d = FS.cleanname (Filename.dirname m) in
         let below =
@@ -168,13 +168,13 @@ let several (caps : < F.caps; .. >) (f : F.t) : int =
             let n = String.length top + 1 in
             String.sub d n (String.length d - n)
           else "" in
-        let dir = if below = "" then f.sources else Filename.concat f.sources below in
-        [ "-sources"; dir ] in
+        let dir = if below = "" then f.project else Filename.concat f.project below in
+        [ "-project"; dir ] in
     let named (m : string) : string =
       match Hashtbl.find_opt f.names m with Some n -> n | None -> "" in
     let st =
       Analyze_merge.merged_runs caps f None
-        (List.map (fun m -> (named m, m, sources_of m)) ms @ dune) in
+        (List.map (fun m -> (named m, m, project_of m)) ms @ dune) in
     gone ();
     st
   with Failure m | Sys_error m -> said caps m

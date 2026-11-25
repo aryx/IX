@@ -6,7 +6,7 @@
  (name ix_analyze_ml)
  (wrapped false)
  (modules Ml_front Module_finder Caller_finder Tiny_manifest Dune_manifest Models Closure_facts Tree_facts)
- (libraries ix_ml ix_ml_pp ix_datalog ix_prolog ix_core fpath logs caps))
+ (libraries ix_ml ix_ml_pp ix_datalog ix_prolog ix_ld_manifest ix_core fpath logs caps))
 
 ; mini-analyze -flow and -flow-answers: a function's SSA form as facts
 ; (Ssa_facts), the unit compiled by mini-ml's own way to Lower (Ml_flow);

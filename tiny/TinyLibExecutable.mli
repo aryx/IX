@@ -107,12 +107,16 @@ val address : symbols -> string -> int option
  * tiny-ml's being one name space. *)
 
 type taken =
-  | Command_line            (* given to tiny-ld *)
+  | Command_line            (* given to the linker *)
   | Archive_member of string  (* a member of this archive *)
 
+(* a path in the project, from its top (assembler/Asm.ml), or absolute
+ * for a file outside it (a lexer a build made elsewhere) *)
+type ppath = Ppath of string
+
 type linked = {
-  l_object : string;        (* x.o; an archive member's name, List.o *)
-  l_source : string option; (* x.ml, x.c or x.s *)
+  l_object : string;        (* x.o as the linker was given it; a member's name *)
+  l_source : ppath option;  (* x.ml, x.c or x.s *)
   l_taken : taken;
 }
 

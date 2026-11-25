@@ -17,10 +17,10 @@ val read : < Analyze_flags.caps; .. > -> Analyze_flags.t -> bool
 
 (* -dead on one .ml file and programs: the file a library's or a part of
  * a program's, its programs those given that link it, each run as
- * linked, merged (Analyze_merge), its -sources found if not given *)
+ * linked, merged (Analyze_merge), its -project found if not given *)
 val library : < Analyze_flags.caps; .. > -> Analyze_flags.t -> int
 
 (* several programs: each run as linked, merged; a manifest of no ML
- * unit (tiny-cc's) left out, said; each manifest's -sources, the
- * shallowest manifest's directory's -sources, a deeper one's below it *)
+ * unit (tiny-cc's) left out, said; each manifest's -project, the
+ * shallowest manifest's directory's -project, a deeper one's below it *)
 val several : < Analyze_flags.caps; .. > -> Analyze_flags.t -> int

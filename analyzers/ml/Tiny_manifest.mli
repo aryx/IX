@@ -1,33 +1,37 @@
-(* What tiny-ld linked into a program, read back: the manifest it writes
- * with its map (tiny-ld -map: out.manifest), for mini-analyze to read
- * the program's exact files, as the build linked them, instead of being
- * told them (-L, -own, -I) or guessing them (Module_finder).
+(* What tiny-ld or mini-ld linked into a program, read back: the
+ * manifest each writes with its map (-map: out.manifest), for
+ * mini-analyze to read the program's exact files, as the build linked
+ * them, instead of being told them (-L, -own, -I) or guessing them
+ * (Module_finder).
  *
- * The types are TinyLibExecutable's, declared again here: tiny/'s tools
- * use no file outside tiny/, and Marshal knows no type, so both
- * declarations must be the same, constructors in the same order
- * (analyzers/tests/run.sh checks the text). The file is the magic
- * line "tiny-manifest 1" and the marshalled manifest.
+ * The types are mini-ld's (linker/Manifest), the same as tiny-ld's
+ * (TinyLibExecutable), declared again there: tiny/'s tools use no file
+ * outside tiny/, and Marshal knows no type, so both declarations must be
+ * the same, constructors in the same order (analyzers/tests/run.sh
+ * checks the text). The file is the magic line "tiny-manifest 2" and
+ * the marshalled manifest.
  *
- * A manifest's paths are as tiny-ld was given them, relative to the
- * directory it ran in, which is the manifest's in the Buildfile's links.
- * The host's build of t-IX runs in a copy of tiny/
- * (tiny/TinyKernel/_make/src), so [sources] says where they are read
- * instead: tiny/, whose files the reports then name.
+ * A source is a project path, read against the project's top: -project,
+ * else the first directory up from the manifest with a dune-project, as
+ * git finds its root, else the current directory. mini-ld's are project
+ * paths (its -project, -build); tiny-ld's are still as it was given
+ * them, in the build's copy of tiny/, which -project tiny names.
  *
  * docs/plans/plan_analyzer_build_manifest.md *)
 
-type taken =
-  | Command_line            (* given to tiny-ld *)
+type taken = Manifest.taken =
+  | Command_line            (* given to the linker *)
   | Archive_member of string  (* a member of this archive *)
 
-type linked = {
-  l_object : string;        (* x.o; an archive member's name, List.o *)
-  l_source : string option; (* x.ml, x.c or x.s *)
+type ppath = Manifest.ppath = Ppath of string
+
+type linked = Manifest.linked = {
+  l_object : string;        (* x.o as the linker was given it; a member's name *)
+  l_source : ppath option;  (* x.ml, x.c or x.s *)
   l_taken : taken;
 }
 
-type manifest = {
+type manifest = Manifest.manifest = {
   m_program : string;       (* the output's name, rc *)
   m_units : linked list;    (* in the link's order *)
 }
@@ -78,8 +82,8 @@ val of_manifest :
   < Cap.open_in; Cap.readdir; .. > -> manifest -> manifest list -> string ->
   program
 
-(* [program caps file sources]: file a manifest; its paths read against
- * sources if given, else against the manifest's directory *)
+(* [program caps file project]: file a manifest; its paths read against
+ * project if given, else the project found above the manifest *)
 val program :
   < Cap.open_in; Cap.readdir; .. > -> string -> string option -> program
 

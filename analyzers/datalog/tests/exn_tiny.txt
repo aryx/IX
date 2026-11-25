@@ -1,4 +1,4 @@
-# mini-analyze -exn on tiny/'s programs (tiny_check.sh -exn): the
+# mini-analyze -exn on tiny/'s programs (check.sh tiny -exn): the
 # exceptions their toplevels may let escape. Since 2026-11-11 lib_core's
 # too (Failure, Not_found, Unix_error...) where the program raises them
 # itself, with its functions that do (compare.sh's exn_lines). Not tried

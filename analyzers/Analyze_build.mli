@@ -9,9 +9,9 @@
  *     mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tix/src/*.manifest
  *
  * history:
- * Before the manifests (2026-11-23), a program was told: tiny_check.sh's
+ * Before the manifests (2026-11-23), a program was told: check.sh tiny's
  * table of about 30 programs, each with its main file and flags (-L,
- * -own, -I), and ix_check.sh's 44 programs read from their mkfiles by
+ * -own, -I), and check.sh ix's 44 programs read from their mkfiles by
  * shell (mk_units.sh, generated.sh, sweep.sh, triage.sh): 607 lines of
  * scripts, a copy of what the build files already said. What the
  * manifests bought (2026-11-25), for about 1,100 lines of the analyzer

@@ -634,15 +634,15 @@ job -after-ix "each unit compiled after those it inlines (else builds differ)" e
 # here, two under make test's load); not -exn: mini-ml's alone a minute, 6 GB
 group t-ix
 family "ix's code by its analyses: no new report" check
-job "mini-analyze -caps on tiny/'s programs dune links: no report but the recorded ones (caps_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -caps -check
-job "mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -dead -check
-job "mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
-job "mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -exn -check
+job "mini-analyze -caps on tiny/'s programs dune links: no report but the recorded ones (caps_tiny.txt)" analyzers/datalog/tests/check.sh tiny -caps -check
+job "mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no dead code but the recorded (dead_tiny.txt)" analyzers/datalog/tests/check.sh tiny -dead -check
+job "mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/check.sh tiny -bugs -check
+job "mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/check.sh tiny -exn -check
 group m-ix
-# (ix_check.sh reads ix's build as mini-ld linked it, its manifests: the
+# (check.sh ix reads ix's build as mini-ld linked it, its manifests: the
 # one above, the programs it has; make check's, all of _mk/7. old: the
 # 44 programs read from their mkfiles)
-job -after-ix "mini-analyze -caps on m-ix's programs as ix links them: no report but the recorded ones (caps_ix.txt)" env MK=$K analyzers/datalog/tests/ix_check.sh -caps -check
+job -after-ix "mini-analyze -caps on m-ix's programs as ix links them: no report but the recorded ones (caps_ix.txt)" env MK=$K analyzers/datalog/tests/check.sh ix -caps -check
 
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it
 # a line a family, each with its bar, its jobs ended and its failures,

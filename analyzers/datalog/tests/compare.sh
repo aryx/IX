@@ -1,8 +1,8 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# An analysis's answer against its recording, the baseline (ix_check.sh's
-# and tiny_check.sh's; sourced): compared without line numbers, the
+# An analysis's answer against its recording, the baseline (check.sh ix's
+# and check.sh tiny's; sourced): compared without line numbers, the
 # reports' own too (an edit above a function moves it), and without the
 # files in $unknown (one a line: not read here), a recording's # lines
 # its notes. Printed: ok, or the new reports whole (where they are now)

@@ -59,7 +59,7 @@
 #     caught by CLI.main, its line gone (lib_core's Arg alone left).
 #     A unit's line no longer the same as another's is said apart
 #     (oberon's Edit, FileDir, System; rio's Rio)
-#   2026-11-25, ix's build as mini-ld links it (ix_check.sh, its manifests): every program make ix builds, 140, not the 44 the mkfiles gave; programs named by their path (utilities/calc/dc/mini-dc, utilities_calc_dc before): 230 lines, the new ones not tried yet
+#   2026-11-25, ix's build as mini-ld links it (check.sh ix, its manifests): every program make ix builds, 140, not the 44 the mkfiles gave; programs named by their path (utilities/calc/dc/mini-dc, utilities_calc_dc before): 230 lines, the new ones not tried yet
 apps/files/files: Files.ml: the toplevel may let Failure escape, raised in Files.came_from, Playground_platform.run_app, Shape_render_software.rgb_of_color
 apps/files/open: Open.ml: the toplevel may let Failure escape, raised in Open.main
 apps/maps/mini-maps: Maps.ml: the toplevel may let Failure escape, raised in Cookie:fun at line 46, Http.body, Map_window.initial, Playground_platform.run_app, Shape_render_software.rgb_of_color, Tls12.handshake, Tls13.handle13, Url.parse_authority
@@ -150,6 +150,21 @@ kernels/oberon/kernel8.img: FileDir.ml: the toplevel may let Failure escape, rai
 kernels/oberon/kernel8.img: Main.ml: the toplevel may let Not_found escape, raised in runs, Viewers.track_of
 kernels/oberon/kernel8.img: Oberon.ml: the toplevel may let Not_found escape, raised in runs
 kernels/oberon/kernel8.img: System.ml: the toplevel may let Failure escape, raised in MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, Viewers.locate, Viewers.filler, after
+kernels/singularity/p_bench.img: Main.ml: the toplevel may let Sip.Closed escape
+kernels/singularity/p_bench.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_console.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_crash.img: Main.ml: the toplevel may let Failure escape, raised in init
+kernels/singularity/p_init.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_ping.img: Main.ml: the toplevel may let Sip.Closed escape
+kernels/singularity/p_ping.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_pong.img: Main.ml: the toplevel may let Sip.Closed escape
+kernels/singularity/p_pong.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_rogue.img: Main.ml: the toplevel may let Sip.Closed escape
+kernels/singularity/p_rogue.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_selftest.img: Main.ml: the toplevel may let Sip.Closed escape
+kernels/singularity/p_selftest.img: Main.ml: the toplevel may let Sip.Not_held escape
+kernels/singularity/p_shell.img: Main.ml: the toplevel may let Sip.Closed escape
+kernels/singularity/p_shell.img: Main.ml: the toplevel may let Sip.Not_held escape
 kernels/singularity/singml/mini-singml: Main.ml: the toplevel may let Failure escape, raised in target, Description:fun at line 139, Description:fun at line 156
 kernels/squeak/kernel8.img: Main.ml: the toplevel may let Failure escape, raised in go, St_compile:fun at line 148, number, St_lexer.small_of_bytes, St_primitives.float_string
 kernels/squeak/kernel8.img: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
@@ -172,7 +187,7 @@ languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Division_by_zero esc
 languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Il.Bad_il escape
 languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Jit.Refused escape
 languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Link.Error escape
-languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Not_found escape, raised in go, Jit:fun at line 663, Jit:fun at line 1188, Jit:fun at line 1185, Jit.symbol_of, Jit.instance_code, Jit.method_text, Jit_run:fun at line 137, Jit_run:fun at line 24, cell, Jit_run:fun at line 242, Jit_run:fun at line 245, Jit_run:fun at line 37, Link:fun at line 336, Machine:fun at line 228, Machine.call_method, Machine:fun at line 649, Parser_asm.unary, Types.extra
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Not_found escape, raised in go, Jit:fun at line 663, Jit:fun at line 1188, Jit:fun at line 1185, Jit.symbol_of, Jit.instance_code, Jit.method_text, Jit_run:fun at line 137, Jit_run:fun at line 24, cell, Jit_run:fun at line 242, Jit_run:fun at line 245, Jit_run:fun at line 37, Link:fun at line 342, Machine:fun at line 228, Machine.call_method, Machine:fun at line 649, Parser_asm.unary, Types.extra
 languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Parser_asm.Error escape
 languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Signature.Bad escape
 languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Types.Load_error escape
@@ -231,7 +246,7 @@ lib_gui/examples/guiwidgets: GuiWidgets.ml: the toplevel may let Failure escape,
 lib_gui/examples/guiwidgets: GuiWidgets.ml: the toplevel may let Not_found escape, raised in box, GuiWidgets.view
 linker/mini-ld: Main.ml: the toplevel may let Division_by_zero escape
 linker/mini-ld: Main.ml: the toplevel may let Failure escape, raised in args, CLI.main
-linker/mini-ld: Main.ml: the toplevel may let Not_found escape, raised in Link:fun at line 336
+linker/mini-ld: Main.ml: the toplevel may let Not_found escape, raised in Link:fun at line 342
 linker/tools/mini-ar: Ar.ml: the toplevel may let Failure escape, raised in Ar.main
 linker/tools/mini-nm: Nm.ml: the toplevel may let Failure escape, raised in Nm.main
 linker/tools/mini-nm: Nm.ml: the toplevel may let Link.Error escape

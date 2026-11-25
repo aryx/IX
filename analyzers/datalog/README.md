@@ -115,10 +115,10 @@ with no body, in ML's `ext`, or named by `-root` (`dead.dl`'s header).
 ## The sweep (2026-10-31)
 
 (Its scripts, `sweep.sh`, `triage.sh` and `mk_units.sh`, are gone since
-2026-11-25: `tests/ix_check.sh` reads ix's build by its manifests, mini-ld
-`-map`'s, 163 programs as linked, and `dead_all_ix.txt` is what is dead in
-ix, every program that links the file saying it; `dead_ix.txt`, the grep's
-list below, went with them. The numbers here are of that time.)
+2026-11-25: `tests/check.sh ix` reads ix's build by its manifests, mini-ld
+`-map`'s, 163 programs as linked, and `dead_ix.txt` (`dead_all_ix.txt` then)
+is what is dead in ix, every program that links the file saying it; the
+grep's list below, the `dead_ix.txt` of that time, went with them. The numbers here are of that time.)
 
 Every program with a mkfile's `SRC`, by its own units and `-I`'s (`mk_units.sh`:
 LIBI's, INCLUDES', LIBDIRS', a library's DIRS, the units made first): all 44
@@ -140,7 +140,7 @@ Dead in a program is not dead in ix: a library's function another program uses
 is dead in this one, so most of the 1,145 are to be read, not deleted (mini-emacs's
 two builds and mini-csc's alone 480, by the libraries they share). Fields are
 noisier: what a program writes by `Marshal` (`Asm`'s `s_items`) another reads.
-`dead_ix.txt` is a list to read, not to delete by: its grep sees no `open`, and
+That `dead_ix.txt` was a list to read, not to delete by: its grep saw no `open`, and
 tests and other programs not read may use what it lists. The aliases, since
 2026-11-02, took out four (`St_interp.resume`, which `St_debug` calls as `I.resume`).
 
@@ -232,7 +232,7 @@ Of the 23 programs read first, those holding some were read at the source, but f
 5 of dc's of one kind, of which one was; of the 12 read since, 2 (`Host.dir_of`,
 mini-sql's prompt loop), the others not.
 
-tiny/'s host programs, the 17 OCaml builds (`tests/tiny_check.sh -caps`, seconds;
+tiny/'s host programs, the 17 OCaml builds (`tests/check.sh tiny -caps`, seconds;
 `tests/caps_tiny.txt`): 45 functions at first (2026-11-04), 10 of them every
 CLI's "may not need `Cap.argv`", `Sys.argv` not in the table (now
 `requires('Sys.argv', argv)`); `TinyLibSystem`'s 17 functions that asked for
@@ -299,14 +299,14 @@ m-ix's too, and their callers' types would change.
 
 In make test (2026-11-04, the author: "at least we detect when new code
 introduce new one and prevent that"): a family of kind check, `-caps`,
-`-dead`, `-bugs` and `-exn` of tiny/'s host programs (`tests/tiny_check.sh`,
+`-dead`, `-bugs` and `-exn` of tiny/'s host programs (`tests/check.sh tiny`,
 the 17 at once, seconds: `caps_tiny.txt` 1, `dead_tiny.txt` 75,
 `bugs_tiny.txt` 65, `exn_tiny.txt` 3), and `-caps` of the 44 programs
-(`tests/ix_check.sh`: `caps_ix.txt` 149); all eight are make check's
+(`tests/check.sh ix`: `caps_ix.txt` 149); all eight are make check's
 (check-tix, check-mix; 4 minutes), which
 prints the new reports whole and those gone, the recording the baseline;
 m-ix's `-dead` and `-bugs` not in make test: a minute each, two
-under make test's load (`dead_all_ix.txt` 399, `bugs_ix.txt` 213 with
+under make test's load (`dead_ix.txt` 399, `bugs_ix.txt` 213 with
 mini-9pi's kernel). Each against its recording, made by HEAD's analyzer
 and rules: a new report fails; one gone fails too, until recorded again.
 Compared without line numbers, the reports' own too. `-dead`'s is what

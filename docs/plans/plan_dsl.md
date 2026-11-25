@@ -145,7 +145,7 @@ this plan.
   the format, and it can replace the header comments that described
   the format before.
 - Output: mini-cc and mini-ld produce byte-identical binaries,
-  mini-9pi boots, and `make test`, `tiny_check.sh` and
+  mini-9pi boots, and `make test`, `check.sh tiny` and
   `make -C tiny/TinyKernel check` pass.
 
 ## Smaller candidates, after the three stages

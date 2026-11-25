@@ -65,7 +65,7 @@ val to_string : manifest -> string
  *   TinyLibSystem/tinykernel's, which every program links), what -dead
  *   reports on when the program is analyzed alone (Ml_front.components):
  *   a library's function one program does not call is not dead, its
- *   dead code is the merge's (mini-analyze -dead lib.ml, tiny_check.sh);
+ *   dead code is the merge's (mini-analyze -dead lib.ml, check.sh tiny);
  *   another program, for tiny-ld's, is a manifest beside this one;
  * - each linked ML unit's file, by the unit's name (Ml_front.linked). *)
 type program = {

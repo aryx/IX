@@ -149,7 +149,7 @@ programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without
      (mini-ld's: `assembler/Asm.ml`); without it, the first directory
      above the manifest with a `dune-project`, as git finds its root,
      else the current directory. tiny-ld's are project paths too; t-IX's
-     build runs in `tiny`, or in a copy of its sources (tiny_check.sh's):
+     build runs in `tiny`, or in a copy of its sources (check.sh tiny's):
      **-project** `tiny`, whose files the reports then name.
 
 **-r** *rules*
@@ -251,7 +251,7 @@ programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without
      `analyzers/datalog/dead_all.dl` merges several programs' facts:
      a report is kept where every program that has the file, or another
      implementation of its interface, says it. Several programs given
-     are merged so by mini-analyze itself; `ix_check.sh`'s, given by
+     are merged so by mini-analyze itself; `check.sh ix`'s, given by
      their files, are merged so:
 
          mini-analyze -dead -summary a.dl -program a ... a.ml
@@ -401,7 +401,7 @@ its paths read in `tiny/`, where the build ran:
 
 says what is dead in `TinyBuildSystem.ml`, the one file no other
 program links; `mini-analyze -dead -project tiny tiny`, every t-IX
-program, merged. `analyzers/datalog/tests/tiny_check.sh` merges them
+program, merged. `analyzers/datalog/tests/check.sh tiny` merges them
 with every program dune builds under `tiny/`, its build in a copy of
 `tiny`'s sources (`$W/tix/src tiny`: in `tiny`, the manifests would
 hide dune's programs).
@@ -420,7 +420,7 @@ utilities/calc/dc/Num.ml:64: dead: Num.sub, nothing names it
 are dead in mini-dc, not in mini-bc, which links `Dc` and calls
 `feed`: **-dead** is of one program. `mini-analyze -dead _mk/7`, ix's build,
 says what is dead in ix: every program that links a file saying it
-(`analyzers/datalog/tests/ix_check.sh`).
+(`analyzers/datalog/tests/check.sh ix`).
 
 One's own question: the facts, and rules over them. Which functions
 may `main` reach, calls through pointers too (`target`, of

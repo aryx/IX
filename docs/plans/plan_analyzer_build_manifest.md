@@ -643,7 +643,20 @@ its magic line no longer read (the special case gone). Singularity's
 kernel had the stamp bug oberon's and squeak's had (fixed). The two ways
 of finding a program's files in two directories: analyzers/ml/linked/
 (Tiny_manifest, Dune_manifest) and analyzers/ml/searched/ (Module_finder,
-Caller_finder), dune's copy_files#. make generated
+Caller_finder), dune's copy_files#.
+
+One check script (2026-11-25; the author: "let's do 3 and then 1"):
+tiny_check.sh (70 lines) and ix_check.sh (81) are
+analyzers/datalog/tests/check.sh tiny|ix (91): the same skeleton, what
+is read (t-IX's build made and dune's under tiny/, or MK), ix's
+generated files' place in _mk/7, and ix's part's unknown lines the only
+differences; dead_all_ix.txt renamed dead_ix.txt, as dead_tiny.txt.
+make check builds the kernels make ix does not (mini-9pi's, oberon's,
+squeak's, Singularity's), the recordings' too; Singularity's kernel and
+programs read for the first time (17 -caps lines, 21 -dead, 3 -bugs, 15
+-exn, recorded, not read). make self-quick-mix passed: the card's 102
+files Linux's, byte for byte, objects with their project paths and
+compile flags. make generated
 gone too ("is it still needed?"): dune build makes the lexers and
 parsers, and mini-analyze is dune's; its warning says dune build.
 

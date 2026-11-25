@@ -1,4 +1,4 @@
-# 2026-11-25: ix's build as mini-ld links it (ix_check.sh, its manifests): 140 programs, not 44: 113 more (browsers/javascript, troff, games/fps...), not read yet; -bugs's init without -start (the link's order is not the start's), the library's units before the program's
+# 2026-11-25: ix's build as mini-ld links it (check.sh ix, its manifests): 140 programs, not 44: 113 more (browsers/javascript, troff, games/fps...), not read yet; -bugs's init without -start (the link's order is not the start's), the library's units before the program's
 _mk/7/editors/emacs/draw/Parser.ml:59: stack: Parser.mklist calls itself, not a tail call, over a list
 _mk/7/editors/emacs/draw/Parser.ml:63: stack: Parser.mkpatlist calls itself, not a tail call, over a list
 _mk/7/editors/emacs/tty/Parser.ml:59: stack: Parser.mklist calls itself, not a tail call, over a list
@@ -281,6 +281,9 @@ kernels/oberon/texts/Edit.ml:114: evalorder: operands at 114:13 and 114:27, both
 kernels/oberon/texts/Edit.ml:30: evalorder: operands at 30:31 and 30:79, both with an effect: their order the compiler's
 kernels/oberon/texts/Edit.ml:67: evalorder: operands at 67:8 and 67:33, both with an effect: their order the compiler's
 kernels/oberon/texts/Texts.ml:113: stack: Texts.split calls itself, not a tail call, over a list
+kernels/singularity/Abi.ml:180: crash: in Abi:fun at line 179, Contract.Bad caught by all, the handler raising Contract.Bad or Failure
+kernels/singularity/Exchange.ml:34: stack: take calls itself, not a tail call, over a list
+kernels/singularity/Exchange.ml:54: stack: put calls itself, not a tail call, over a list
 kernels/singularity/singml/Description.ml:124: evalorder: operands at 124:55 and 124:71, both with an effect: their order the compiler's
 kernels/singularity/singml/Safe.ml:118: stack: module_expr calls itself, not a tail call, over a list
 kernels/tools/Mkpixdata.ml:69: stack: Mkpixdata.take calls itself, not a tail call, over a list

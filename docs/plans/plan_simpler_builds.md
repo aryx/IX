@@ -249,7 +249,7 @@ requirement), before step 5. What else it needs:
   that two runs, or a session's build, do not meet (memory: private
   builds); beside the sources it builds in a copy, as above.
 - **The tree's users of `_mk/`**: 162 lines of scripts and Makefiles
-  (ix_check.sh's MK, caps_types.sh, kernels/9pi's card, install.rc,
+  (check.sh ix's MK, caps_types.sh, kernels/9pi's card, install.rc,
   examples/), .gitignore (`*.[57]`, `*.a`), make clean, TinyKernel/
   Makefile's copy (git's list of sources since e10520b9: .gitignore
   leaves them out).
@@ -265,7 +265,7 @@ runs `tiny-build TINY=tiny-` in tiny/, as `build` in /src under t-IX
 (f0601cfb; any other target is the Buildfile's: make rc), and
 TinyKernel/Makefile's default build runs there too: `_make/src`, the
 links to the tools under t-IX's names and the tools' sums gone.
-Another O (make test's, tiny_check.sh's, MEMORY's) builds in a copy of
+Another O (make test's, check.sh tiny's, MEMORY's) builds in a copy of
 tiny/'s sources. The images are byte for byte the copy's. What it
 taught, which m-IX will meet:
 
@@ -283,7 +283,7 @@ taught, which m-IX will meet:
   format, the old objects refused by tiny-ld ("rebuild it").
 - **A directory holds two builds.** mini-analyze takes a directory's
   manifests, or with none the programs dune builds there; with t-IX's
-  manifests in tiny/, tiny_check.sh's `tiny` gave those instead of
+  manifests in tiny/, check.sh tiny's `tiny` gave those instead of
   dune's programs (their reports "gone"). dune's are now named by
   their build directory, `_build/default/tiny`.
 

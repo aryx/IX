@@ -1,4 +1,4 @@
-# 2026-11-25: ix's build as mini-ld links it (ix_check.sh, its manifests): 140 programs, not 44: 155 more (games/fps, browsers/javascript, apps/office...), not read yet; 68 gone, called by a program the 44 did not have (the linker's tools, Asm's)
+# 2026-11-25: ix's build as mini-ld links it (check.sh ix, its manifests): 140 programs, not 44: 155 more (games/fps, browsers/javascript, apps/office...), not read yet; 68 gone, called by a program the 44 did not have (the linker's tools, Asm's)
 _mk/7/editors/emacs/draw/Lexer_c.ml:134: dead field: pp stored in go, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tkind stored in Parser:fun at line 2730, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tloc stored in Parser:fun at line 2730, nothing live reads it
@@ -27,6 +27,22 @@ _mk/7/editors/emacs/tty/Parser.ml:34: dead field: sloc stored in Parser.mksig, n
 _mk/7/editors/emacs/tty/Parser.ml:3617: dead: Parser.interface, nothing names it
 _mk/7/editors/emacs/tty/Parser.ml:99: dead field: aend stored in Parser.attribute, nothing live reads it
 _mk/7/editors/emacs/tty/Parser.ml:99: dead field: aloc stored in Parser.attribute, nothing live reads it
+_mk/7/kernels/singularity/Console.ml:50: dead: Console.Imp.close, nothing names it
+_mk/7/kernels/singularity/Console.ml:64: dead: Console.Exp.close, nothing names it
+_mk/7/kernels/singularity/Intro.ml:29: dead: Intro.Imp.of_endpoint, nothing names it
+_mk/7/kernels/singularity/Intro.ml:32: dead: Intro.Imp.close, nothing names it
+_mk/7/kernels/singularity/Intro.ml:43: dead: Intro.Exp.close, nothing names it
+_mk/7/kernels/singularity/g_bench/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_crash/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_hello/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_init/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_nothing/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_ping/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_pong/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_rogue/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_selftest/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_tick/Given.ml:2: dead: Given.endpoint, nothing names it
+_mk/7/kernels/singularity/g_tock/Given.ml:2: dead: Given.endpoint, nothing names it
 _mk/7/tiny/Parallel.ml:20: dead: Parallel.wait, in init but no call goes through the pointer
 _mk/7/tiny/Parallel.ml:22: dead: Parallel.broadcast, nothing names it
 apps/maps/Roads.ml:203: dead: Roads.of_json, nothing names it
@@ -291,6 +307,11 @@ kernels/oberon/texts/Fonts.ml:24: dead field: min_x stored in Fonts.read, nothin
 kernels/oberon/texts/TextFrames.ml:223: dead field: org stored in TextFrames.locate_pos, nothing live reads it
 kernels/oberon/texts/Texts.ml:184: dead field: col stored in Texts.open_reader, nothing live reads it
 kernels/oberon/texts/Texts.ml:184: dead field: voff stored in Texts.open_reader, nothing live reads it
+kernels/singularity/Exchange.ml:24: dead: Exchange.bytes, nothing names it
+kernels/singularity/contracts/Pong.ml:84: dead: Pong.Exp.close, nothing names it
+kernels/singularity/machine/Machine.ml:147: dead: Machine.le16, in init but no call goes through the pointer
+kernels/singularity/machine/Machine.ml:149: dead: Machine.le32, nothing names it
+kernels/singularity/machine/Machine.ml:151: dead: Machine.get_le32, nothing names it
 kernels/squeak/machine/Machine.ml:136: dead: Machine.panic, nothing names it
 kernels/squeak/machine/Machine.ml:147: dead: Machine.le16, in init but no call goes through the pointer
 kernels/squeak/machine/Machine.ml:149: dead: Machine.le32, nothing names it

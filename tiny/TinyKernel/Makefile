@@ -228,7 +228,7 @@ T = ../tests/TinyKernel_tests
 # runs in tiny/ itself, as ../Makefile's make does: what it makes goes
 # beside the sources, and tiny-build makes again what changed (by its
 # digests). Another O is a build of its own (make test's and
-# tiny_check.sh's, which run beside the sessions' and each other's;
+# check.sh tiny's, which run beside the sessions' and each other's;
 # MEMORY's), so it runs in O/src, a copy of tiny/'s sources made at each
 # make, kept between them.
 BUILD = $(call tool,tiny-build) TINY=tiny-

@@ -93,16 +93,17 @@ test-long: all
 # tiny/'s four and m-ix's -caps; make check runs them all, with a
 # longer budget. check-mix reads ix's build, _mk/7, as mini-ld linked
 # it (its manifests), made or brought up to date first (make ix, and
-# mini-9pi's kernel, which make ix does not build): a minute for each
-# analysis, -exn two.
+# the kernels make ix does not build, mini-9pi's, oberon's, squeak's,
+# Singularity's): a minute for each analysis, -exn two.
 check: check-tix check-mix
 check-tix:
 	@st=0; for f in -caps -dead -bugs -exn; do \
-	  ./analyzers/datalog/tests/tiny_check.sh $$f -check || st=1; done; exit $$st
+	  ./analyzers/datalog/tests/check.sh tiny $$f -check || st=1; done; exit $$st
 check-mix: ix
-	@cd kernels/9pi && $(IXPATH) mini-mk > /dev/null
+	@for d in kernels/9pi kernels/oberon kernels/squeak kernels/singularity; do \
+	  (cd $$d && $(IXPATH) mini-mk > /dev/null) || exit 1; done
 	@st=0; for f in -caps -dead -bugs -exn; do \
-	  ./analyzers/datalog/tests/ix_check.sh $$f -check || st=1; done; exit $$st
+	  ./analyzers/datalog/tests/check.sh ix $$f -check || st=1; done; exit $$st
 
 # The website's machine (docs/t-ix.html; plan_web.md). make website
 # compiles tiny-machine with js_of_ocaml and puts it, with the kernels'

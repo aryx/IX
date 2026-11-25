@@ -25,6 +25,11 @@
 # (the mkfiles' recipes are rc scripts, run by mini-rc: see
 # mkfiles/mkconfig)
 export MINI = mini-
+# mini-mk's jobs, 1 by default as Plan 9's mk: 8 directories at once,
+# each with 8 jobs of its own (as tests/lite.sh). make when nothing
+# changed: 3.5 s, against 14 s for one at a time; a whole build: 30 s,
+# against almost 5 minutes. NPROC=n make another count.
+export NPROC ?= 8
 # make builds ix by ix, as on m-IX itself: make host, then mini-mk over
 # the mkfiles (the top mkfile's all), into _mk/7. Any other target is
 # the top mkfile's, make libs, make lib_core.dir, make install, make

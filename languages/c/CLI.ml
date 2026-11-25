@@ -166,7 +166,12 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
                if be.saved then begin
                  Logs.info (fun m -> m "writing %s" (Fpath.to_string out));
                  let obj = be.obj file in
-                 Asm.save caps out { obj with file = Asm.in_project caps !project obj.file }
+                 (* (what a reader of the source needs: -I's, by their
+                  * project paths, and -D's) *)
+                 let flags =
+                   List.map (fun d -> "-I" ^ Fpath.to_string (Asm.in_project caps !project d)) incs
+                   @ List.map (fun d -> "-D" ^ d) defs in
+                 Asm.save caps out { obj with file = Asm.in_project caps !project obj.file; flags }
                end;
                Ok ()
            | exception Tree_helpers.Error m -> Error (Printf.sprintf "%s:%s" (Fpath.to_string file) m))

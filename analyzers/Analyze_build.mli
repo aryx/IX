@@ -34,8 +34,12 @@
  * - one command, from anywhere, its answer the checks' (no filtering
  *   before or after it in a script).
  * mini-9pi's kernel too, since (mkkernel's link writes its manifest;
- * kernel.sh, which read its mkfile, gone). Left: tiny-cc's C programs
- * not read. *)
+ * kernel.sh, which read its mkfile, gone). C programs too, since: each
+ * C file read with its compile's flags, -I and -D, which mini-cc and
+ * tiny-cc record in the object and the linkers in the manifest (hello-c
+ * with libc's members, tiny-cc's 7, the C kernels); found, libc's
+ * functions no program calls. Left: an ML program's C (the runtime's)
+ * not read with it. *)
 
 (* the directories given: the manifests under each, every one, or with
  * none the executables dune builds under it, each named by its path from

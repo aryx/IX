@@ -56,7 +56,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Help _ -> Console.print caps help; 0
   | exception Arg.Bad m -> eprint caps m; 1
   | [] when !datas <> [] && !out <> "" ->
-      let obj : Asm.obj = { arch = !arch; file = Fpath.v !out; items = [||]; history = []; acid = [] } in
+      let obj : Asm.obj = { arch = !arch; file = Fpath.v !out; items = [||]; history = []; acid = []; flags = [] } in
       (match data_items caps (List.rev !datas) with
        | items ->
            Logs.info (fun m -> m "writing %s" !out);

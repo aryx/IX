@@ -218,7 +218,7 @@ if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/un
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi
 # (its manifest, marshalled: the sources' paths are in its bytes as
 # they are; mini-analyze reads it whole)
-if head -c 16 $W/units/prog.manifest | grep -q '^tiny-manifest 2$' \
+if head -c 16 $W/units/prog.manifest | grep -q '^tiny-manifest 3$' \
    && grep -aq "$W/units/Shapes.ml" $W/units/prog.manifest \
    && grep -aq "$W/units/Main.ml" $W/units/prog.manifest
 then echo "ok units: tiny-ld -map's manifest names each unit's .ml"

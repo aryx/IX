@@ -134,11 +134,12 @@ val sym_of : 'm t -> int -> Asm.name -> sym
  * must define too (5l's needsdiv). What it took, in the link's order (a
  * member at its archive's place, in the archive's order): each
  * object (a member by its name), the source it names, as its compiler
- * was given it, and the archive a member came from (-map's manifest). *)
+ * was given it, its compile's flags, and the archive a member came from
+ * (-map's manifest). *)
 val load :
   < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) ->
   needs:('m prog list -> string list) -> Fpath.t list ->
-  (string * string * string option) list
+  (string * string * string list * string option) list
 
 (* loads objects already in memory, and only them. It is for
  * mini-dotnet's JIT, which assembles its text and encodes it with the

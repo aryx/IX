@@ -291,7 +291,7 @@ let encode (file : string) (lines : (int * M.line list) list)
 
 (* the object written, marshalled (TinyLibMachine's to_object) *)
 let write (chan : Chan.o) (items : M.line list) : unit =
-  Out_channel.output_string chan.oc (E.to_object items)
+  Out_channel.output_string chan.oc (E.to_object [] items)
 
 (*****************************************************************************)
 (* Entry point *)

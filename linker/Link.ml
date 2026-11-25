@@ -243,7 +243,7 @@ let load caps t ~decode ~needs files =
    * the order they start in) *)
   let taken = ref [] in
   let took (key : int * int) (obj : string) (o : Asm.obj) (archive : string option) : unit =
-    taken := (key, (obj, Fpath.to_string o.file, archive)) :: !taken in
+    taken := (key, (obj, Fpath.to_string o.file, o.flags, archive)) :: !taken in
   List.iteri (fun (p : int) f ->
     if Fpath.has_ext ".a" f then begin
       Logs.info (fun m -> m "library %a" Fpath.pp f);
@@ -290,8 +290,9 @@ let load caps t ~decode ~needs files =
   again ();
   (* (the first instruction first, from here on: see add_object) *)
   t.progs <- List.rev t.progs;
-  let first ((a, _) : (int * int) * (string * string * string option))
-      ((b, _) : (int * int) * (string * string * string option)) : int = compare a b in
+  let first ((a, _) : (int * int) * (string * string * string list * string option))
+      ((b, _) : (int * int) * (string * string * string list * string option)) : int =
+    compare a b in
   List.map snd (List.sort first !taken)
 
 let load_objects t ~decode objs =

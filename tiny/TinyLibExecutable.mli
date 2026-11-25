@@ -17,11 +17,13 @@
 (* The objects *)
 (*****************************************************************************)
 
-(* to_object marshals the lines after a magic line; of_object raises
- * TinyLibMachine.Error on bytes that are not an object, or on an object
- * of an older format. *)
-val to_object : TinyLibMachine.line list -> string
+(* to_object marshals the lines after a magic line and a line of the
+ * compile's flags (tiny-cc's -I: what a reader of its source needs, as
+ * tiny-ld's manifest says); of_object raises TinyLibMachine.Error on
+ * bytes that are not an object, or on an object of an older format. *)
+val to_object : string list -> TinyLibMachine.line list -> string
 val of_object : string -> TinyLibMachine.line list
+val flags_of_object : string -> string list
 
 (* [plain bytes] is a marshalled value's bytes made the same whichever
  * Marshal wrote them: OCaml 5's sets two bits in a large block's
@@ -102,9 +104,10 @@ val address : symbols -> string -> int option
  * x.c or x.s, and an
  * archive member's beside the archive (TinyLibCore/stdlib.a's List.o is
  * TinyLibCore/List.ml); a start object (rc.start.o), which tiny-ml made
- * from the units' names, has none. No compile's flags: t-IX generates
- * no source and compiles each unit the same way (the Buildfile's MLC),
- * so the files are all a reader needs. lib_executable/Manifest has the same
+ * from the units' names, has none. Each with its compile's flags, what
+ * reading it needs (tiny-cc's -I runtime/c, from the project's top, its
+ * object's flags line); an ML unit none, t-IX generating no source and
+ * compiling each unit the same way. lib_executable/Manifest has the same
  * types, mini-ld's; the constructors and fields are prefixed,
  * tiny-ml's being one name space. *)
 
@@ -119,6 +122,7 @@ type ppath = Ppath of string
 type linked = {
   l_object : string;        (* x.o as the linker was given it; a member's name *)
   l_source : ppath option;  (* x.ml, x.c or x.s *)
+  l_flags : string list;    (* what reading it needs: a C file's -I, -D *)
   l_taken : taken;
 }
 
@@ -127,9 +131,10 @@ type manifest = {
   m_units : linked list;    (* in the link's order *)
 }
 
-(* [manifest program objects source]: source gives an object's source *)
+(* [manifest program objects source]: each object with its compile's
+ * flags; source gives an object's source *)
 val manifest :
-  string -> (string * taken) list -> (string -> taken -> string option) ->
-  manifest
+  string -> (string * taken * string list) list ->
+  (string -> taken -> string option) -> manifest
 
 val to_manifest : manifest -> string

@@ -303,4 +303,4 @@ let obj file : A.obj =
     item, (match q.pseudo with Pdata _ | Pglobl -> 0 | _ -> q.line)) ps in
   (* the lines a statement's (the compat back end's; the others' a
    * function's), the history of the #includes 5c's *)
-  { A.arch = (if arm () then A.Arm else A.Arm64); file; items; history = List.rev !Pre.history; acid = List.rev !Acid.decls }
+  { A.arch = (if arm () then A.Arm else A.Arm64); file; items; history = List.rev !Pre.history; acid = List.rev !Acid.decls; flags = [] }

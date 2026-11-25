@@ -8,6 +8,7 @@ type ppath = Manifest.ppath = Ppath of string
 type linked = Manifest.linked = {
   l_object : string;
   l_source : ppath option;
+  l_flags : string list;
   l_taken : taken;
 }
 type manifest = Manifest.manifest = { m_program : string; m_units : linked list }
@@ -36,6 +37,7 @@ type program = {
   own_dirs : string list;
   library : string option;
   units : (string * string) list;
+  c : (string * (string list * string list)) list;
 }
 
 let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
@@ -118,7 +120,20 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
            (fun f -> if own_member f then Some (Filename.dirname f) else None)
            members);
     library;
-    units = List.map (fun (f, _) -> (unit_of f, f)) ml }
+    units = List.map (fun (f, _) -> (unit_of f, f)) ml;
+    c =
+      List.filter_map (fun (l : linked) ->
+          match l.l_source with
+          | Some (Ppath s) when Filename.check_suffix s ".c" ->
+              (* (its -D's, and its -I's from the project's top) *)
+              let flag (k : string) (x : string) : string option =
+                if String.length x > 2 && String.sub x 0 2 = k then Some (String.sub x 2 (String.length x - 2))
+                else None in
+              let defs = List.filter_map (flag "-D") l.l_flags in
+              let incs = List.map at (List.filter_map (flag "-I") l.l_flags) in
+              Some (at s, (defs, incs))
+          | _ -> None)
+        m.m_units }
 
 let root (caps : < Cap.readdir; .. >) (file : string) (project : string option) : string =
   match project with

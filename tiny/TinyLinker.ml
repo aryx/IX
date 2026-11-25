@@ -283,7 +283,7 @@ let contents (out : output) (l : linked) : string =
 (* an object file's items (TinyLibMachine's of_object), each said with
  * -debug; an archive's objects, all of them, in its order, as if each
  * were given (a library: no member left out, the sweep below does it) *)
-let read (chan : Chan.i) : ((string * E.taken) * M.line list) list =
+let read (chan : Chan.i) : ((string * E.taken * string list) * M.line list) list =
   let f = Chan.origin chan in
   let items name s =
     let items =
@@ -296,9 +296,9 @@ let read (chan : Chan.i) : ((string * E.taken) * M.line list) list =
     let members =
       try E.of_archive s with M.Error e -> M.error (f ^ ": " ^ e) in
     List.map (fun (name, o) ->
-      ((name, E.Archive_member f), items (f ^ "(" ^ name ^ ")") o))
+      ((name, E.Archive_member f, E.flags_of_object o), items (f ^ "(" ^ name ^ ")") o))
       members
-  else [ ((f, E.Command_line), items f s) ]
+  else [ ((f, E.Command_line, E.flags_of_object s), items f s) ]
 
 (* an object's source, for the manifest: x.o's x.ml, x.c or x.s beside
  * it, an archive member's beside the archive; a start object's none *)
@@ -385,14 +385,21 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
               write (Fpath.v (Fpath.to_string out ^ ".map")) (map linked);
               (* (each source from the project's top, as mini-ld's) *)
               let at = in_project caps o.project in
+              let top (f : string) : string = clean_path (if at = "" then f else at ^ "/" ^ f) in
               let from_top (o : string) (t : E.taken) : string option =
                 match source caps o t with
-                | Some f -> Some (clean_path (if at = "" then f else at ^ "/" ^ f))
+                | Some f -> Some (top f)
                 | None -> None in
+              (* (an -I a directory from the project's top too) *)
+              let flag (x : string) : string =
+                if String.length x > 2 && String.sub x 0 2 = "-I" then
+                  "-I" ^ top (String.sub x 2 (String.length x - 2))
+                else x in
               write (Fpath.v (Fpath.to_string out ^ ".manifest"))
                 (E.to_manifest
                    (E.manifest (Filename.basename (Fpath.to_string out))
-                      (List.map fst objects) from_top))
+                      (List.map (fun ((o, t, fl), _) -> (o, t, List.map flag fl)) objects)
+                      from_top))
             end;
             Exit.OK
           with M.Error e -> Exit.Err e

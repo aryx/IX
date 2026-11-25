@@ -17,7 +17,7 @@ let starts s m = String.length s >= String.length m
  * bytes it cannot read, so another file is said not an object first.
  * 3: an object is lines, the assembly's type; an older object is
  * refused, not misread) *)
-let magic = "tiny-object 3\n"
+let magic = "tiny-object 4\n"
 
 (* A marshalled value's bytes, the same whichever Marshal wrote them.
  * OCaml 5's sets two bits, a block's colour for its collector, in the
@@ -65,12 +65,21 @@ let plain (s : string) : string =
     Bytes.to_string b
   end
 
-let to_object (lines : M.line list) =
-  magic ^ plain (Marshal.to_string lines [ Marshal.No_sharing ])
-let of_object (s : string) : M.line list =
+(* (the compile's flags a line after the magic one, a word each: the
+ * names have no blank) *)
+let to_object (flags : string list) (lines : M.line list) =
+  magic ^ String.concat " " flags ^ "\n" ^ plain (Marshal.to_string lines [ Marshal.No_sharing ])
+let flags_line (s : string) : int =
   if not (starts s magic) then
-    M.error "not an object of this tiny-as's (tiny-object 3): rebuild it";
-  Marshal.from_string s (String.length magic)
+    M.error "not an object of this tiny-as's (tiny-object 4): rebuild it";
+  match String.index_from_opt s (String.length magic) '\n' with
+  | Some i -> i
+  | None -> M.error "an object cut short"
+let of_object (s : string) : M.line list =
+  Marshal.from_string s (flags_line s + 1)
+let flags_of_object (s : string) : string list =
+  let n = String.length magic in
+  List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.sub s n (flags_line s - n)))
 
 (* an archive: its magic line, then each member's name and size on a
  * line, then its bytes, as Unix's ar's header before each member (its
@@ -183,21 +192,24 @@ type ppath = Ppath of string
 type linked = {
   l_object : string;
   l_source : ppath option;
+  l_flags : string list;
   l_taken : taken;
 }
 type manifest = { m_program : string; m_units : linked list }
 
-let manifest (program : string) (objects : (string * taken) list)
+let manifest (program : string) (objects : (string * taken * string list) list)
     (source : string -> taken -> string option) : manifest =
   { m_program = program;
     m_units =
-      List.map (fun (o, t) ->
+      List.map (fun (o, t, flags) ->
         { l_object = o;
           l_source = (match source o t with Some s -> Some (Ppath s) | None -> None);
+          l_flags = flags;
           l_taken = t })
         objects }
 
-(* (as an object's: 2, its format's version: a source a ppath since 2) *)
-let manifest_magic = "tiny-manifest 2\n"
+(* (as an object's: 3, its format's version: a source a ppath since 2,
+ * its reading's flags since 3) *)
+let manifest_magic = "tiny-manifest 3\n"
 let to_manifest (m : manifest) =
   manifest_magic ^ plain (Marshal.to_string m [ Marshal.No_sharing ])

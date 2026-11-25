@@ -85,7 +85,7 @@ let project = ref ""
  * them and this one the same $TOP); a source not there has none (an
  * object compiled without -project, an installed library's) *)
 let write_manifest (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out : Fpath.t)
-    (taken : (string * string * string option) list) : unit =
+    (taken : (string * string * string list * string option) list) : unit =
   let cwd = FS.getcwd caps () in
   let absolute (p : string) : string =
     FS.cleanname (if Filename.is_relative p then Filename.concat cwd p else p) in
@@ -97,8 +97,9 @@ let write_manifest (caps : < Cap.open_in; Cap.open_out; Cap.readdir; .. >) (out 
   let ppath (s : string) : Manifest.ppath option =
     let file = if Filename.is_relative s then Filename.concat project s else s in
     if CapSys.file_exists caps file then Some (Manifest.Ppath s) else None in
-  let unit_ ((obj, source, archive) : string * string * string option) : Manifest.linked =
-    { l_object = obj; l_source = ppath source;
+  let unit_ ((obj, source, flags, archive) : string * string * string list * string option) :
+      Manifest.linked =
+    { l_object = obj; l_source = ppath source; l_flags = flags;
       l_taken = (match archive with Some a -> Manifest.Archive_member a | None -> Manifest.Command_line) } in
   let units = List.map unit_ taken in
   let m : Manifest.manifest =

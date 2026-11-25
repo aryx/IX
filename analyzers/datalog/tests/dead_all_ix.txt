@@ -295,6 +295,7 @@ kernels/squeak/machine/Machine.ml:136: dead: Machine.panic, nothing names it
 kernels/squeak/machine/Machine.ml:147: dead: Machine.le16, in init but no call goes through the pointer
 kernels/squeak/machine/Machine.ml:149: dead: Machine.le32, nothing names it
 kernels/squeak/machine/Machine.ml:151: dead: Machine.get_le32, nothing names it
+kernels/steps/step0/shim.c:65: dead: _syscall6v, named only by dead code: lseek
 languages/c/Emit.ml:293: dead field: op stored in Emit:fun at line 293, nothing live reads it
 languages/c/Emit.ml:293: dead field: suffixes stored in Emit:fun at line 293, nothing live reads it
 languages/c/highlight/Token_c.ml:13: dead: Token_c.show_kind, nothing names it
@@ -303,13 +304,58 @@ languages/datalog/Index.ml:32: dead: Index.first, nothing names it
 languages/datalog/Index.ml:41: dead: Index.exists_array, nothing names it
 languages/datalog/Tuples.ml:20: dead: Tuples.count, nothing names it
 languages/dotnet/assembly/Il.ml: dead global: Il.opcodes, nothing live names it
+languages/dotnet/assembly/Il.ml:176: dead: Il.kind_of, in init but no call goes through the pointer
+languages/dotnet/assembly/Il.ml:183: dead: Il.cmp_of, in init but no call goes through the pointer
+languages/dotnet/assembly/Il.ml:194: dead: Il.make, in init but no call goes through the pointer
+languages/dotnet/assembly/Il.ml:275: dead: Il.decode, nothing names it
+languages/dotnet/assembly/Il.ml:333: dead: Il.index, nothing names it
+languages/dotnet/assembly/Il.ml:373: never built: Prefix.0, matched in Il.encode
+languages/dotnet/assembly/Image.ml:130: dead: Image.read, nothing names it
+languages/dotnet/assembly/Image.ml:198: dead: Image.body, nothing names it
+languages/dotnet/assembly/Image.ml:22: dead: Image.bad, in init but no call goes through the pointer
+languages/dotnet/assembly/Image.ml:28: dead: Image.offset_in, in init but no call goes through the pointer
+languages/dotnet/assembly/Image.ml:33: dead: Image.offset, in init but no call goes through the pointer
+languages/dotnet/assembly/Image.ml:36: dead: Image.cstring, in init but no call goes through the pointer
+languages/dotnet/assembly/Image.ml:43: dead: Image.compressed, in init but no call goes through the pointer
+languages/dotnet/assembly/Image.ml:51: dead: Image.string, nothing names it
+languages/dotnet/assembly/Image.ml:53: dead: Image.blob, nothing names it
 languages/dotnet/assembly/Image.ml:57: dead: Image.guid, nothing names it
+languages/dotnet/assembly/Image.ml:62: dead: Image.user_string, nothing names it
+languages/dotnet/assembly/Image.ml:74: dead: Image.decode, nothing names it
+languages/dotnet/assembly/Image.ml:82: dead: Image.get, in init but no call goes through the pointer
+languages/dotnet/assembly/Image.ml:85: dead: Image.range, nothing names it
+languages/dotnet/assembly/Image.ml:93: dead: Image.read_tables, in init but no call goes through the pointer
 languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_class_layout, nothing live names it
 languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_constant, nothing live names it
 languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_custom_attribute, nothing live names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_field_rva, nothing live names it
+languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_method_impl, nothing live names it
 languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_method_semantics, nothing live names it
 languages/dotnet/assembly/Metadata.ml: dead global: Metadata.t_property_map, nothing live names it
+languages/dotnet/assembly/Metadata.ml:170: dead: Metadata.name, nothing names it
+languages/dotnet/assembly/Metadata.ml:173: dead: Metadata.col, in init but no call goes through the pointer
+languages/dotnet/assembly/Metadata.ml:173: dead: Metadata.col, nothing names it
+languages/dotnet/assembly/Signature.ml:107: dead: Signature.reader, in init but no call goes through the pointer
+languages/dotnet/assembly/Signature.ml:109: dead: Signature.field, nothing names it
+languages/dotnet/assembly/Signature.ml:114: dead: Signature.method_, nothing names it
+languages/dotnet/assembly/Signature.ml:116: dead: Signature.locals, nothing names it
+languages/dotnet/assembly/Signature.ml:122: dead: Signature.type_spec, nothing names it
+languages/dotnet/assembly/Signature.ml:124: dead: Signature.method_spec, nothing names it
 languages/dotnet/assembly/Signature.ml:130: dead: Signature.property, nothing names it
+languages/dotnet/assembly/Signature.ml:158: never built: FnPtr.0, matched in Signature.add_type
+languages/dotnet/assembly/Signature.ml:158: never built: Ptr.0, matched in Signature.add_type
+languages/dotnet/assembly/Signature.ml:197: dead: Signature.show, nothing names it
+languages/dotnet/assembly/Signature.ml:217: dead: Signature.show_meth, nothing names it
+languages/dotnet/assembly/Signature.ml:37: dead: Signature.type_token, in init but no call goes through the pointer
+languages/dotnet/assembly/Signature.ml:48: dead: Signature.byte, in init but no call goes through the pointer
+languages/dotnet/assembly/Signature.ml:50: dead: Signature.number, in init but no call goes through the pointer
+languages/dotnet/assembly/Signature.ml:58: dead: Signature.typ, in init but no call goes through the pointer
+languages/dotnet/assembly/Signature.ml:97: dead: Signature.meth, in init but no call goes through the pointer
+languages/dotnet/assembly/Writer.ml:150: dead: Writer.field_ref, nothing names it
+languages/dotnet/assembly/Writer.ml:175: dead: Writer.generic_param, nothing names it
+languages/dotnet/assembly/Writer.ml:180: dead: Writer.method_spec, nothing names it
+languages/dotnet/assembly/Writer.ml:198: dead: Writer.nest, nothing names it
+languages/dotnet/assembly/Writer.ml:60: dead field: method_specs stored in Writer.create, nothing live reads it
 languages/dotnet/csc/Csc_compile.ml:34: dead field: spec stored in Csc_compile:fun at line 34, nothing live reads it
 languages/dotnet/runtime/Library.ml:866: dead field: sgeneric stored in Library.delegate, nothing live reads it
 languages/dotnet/runtime/Types.ml:132: dead field: origin stored in Types.new_cls, nothing live reads it
@@ -536,6 +582,35 @@ lib_audio/synthesis/Oscillator.ml:64: dead: Oscillator.pulse_band_limited, nothi
 lib_audio/synthesis/Oscillator.ml:69: dead: Oscillator.make, in init but no call goes through the pointer
 lib_audio/synthesis/Oscillator.ml:72: dead: Oscillator.next, in init but no call goes through the pointer
 lib_audio/synthesis/Oscillator.ml:78: dead: Oscillator.render, nothing names it
+lib_core/libc/ix/fmt.c:439: dead: sprint, nothing names it
+lib_core/libc/ix/fmt.c:458: dead: cmphalf, named only by dead code: strtod
+lib_core/libc/ix/fmt.c:471: dead: lower, named only by dead code: strtod, word
+lib_core/libc/ix/fmt.c:480: dead: word, named only by dead code: strtod
+lib_core/libc/ix/fmt.c:495: dead: strtod, nothing names it
+lib_core/libc/ix/fmt.c:58: dead: NaN, named only by dead code: strtod
+lib_core/libc/port/atexit.c:28: dead: atexit, nothing names it
+lib_core/libc/port/exits.c:26: dead: _exits, nothing names it
+lib_core/libc/port/lock.c: dead: lock, named only by dead code: atexit
+lib_core/libc/port/lock.c: dead: unlock, named only by dead code: atexit
+lib_core/libc/port/lock.c:24: dead: canlock, nothing names it
+lib_core/libc/port/memcmp.c:10: dead: memcmp, named only by dead code: cmphalf
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:106: dead: _sysgetcwd, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:112: dead: _sysfstat, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:123: dead: _sysfchmod, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:129: dead: _sysftruncate, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:140: dead: _sysgetdents64, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:145: dead: _sysrenameat2, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:151: dead: _sysrawclone, named only by dead code: _sysfork
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:162: dead: _sysexecve, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:167: dead: _syswait4, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:22: dead: read, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:27: dead: close, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:33: dead: lseek, nothing names it
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:69: dead: openat, named only by dead code: _sysopen
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:75: dead: unlinkat, named only by dead code: _sysrmdir, _sysunlink
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:80: dead: mkdirat, named only by dead code: _sysmkdir
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:85: dead: faccessat, named only by dead code: access
+lib_core/libc/syscall/os/linux/zsyscall_linux.c:91: dead: chdir, nothing names it
 lib_crypto/Aes.ml:58: dead: Aes.encrypt_block_simple, nothing names it
 lib_crypto/Bignum.ml: dead global: Bignum.mont_mul_simple, nothing live names it
 lib_crypto/Bignum.ml: dead global: Bignum.mont_mul_wide, nothing live names it
@@ -641,6 +716,7 @@ lib_terminal/Vt.ml:350: dead: Vt.cursor_visible, nothing names it
 lib_terminal/Vt.ml:351: dead: Vt.bells, nothing names it
 lib_terminal/Vt.ml:353: dead: Vt.rtrim, in init but no call goes through the pointer
 lib_terminal/Vt.ml:360: dead: Vt.text, nothing names it
+linker/CLI.ml:100: dead field: l_flags stored in unit_, nothing live reads it
 linker/CLI.ml:100: dead field: l_object stored in unit_, nothing live reads it
 linker/CLI.ml:100: dead field: l_source stored in unit_, nothing live reads it
 linker/CLI.ml:100: dead field: l_taken stored in unit_, nothing live reads it
@@ -714,7 +790,7 @@ tiny/TinyBrowser/Strings.ml:6: dead: Strings.find, in init but no call goes thro
 tiny/TinyBrowser/Url.ml:54: dead: Url.site, in init but no call goes through the pointer
 tiny/TinyBrowser/Url.ml:63: dead: Url.resolve, nothing names it
 tiny/TinyKernel/KNetwork.ml:293: dead: KNetwork.il_readable, nothing names it
-tiny/TinyLibExecutable.ml:169: dead: TinyLibExecutable.address, nothing names it
+tiny/TinyLibExecutable.ml:178: dead: TinyLibExecutable.address, nothing names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_draw, nothing live names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_mouse, nothing live names it
 tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stderr, nothing live names it

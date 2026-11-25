@@ -37,7 +37,9 @@ nothing.
      object names its source by its path from there
      (`assembler/Asm.ml`), the same wherever it was compiled and the
      tree is, which \man{ld}{1}'s **-map** manifest says. Without it,
-     the source as given.
+     the source as given. The object records the **-I**'s (by their
+     project paths) and **-D**'s too, what a reader of the source
+     needs: \man{analyze}{1} reads a C program so, from its manifest.
 
 **-I** *dir*
 :    An `#include` is looked for in *dir* too.

@@ -456,7 +456,7 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout;
    * text (-S) *)
   let made (ls : TinyLibMachine.line list) =
     if !text then String.concat "" (List.map TinyLibMachine.print_line ls)
-    else TinyLibExecutable.to_object (TinyLibMachine.assemble ls) in
+    else TinyLibExecutable.to_object [] (TinyLibMachine.assemble ls) in
   (* x.ml's x.o here (x.s by -S); a whole program's after its first
    * .ml, main.o when it has none *)
   let named f = Fpath.set_ext (if !text then ".s" else ".o") (Fpath.base f) in

@@ -24,6 +24,13 @@ let linked (f : F.t) (what : string) (p : Tiny_manifest.program) : unit =
       l "%s: %d units, %d the program's own" what (List.length p.units)
         (List.length p.own));
   f.files <- f.files @ p.own;
+  (* (a C program: its C files, each read with its own flags; an ML
+   * program's C, the runtime's, not read yet) *)
+  if p.own = [] then
+    List.iter (fun ((c, fl) : string * (string list * string list)) ->
+        f.files <- f.files @ [ c ];
+        Hashtbl.replace f.cflags c fl)
+      p.c;
   Ml_front.own_dirs := !Ml_front.own_dirs @ List.map Fpath.v p.own_dirs;
   (* (a link with no standard library of the project's, an archive's, is
    * on OCaml's, lib_core's for the analyzer: dune's tiny-machine-window;
@@ -162,10 +169,12 @@ let library (caps : < F.caps; .. >) (f : F.t) : int =
   | st -> st
   | exception (Failure m | Sys_error m) -> said caps m
 
-(* (a program with no ML unit, tiny-cc's: not read) *)
+(* (a program with no ML nor C unit, of assembly alone: not read) *)
 let has_ml (caps : < Cap.open_in; .. >) (m : string) : bool =
   List.exists (fun (l : Tiny_manifest.linked) ->
-      match l.l_source with Some (Ppath s) -> Filename.check_suffix s ".ml" | None -> false)
+      match l.l_source with
+      | Some (Ppath s) -> Filename.check_suffix s ".ml" || Filename.check_suffix s ".c"
+      | None -> false)
     (Tiny_manifest.of_string (FS.read caps (Fpath.v m))).m_units
 
 let several (caps : < F.caps; .. >) (f : F.t) : int =
@@ -175,7 +184,7 @@ let several (caps : < F.caps; .. >) (f : F.t) : int =
     let ms, others = List.partition (has_ml caps) f.manifests in
     if others <> [] then
       Console.eprint caps
-        (Printf.sprintf "mini-analyze: no ML unit, not read: %s\n"
+        (Printf.sprintf "mini-analyze: no ML nor C unit, not read: %s\n"
            (String.concat " " others));
     let project_of (_ : string) : string list =
       if f.project = "" then [] else [ "-project"; f.project ] in

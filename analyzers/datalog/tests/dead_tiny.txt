@@ -1,2 +1,8 @@
 tiny/TinyLibGUI.ml:472: never built: Disc.1, matched in TinyLibGUI.area_of
 tiny/TinyLibGUI.ml:472: never built: Disc.2, matched in TinyLibGUI.area_of
+tiny/runtime/c/draw.c:102: dead: d_pixels, nothing names it
+tiny/runtime/c/draw.c:74: dead: d_ellipse, nothing names it
+tiny/runtime/c/draw.c:81: dead: d_fillellipse, nothing names it
+tiny/runtime/c/libc.c: dead: free, nothing names it
+tiny/runtime/c/libc.c:126: dead: memset, nothing names it
+tiny/runtime/c/libc.c:160: dead: malloc, nothing names it

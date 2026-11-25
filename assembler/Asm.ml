@@ -165,9 +165,13 @@ type item =
  * ends (None), a #include's inside its includer's; what the linker's
  * symbol table names an instruction's file and line by *)
 (* and acid's declarations of the file's types, each once (mini-cc -g:
- * Acid's; mini-ld -g puts them in the program) *)
+ * Acid's; mini-ld -g puts them in the program); and the compile's flags
+ * a reader of the source needs, mini-cc's -I (each a project path) and
+ * -D, as flags: mini-ld -map's manifest says them, mini-analyze's C
+ * front end reads the file so *)
 type obj = { arch : arch; file : Fpath.t; items : (item * int) array (* and its line *);
-             history : (string option * int) list; acid : string list }
+             history : (string option * int) list; acid : string list;
+             flags : string list }
 
 (* the conditions both machines test, as 5a and 7a name them (CS and
  * CC are HS and LO); shared by the assembler, the linkers and the
@@ -211,10 +215,14 @@ type stored = { s_arch : arch; s_file : Fpath.t; s_items : (item * int) array }
  * libc's objects not the same bytes, plan_self_hosting.md), for 5% more *)
 let stored (o : obj) = { s_arch = o.arch; s_file = o.file; s_items = o.items }
 (* (the declarations a third value, after the history, which is then
- * written even if empty: the same way, an object without them read) *)
+ * written even if empty: the same way, an object without them read; the
+ * compile's flags a fourth, the declarations then written too) *)
 let history_bytes (o : obj) =
-  if o.history = [] && o.acid = [] then ""
-  else Marshal_.to_string o.history [ Marshal.No_sharing ] ^ (if o.acid = [] then "" else Marshal_.to_string o.acid [ Marshal.No_sharing ])
+  if o.history = [] && o.acid = [] && o.flags = [] then ""
+  else
+    Marshal_.to_string o.history [ Marshal.No_sharing ]
+    ^ (if o.acid = [] && o.flags = [] then "" else Marshal_.to_string o.acid [ Marshal.No_sharing ])
+    ^ (if o.flags = [] then "" else Marshal_.to_string o.flags [ Marshal.No_sharing ])
 
 (* the value at [pos], then the history and the declarations if there
  * are bytes after it *)
@@ -223,7 +231,9 @@ let with_history (b : string) pos (st : stored) : obj =
   let history = if next < String.length b then (Marshal.from_string b next : (string option * int) list) else [] in
   let next = if next < String.length b then next + Marshal.total_size (Bytes.unsafe_of_string b) next else next in
   let acid = if next < String.length b then (Marshal.from_string b next : string list) else [] in
-  { arch = st.s_arch; file = st.s_file; items = st.s_items; history; acid }
+  let next = if next < String.length b then next + Marshal.total_size (Bytes.unsafe_of_string b) next else next in
+  let flags = if next < String.length b then (Marshal.from_string b next : string list) else [] in
+  { arch = st.s_arch; file = st.s_file; items = st.s_items; history; acid; flags }
 
 (* [in_project caps project file]: an object's source by its path in the
  * project, from its top (the compilers' -project, from here: mkconfig's

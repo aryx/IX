@@ -25,6 +25,7 @@ type ppath = Ppath of string
 type linked = {
   l_object : string;        (* x.o as the linker was given it; a member's name *)
   l_source : ppath option;  (* x.ml, x.c or x.s *)
+  l_flags : string list;    (* what reading it needs: a C file's -I, -D *)
   l_taken : taken;
 }
 
@@ -33,7 +34,7 @@ type manifest = {
   m_units : linked list;    (* in the link's order *)
 }
 
-(* the file's bytes: "tiny-manifest 2" and the manifest marshalled, by
+(* the file's bytes: "tiny-manifest 3" and the manifest marshalled, by
  * Marshal_ (the same bytes whatever OCaml built the linker) *)
 val to_string : manifest -> string
 

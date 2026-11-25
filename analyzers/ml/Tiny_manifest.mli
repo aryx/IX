@@ -8,7 +8,7 @@
  * (TinyLibExecutable), declared again there: tiny/'s tools use no file
  * outside tiny/, and Marshal knows no type, so both declarations must be
  * the same, constructors in the same order (analyzers/tests/run.sh
- * checks the text). The file is the magic line "tiny-manifest 2" and
+ * checks the text). The file is the magic line "tiny-manifest 3" and
  * the marshalled manifest.
  *
  * A source is a project path, read against the project's top: -project,
@@ -28,6 +28,7 @@ type ppath = Manifest.ppath = Ppath of string
 type linked = Manifest.linked = {
   l_object : string;        (* x.o as the linker was given it; a member's name *)
   l_source : ppath option;  (* x.ml, x.c or x.s *)
+  l_flags : string list;    (* what reading it needs: a C file's -I, -D *)
   l_taken : taken;
 }
 
@@ -74,6 +75,7 @@ type program = {
   own_dirs : string list;
   library : string option;
   units : (string * string) list;
+  c : (string * (string list * string list)) list;  (* each C file, its -D's, -I's *)
 }
 
 (* [of_manifest caps m others root]: its paths read against root; others

@@ -233,7 +233,12 @@ let analyze (caps : < F.caps; .. >) (f : F.t) : int =
   List.iter
     (fun (file : string) ->
       Logs.info (fun m -> m "reading %s" file);
-      match C.C_front.file caps (f.defs, incs) (path file) with
+      (* (its own flags, a manifest's, else the command line's) *)
+      let defs, incs =
+        match Hashtbl.find_opt f.cflags file with
+        | Some (d, i) -> (d, List.map path i)
+        | None -> (f.defs, incs) in
+      match C.C_front.file caps (defs, incs) (path file) with
       | Ok () -> ()
       | Error m -> failure m)
     c;

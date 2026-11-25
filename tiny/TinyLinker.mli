@@ -137,7 +137,8 @@ type linked = {
  * read prints each item with -debug, and reports an error with the
  * file (Chan.origin). *)
 val read :
-  Chan.i -> ((string * TinyLibExecutable.taken) * TinyLibMachine.line list) list
+  Chan.i ->
+  ((string * TinyLibExecutable.taken * string list) * TinyLibMachine.line list) list
 
 val link : sections -> TinyLibMachine.line list list -> linked
 

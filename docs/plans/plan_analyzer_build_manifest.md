@@ -611,7 +611,25 @@ tiny/TinyC and TinyLibSystem's exit codes, other sessions' commits).
 caps_ix.txt: mini-asm's and mini-cc's functions now holding Cap.readdir
 for the current directory, "may not need" it (FS.getcwd's type says
 readdir, capabilities.dl's the directory env: Lines_ml.source's line
-already). make generated
+already).
+
+The start order and C programs (2026-11-25; the author: "ok let's do 1
+then 2, and then 3", "Like right now maybe the manifest for C programs
+also work and we can analyze C programs too?"). 1: mini-ld's manifest in
+link order, an archive's member at its archive's place in the archive's
+order, which is mkprog's start order: -bugs's init has it again, as
+sweep.sh's -start gave it (standard_library then took lib_core/core,
+with its Stdlib.mli, for lib_core: it looks for units.txt one directory
+up). 2, the compile record of the plan's design: mini-cc records each
+object's -I (project paths) and -D in it (Asm.obj's flags, a fourth
+value after the declarations, an older object read), tiny-cc its -I on
+a line after tiny's object magic (tiny-object 4), the linkers put them
+in the manifest (l_flags, format 3), mini-analyze reads a C program's
+files each with its own (hello-c and libc's members, tiny-cc's 7
+programs with -Iruntime/c, the C kernels). Found: tiny's C library's
+d_ellipse, malloc, free... no t-IX C program calls; 29 of libc's
+functions no m-ix C program does. Left: an ML program's C (the runtime,
+bugs/raises.dl's) not read with it. make generated
 gone too ("is it still needed?"): dune build makes the lexers and
 parsers, and mini-analyze is dune's; its warning says dune build.
 

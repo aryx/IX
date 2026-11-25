@@ -132,7 +132,9 @@ let main (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
         let made =
           if !ir_only then Buffer.contents ir
           else if !text then String.concat "" (List.map M.print_line lines)
-          else E.to_object (M.assemble lines) in
+          else
+            (* (its -I's in the object, what reading its source needs) *)
+            E.to_object (List.map (fun d -> "-I" ^ Fpath.to_string d) !incl) (M.assemble lines) in
         (match !output with
          | None when !text || !ir_only -> TSys.print caps made
          | o ->

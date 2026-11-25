@@ -4,10 +4,13 @@
 # Build and test t-IX from tiny/ itself, as ../Makefile's tix, test-tix
 # and self-tix targets do from the top:
 #
-#   make         builds t-IX with its own tools: make host, then the
-#                tiny programs compiled by tiny-ml and linked by tiny-ld
-#                into TinyKernel/'s boot, disk and source images (with
-#                the manifests mini-analyze reads)
+#   make         builds t-IX with its own tools, here, beside the sources:
+#                make host, then tiny-build TINY=tiny- over the Buildfile,
+#                as build in /src does under t-IX (the programs, the
+#                kernel, and the manifests mini-analyze reads; 2 s, 1 s
+#                when nothing changed)
+#   make rc      any other target is the Buildfile's: tiny-build TINY=tiny-
+#                rc, as build rc under t-IX (make boot.img, make depend)
 #   make host    builds the tiny tools for the host with dune (from here,
 #                dune builds tiny/ alone: a no-op takes 0.6 s, against 4 s
 #                for the whole tree); a convenience, ix built by ix being
@@ -31,19 +34,34 @@
 #   make loc     counts t-IX's lines alone (../scripts/stats/loc.py -t
 #                counts the files git knows, and lists those set apart at
 #                the end)
-#   make clean   removes what the targets above wrote here: TinyKernel/'s
-#                builds, the steps' builds, and tiny-build's digests
-#                (dune's _build belongs to the whole tree, so
-#                ../Makefile's clean removes it)
+#   make clean   removes what the targets above wrote here: build clean's
+#                files, TinyKernel/'s builds, the steps' builds, and
+#                tiny-build's digests (dune's _build belongs to the whole
+#                tree, so ../Makefile's clean removes it)
 #
 # The tiny programs that ix builds are built by the mkfile (mini-mk).
-# tiny-kernel has its own Makefile (TinyKernel/: make run, make check).
+# tiny-kernel has its own Makefile (TinyKernel/: make run, make check),
+# which builds again in a copy of tiny/, for its images.
+
+# The tools by their names on the host, tiny-ml... (../bin is dune's),
+# tiny-shell running the recipes
+export PATH := $(abspath ../bin):$(PATH)
+BUILD = tiny-build TINY=tiny- -j 32
 
 # TinyKernel/'s targets, run after dune has built the tools they use
 KERNEL_TARGETS = run run-window self self-quick
 
-all: host
-	$(MAKE) -C TinyKernel all
+all: host TinyKernel/kfont.s
+	$(BUILD)
+# Any target not below is the Buildfile's. (.DEFAULT's prerequisites
+# are not made, hence the make in its recipe.)
+.DEFAULT:
+	$(MAKE) host TinyKernel/kfont.s
+	$(BUILD) $@
+# The font's pixels, which the Buildfile takes as they are (in /src
+# under t-IX): TinyKernel/Makefile's rule, made here and not in _make
+TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
+	$(MAKE) -C TinyKernel O=. kfont.s
 host:
 	dune build
 test:
@@ -56,6 +74,8 @@ check: host
 loc:
 	cd .. && scripts/stats/loc.py -t
 clean:
+	$(BUILD) clean
+	rm -f TinyKernel/kfont.s
 	$(MAKE) -C TinyKernel clean
 	$(MAKE) -C TinyKernel/steps clean
 	find . -name .tiny-build -type f -exec rm -f {} +

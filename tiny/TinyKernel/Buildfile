@@ -73,4 +73,4 @@ depend:
 <.depend
 
 clean:
-	rm -f *.o *.tmi kernel.img kernel.map kernel.img.manifest
+	rm -f *.o *.tmi kernel.img kernel.img.map kernel.img.manifest

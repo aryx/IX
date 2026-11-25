@@ -21,6 +21,7 @@
 /windows
 /square
 /tetris
+/orrery
 /calc
 /temp
 /ping
@@ -37,7 +38,10 @@
 /build
 /as
 /ld
+/ar
 /cc
 /ml
 /trace
 /debug
+# the font's pixels, which make (tiny/Makefile) makes for the Buildfile
+/TinyKernel/kfont.s

@@ -15,7 +15,7 @@
  *                                                   message
  *     Main.ml -------> Safe ----------> nothing, or  file:line: why
  *       (a program's)                   and the build stops
- *     Main.manifest --> Manifest -----> Given.ml (the program's
+ *     Main.app --> Manifest -----> Given.ml (the program's
  *                                       resources, by name) and the
  *                                       kernel's list of grants
  *

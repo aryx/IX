@@ -57,7 +57,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE '/tests/|^lib_cor
   # (mini-singml: over mini-ml's parser and its Ast)
   case $f in
   $S/programs/*)
-    root=$(dirname $f); g=$W/g_$(basename $root); m=$root/Main.manifest; [ -f $m ] || m=/dev/null
+    root=$(dirname $f); g=$W/g_$(basename $root); m=$root/Main.app; [ -f $m ] || m=/dev/null
     [ -d $g ] || { mkdir -p $g; $SINGML -given -o $g $m > /dev/null; }
     incs[$root]="-I $g -I $W/contracts -I $S/lib -I $S/contracts";;
   $S/singml/*) root=$S/singml; incs[$root]="$(dirs $S/singml) $(dirs languages/ml)";;

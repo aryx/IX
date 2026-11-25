@@ -8,7 +8,7 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: mini-singml [-o dir] Name.contract
        mini-singml -safe [-allow Module]... file.ml
-       mini-singml -given [-o dir] Main.manifest | -grants Main.manifest
+       mini-singml -given [-o dir] Main.app | -grants Main.app
 What mini-singularity (kernels/singularity) asks of the language beyond mini-ml.
 A contract's declaration to its module in OCaml, Name.ml and Name.mli (-o: in
 that directory), written over lib/Contract and lib/Sip, for mini-ml to compile;
@@ -17,7 +17,7 @@ space? For example:
   mini-singml -o out contracts/Intro.contract     out/Intro.ml, out/Intro.mli: 1 message, 2 states
   mini-singml -safe -allow Pong programs/pong/Main.ml     nothing said, exit 0
   mini-singml -safe singml/tests/unsafe/magic.ml          magic.ml:2: module Obj is not one a process may name
-  mini-singml -given -o out programs/console/Main.manifest    out/Given.ml, out/Given.mli
+  mini-singml -given -o out programs/console/Main.app    out/Given.ml, out/Given.mli
 A manifest is what a program needs of the machine, a name a resource:
   let uart = registers 0x201000 0x1000    registers among the peripherals', their bytes
   let keys = interrupt 57
@@ -45,7 +45,7 @@ close: a message of the other end's, or with a wrong argument, does not compile.
 An error names the file and the line: Intro.contract:3: ...
 |}
 
-let usage = "usage: mini-singml [-o dir] Name.contract | -safe [-allow Module]... file.ml | -given [-o dir] Main.manifest | -grants Main.manifest   (-h: how)"
+let usage = "usage: mini-singml [-o dir] Name.contract | -safe [-allow Module]... file.ml | -given [-o dir] Main.app | -grants Main.app   (-h: how)"
 
 (* a declaration's tree: mini-ml's, of a structure *)
 let parse (file : string) (text : string) : (Ast.structure, string) result =

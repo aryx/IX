@@ -77,7 +77,7 @@ and serve = function
 ```
 singml -o out contracts/Intro.contract
 singml -safe -allow Pong programs/pong/Main.ml
-singml -given -o out programs/console/Main.manifest
+singml -given -o out programs/console/Main.app
 ```
 
 # SEE ALSO

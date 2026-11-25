@@ -198,7 +198,7 @@ and prints the second line.
 ## 6. A driver
 
 A driver is a process. What it may touch of the machine is what its
-**manifest** asks, `programs/console/Main.manifest`:
+**manifest** asks, `programs/console/Main.app`:
 
     let uart = registers 0x201000 0x1000
     let keys = interrupt 57
@@ -274,7 +274,7 @@ programs that break the rules.
   program is linked with every contract.
 - **A server and its client**: a third program makes the channel and
   gives an end to each (`init`, or `selftest` for Pong).
-- **A driver**: `programs/name/Main.manifest`. The kernel knows one
+- **A driver**: `programs/name/Main.app`. The kernel knows one
   interrupt today, the serial line's (57).
 
 What there is not yet: arguments for a program, several processes of

@@ -90,7 +90,7 @@ val set : block -> int -> char -> unit
 val sub : block -> int -> int -> string
 val write : block -> int -> string -> unit
 
-(* What a program's manifest asks of the machine (Main.manifest; its
+(* What a program's manifest asks of the machine (Main.app; its
  * module Given has them by their names): given at its start, and
  * nothing else of the machine is reachable. *)
 

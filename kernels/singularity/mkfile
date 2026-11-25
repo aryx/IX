@@ -101,11 +101,11 @@ $D/%.$O: %.ml $LOCAL $MSRC
 
 # The programs, as the kernel sees them: the names in PROGRAMS, as an
 # OCaml array, and for each program what its manifest asks of the
-# machine. mini-singml reads the manifest, programs/x/Main.manifest; a
+# machine. mini-singml reads the manifest, programs/x/Main.app; a
 # program without one asks for nothing.
-MANIFESTS=`{ls programs/*/Main.manifest}
+MANIFESTS=`{ls programs/*/Main.app}
 $D/Programs.$O: mkfile $MANIFESTS
-	manifest() { m=programs/$1/Main.manifest; [ -f $m ] || m=/dev/null; echo $m; }
+	manifest() { m=programs/$1/Main.app; [ -f $m ] || m=/dev/null; echo $m; }
 	(echo "(* the mkfile's PROGRAMS, and their manifests *)"
 	 echo 'type grant = Registers of int * int | Interrupt of int'
 	 echo 'let names : string array = [|'; for p in $PROGRAMS; do echo "  \"$p\";"; done; echo '|]'
@@ -185,7 +185,7 @@ PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
 # program.)
 $D/g_%.given: programs/%/Main.ml lib/Sip.mli $MANIFESTS mkfile
 	mkdir -p $D/g_$stem
-	m=programs/$stem/Main.manifest; [ -f $m ] || m=/dev/null
+	m=programs/$stem/Main.app; [ -f $m ] || m=/dev/null
 	mini-singml -given -o $D/g_$stem $m
 	$ML $PMLI -o $target $D/g_$stem/Given.ml
 $D/p_%.sip: programs/%/Main.ml lib/Sip.mli $CSRC $CMADE $D/g_%.given
@@ -221,8 +221,14 @@ $D/images.$O: $M/font1.bin $PIMAGES mkfile
 # (l comes first, because its vectors, or on the Pi 1 its start, are
 # the image's first bytes.)
 OBJS=$D/l.$O $D/shim.$O $D/machine_c.$O $D/kruntime.$O $D/usb_c.$O $D/cross.$O $D/crossl.$O $D/malloc.$O $D/images.$O $D/start.$O $STDOBJS ${UNITS:%=$D/%.$O} $L/std_exit.$O $D/rt.$O $L/libc.a
-$IMAGE: $OBJS
-	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS
+$IMAGE: $OBJS $D/stamp.$O
+	$LD -H0 -T $KTEXT -E $ENTRY -nofollow -o $target $OBJS $D/stamp.$O
+# the kernel's stamp (machine.c's kernel_stamp, which /dev/osversion
+# says on mini-9pi): the checksum of its objects, as mkkernel's
+$D/stamp.$O: $OBJS
+	cat $OBJS | cksum | awk '{ printf "%08x", $1 }' > $D/stamp.txt
+	echo > $D/stamp.s
+	$AS -data kernel_stamp'='$D/stamp.txt -o $target $D/stamp.s
 
 run:V: $IMAGE
 	$MINIQEMU $BOOT -nographic

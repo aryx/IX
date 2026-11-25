@@ -700,4 +700,7 @@ did not link (mini-emacs's mkfiles had the same break, ad93e2ae). Fixed
 the same day: oberon's and squeak's mkfiles make the stamp as mkkernel
 does; singml's links languages/ml's Annotations. Checked: the three
 built by ix; mini-singml's tests/check.sh. Not run: the two kernels'
-sessions under mini-qemu.
+sessions under mini-qemu. Singularity's kernel (kernels/singularity's mkfile) had the
+same missing stamp, found when its application manifest was renamed
+Main.app (2026-11-25): fixed the same way, its kernel and 13 programs'
+images built by ix.

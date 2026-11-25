@@ -1,6 +1,6 @@
 // kernels/singularity/programs/console/: what the code map says of it (the
 // code map is tinybox codemap, in ~/github/ocaml-elm-playground).
-// Main.manifest (the PL011's registers and its interrupt, by name) is not a source to the map.
+// Main.app (the PL011's registers and its interrupt, by name) is not a source to the map.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },
   summary: "The console's driver, a process as the others: the PL011's registers by its manifest, served by contract.",

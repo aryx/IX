@@ -35,7 +35,7 @@ good=1
 for m in Pong Intro Console; do mini-ml -m 7 -I $T $I -o $T/$m.7 $T/$m.ml || good=0; done
 for p in $K/programs/*/Main.ml; do
   # (its module Given, of its manifest if it has one)
-  m=$(dirname $p)/Main.manifest; [ -f $m ] || m=/dev/null
+  m=$(dirname $p)/Main.app; [ -f $m ] || m=/dev/null
   mkdir -p $T/given && $S -given -o $T/given $m && mini-ml -m 7 -I $T $I -o $T/g.7 $T/given/Given.ml &&
     mini-ml -m 7 -I $T/given -I $T $I -o $T/p.7 $p || good=0
 done

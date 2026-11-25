@@ -2,7 +2,7 @@
  * kernels/singularity's plan_system_singularity.md): what it needs of
  * the machine, which the kernel gives it at its start and no more. A
  * manifest is a file in OCaml's syntax beside the program's Main.ml,
- * Main.manifest, a name a resource:
+ * Main.app, a name a resource:
  *
  *   let uart = registers 0x201000 0x1000    a device's registers: where
  *                                           among the peripherals', how many bytes

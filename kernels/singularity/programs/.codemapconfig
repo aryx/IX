@@ -1,6 +1,6 @@
 // kernels/singularity/programs/: what the code map says of it (the code
 // map is tinybox codemap, in ~/github/ocaml-elm-playground). Each program
-// a directory, its Main.ml (and maybe Main.manifest), linked at its own
+// a directory, its Main.ml (and maybe Main.app), linked at its own
 // slot with lib/ and vetted by mini-singml -safe.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-11-04' },

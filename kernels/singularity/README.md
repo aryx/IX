@@ -121,7 +121,7 @@ is in `languages/ml`. A contract's declaration made its module, and a
 program's source refused if it is not safe (both below).
 
 `programs/`: a directory a program, its `Main.ml` and, if it needs
-something of the machine, its `Main.manifest`. `init` (the system's
+something of the machine, its `Main.app`. `init` (the system's
 wiring); `console` (the serial line's driver); `shell`; `hello`;
 `tick` and `tock`, which run in turn; `ping` and `pong`, a client and
 a server; `rogue`, a client that breaks the contract; `selftest`,

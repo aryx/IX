@@ -14,8 +14,8 @@ things for m-ix (and t-ix) when possible, cheapest first".
 (7a7da7c5); step 4's first groups. Step 3 done, t-IX's session's (t-IX built
 beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
 languages/dotnet/assembly, lib_playground/random, lib_terminal,
-languages/pascal, languages/scheme. Next: the linker's units
-(mini-dotnet).**
+languages/pascal, languages/scheme; the linker's units for mini-dotnet.
+Next: languages/dotnet/runtime (Value, Library).**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -201,6 +201,13 @@ first requirement.
    a library and mini-scheme (Scheme_secd CLI Main) in one mkfile;
    games/mkgames links it for WITH=scheme (mini-drscheme) instead of
    compiling the nine units in $B/lib_playground/scheme.
+   Done: the linker's units in mini-dotnet (Program Debug_link Link Arm
+   Arm64), not a library: the linker and the assembler are programs
+   whose objects others link (linker/tools, mini-cc, mini-ml), and
+   mini-dotnet now links the linker's that way, the top mkfile building
+   the linker first. Making the assembler's and the linker's shared
+   units libraries would link each program's whole archive (mini-ml
+   does not link Show_asm, linker/tools not Arm and Arm64): left.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

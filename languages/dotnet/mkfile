@@ -1,34 +1,28 @@
 # mini-dotnet, built by ix's tools. The JIT's encoders are the linker's
-# (Program Debug_link Link Arm Arm64), compiled here from its sources,
-# because the linker is made beside this directory, not before it. Its
-# memory is jit/mini-ml/'s Code_memory, not dune's.
+# (Program Debug_link Link Arm Arm64): its objects, as the assembler's,
+# linked here (the top mkfile builds the linker first, and linker/tools
+# links them the same way). Its memory is jit/mini-ml/'s Code_memory,
+# not dune's.
+# old: the linker's units compiled again here, a rule each, the linker
+# being made beside this directory, not before it
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
-SRC=Value Library Types Frame Arith Machine Verifier Jit Program Debug_link Link Arm Arm64 Code_memory Jit_run CLI Main
+SRC=Value Library Types Frame Arith Machine Verifier Jit Code_memory Jit_run CLI Main
 LOCAL=`{ls *.ml *.mli runtime/*.ml* interpreter/*.ml* jit/*.ml* jit/mini-ml/*.ml}
 GEN=
 LIBI=-I runtime -I interpreter -I jit -I ../../assembler -I ../../linker -I ../../linker/debug
-LIBUNITS=Asm Show_asm Lexer_asm Parser_asm
+LIBUNITS=Asm Show_asm Lexer_asm Parser_asm Program Debug_link Link Arm Arm64
 # (assembly/, the file's tables, read and written: a library, which
 # mini-cc, mini-ml, mini-csc, mini-tiger and mini-datalog link too)
 LIBDIRS=languages/dotnet/assembly
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
+LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O \
+ $B/linker/Program.$O $B/linker/Debug_link.$O $B/linker/Link.$O $B/linker/Arm.$O $B/linker/Arm64.$O
+# (-I $B/linker: their summaries, which the JIT inlines from, as when
+# they were compiled here)
+LIBI=$LIBI -I $B/linker
 <$TOP/mkfiles/mkprog
-
-# the linker's units, with one recipe each, so that .depend orders each
-# one
-$D/Program.$O: $TOP/linker/Program.ml
-	$ML $INCLUDES -o $target $TOP/linker/Program.ml
-$D/Debug_link.$O: $TOP/linker/debug/Debug_link.ml
-	$ML $INCLUDES -o $target $TOP/linker/debug/Debug_link.ml
-$D/Link.$O: $TOP/linker/Link.ml
-	$ML $INCLUDES -o $target $TOP/linker/Link.ml
-$D/Arm.$O: $TOP/linker/Arm.ml
-	$ML $INCLUDES -o $target $TOP/linker/Arm.ml
-$D/Arm64.$O: $TOP/linker/Arm64.ml
-	$ML $INCLUDES -o $target $TOP/linker/Arm64.ml
 
 # the JIT's memory, mini-ml's version (jit/Code_memory.ml is dune's)
 $D/Code_memory.$O: jit/mini-ml/Code_memory.ml

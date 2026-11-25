@@ -6,62 +6,74 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 # SYNOPSIS
 **mini-analyze**
 [ **-dead** | **-caps** | **-exn** | **-bugs** ]
-[ **-facts** | **-flow** | **-flow-answers** ]
-[ **-r** *rules* ]
+[ **-project** *dir* ]
+[ **-j** *n* ]
+[ **-v** | **-debug** | **-quiet** ]
+*program*`.exe` ... | *program*`.manifest` ... | *dir* ...
+
+**mini-analyze**
+[ **-dead** | **-caps** | **-exn** | **-bugs** ]
 [ **-L** *lib* ]
 [ **-I** *dir* ] ...
 [ **-own** *dir* ] ...
 [ **-D** *name*`=`*value* ] ...
-[ **-root** *f* ] ...
 [ **-start** *units* ]
-[ **-context** *file* ]
 [ **-library** ]
-[ **-summary** *file* [ **-program** *name* ] ]
-[ **-alone** ]
-[ **-no-models** ]
-[ **-fingerprint** ]
-[ **-project** *dir* ]
-[ **-v** | **-debug** | **-quiet** ]
-*program*`.exe` ... | *program*`.manifest` ... | *dir* ... |
 *file*`.c` ... | *file*`.ml` ...
 
+and, rarely: **-r** *rules*, **-facts**, **-flow**, **-flow-answers**,
+**-root** *f*, **-context** *file*, **-summary** *file* [ **-program**
+*name* ], **-alone**, **-no-models**, **-fingerprint**
+
 # DESCRIPTION
-*Analyze* reads the *files* as one program, by mini-cc's front end
-for C and mini-ml's for ML, writes what each says as Datalog facts,
-and runs on them the rules of `analyzers/datalog`, with
-\man{datalog}{1}'s engine: what a pointer may point to, by Andersen's
-analysis, then the question asked of it. Each answer is a "may": what
-the facts cannot see is taken as able to do anything, so what is said
-of a program holds of every run, and what is said may never happen.
+*Analyze* reads a program, by mini-cc's front end for C and mini-ml's
+for ML, writes what each file says as Datalog facts, and runs on them
+the rules of `analyzers/datalog`, with \man{datalog}{1}'s engine: what a
+pointer may point to, by Andersen's analysis, then the question asked of
+it. Each answer is a "may": what the facts cannot see is taken as able
+to do anything, so what is said of a program holds of every run, and
+what is said may never happen.
+
+A program's files are known in one of two ways:
+
+- **Linked** (`analyzers/ml/linked/`): the program is given by its
+  build, which knows its files, and is read as linked, its platform's
+  files among them, nothing to tell. A *`.manifest`* is what a linker
+  wrote beside the program with its map (\man{ld}{1} **-map**, tiny-ld
+  **-map**; t-IX's build, make in `tiny`, writes `tiny/temp.manifest`):
+  each object in the link's order (the order its units start in), its
+  source's path in the project, and what reading it needs (a C file's
+  **-I**, **-D**). An *`.exe`* dune builds (`tiny/TinyShell.exe`, or
+  `_build/default`'s): mini-analyze asks dune for its link (`dune
+  describe`, `dune rules`, in a build directory of its own:
+  `analyzers/ml/linked/Dune_manifest.ml`). A *directory*: the manifests
+  under it, or with none the executables dune builds under it, those of
+  tests' directories left out (`mini-analyze -caps _mk/7`, ix's build).
+  This is the way to use.
+- **Searched** (`analyzers/ml/searched/`): the program is given by its
+  *files*, and the units they name are looked for by their names, in the
+  directories given (**-L**, **-I**, **-own**) and then in the project;
+  for a tree not built. PROGRAMS BY THEIR FILES says how.
+
+Linked, a program's own files are those given to the linker; its
+library's units are reported on when they are of the program's part of
+the project (`tiny/`'s `TinyLib*.ml`), and **-dead** of one program
+reports on its own components, the files no other program of the build
+links. A C program is read by its C files, each with its own flags; an
+ML program with **-bugs**, its C given to the linker too (mini-ml's
+runtime, a kernel's machine.c). Several programs, or a directory of
+them, are each run, **-j** at once, and merged: **-dead** keeps what
+every program that has the file says (`dead_all.dl`), the others every
+program's reports (`said_all.dl`). A library's file and programs,
+`mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/*.manifest`,
+say its dead code over those that link it; the file alone, over the
+programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`).
 
 With no option, each call through a pointer (C) or through a variable
 (ML: a closure is a pointer to a function) is said with the functions
-it may reach, and for C the bugs the same answers show (`bugs/pointers.dl`): a
-`free` of what is not the heap's, a local's address returned. An ML
-program's library, lib_core's units it names, is read with it.
-
-An ML program is best given by its build, which knows its files: an
-*`.exe`* dune builds (`tiny/TinyShell.exe`, or `_build/default`'s),
-whose link mini-analyze asks dune for (`dune describe`, `dune rules`,
-in a build directory of its own: `analyzers/ml/linked/Dune_manifest.ml`); a
-*`.manifest`*, what tiny-ld **-map** writes beside the program it
-links, each unit and its source (t-IX's build, make in `tiny`, writes
-one beside each program, `tiny/temp.manifest`); a directory, the
-manifests under it, or with none the executables dune builds under it,
-those of tests' directories left out. The program is then read as
-linked, its platform's files among them, and nothing is told by
-**-L**, **-I** or **-own**: its own files are those given to the
-linker, its library's units are reported on when they are of the
-program's part of the project (`tiny/`'s `TinyLib*.ml`), and **-dead**
-of one program reports on its own components, the files no other
-program of the build links. Several programs, or a directory of them,
-are each run and merged: **-dead** keeps what every program that has
-the file says (`dead_all.dl`), the others every program's reports
-(`said_all.dl`). A library's file and programs, manifests or `.exe`,
-`mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tiny/*.manifest`,
-say its dead code over those that link it; the file alone, over the
-programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without a build, the
-*files* given are the program (**-L**, **-I**, **-own** below).
+it may reach, and for C the bugs the same answers show
+(`bugs/pointers.dl`): a `free` of what is not the heap's, a local's
+address returned.
 
 **-dead**
 :    What no run can reach, from `main` and the toplevels (`dead.dl`):
@@ -108,57 +120,56 @@ programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without
      (`bugs/order.dl`; `List.sort` makes a list in no table's order);
      `sharing`, a `Marshal` without `No_sharing`, its bytes depending
      on what the compiler shared; `init`, a unit's start reading a
-     global of a unit that starts after it, in `-start`'s order;
-     `link`, two files of one unit's name, each named by units of its
-     directory (`bugs/init.dl`); `race`, a field written by what a
-     signal's handler runs and by the program, of an object the
-     program made, a bool being a flag (threads not yet); `wait`, a
-     `Condition.wait` not in a `while` (`bugs/races.dl`); `leak`, a
-     channel or a lock taken and given back in one function, but not
-     when a call on a path between raises (`bugs/pairs.dl`, over the
-     program's functions in mini-ml's SSA form), across a call of a
-     helper that closes its argument or returns what it opens; `unused`, a local
-     variable never read, its name not `_x`: OCaml's warnings 26 and
-     27 by rules (`bugs/unused.dl`), for what no compiler checks (the
-     kernel's ML); `layout`, a statement in the column of an `if`'s
-     branch above it, which OCaml runs whatever the test
-     (`bugs/layout.dl`, over the program's tree as facts); `evalorder`,
-     two operands that both have an effect, a write or I/O, in an
-     application, a tuple, a record, whose order the compiler chooses
-     (`bugs/evalorder.dl`: OCaml right to left, mini-ml -dotnet left to
-     right). C files: the
-     report without an option, its `bug?` lines `bugs/pointers.dl`'s.
-     C files and ML ones, an ML program by its manifest its C given to
-     the linker too (mini-ml's runtime, a kernel's machine.c): each
-     external's `[@@raise E]` against what the C of its primitive
-     raises, `raises` (`bugs/raises.dl`), one analysis over two
-     languages, beside the ML's bugs; a C mini-cc's front end cannot
+     global of a unit that starts after it, in the start order (a
+     manifest's, or **-start**); `link`, two files of one unit's name,
+     each named by units of its directory (`bugs/init.dl`); `race`, a
+     field written by what a signal's handler runs and by the program,
+     of an object the program made, a bool being a flag (threads not
+     yet); `wait`, a `Condition.wait` not in a `while`
+     (`bugs/races.dl`); `leak`, a channel or a lock taken and given back
+     in one function, but not when a call on a path between raises
+     (`bugs/pairs.dl`, over the program's functions in mini-ml's SSA
+     form), across a call of a helper that closes its argument or
+     returns what it opens; `unused`, a local variable never read, its
+     name not `_x`: OCaml's warnings 26 and 27 by rules
+     (`bugs/unused.dl`), for what no compiler checks (the kernel's ML);
+     `layout`, a statement in the column of an `if`'s branch above it,
+     which OCaml runs whatever the test (`bugs/layout.dl`, over the
+     program's tree as facts); `evalorder`, two operands that both have
+     an effect, a write or I/O, in an application, a tuple, a record,
+     whose order the compiler chooses (`bugs/evalorder.dl`: OCaml right
+     to left, mini-ml -dotnet left to right). C files: the report
+     without an option, its `bug?` lines `bugs/pointers.dl`'s. C files
+     and ML ones, an ML program by its manifest its C given to the
+     linker too: each external's `[@@raise E]` against what the C of its
+     primitive raises, `raises` (`bugs/raises.dl`), one analysis over
+     two languages, beside the ML's bugs; a C mini-cc's front end cannot
      read (tiny's, tiny-cc's dialect) not read, said.
-
-**-facts**
-:    The facts, not the analysis: to write one's own rules
-     (`analyzers/datalog/FACTS.md` says each relation).
-
-**-flow**
-:    Each function's code as facts: ML's in SSA form, for
-     `liveness_ssa.dl` and `dominators.dl`; C's as mini-cc's stack
-     code, for `liveness.dl`. **-flow-answers**: the compilers' own
-     answers on those facts, their liveness and dominators, as facts:
-     what the rules must find (the tests compare them).
 
 **-project** *dir*
 :    The project's top, which a manifest's sources are paths from
      (mini-ld's: `assembler/Asm.ml`); without it, the first directory
      above the manifest with a `dune-project`, as git finds its root,
-     else the current directory. tiny-ld's are project paths too; t-IX's
-     build runs in `tiny`, or in a copy of its sources (check.sh tiny's):
-     **-project** `tiny`, whose files the reports then name.
+     else the current directory. t-IX's build runs in `tiny`, or in a
+     copy of its sources (check.sh tiny's): **-project** `tiny`, whose
+     files the reports then name.
 
-**-r** *rules*
-:    The directory of the `.dl` files and `points_to/`; by default
-     `analyzers/datalog` of the ix tree mini-analyze was built in, the
-     first directory above its executable that has it (`bin/`'s link
-     followed), so that it runs from anywhere.
+**-j** *n*
+:    Several programs' runs at once, 8 by default: a run of **-exn**
+     on mini-ml takes up to 6 GB.
+
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says each rules
+     file read, the summaries, the program's files and the library's
+     units (where each comes from), the directories made and removed
+     (a merge's, dune's build directory kept between runs), and the
+     evaluation (by \man{datalog}{1}'s engine, in this process): its
+     rules and facts, then its rounds and tuples derived; **-debug**
+     also each relation's size.
+
+# PROGRAMS BY THEIR FILES
+Without a build, the *files* given are the program, and the units its
+ML files name are searched for. Linked, none of these is needed.
 
 **-L** *lib*
 :    The standard library's directory. Without **-L**, the one nearest
@@ -190,71 +201,86 @@ programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without
      directories of the *files*, whose units are the program's own
      too unless their directory is an **-I**'s.
 
-     A unit in none of these directories, the **-I**'s and the
-     library's is looked for in the project, the first directory above
-     the first *file* with a `dune-project`
-     (`analyzers/ml/searched/Module_finder.ml`). Where several directories have a
-     file of its name, the program as a whole decides: a directory
-     already chosen for it, then the one with the most of the units
-     its files name, then the nearest; a directory with its own
-     `Stdlib` is another platform's library and never chosen. A unit
-     the build makes, from a `.mll` or `.mly` of its name in a
-     directory of the *files* (`Lexer.mll`, `Parser.mly`), is taken
-     from dune's build directory, the project's `_build/default`
-     (`dune build` makes them), and never from another
-     directory of the project; not built, a warning says so.
-     A unit found in the first *file*'s top directory of the project is the
-     program's own (`tiny/` for `tiny/TinyBuildSystem.ml`), one found
-     elsewhere a library's (`lib_crypto`). A program can so be given
-     by its main file alone, `mini-analyze -dead tiny/TinyBuildSystem.ml`;
-     an interface whose implementations are elsewhere
-     (`tiny/TinyLibSystem.mli`) is read as one without code, and
-     **-own** chooses a platform's (`tiny/TinyLibSystem/unix`,
-     `tinykernel`). **-v** says each choice, the library's and a unit's
-     with its candidates and their scores, and where each file read
-     comes from (given, **-own**, the program's directory, **-L** or
-     **-I**, found in the project), a unit read by its interface alone,
-     and a tie as a warning. A
-     library's functions that
-     this one program does not call are said dead too (by its build,
-     its components alone: above). For one
-     file of a program, give it and the main file, the libraries by
-     **-I**; for a t-IX program as tiny-kernel runs it:
-     `mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml`
-     says only what is dead in `temp.ml` and `TinyAppTemperature.ml`.
-     **-v** says each file read: `reading` for the program's own,
-     `the library's` for the others.
+**-start** *"units"*
+:    The units in the order they start, as **mini-ml -start** is given
+     them (mkprog's: the stdlib's, the libraries', the program's), for
+     **-bugs**' `init` (a manifest gives it, its link's order). Without
+     it, only the library's units start before the files'.
+
+**-library**
+:    Every function may be called from outside, not `main` alone: a
+     runtime, a library.
+
+A unit in none of the directories given, the **-I**'s and the
+library's is looked for in the project, the first directory above the
+first *file* with a `dune-project`
+(`analyzers/ml/searched/Module_finder.ml`). Where several directories
+have a file of its name, the program as a whole decides: a directory
+already chosen for it, then the one with the most of the units its
+files name, then the nearest; a directory with its own `Stdlib` is
+another platform's library and never chosen. A unit the build makes,
+from a `.mll` or `.mly` of its name in a directory of the *files*
+(`Lexer.mll`, `Parser.mly`), is taken from dune's build directory, the
+project's `_build/default` (`dune build` makes them), and never from
+another directory of the project; not built, a warning says so. A unit
+found in the first *file*'s top directory of the project is the
+program's own (`tiny/` for `tiny/TinyBuildSystem.ml`), one found
+elsewhere a library's (`lib_crypto`). A program can so be given by its
+main file alone, `mini-analyze -dead tiny/TinyBuildSystem.ml`; an
+interface whose implementations are elsewhere (`tiny/TinyLibSystem.mli`)
+is read as one without code, and **-own** chooses a platform's
+(`tiny/TinyLibSystem/unix`, `tinykernel`). **-v** says each choice, the
+library's and a unit's with its candidates and their scores, and where
+each file read comes from (given, **-own**, the program's directory,
+**-L** or **-I**, found in the project), a unit read by its interface
+alone, and a tie as a warning. A library's functions that this one
+program does not call are said dead too (linked, its components alone).
+For one file of a program, give it and the main file, the libraries by
+**-I**; for a t-IX program as tiny-kernel runs it:
+`mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml`
+says only what is dead in `temp.ml` and `TinyAppTemperature.ml`.
+
+# OTHER OPTIONS
+Rarely needed: for one's own rules, the tests, the merges' runs.
+
+**-r** *rules*
+:    The directory of the `.dl` files and `points_to/`; by default
+     `analyzers/datalog` of the ix tree mini-analyze was built in, the
+     first directory above its executable that has it (`bin/`'s link
+     followed), so that it runs from anywhere.
+
+**-facts**
+:    The facts, not the analysis: to write one's own rules
+     (`analyzers/datalog/FACTS.md` says each relation).
+
+**-flow**
+:    Each function's code as facts: ML's in SSA form, for
+     `liveness_ssa.dl` and `dominators.dl`; C's as mini-cc's stack
+     code, for `liveness.dl`. **-flow-answers**: the compilers' own
+     answers on those facts, their liveness and dominators, as facts:
+     what the rules must find (the tests compare them).
 
 **-root** *f*
 :    *F* is entered from where the facts do not go: assembly, a
      kernel's trap.
-
-**-start** *"units"*
-:    The units in the order they start, as **mini-ml -start** is given
-     them (mkprog's: the stdlib's, the libraries', the program's), for
-     **-bugs**' `init`. Without it, only the library's units start
-     before the files'.
 
 **-context** *file*
 :    The context file of `points_to/`: `call1_heap1` for C,
      `call1_rec` for **-exn**, `insensitive` for **-bugs**. The
      sharper, the longer.
 
-**-library**
-:    Every function may be called from outside, not `main` alone.
-
 **-summary** *file* [ **-program** *name* ]
-:    With **-dead**: the program's files and reports also as facts, in
-     *file*. They say which files the program reads (`has`) and which it
-     reports on (`own`), and give an implementation whose interface is
-     elsewhere (`implements`), a file outside the project (`outside`:
-     no `dune-project` above it), and each report (`report`). *Name*
-     (the first file's if not given) tells the programs apart.
+:    The program's files and reports also as facts, in *file*: what a
+     merge's runs write, mini-analyze running each program so. They say
+     which files the program reads (`has`) and which it reports on
+     (`own`), and give an implementation whose interface is elsewhere
+     (`implements`), a file outside the project (`outside`: no
+     `dune-project` above it), each **-dead** report (`report`), the
+     other analyses' lines (`said`) and the units not read (`unread`).
+     *Name* (the first file's if not given) tells the programs apart.
      `analyzers/datalog/dead_all.dl` merges several programs' facts:
      a report is kept where every program that has the file, or another
-     implementation of its interface, says it. Several programs given
-     are merged so by mini-analyze itself; `check.sh ix`'s, given by
-     their files, are merged so:
+     implementation of its interface, says it; by hand:
 
          mini-analyze -dead -summary a.dl -program a ... a.ml
          mini-analyze -dead -summary b.dl -program b ... b.ml
@@ -271,13 +297,6 @@ programs whose files name it (`analyzers/ml/searched/Caller_finder.ml`). Without
 **-fingerprint**
 :    After the report, one number of every answer: two runs of the
      analysis, native or on .NET, agree if their numbers do.
-
-**-v**, **-debug**, **-quiet**
-:    As every ix program's (\man{common}{1}). **-v** says each rules
-     file read, the summaries, the program's files and the library's
-     units, and the evaluation (by \man{datalog}{1}'s engine, in this
-     process): its rules and facts, then its rounds and tuples
-     derived; **-debug** also each relation's size.
 
 # EXAMPLES
 `bin/` first on the path; the rules and lib_core are found from

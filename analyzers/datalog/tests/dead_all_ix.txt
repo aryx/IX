@@ -249,14 +249,37 @@ games/shmup/kit/Shots.ml:12: dead: Shots.straight, nothing names it
 games/shmup/kit/Shots.ml:21: dead: Shots.on_screen, nothing names it
 games/shmup/kit/Shots.ml:24: dead: Shots.near, nothing names it
 games/shmup/kit/Shots.ml:26: dead: Shots.angle, nothing names it
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml: dead global: Xv6fs.mtime_at, nothing live names it
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:134: dead: Xv6fs.mtime, nothing names it
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:135: dead: Xv6fs.set_mtime, nothing names it
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:186: dead: Xv6fs.truncate, in init but no call goes through the pointer
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:220: dead: Xv6fs.slots, in init but no call goes through the pointer
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:229: dead: Xv6fs.entries, in init but no call goes through the pointer
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:291: dead: Xv6fs.remove, nothing names it
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:313: dead: Xv6fs.rename, nothing names it
+kernels/9pi/buses/Devusb.ml:47: dead field: ntds stored in Devusb.epalloc, nothing live reads it
+kernels/9pi/core/Errors.ml: dead global: Errors.eismtpt, nothing live names it
+kernels/9pi/devices/keyboard/Kbd.ml: dead global: Kbd.del, nothing live names it
+kernels/9pi/devices/screen/Devdraw.ml:217: dead: Devdraw.refresh, in Devdraw.init, init but no call goes through the pointer
+kernels/9pi/devices/storage/arm/Emmc.ml: dead global: Emmc.bufread, nothing live names it
+kernels/9pi/devices/storage/arm/Emmc.ml: dead global: Emmc.bufwrite, nothing live names it
+kernels/9pi/devices/storage/arm/Emmc.ml: dead global: Emmc.irpten, nothing live names it
+kernels/9pi/files/P9_wire.ml:25: never built: Flush.0, matched in P9_wire.encode
+kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:12: dead field: cmap stored in Memchan.make, nothing live reads it
+kernels/9pi/lib_graphics/ocaml/Kdraw.ml:10: dead: Kdraw:fun at line 10, nothing names it
+kernels/9pi/processes/Sysproc.ml: dead global: Sysproc.rfnomnt, nothing live names it
+kernels/lib_machine/Mmu.ml:114: dead: Mmu.dealloc, nothing names it
+kernels/lib_machine/Mmu.ml:127: dead: Mmu.alloc, nothing names it
+kernels/lib_machine/Mmu.ml:142: dead: Mmu.guard, nothing names it
+kernels/lib_machine/Mmu.ml:148: dead: Mmu.free, in init but no call goes through the pointer
+kernels/lib_machine/Mmu.ml:185: dead: Mmu.copy_range, in init but no call goes through the pointer
+kernels/lib_machine/Mmu.ml:197: dead: Mmu.copy, nothing names it
+kernels/lib_machine/Mmu.ml:237: dead: Mmu.room, nothing names it
+kernels/lib_machine/Mmu.ml:261: dead: Mmu.read_string, nothing names it
+kernels/lib_machine/Screen.ml: dead global: Screen.depth, nothing live names it
+kernels/lib_machine/Screen.ml:100: dead: Screen.init, nothing names it
+kernels/lib_machine/Screen.ml:82: dead: Screen.pointer, nothing names it
+kernels/lib_machine/pi4/Arch.ml: dead global: Arch.args_on_stack, nothing live names it
+kernels/lib_machine/pi4/Arch.ml: dead global: Arch.elf_class, nothing live names it
+kernels/lib_machine/pi4/Arch.ml: dead global: Arch.tf_sp, nothing live names it
+kernels/lib_machine/pi4/Arch.ml: dead global: Arch.tf_syscall, nothing live names it
+kernels/lib_machine/pi4/Arch.ml: dead global: Arch.word, nothing live names it
+kernels/lib_machine/pi4/Arch.ml:24: dead: Arch.get_word, nothing names it
+kernels/lib_machine/pi4/Arch.ml:32: dead: Arch.word_bytes, nothing names it
+kernels/lib_machine/pi4/Arch.ml:37: dead: Arch.c_int, nothing names it
+kernels/lib_machine/pi4/Arch.ml:38: dead: Arch.c_uint, nothing names it
 kernels/oberon/display/Display.ml: dead global: Display.cross, nothing live names it
 kernels/oberon/display/Display.ml: dead global: Display.grey, nothing live names it
 kernels/oberon/machine/Machine.ml:147: dead: Machine.le16, in init but no call goes through the pointer
@@ -523,6 +546,12 @@ lib_crypto/Ecdsa.ml:11: dead field: name stored in Ecdsa.make, nothing live read
 lib_crypto/Ecdsa.ml:120: dead: Ecdsa.generator, nothing names it
 lib_crypto/Ecdsa.ml:122: dead: Ecdsa.multiply, nothing names it
 lib_crypto/Ecdsa.ml:29: dead: Ecdsa.size, nothing names it
+lib_executable/Frames.ml:55: dead field: pc stored in go, nothing live reads it
+lib_executable/Symbols.ml:100: dead: Symbols.func, nothing names it
+lib_executable/Symbols.ml:162: dead: Symbols.file_pc, nothing names it
+lib_executable/Symbols.ml:34: dead: Symbols.of_tables, nothing names it
+lib_executable/Symbols.ml:58: dead: Symbols.read, nothing names it
+lib_executable/Symbols.ml:96: dead: Symbols.path, nothing names it
 lib_graphics/Display.ml:113: dead: Display.hold, nothing names it
 lib_graphics/Display.ml:121: dead field: repl stored in Display.alloc_on, nothing live reads it
 lib_graphics/Display.ml:150: dead: Display.clip, nothing names it

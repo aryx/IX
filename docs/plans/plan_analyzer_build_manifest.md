@@ -562,8 +562,24 @@ file). Their last users read a build's manifests: dynamic.sh the
 program it builds (mini-analyze -facts prog.manifest, the same 121,072
 facts for mini-dc as by its mkfile), caps_types.sh the programs of MK
 (_mk/7) under the directories given, analysis_scale/measure.sh each of
-MK's programs, its own files -v's "a file given". kernel.sh stays:
-mini-9pi's kernel is linked by kernel.mk, no manifest. make generated
+MK's programs, its own files -v's "a file given". kernel.sh stayed for a
+day: mini-9pi's kernel then read by its mkfile (below).
+
+kernel.sh gone (2026-11-25; the author: "let's pass -map and retire
+kernel.sh too"): mini-9pi's kernel built by mini-mk links by mkkernel's
+$LD, mkconfig's, which writes its manifest already; the kernel is then
+one more program of the build, in all four analyses (oberon's and
+squeak's were already). make check's check-mix builds it after make ix,
+which does not. Its -bugs lines: kernel.sh's (the arm build's, by the
+mkfile's $UREG) all found again on the arm64 kernel, more of the same
+(Fault's order, the guard's crash its exceptions all said, Mmu's
+stack), paths project paths; kernels/9pi/syscalls/arm64 a wide_dir of
+bugs/intwidth.dl, as lib_machine/pi4 (its Ureg's 0xffffffff, arm64's
+alone). -v on tiny_check.sh and ix_check.sh: the directory each makes
+(its answer in it, no separate file), what it reads, its removal
+("would be nice to show it by default ... it could be with a -v flag");
+mini-analyze -v says its own (a merge's runs, dune's manifests, dune's
+build directory kept between runs). make generated
 gone too ("is it still needed?"): dune build makes the lexers and
 parsers, and mini-analyze is dune's; its warning says dune build.
 

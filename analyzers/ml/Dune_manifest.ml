@@ -273,13 +273,18 @@ let ask (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; ..
  * it (make test's analyses at once), one of this run's, cleaned after *)
 let with_build (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
     (f : string -> 'a) : 'a =
-  match f (build_dir caps) with
+  let kept = build_dir caps in
+  Logs.info (fun m -> m "dune's build directory %s, kept for the next run" kept);
+  match f kept with
   | x -> x
   | exception Locked ->
       let b =
         Filename.concat (Filename.get_temp_dir_name ())
           (Printf.sprintf "mini-analyze-dune-%d" (Unix.getpid ())) in
-      let clean () = try ignore (ask caps [ "clean"; "--build-dir"; b ]) with _ -> () in
+      Logs.info (fun m -> m "%s held by another dune: %s instead, removed after" kept b);
+      let clean () =
+        (try ignore (ask caps [ "clean"; "--build-dir"; b ]) with _ -> ());
+        Logs.info (fun m -> m "removed %s" b) in
       (match f b with
        | x -> clean (); x
        | exception e -> clean (); raise e)
@@ -301,6 +306,7 @@ let write (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; 
     Filename.concat (Filename.get_temp_dir_name ())
       (Printf.sprintf "mini-analyze-manifests-%d" (Unix.getpid ())) in
   if not (CapSys.file_exists caps d) then FS.mkdir caps d 0o755;
+  Logs.info (fun m -> m "made %s: dune's programs' manifests, for the runs" d);
   let files =
     List.map (fun ((exe, m) : string * M.manifest) ->
         let f =
@@ -311,7 +317,8 @@ let write (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; 
       ms in
   let gone () =
     List.iter (fun ((_, f) : string * string) -> FS.remove_any caps f) files;
-    FS.remove_any caps d in
+    FS.remove_any caps d;
+    Logs.info (fun m -> m "removed %s" d) in
   (root, files, gone)
 
 (* (a tests' directory: tests/, KFS_tests/; their programs are not the

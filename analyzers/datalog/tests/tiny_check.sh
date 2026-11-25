@@ -22,7 +22,8 @@
 # out-file, the reports on the standard output. Seconds.
 # (old, before the manifests: a table of the programs, each one's main
 # file, its platform's flags, -L, -own, -I's, its runs merged here)
-# usage: analyzers/datalog/tests/tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]
+# usage: analyzers/datalog/tests/tiny_check.sh [-v] -caps|-dead|-bugs|-exn [out-file|-check]
+#   -v: the directories made and removed (mini-analyze -v: its own)
 #   (dune build first)
 # ANALYZE: the analyzer, if not dune's.
 cd "$(dirname "$0")/../../.."
@@ -30,14 +31,16 @@ ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
 export LC_ALL=C
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
+verbose=; [ "${1:-}" = -v ] && { verbose=1; shift; }
 flag=$1; out=$2; check=; show=
 case $flag in
   -caps|-bugs|-dead|-exn) expected=analyzers/datalog/tests/${flag#-}_tiny.txt;;
-  *) echo "usage: tiny_check.sh -caps|-dead|-bugs|-exn [out-file|-check]"; exit 2;;
+  *) echo "usage: tiny_check.sh [-v] -caps|-dead|-bugs|-exn [out-file|-check]"; exit 2;;
 esac
-if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
-if [ -z "$out" ]; then show=1; out=$(mktemp); fi
-W=$(mktemp -d); trap 'rm -rf $W' EXIT
+W=$(mktemp -d); trap 'rm -rf $W; [ -n "$verbose" ] && echo "tiny_check.sh: removed $W" >&2' EXIT
+[ -n "$verbose" ] && echo "tiny_check.sh: made $W: t-IX's build (tix/), the answer" >&2
+if [ "$out" = -check ]; then check=1; out=$W/out; fi
+if [ -z "$out" ]; then show=1; out=$W/out; fi
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
 make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
@@ -47,10 +50,10 @@ $ANALYZE $flag -project tiny $W/tix/src tiny > $W/answer 2> $W/err ||
 # (the reports, not the programs' list under them)
 sed '/^[0-9]* reports, over the/,$d' $W/answer |
   if [ $flag = -exn ]; then exn_lines by; else cat; fi | sort -u > $out
-if [ -n "$show" ]; then cat $out; rm -f $out; exit 0; fi
+if [ -n "$show" ]; then cat $out; exit 0; fi
 if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0
 fi
 compare "mini-analyze $flag on tiny/'s programs" $out $expected /dev/null
 st=$?
-rm -f $out; exit $st
+exit $st

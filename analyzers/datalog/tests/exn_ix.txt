@@ -139,6 +139,10 @@ generators/yacc/mini-yacc: Main.ml: the toplevel may let Failure escape, raised 
 generators/yacc/mini-yacc: Main.ml: the toplevel may let Not_found escape, raised in Lalr:fun at line 139, Lalr.make, Output:fun at line 18
 kernels/9pi/devices/storage/user/fdisk/mini-fdisk: Fdisk.ml: the toplevel may let Failure escape, raised in Fdisk.main
 kernels/9pi/filesystems/user/dossrv/mini-dossrv: Dossrv.ml: the toplevel may let Failure escape, raised in Dossrv.main
+kernels/9pi/kernel8.img: Main.ml: the toplevel may let Errors.Error escape
+kernels/9pi/kernel8.img: Main.ml: the toplevel may let Failure escape, raised in Devarch:fun at line 88, Devcons.kbd_message, Devcons.name_of, Devdraw.close, Devdraw:fun at line 820, Devip.proto, Devmnt.dirs, wait, Devproc.name_of, Devroot.init, files, Devsys.name_of, arg, Emmc.bio_, Emmc.bio, Hid.typed, Ip.parse, Kchan.parent, Kdos.fat_of, Kfs.fs_of, Kfs.failing, find, Memfont.default, go, Proc.with_qlock, Swconsole.putbyte
+kernels/9pi/kernel8.img: Main.ml: the toplevel may let Not_found escape, raised in go, Devmnt.dirs, wait, Devroot:fun at line 71, Fault.make, Kdos:fun at line 128, Kdos:fun at line 89, Kfs.failing, bytes, Proc.with_qlock, Tcp.listen
+kernels/9pi/kernel8.img: Main.ml: the toplevel may let Queue.Empty escape, raised in Devmnt.dirs, wait, Kfs.failing, Proc.with_qlock
 kernels/9pi/tests/hello/hello: Hello.ml: the toplevel may let Failure escape, raised in init
 kernels/9pi/tests/hog/hog: Hog.ml: the toplevel may let Failure escape, raised in init
 kernels/oberon/kernel8.img: Edit.ml: the toplevel may let Failure escape, raised in MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, after

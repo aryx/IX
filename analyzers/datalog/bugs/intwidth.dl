@@ -48,6 +48,8 @@
 % 1977) is what the second step does.
 
 wide_dir('kernels/lib_machine/pi4').
+% (mini-9pi's arm64 registers, its arm build's syscalls/arm instead)
+wide_dir('kernels/9pi/syscalls/arm64').
 wide_dir(raspberry).
 wide_dir(machine).
 wide_unit(U) :- unit_dir(U, D), wide_dir(D).

@@ -33,8 +33,9 @@
  *   table to keep;
  * - one command, from anywhere, its answer the checks' (no filtering
  *   before or after it in a script).
- * Left: mini-9pi's kernel, linked by kernel.mk, no manifest (kernel.sh
- * reads its mkfile); tiny-cc's C programs not read. *)
+ * mini-9pi's kernel too, since (mkkernel's link writes its manifest;
+ * kernel.sh, which read its mkfile, gone). Left: tiny-cc's C programs
+ * not read. *)
 
 (* the directories given: the manifests under each, every one, or with
  * none the executables dune builds under it, each named by its path from

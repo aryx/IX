@@ -250,14 +250,22 @@ kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:82: evalorder: operands at 82:17 and 
 kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:83: evalorder: operands at 83:17 and 83:32, both with an effect: their order the compiler's
 kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:92: evalorder: operands at 92:24 and 92:32, both with an effect: their order the compiler's
 kernels/9pi/init/Main.ml:167: evalorder: operands at 167:41 and 167:73, both with an effect: their order the compiler's
-kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, the handler raising Failure
+kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, the handler raising Errors.Error or Failure or Not_found or Queue.Empty
 kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:21: stack: place calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memdraw/Memdraw.ml:196: layout: in the column of the if's branch above, not in it: run whatever the test
 kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.ml:25: unused: in Memgeneral.general, grey is never read (_grey if meant)
 kernels/9pi/lib_graphics/lib_memlayer/Memlayer.ml:50: stack: front calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:79: unused: in pairs, inside is never read (_inside if meant)
-kernels/9pi/memory/Fault.ml:181: order: in Fault.unkeep_all, a table's order reaches the output at memory/Fault.ml:181
+kernels/9pi/memory/Fault.ml:181: order: in Fault.unkeep_all, a table's order reaches the output at kernels/9pi/memory/Fault.ml:181
+kernels/9pi/memory/Fault.ml:260: order: in Fault.text, a table's order reaches the output at kernels/9pi/memory/Fault.ml:260
+kernels/9pi/memory/Fault.ml:283: order: in Fault.dup, a table's order reaches the output at kernels/9pi/memory/Fault.ml:284
+kernels/9pi/memory/Fault.ml:287: order: in Fault.dup, a table's order reaches the output at kernels/9pi/memory/Fault.ml:287
+kernels/9pi/memory/Fault.ml:293: order: in Fault.dup, a table's order reaches the output at kernels/9pi/memory/Fault.ml:293
+kernels/9pi/memory/Fault.ml:302: order: in Fault.dup, a table's order reaches the output at kernels/9pi/memory/Fault.ml:302
+kernels/9pi/memory/Fault.ml:313: order: in Fault.shrink, a table's order reaches the output at kernels/9pi/memory/Fault.ml:314
+kernels/9pi/memory/Fault.ml:321: order: in Fault.detach, a table's order reaches the output at kernels/9pi/memory/Fault.ml:321
+kernels/9pi/memory/Fault.ml:331: order: in Fault.free_range, a table's order reaches the output at kernels/9pi/memory/Fault.ml:332
 kernels/9pi/network/Etherusb.ml:108: evalorder: operands at 108:8 and 108:17, both with an effect: their order the compiler's
 kernels/9pi/network/Etherusb.ml:49: int31: in Etherusb.rr, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/processes/Exec.ml:27: int31: in Exec.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
@@ -265,6 +273,7 @@ kernels/9pi/syscalls/Systab.ml:60: evalorder: operands at 60:30 and 60:38, both 
 kernels/9pi/syscalls/Systab.ml:62: evalorder: operands at 62:38 and 62:52, both with an effect: their order the compiler's
 kernels/9pi/syscalls/Usermem.ml:29: stack: go calls itself in a try's handler: no tail call by mini-ml
 kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+kernels/lib_machine/Mmu.ml:177: stack: table calls itself, not a tail call, over a list
 kernels/oberon/Main.ml:126: evalorder: operands at 126:27 and 127:12, both with an effect: their order the compiler's
 kernels/oberon/display/MenuViewers.ml:181: evalorder: operands at 181:16 and 181:31, both with an effect: their order the compiler's
 kernels/oberon/system/System.ml:27: evalorder: operands at 27:19 and 27:51, both with an effect: their order the compiler's

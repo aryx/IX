@@ -209,6 +209,7 @@ let merged_runs (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
     Filename.concat (Filename.get_temp_dir_name ())
       (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
   FS.mkdir caps w 0o755;
+  Logs.info (fun m -> m "made %s: the runs' reports and summaries" w);
   let runs = runs_of f w mains in
   run_all caps f w runs;
   let failed = List.filter (fun (r : run) -> not r.ok) runs in
@@ -234,5 +235,6 @@ let merged_runs (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
         List.iter (fun x -> FS.remove_any caps (file_of w r.name x)) [ ".out"; ".dl" ])
       runs;
     FS.remove_any caps w;
+    Logs.info (fun m -> m "removed %s" w);
     0
   end

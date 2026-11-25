@@ -1,8 +1,8 @@
-% mini-analyze -r $IX/analyzers/datalog calc.c
+% mini-analyze calc.c
 calc.c:16: in apply, through o->run: square, twice
 bug? calc.c:25: in main, free may be given a string (line 22), not the heap's
 5 functions, 1 calls through a pointer, 0 of them reaching nothing; 1 bugs?
-% mini-analyze -r $IX/analyzers/datalog -dead calc.c
+% mini-analyze -dead calc.c
 dead field: name stored in _init, nothing live reads it
 calc.c:9: dead: negate, nothing names it
 1 functions dead (1 nothing names), 2 only through a pointer; 0 globals, 1 fields, 0 constructors, 0 statements
@@ -22,11 +22,11 @@ analyzers/examples/Log.ml:2: Log.shout: no capability, needs Cap.stdout (Stdlib.
 % mini-analyze -exn analyzers/examples/Main.exe
 Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3 (Main.first)
 Main.ml: the toplevel may let Invalid_argument escape, raised at String.ml:153 (String.map)
-% mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core Log.ml Main.ml
+% mini-analyze Log.ml Main.ml
 Main.ml:11: in Main:fun at line 11, through h: Main:fun at line 6, Main:fun at line 7
 never reached: Log.unused (Log.ml:3)
 21 units (2 the program's), 1 calls through a variable, 1 functions never reached
-% mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -dead Log.ml Main.ml
+% mini-analyze -dead Log.ml Main.ml
 Log.ml:3: dead: Log.unused, nothing names it
 1 functions dead (1 nothing names), 0 only through a pointer; 0 globals, 0 fields, 0 constructors, 0 statements
 % mini-analyze -facts calc.c > calc.dl

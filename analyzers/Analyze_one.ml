@@ -80,6 +80,10 @@ let start_facts (fact : string -> C.Facts.arg list -> unit) (start : string)
       List.iter (fun (f : string) -> fact "unit_file" [ sym u; sym f ]) fs)
     Ml_front.homes
 
+(* the standard library when none is found: the analyzer's tree's *)
+let lib_core (f : F.t) : string =
+  if f.home = "." then "lib_core" else Filename.concat f.home "lib_core"
+
 let path (s : string) : Fpath.t =
   match FS.path s with Ok p -> p | Error m -> failwith m
 
@@ -308,8 +312,8 @@ let run (caps : < F.caps; .. >) (f : F.t) : int =
     f.lib <-
       (match List.find_opt (fun x -> Filename.check_suffix x ".ml") f.files with
        | Some x -> (
-           match Module_finder.library caps x with Some d -> d | None -> "lib_core")
-       | None -> "lib_core");
+           match Module_finder.library caps x with Some d -> d | None -> lib_core f)
+       | None -> lib_core f);
   (* (-exn's: a recursive call in its caller's context, else
    * List.fold_left's callers are one: exceptions.dl's design note) *)
   if f.context = "" then

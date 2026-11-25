@@ -28,16 +28,16 @@ mini-datalog() { "$DATALOG" "$@"; }
 # Each command is printed as the page writes it, $IX unexpanded, then run.
 t() { echo "% $1"; eval "$1" 2>&1; }
 {
-  t 'mini-analyze -r $IX/analyzers/datalog calc.c'
-  t 'mini-analyze -r $IX/analyzers/datalog -dead calc.c'
+  t 'mini-analyze calc.c'
+  t 'mini-analyze -dead calc.c'
   cd $IX
   t 'mini-analyze analyzers/examples/Main.exe'
   t 'mini-analyze -dead analyzers/examples/Main.exe'
   t 'mini-analyze -caps analyzers/examples/Main.exe'
   t 'mini-analyze -exn analyzers/examples/Main.exe'
   cd $W
-  t 'mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core Log.ml Main.ml'
-  t 'mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -dead Log.ml Main.ml'
+  t 'mini-analyze Log.ml Main.ml'
+  t 'mini-analyze -dead Log.ml Main.ml'
   t 'mini-analyze -facts calc.c > calc.dl'
   t 'P=$IX/analyzers/datalog/points_to'
   t 'mini-datalog -q '\''reaches(main, F)'\'' $P/instructions.dl $P/contexts.dl $P/insensitive.dl calc.dl graph.dl 2> /dev/null'

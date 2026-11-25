@@ -28,7 +28,8 @@ let linked (f : F.t) (what : string) (p : Tiny_manifest.program) : unit =
   (* (a link with no standard library of the project's, an archive's, is
    * on OCaml's, lib_core's for the analyzer: dune's tiny-machine-window;
    * not the nearest to its files, TinyLibCore) *)
-  if f.lib = "" then f.lib <- (match p.library with Some d -> d | None -> "lib_core");
+  if f.lib = "" then
+    f.lib <- (match p.library with Some d -> d | None -> Analyze_one.lib_core f);
   if f.program = "" then f.program <- p.name;
   List.iter (fun (u, file) -> Hashtbl.replace Ml_front.linked u file) p.units;
   (* (-dead on the program alone: its components' dead code, not its

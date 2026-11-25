@@ -8,6 +8,10 @@
 (* a file's unit: Bugs.ml, Bugs *)
 val unit_of_file : string -> string
 
+(* the standard library when none is found: the analyzer's tree's
+ * lib_core (Analyze_flags.home) *)
+val lib_core : Analyze_flags.t -> string
+
 (* the program analyzed, its report printed; 1 when a file could not be
  * read. No -L: the standard library nearest the first ML file. *)
 val run : < Analyze_flags.caps; .. > -> Analyze_flags.t -> int

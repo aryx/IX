@@ -34,8 +34,11 @@ type t = {
   (* the command line's flags, not its programs nor files: the runs of a
    * merge given them again *)
   mutable args : string list;
-  mutable rules : string;  (* -r *)
-  mutable lib : string;  (* -L, "" none: found *)
+  (* ix's tree mini-analyze is from, its executable's: its rules and its
+   * lib_core when not said; "." when it is the current directory *)
+  mutable home : string;
+  mutable rules : string;  (* -r, else home's analyzers/datalog *)
+  mutable lib : string;  (* -L, "" none: found, else home's lib_core *)
   mutable incs : string list;  (* -I *)
   mutable defs : string list;  (* -D *)
   mutable roots : string list;  (* -root *)

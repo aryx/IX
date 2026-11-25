@@ -476,7 +476,10 @@ scripts into mini-analyze, Datalog or the manifest generation.
   to capabilities, so -caps reads tiny-kernel's programs from their
   manifests. Gone: O.
 - **E.** mini-analyze finding its rules from its own path, from any
-  directory.
+  directory. Done (2026-11-25): its tree the first directory above its
+  executable with analyzers/datalog (Sys.executable_name, bin/'s link
+  followed), its rules and its lib_core (the library of none found)
+  that tree's; no -r nor -L in the examples.
 
 ### The ledger
 
@@ -495,7 +498,9 @@ ml/, report/, manifest/'s .ml.
 | D, tiny-kernel's capabilities | 3152ebc6 | 69 | 95 | 92 | 124 | 37 | 4,786 |
 | the library mode's test, toy programs | 52eb5894 | 56 | 95 | 92 | 124 | 37 | 4,804 |
 | Analyze.ml split, 80 columns | c5c0ae77 | 56 | 95 | 92 | 124 | 37 | 4,940 |
-| dune's executables by dune rules @dir/all | the next | 56 | 95 | 92 | 124 | 37 | 4,933 |
+| dune's executables by dune rules @dir/all | 9e216fac | 56 | 95 | 92 | 124 | 37 | 4,933 |
+| a toplevel's global read (dead.dl) | e01478d6 | 56 | 95 | 92 | 124 | 37 | 4,940 |
+| E, rules and lib_core from mini-analyze's tree | the next | 56 | 95 | 92 | 124 | 37 | 4,974 |
 
 (D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
 420 to 488.)

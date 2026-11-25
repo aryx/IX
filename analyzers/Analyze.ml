@@ -24,6 +24,7 @@ platform's, no -L, -I, -own to give; several, each run and merged:
 A library's file and its programs (or the file alone: those naming it):
   mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest
 Or by its files, the library found or given (-L), the rest found too.
+The rules and lib_core are mini-analyze's tree's: it runs from anywhere.
 Flags:|}
 
 let options (caps : < Cap.open_in; .. >) (f : F.t) :
@@ -39,7 +40,8 @@ let options (caps : < Cap.open_in; .. >) (f : F.t) :
       ("-bugs", set Bugs, " the bugs an ML program may have");
       ("-sources", str (fun d -> f.sources <- d),
        " dir: a manifest's paths read there, the build having run in a copy");
-      ("-r", str (fun d -> f.rules <- d), " dir: the rules (analyzers/datalog)");
+      ("-r", str (fun d -> f.rules <- d),
+       " dir: the rules (mini-analyze's tree's analyzers/datalog)");
       ("-L", str (fun d -> f.lib <- d),
        " dir: the standard library (found if not said)");
       ("-I", str (fun d -> f.incs <- f.incs @ [ d ]),
@@ -85,10 +87,25 @@ let anon (caps : < Cap.readdir; .. >) (f : F.t) (a : string) : unit =
   else if Analyze_merge.directory caps a then f.dirs <- f.dirs @ [ a ]
   else f.files <- f.files @ [ a ]
 
+(* ix's tree, the first directory above mini-analyze's executable with
+ * analyzers/datalog (Sys.executable_name the real path, not bin/'s link:
+ * _build/default/analyzers/Main.exe's), so that it runs from anywhere;
+ * "." when it is the current directory, or with none found *)
+let home (caps : < Cap.readdir; .. >) : string =
+  let rules (d : string) : bool =
+    CapSys.file_exists caps (Filename.concat d "analyzers/datalog/dead.dl") in
+  let rec up (d : string) : string option =
+    if rules d then Some d
+    else if Filename.dirname d = d then None
+    else up (Filename.dirname d) in
+  match up (Filename.dirname Sys.executable_name) with
+  | Some d when d <> FS.getcwd caps () -> d
+  | _ -> "."
+
 let main (caps : < F.caps; .. >) (argv : string array) : int =
   let f : F.t =
     { analysis = Calls; files = []; manifests = []; exes = []; dirs = [];
-      names = Hashtbl.create 64; sources = ""; args = []; rules = "analyzers/datalog";
+      names = Hashtbl.create 64; sources = ""; args = []; home = "."; rules = "";
       lib = ""; incs = []; defs = []; roots = []; start = ""; context = "";
       library = false; summary = ""; program = ""; facts = false; flow = false;
       answers = false; fingerprint = false } in
@@ -110,6 +127,8 @@ let main (caps : < F.caps; .. >) (argv : string array) : int =
   | () ->
       f.args <-
         List.filteri (fun i _ -> i > 0 && not (List.mem i !taken)) (Array.to_list argv);
+      f.home <- home caps;
+      if f.rules = "" then f.rules <- Filename.concat f.home "analyzers/datalog";
       (* (not a run of a merge's, nor the facts alone) *)
       let first = f.summary = "" && not f.facts in
       let one_ml =

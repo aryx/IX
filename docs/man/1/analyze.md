@@ -152,14 +152,17 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
 
 **-r** *rules*
 :    The directory of the `.dl` files and `points_to/`; by default
-     `analyzers/datalog` of the current directory.
+     `analyzers/datalog` of the ix tree mini-analyze was built in, the
+     first directory above its executable that has it (`bin/`'s link
+     followed), so that it runs from anywhere.
 
 **-L** *lib*
 :    The standard library's directory. Without **-L**, the one nearest
      the first ML *file* in the project, then the shallowest:
      `tiny/TinyLibCore` for `tiny/`'s programs, `lib_core` for the rest
      of ix (a directory with a `Stdlib`, or the one above it with a
-     `units.txt`); outside a project, `lib_core`. For lib_core,
+     `units.txt`); outside a project, or in a link with none of the
+     project's, the `lib_core` of mini-analyze's tree. For lib_core,
      *lib*`/stdlib`'s Stdlib must be there. Without its `units.txt`
      (run elsewhere than ix's root), a warning, and an ML program's units find no
      Stdlib. Or a library in one directory, its own `Stdlib.mli` there
@@ -273,8 +276,9 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
      derived; **-debug** also each relation's size.
 
 # EXAMPLES
-In ix's root, `bin/` first on the path; elsewhere **-r** and **-L**
-say where ix is (`IX`), for files given without their build. Each report's last line, its counts, is left
+`bin/` first on the path; the rules and lib_core are found from
+mini-analyze's executable, anywhere (`IX` below: ix's tree, for
+mini-datalog's rules). Each report's last line, its counts, is left
 out here, and long lines are cut. The files are in
 `analyzers/examples/`, and its `run.sh` runs these commands against
 the reports in full (`expected.out`).
@@ -312,11 +316,11 @@ main(void)
 ```
 
 ```
-% mini-analyze -r $IX/analyzers/datalog calc.c
+% mini-analyze calc.c
 calc.c:16: in apply, through o->run: square, twice
 bug? calc.c:25: in main, free may be given a string (line 22),
   not the heap's
-% mini-analyze -r $IX/analyzers/datalog -dead calc.c
+% mini-analyze -dead calc.c
 dead field: name stored in _init, nothing live reads it
 calc.c:9: dead: negate, nothing names it
 ```
@@ -369,14 +373,14 @@ Main.ml: the toplevel may let Invalid_argument escape, raised at
   String.ml:153 (String.map)
 ```
 
-Or without a build, anywhere, by its files, the library by **-L**:
+Or without a build, anywhere, by its files:
 
 ```
-% mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core Log.ml Main.ml
+% mini-analyze Log.ml Main.ml
 Main.ml:11: in Main:fun at line 11, through h: Main:fun at line 6,
   Main:fun at line 7
 never reached: Log.unused (Log.ml:3)
-% mini-analyze ... -dead Log.ml Main.ml
+% mini-analyze -dead Log.ml Main.ml
 Log.ml:3: dead: Log.unused, nothing names it
 ```
 

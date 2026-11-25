@@ -7,6 +7,16 @@
 # commit and which takes two minutes (docs/testing.md). Below them are
 # the targets that check ix built by ix (make test-ix...) and the one
 # that tests everything (make test-all).
+#
+# ix builds itself in three stages, as a compiler does:
+#
+#   stage 0  make host  ix's tools (mini-ml, mini-ld...), by OCaml and
+#                       dune, in bin/
+#   stage 1  make       ix, by stage 0's tools, in _mk/7
+#   stage 2  make self  ix, by stage 1's tools in its own systems, t-IX
+#                       in tiny-kernel and m-IX in mini-9pi: each file
+#                       the same as stage 1's, byte for byte (make
+#                       test-ix-fixpoint: stage 2 on the host)
 
 ###############################################################################
 # Main targets
@@ -23,14 +33,16 @@ export MINI = mini-
 # first build among them (bin/): a convenience, fast, with recent
 # OCaml compilers and OCaml 5's domains for some programs, ix built by
 # ix being the way to build it.
+# stage 1
 all: host
 	$(IXPATH) mini-mk
+# stage 0
 host:
 	dune build
 # tix builds t-IX alone (tiny/) and mix builds m-IX (the rest), as
 # test-tix and test-mix do. When nothing changed, they take 0.6 s and
-# 3 s where make takes 4 s, because dune checks every rule of what it
-# builds, each time.
+# 3 s where make host takes 4 s, because dune checks every rule of what
+# it builds, each time.
 tix:
 	dune build ./tiny
 MIX_DIRS = $(filter-out tiny/ docs/ bin/ _%, $(wildcard */))
@@ -311,6 +323,7 @@ kernels-ix: ix ix-arm
 #   in a few minutes.
 test-ix: host
 	true | ./mkfiles/check.sh
+# stage 2 on the host
 test-ix-fixpoint: host
 	./mkfiles/fixpoint.sh
 test-ix-arm: host
@@ -320,6 +333,7 @@ test-ix-fixpoint-arm: host
 test-ix-kernels: host
 	./tests/kernels_ix.sh
 
+# stage 2
 self self-quick:
 	$(MAKE) --no-print-directory -j2 $@-tix $@-mix
 self-tix self-quick-tix: host

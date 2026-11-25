@@ -2,7 +2,14 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Build and test t-IX from tiny/ itself, as ../Makefile's tix, test-tix
-# and self-tix targets do from the top:
+# and self-tix targets do from the top. t-IX builds itself in three
+# stages, as a compiler does:
+#
+#   stage 0  make host  the tiny tools (tiny-ml, tiny-ld...), by OCaml
+#                       and dune, in ../bin
+#   stage 1  make       t-IX, by stage 0's tools, here
+#   stage 2  make self  t-IX, by stage 1's tools on tiny-kernel, from
+#                       /src: the same image as stage 1's, byte for byte
 #
 #   make         builds t-IX with its own tools, here, beside the sources:
 #                make host, then tiny-build TINY=tiny- over the Buildfile,
@@ -53,14 +60,17 @@ export PATH := $(abspath ../bin):$(PATH)
 BUILD = tiny-build TINY=tiny- -j 32
 
 # TinyKernel/'s targets, run after dune has built the tools they use
+# (self: stage 2)
 KERNEL_TARGETS = run run-window self self-quick
 
+# stage 1
 all: host TinyKernel/kfont.s
 	$(BUILD)
 # The font's pixels, which the Buildfile takes as they are (in /src
 # under t-IX): TinyKernel/Makefile's rule
 TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
 	$(MAKE) -C TinyKernel kfont.s
+# stage 0
 host:
 	dune build
 test:

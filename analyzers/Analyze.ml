@@ -43,8 +43,8 @@ those no other program of the build links (a library's: -dead its file):
 -dead on one .ml file some other names, a library's or a part of a program's
 (tiny/TinyLibGUI.ml): each program that reaches it, run by mini-analyze
 itself, merged (datalog/dead_all.dl), what is said of the file. Its programs
-the manifests given that link it, each read as linked (-sources found);
-without manifests, those whose files name it (Caller_finder), from their main:
+the programs given that link it, manifests or dune's .exe, each read as
+linked (-sources found); with none, those whose files name it (Caller_finder):
   mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest
   tiny/TinyLibGUI.ml:472: never built: Disc.1, matched in TinyLibGUI.area_of
 -caps: instead, whether ML's own functions hold the capabilities they need
@@ -497,25 +497,62 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     with
     | () -> false
     | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); true in
+  (* (dune's .exe given to runs: their manifests, by dune asked once, a
+   * file each, the runs' to read; removed after, gone) *)
+  let dune_runs () : (string * string * string list) list * (unit -> unit) =
+    if !exes = [] then ([], fun () -> ())
+    else begin
+      let root, ms = Dune_manifest.run caps (List.rev !exes) in
+      let d = Filename.concat (Filename.get_temp_dir_name ())
+          (Printf.sprintf "mini-analyze-manifests-%d" (Unix.getpid ())) in
+      if not (CapSys.file_exists caps d) then FS.mkdir caps d 0o755;
+      let root = if root = FS.getcwd caps () then "." else root in
+      let runs =
+        List.map (fun ((exe, m) : string * Tiny_manifest.manifest) ->
+            let name =
+              match Hashtbl.find_opt named exe with
+              | Some n -> n
+              | None -> Filename.chop_suffix exe ".exe" in
+            let f = Filename.concat d (String.map (fun c -> if c = '/' then '_' else c) exe ^ ".manifest") in
+            FS.write caps (Fpath.v f) (Tiny_manifest.to_string m);
+            (name, f, [ "-sources"; root ]))
+          ms in
+      let gone () =
+        List.iter (fun ((_, f, _) : string * string * string list) -> FS.remove_any caps f) runs;
+        FS.remove_any caps d in
+      (runs, gone)
+    end in
   match Arg.parse_argv argv options anon usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () when !summary_file = "" && expand_dirs () -> 1
-  (* (-dead on one .ml file and manifests: the file a library's or a
-   * part of a program's, its programs the manifests that link it, each
-   * run as linked, merged; its -sources found if not given) *)
+  (* (-dead on one .ml file and programs, manifests or dune's .exe: the
+   * file a library's or a part of a program's, its programs those that
+   * link it, each run as linked, merged; its -sources found if not
+   * given) *)
   | () when (match !files with [ f ] -> !dead && Filename.check_suffix f ".ml" | _ -> false)
-            && !manifests <> [] && !summary_file = "" && not !only -> (
+            && (!manifests <> [] || !exes <> []) && !summary_file = "" && not !only -> (
       let file = List.hd !files in
-      let given = if !sources = "" then None else Some !sources in
+      let links (given : string option) (m : string) : string option =
+        Tiny_manifest.linking m (Tiny_manifest.of_string (FS.read caps (Fpath.v m))) given file in
       match
-        List.filter_map (fun (m : string) ->
-            Option.map (fun (root : string) -> ("", m, [ "-sources"; root ]))
-              (Tiny_manifest.linking m (Tiny_manifest.of_string (FS.read caps (Fpath.v m))) given file))
-          (List.rev !manifests)
+        let given = if !sources = "" then None else Some !sources in
+        let dune, gone = dune_runs () in
+        let mains =
+          List.filter_map (fun (m : string) ->
+              Option.map (fun (root : string) -> ("", m, [ "-sources"; root ])) (links given m))
+            (List.rev !manifests)
+          @ List.filter (fun ((_, m, extra) : string * string * string list) ->
+              links (Some (List.nth extra 1)) m <> None) dune in
+        let st =
+          if mains = [] then begin
+            Console.eprint caps (Printf.sprintf "mini-analyze: no program given links %s\n" file); 1
+          end
+          else merged_runs caps (List.tl (Array.to_list argv)) !rules "-dead" (Some file) mains in
+        gone ();
+        st
       with
-      | [] -> Console.eprint caps (Printf.sprintf "mini-analyze: no manifest given links %s\n" file); 1
-      | mains -> merged_runs caps (List.tl (Array.to_list argv)) !rules "-dead" (Some file) mains
+      | st -> st
       | exception (Failure m | Sys_error m) -> Console.eprint caps (m ^ "\n"); 1)
   (* (several programs, manifests or dune's .exe: each run, merged;
    * dune asked once, each .exe's manifest a file of its own) *)
@@ -526,24 +563,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         else if !ambient then "-caps" else "" in
       try
         if analysis = "" then failwith "several programs: -dead, -exn, -bugs or -caps";
-        let dune =
-          if !exes = [] then []
-          else begin
-            let root, ms = Dune_manifest.run caps (List.rev !exes) in
-            let d = Filename.concat (Filename.get_temp_dir_name ())
-                (Printf.sprintf "mini-analyze-manifests-%d" (Unix.getpid ())) in
-            if not (CapSys.file_exists caps d) then FS.mkdir caps d 0o755;
-            let root = if root = FS.getcwd caps () then "." else root in
-            List.map (fun ((exe, m) : string * Tiny_manifest.manifest) ->
-                let name =
-                  match Hashtbl.find_opt named exe with
-                  | Some n -> n
-                  | None -> Filename.chop_suffix exe ".exe" in
-                let f = Filename.concat d (String.map (fun c -> if c = '/' then '_' else c) exe ^ ".manifest") in
-                FS.write caps (Fpath.v f) (Tiny_manifest.to_string m);
-                (name, f, [ "-sources"; root ]))
-              ms
-          end in
+        let dune, gone = dune_runs () in
         (* (-sources: the shallowest manifest's directory's, a deeper
          * one's below it as the manifest is below that one: tiny/
          * TinyKernel for _make/src/TinyKernel's kernel.img.manifest) *)
@@ -576,9 +596,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                  ((match Hashtbl.find_opt named m with Some n -> n | None -> ""), m, sources_of m))
                 ms
              @ dune) in
-        (* (dune's manifests, files of this run's) *)
-        List.iter (fun ((_, f, _) : string * string * string list) -> FS.remove_any caps f) dune;
-        if dune <> [] then FS.remove_any caps (Filename.dirname (match dune with (_, f, _) :: _ -> f | [] -> "."));
+        gone ();
         st
       with Failure m | Sys_error m -> Console.eprint caps (m ^ "\n"); 1)
   | () when read_manifests () -> 1

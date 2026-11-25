@@ -1,0 +1,5 @@
+; CallersLib's two programs, built, for mini-analyze -dead CallersLib.ml
+; by their links (analyzers/tests/run.sh); CallersNot left out
+(executables
+ (names CallersA CallersB)
+ (modules CallersLib CallersA CallersB))

@@ -57,9 +57,10 @@ of one program reports on its own components, the files no other
 program of the build links. Several programs, or a directory of them,
 are each run and merged: **-dead** keeps what every program that has
 the file says (`dead_all.dl`), the others every program's reports
-(`said_all.dl`). A library's file and manifests,
+(`said_all.dl`). A library's file and programs, manifests or `.exe`,
 `mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest`,
-say its dead code over the programs that link it. Without a build, the
+say its dead code over those that link it; the file alone, over the
+programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build, the
 *files* given are the program (**-L**, **-I**, **-own** below).
 
 **-dead**

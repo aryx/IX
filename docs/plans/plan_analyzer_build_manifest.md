@@ -492,7 +492,8 @@ ml/, report/, manifest/'s .ml.
 | C, interface alone; tiny-machine | 456676db | 197 | 95 | 100 | 124 | 37 | 4,632 |
 | C, the SDL programs; tiny-mkfs | 5ea071c0 | 190 | 95 | 100 | 124 | 37 | 4,642 |
 | B, directories; one call | a00edaaf | 76 | 95 | 92 | 124 | 37 | 4,786 |
-| D, tiny-kernel's capabilities | the next | 69 | 95 | 92 | 124 | 37 | 4,786 |
+| D, tiny-kernel's capabilities | 3152ebc6 | 69 | 95 | 92 | 124 | 37 | 4,786 |
+| the library mode's test, toy programs | the next | 56 | 95 | 92 | 124 | 37 | 4,804 |
 
 (D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
 420 to 488.)
@@ -614,3 +615,13 @@ capability (names, entry, waits, said, main), the tracer's and
 debugger's own u_trace, tiny-kernel's stubs (no signal, no environment,
 an unbuffered stderr); unix's seed, box, raw_console stubs not said, no
 program reading them on unix's TinyLibSystem. -caps 10 s.
+
+The library mode's test out of tiny_check.sh (2026-11-25): it compared
+mini-analyze -dead tiny/TinyLibGUI.ml over t-IX's manifests with the
+merge's lines of the file, TinyLibGUI.ml the one tiny library with dead
+code, which the author is to remove (the author: "I'm gonna fix soon all
+those dead function, so we probably need an external test for this
+instead"). analyzers/tests/callers/ has it instead, its toy library and
+programs built by dune (callers/dune): -dead CallersLib.ml CallersA.exe
+CallersB.exe, the answer of CallersLib.ml alone (Caller_finder's). The
+library mode takes dune's .exe too, not tiny-ld's manifests alone.

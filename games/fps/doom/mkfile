@@ -16,7 +16,7 @@ MADE=`{mkdir -p $D}
 # (each library comes after the ones it names)
 # (the playground's apis, Audio, Audio3d and Ai, come with what they
 # stand on, as in ../../mkgames)
-LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
+LIBDIRS=lib_compression lib_graphics lib_playground/random lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 # (the folders of the modules; dune's comment says which module is in

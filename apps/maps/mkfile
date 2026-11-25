@@ -11,7 +11,7 @@ D=$B/apps/maps
 MADE=`{mkdir -p $D}
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # (each library comes after the ones it names)
-LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_gui \
+LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground/random lib_playground lib_gui \
  lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 # (the libraries come before lib_core, so that Cmd is lib_playground's,

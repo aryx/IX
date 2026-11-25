@@ -116,7 +116,7 @@ $D/procsml: $D/Procsml.start $D/Procsml.$O $STD $END
 # playground program: the draw device on mini-9pi, and on Linux ppm, no
 # window, a frame written to a file.
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
-LIBS=lib_crypto lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
+LIBS=lib_crypto lib_compression lib_graphics lib_playground/random lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 LIBA=${LIBS:%=$LIB/ml/%/lib.a}
 LIBI=${LIBS:%=-I $LIB/ml/%}

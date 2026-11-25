@@ -29,7 +29,7 @@ BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/$DIR$BESIDE
 MADE=`{mkdir -p $D}
 # (each after the ones it names)
-LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
+LIBDIRS=lib_compression lib_graphics lib_playground/random lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 S=$TOP/languages/scheme

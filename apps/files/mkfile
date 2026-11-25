@@ -9,7 +9,7 @@ TOP=../..
 D=$B/apps/files
 MADE=`{mkdir -p $D}
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
-LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_playground/platforms lib_playground/platforms/$PLATFORM
+LIBDIRS=lib_mime lib_compression lib_graphics lib_playground/random lib_playground lib_gui lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . -I $D $LIBI $STDI
 LIB=Folder Icons

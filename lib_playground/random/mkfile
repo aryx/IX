@@ -1,0 +1,16 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# lib_playground/random, a library of ix's tools (mkfiles/mklib):
+# Lehmer, the random numbers, a library of its own as dune's ix_random
+# is: lib_playground stands on it, and lib_terminal's Talk, which has no
+# use for the rest of the playground. It was one of lib_playground's
+# directories before, and mini-pascal and turbopascal compiled Lehmer
+# themselves (plan_simpler_builds.md, step 4).
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_playground/random
+DIRS=.
+NEEDS=
+UNITS=Lehmer
+<$TOP/mkfiles/mklib

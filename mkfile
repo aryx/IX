@@ -25,7 +25,7 @@ TOP=.
 # Linux's ppm, and on Plan 9 its draw device and a software one.)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
 #`
-LIBS1=lib_mime lib_code languages/dotnet/assembly lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground \
+LIBS1=lib_mime lib_code languages/dotnet/assembly lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground/random lib_playground \
  lib_playground/physics lib_playground/juice lib_gui lib_audio lib_playground/netcode lib_playground/ai \
  lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff

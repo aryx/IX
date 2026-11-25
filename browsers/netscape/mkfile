@@ -14,7 +14,7 @@ D=$B/browsers/netscape
 MADE=`{mkdir -p $D}
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # (each library comes after the ones it names)
-LIBDIRS=lib_mime lib_crypto lib_compression lib_networking lib_graphics lib_playground \
+LIBDIRS=lib_mime lib_crypto lib_compression lib_networking lib_graphics lib_playground/random lib_playground \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi \
  lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs

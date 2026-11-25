@@ -1,12 +1,12 @@
 # browsers/javascript as a library (mkfiles/mklib), which reads and runs
 # the language, for mini-netscape; and mini-node, the engine at a
-# prompt, linked with that library and with lib_playground's (Lehmer,
-# for Math.random's numbers)
+# prompt, linked with that library and with lib_playground/random
+# (Lehmer, for Math.random's numbers)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=browsers/javascript
 DIRS=values parsing eval opti library
-NEEDS=lib_playground
+NEEDS=lib_playground/random
 # (each unit comes before the ones that name it. Js_quicken and
 # Js_compile come after Js_eval, which they tell about themselves when
 # the program starts. Nobody names them, so a program links their
@@ -18,7 +18,7 @@ UNITS=Js_prelude Js_ast Per_domain Mini_opti Js_string Js_lexer Js_parse Js_coro
 DEPMORE=CLI Main
 <$TOP/mkfiles/mklib
 
-LIBDIRS=lib_playground
+LIBDIRS=lib_playground/random
 <$TOP/mkfiles/mklibs
 WHOLE=$D/Js_quicken.$O $D/Js_compile.$O
 all:V: $D/mini-node

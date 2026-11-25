@@ -43,12 +43,20 @@ val of_dune :
  * executables exes (tiny/TinyShell.exe, or _build/default/tiny/
  * TinyShell.exe), in a build directory of its own in the temporary
  * directory, one per project and kept (the next run 0.5 s, not 2.5 s;
- * not _build, which another dune may hold); of_dune's answer. Raises
- * Failure when dune fails (an executable it does not know). *)
+ * not _build, which another dune may hold); of_dune's answer, its root
+ * "." when it is the current directory. Raises Failure when dune fails
+ * (an executable it does not know). *)
 val run :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. > ->
   string list -> string * (string * Tiny_manifest.manifest) list
 
+(* [write caps exes]: run's manifests, each a file of a temporary
+ * directory, in tiny-ld's format, for the runs of mini-analyze a merge
+ * makes to read: the root, each executable with its file, and what
+ * removes them *)
+val write :
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. > ->
+  string list -> string * (string * string) list * (unit -> unit)
 
 (* [executables caps dirs]: the executables dune builds under dirs
  * (tiny), from the project's root: dune describe workspace's stanzas,

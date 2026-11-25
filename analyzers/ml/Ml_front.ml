@@ -255,9 +255,9 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   (* (each unit sees the program's directories, then the library's) *)
   let program_dirs = List.sort_uniq compare (List.map Fpath.parent paths) in
   (* (a unit in none of the directories given: the project's, its
-   * directory found by Unit_finder and then searched after the others,
+   * directory found by Module_finder and then searched after the others,
    * for what they do not have, its units the program's own) *)
-  let finder = Unit_finder.create caps (match paths with p :: _ -> Fpath.to_string p | [] -> ".") in
+  let finder = Module_finder.create caps (match paths with p :: _ -> Fpath.to_string p | [] -> ".") in
   let chosen = ref [] in
   let library = dirs in
   let dirs () = program_dirs @ !own_dirs @ library @ !chosen in
@@ -267,7 +267,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
   let mine (d : string) : bool =
     let is (x : Fpath.t) = FS.cleanname (Fpath.to_string x) = d in
     List.exists is !own_dirs
-    || (List.exists is !chosen && Unit_finder.own finder d)
+    || (List.exists is !chosen && Module_finder.own finder d)
     || (List.exists is program_dirs && not (List.exists is library)) in
   (* (the generated units said once each, not built) *)
   let not_built : (string, unit) Hashtbl.t = Hashtbl.create 4 in
@@ -297,7 +297,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
       (* (a unit the build makes from a .mll or .mly in the program's
        * directories: where dune put it, else said, never another
        * directory's of its name) *)
-      match List.find_map (fun (d : Fpath.t) -> Unit_finder.generated caps finder (Fpath.to_string d) name)
+      match List.find_map (fun (d : Fpath.t) -> Module_finder.generated caps finder (Fpath.to_string d) name)
               (program_dirs @ !own_dirs) with
       | Some (Some b) ->
           let d = Fpath.v b in
@@ -312,7 +312,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
           end;
           None
       | None ->
-        match Unit_finder.choose finder from name exts with
+        match Module_finder.choose finder from name exts with
         | None -> None
         | Some d ->
             let d = Fpath.v d in
@@ -345,7 +345,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
               if Hashtbl.mem local n || List.mem_assoc n builtins
                  || look f n [ ".mli"; ".ml" ] <> None then acc
               else n :: acc)
-            (Unit_finder.names text) [] in
+            (Module_finder.names text) [] in
         if missing <> [] then
           Logs.warn (fun l ->
               l "%s: its interface alone (it names %s, which has no file)" f
@@ -387,7 +387,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
               (look "" u [ ".mli" ]);
           b);
   let read (file : Fpath.t) (text : string) (mine : bool) =
-    Unit_finder.mentions finder text;
+    Module_finder.mentions finder text;
     match unit_ caps look file text with
     | Ok named -> List.iter (fun u -> Queue.add (u, Fpath.to_string file) todo) named
     | Error m -> if mine then errors := m :: !errors else unread := m :: !unread in
@@ -405,7 +405,7 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     if List.exists is !own_dirs then "-own"
     else if List.exists is program_dirs && not (List.exists is library) then "the program's directory"
     else if List.exists is library then "-L or -I"
-    else if Unit_finder.own finder d then "found in the project, the program's part"
+    else if Module_finder.own finder d then "found in the project, the program's part"
     else "found in the project, outside the program's part: a library" in
   while not !alone && not (Queue.is_empty todo) do
     let u, from = Queue.pop todo in

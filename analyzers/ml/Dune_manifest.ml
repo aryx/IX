@@ -285,10 +285,33 @@ let with_build (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.w
 
 let run (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
     (exes : string list) : string * (string * M.manifest) list =
-  with_build caps (fun (b : string) ->
-      let described = ask caps [ "describe"; "workspace"; "--build-dir"; b ] in
-      let ruled = ask caps ([ "rules"; "--build-dir"; b ] @ List.map target exes) in
-      of_dune caps described ruled)
+  let root, ms =
+    with_build caps (fun (b : string) ->
+        let described = ask caps [ "describe"; "workspace"; "--build-dir"; b ] in
+        let ruled = ask caps ([ "rules"; "--build-dir"; b ] @ List.map target exes) in
+        of_dune caps described ruled) in
+  (* (relative when here is the root, as the reports name the files) *)
+  ((if root = FS.getcwd caps () then "." else root), ms)
+
+let write (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
+    (exes : string list) : string * (string * string) list * (unit -> unit) =
+  let root, ms = run caps exes in
+  let d =
+    Filename.concat (Filename.get_temp_dir_name ())
+      (Printf.sprintf "mini-analyze-manifests-%d" (Unix.getpid ())) in
+  if not (CapSys.file_exists caps d) then FS.mkdir caps d 0o755;
+  let files =
+    List.map (fun ((exe, m) : string * M.manifest) ->
+        let f =
+          Filename.concat d
+            (String.map (fun c -> if c = '/' then '_' else c) exe ^ ".manifest") in
+        FS.write caps (Fpath.v f) (M.to_string m);
+        (exe, f))
+      ms in
+  let gone () =
+    List.iter (fun ((_, f) : string * string) -> FS.remove_any caps f) files;
+    FS.remove_any caps d in
+  (root, files, gone)
 
 (* (a tests' directory: tests/, KFS_tests/; their programs are not the
  * project's, as Caller_finder leaves them out) *)

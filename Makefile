@@ -36,7 +36,7 @@ install: all
 # generated makes alone the units the build makes, each .mll's lexer and
 # .mly's parser, in _build/default (make makes them too): where
 # mini-analyze finds them when a program's directory has the .mll or
-# .mly (Unit_finder.generated), for an analysis without the whole build.
+# .mly (Module_finder.generated), for an analysis without the whole build.
 # (make check's own, of mini-lex's and mini-yacc's: generated.sh)
 generated:
 	dune build $(shell find . -mindepth 1 \( -name '_*' -o -name '.*' \) -prune -o \( -name '*.mll' -o -name '*.mly' \) -print | sed 's/\.ml[ly]$$/.ml/' | sort -u)

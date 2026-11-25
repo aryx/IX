@@ -6,5 +6,5 @@
  (name Main)
  (public_name mini-analyze)
  (package ix)
- (modules Main Analyze)
+ (modules Main Analyze Analyze_flags Analyze_one Analyze_merge Analyze_build)
  (libraries ix_analyze_c ix_analyze_ml ix_analyze_summaries ix_analyze_reports ix_ml_cli ix_analyze_flow ix_ml ix_ml_pp ix_datalog ix_prolog ix_core fpath logs caps))

@@ -34,7 +34,7 @@ time, beside the build files:
 | mk_units.sh | a mkfile's SRC, its -I's, where a unit's file is, start order | 124 |
 | generated.sh, `make generated` | the lexers and parsers the build makes | 37 + 3 |
 | kernel.sh, sweep.sh | -L, -I, -D, -start of the kernel and the 44 programs | |
-| Unit_finder, Caller_finder | guesses of the same, from names and directories | 240 + 139 |
+| Module_finder, Caller_finder | guesses of the same, from names and directories | 240 + 139 |
 
 and as flags: -L (the standard library), -I (an ML library's directory or
 a C include), -own (whose units are reported on, and the platform's
@@ -45,7 +45,7 @@ merge of several programs).
 Every one of these facts is known exactly, at one moment, by one tool of
 the build: the compiler knows the source it read and its flags, the
 linker knows which objects it took (archive members included) and in
-which order. Unit_finder had to guess the rest, and on a tie it warns
+which order. Module_finder had to guess the rest, and on a tie it warns
 (mkfont's Fill: lib_graphics/software or typesetting/troff/roff). Measured
 on 2026-11-24: five of tiny_check.sh's six -I uses give the same -dead
 report without them, the guess being right; the sixth (tiny-mkfs's
@@ -202,11 +202,11 @@ In mini-analyze, given manifests:
   mini-analyze given several manifests runs each program and merges
   itself, as dead_of_callers already does for the programs that reach
   one file.
-- **Unit_finder's guessing and its tie warnings**, Caller_finder's
+- **Module_finder's guessing and its tie warnings**, Caller_finder's
   search for mains, when manifests are given: the manifests list the
   programs. Both stay for a checkout with nothing built (the author:
   "maybe the mini-analyzer could keep those Caller_finder.ml,
-  Unit_finder.ml so one can also call mini-analyzer on a fresh repo
+  Module_finder.ml so one can also call mini-analyzer on a fresh repo
   without anything built; but we should probably focus now more on
   using those manifest for precise set of files to analyze").
 
@@ -226,7 +226,7 @@ In the scripts:
   every manifest of the t-IX self-build (tiny-kernel's programs) and of
   dune's build of tiny/ (the host's). From 166 lines to perhaps 60.
 - **mk_units.sh** (124 lines): mini-ld's manifests in _mk/7.
-- **generated.sh, `make generated`, Unit_finder.generated**: a generated
+- **generated.sh, `make generated`, Module_finder.generated**: a generated
   unit's source in its record is the file the build made (in _mk/7 or
   _build), and generated_from names the .mll/.mly it comes from.
 - **tiny_check.sh and ix_check.sh as one script**, the two differing
@@ -493,7 +493,8 @@ ml/, report/, manifest/'s .ml.
 | C, the SDL programs; tiny-mkfs | 5ea071c0 | 190 | 95 | 100 | 124 | 37 | 4,642 |
 | B, directories; one call | a00edaaf | 76 | 95 | 92 | 124 | 37 | 4,786 |
 | D, tiny-kernel's capabilities | 3152ebc6 | 69 | 95 | 92 | 124 | 37 | 4,786 |
-| the library mode's test, toy programs | the next | 56 | 95 | 92 | 124 | 37 | 4,804 |
+| the library mode's test, toy programs | 52eb5894 | 56 | 95 | 92 | 124 | 37 | 4,804 |
+| Analyze.ml split, 80 columns | the next | 56 | 95 | 92 | 124 | 37 | 4,940 |
 
 (D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
 420 to 488.)
@@ -540,7 +541,7 @@ library unit whose code mini-ml's dialect cannot read is read by its
 interface alone, an external, decided when its callers ask (has_body),
 before they are read, so the functions given to it count as called:
 its file does not parse, or it names a unit that has no file, code or
-interface (Unit_finder.names, moved from Caller_finder for the .NET
+interface (Module_finder.names, moved from Caller_finder for the .NET
 road, a submodule's name, Fpath_.Operators's, no longer counted). lib_core's
 Parallel on OCaml 5's Domain is one: tiny-machine by dune's manifest,
 its report the old way's. Dune_manifest follows a copy's # 1 "file"
@@ -625,3 +626,17 @@ instead"). analyzers/tests/callers/ has it instead, its toy library and
 programs built by dune (callers/dune): -dead CallersLib.ml CallersA.exe
 CallersB.exe, the answer of CallersLib.ml alone (Caller_finder's). The
 library mode takes dune's .exe too, not tiny-ld's manifests alone.
+
+Analyze.ml split by concern (2026-11-25; the author: "Analyze.ml is also
+far too long, especially its main function is incomprehensible", "its
+help also far too long", the dune code "in a separate module ... or
+inside Dune_manifest.ml itself"): Analyze_flags, the command line as one
+record; Analyze_one, one program by its files (its rules, facts, report,
+-flow); Analyze_merge, -summary's facts and the merged runs;
+Analyze_build, programs by their build (directories, manifests, .exe,
+the library mode, several programs); Analyze, the flags and the
+dispatch, 130 lines (773 before, main 410); Dune_manifest.write, the
+runs' manifest files. The help 16 lines and the flags' (95 before), the
+man page saying the rest. Unit_finder renamed Module_finder (the author:
+"In the past I use Unit_xxx for unit testing modules"). The 136 more
+lines are the 80 columns' wrapping and the new modules' headers.

@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Unit_finder.mli *)
+(* See Module_finder.mli *)
 
 (* the project's units: each file name's directories (Lexer.ml, Lexer.mli),
  * each directory's unit names *)

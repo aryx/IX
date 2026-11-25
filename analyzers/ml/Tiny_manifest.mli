@@ -1,7 +1,7 @@
 (* What tiny-ld linked into a program, read back: the manifest it writes
  * with its map (tiny-ld -map: out.manifest), for mini-analyze to read
  * the program's exact files, as the build linked them, instead of being
- * told them (-L, -own, -I) or guessing them (Unit_finder).
+ * told them (-L, -own, -I) or guessing them (Module_finder).
  *
  * The types are TinyLibExecutable's, declared again here: tiny/'s tools
  * use no file outside tiny/, and Marshal knows no type, so both
@@ -43,11 +43,11 @@ val to_string : manifest -> string
  * - the program's own files, read and reported on: the ML files given
  *   to the linker, in the link's order;
  * - the directories of an archive's members that are in the program's
- *   part of the project (Unit_finder.part_dir) and not the standard
+ *   part of the project (Module_finder.part_dir) and not the standard
  *   library's (Ml_front.own_dirs, -own's): their units reported on when
  *   the program names them, tiny/TinyLibSystem/unix and tiny/'s
  *   TinyLib*.ml libraries for a host program of tiny/, as -own and
- *   Unit_finder had them. Not read up front: OCaml links an archive's
+ *   Module_finder had them. Not read up front: OCaml links an archive's
  *   modules that the program names, not all of them as tiny-ld does
  *   (tiny-shell's dune link has tiny_lib_regex.cmxa, which it does not
  *   name). Another part's library (lib_crypto) is read when named, not

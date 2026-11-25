@@ -186,7 +186,7 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
      A unit in none of these directories, the **-I**'s and the
      library's is looked for in the project, the first directory above
      the first *file* with a `dune-project`
-     (`analyzers/ml/Unit_finder.ml`). Where several directories have a
+     (`analyzers/ml/Module_finder.ml`). Where several directories have a
      file of its name, the program as a whole decides: a directory
      already chosen for it, then the one with the most of the units
      its files name, then the nearest; a directory with its own

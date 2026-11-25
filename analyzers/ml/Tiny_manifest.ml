@@ -67,7 +67,7 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
     String.length f > String.length d && String.sub f 0 (String.length d) = d in
   let part =
     match given with
-    | f :: _ -> Unit_finder.part_dir caps f
+    | f :: _ -> Module_finder.part_dir caps f
     | [] -> None in
   let own_member (f : string) : bool =
     (match part with Some p -> under p f | None -> false)

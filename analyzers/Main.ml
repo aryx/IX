@@ -3,4 +3,7 @@
 
 (* mini-analyze: see Analyze.mli *)
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-analyze"; CapStdlib.exit caps (Analyze.main caps (CapSys.argv caps)))
+let () =
+  Cap.main (fun caps ->
+      Logging.setup caps ~name:"mini-analyze";
+      CapStdlib.exit caps (Analyze.main caps (CapSys.argv caps)))

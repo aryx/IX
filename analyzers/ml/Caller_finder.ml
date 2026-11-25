@@ -5,7 +5,7 @@
 
 let unit_of (file : string) : string = String.capitalize_ascii (Filename.remove_extension (Filename.basename file))
 
-let names = Unit_finder.names
+let names = Module_finder.names
 
 let is_tests (n : string) : bool = n = "tests" || String.ends_with ~suffix:"_tests" n
 
@@ -27,7 +27,7 @@ let rec ml_files (caps : < Cap.readdir; .. >) (tests : bool) (d : string) (acc :
     acc entries
 
 let programs (caps : < Cap.open_in; Cap.readdir; .. >) (given : string list) (file : string) : string list =
-  match Unit_finder.part_dir caps file with
+  match Module_finder.part_dir caps file with
   | None -> []
   | Some top ->
       let file = FS.cleanname file in

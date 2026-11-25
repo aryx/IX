@@ -1,7 +1,8 @@
 (* mini-analyze: a whole program's calls through pointers, which
  * functions each may reach, and the bugs the same answers show (a
  * free of what no allocator gave, a function returning its frame's
- * address: bugs/pointers.dl) (docs/plans/done/plan_dotnet_languages.md, its step 0). One program of three parts that were three commands:
+ * address: bugs/pointers.dl) (docs/plans/done/plan_dotnet_languages.md,
+ * its step 0). One program of three parts that were three commands:
  * mini-cc's front end reads the C files, Facts says each function as
  * the facts of a pointer analysis (mini-cc -facts), and mini-datalog's
  * evaluator runs analyzers/datalog/points_to/'s rules on them; the answers
@@ -81,10 +82,8 @@
  * (OOPSLA 2009); Yannis Smaragdakis, George Balatsouras, "Pointer
  * Analysis" (Foundations and Trends in Programming Languages, 2015). *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr; Cap.exec; Cap.wait >
-
-(* a global line of a file read with its #includes: the file and its
- * own line, by the history (the oldest first) *)
-val locate : (string option * int) list -> int -> (string * int) option
-
-val main : < caps; .. > -> string array -> int
+(* the command line read (Analyze_flags), and the program given by its
+ * build (Analyze_build: one, several merged, a library's file's), or by
+ * its files (Analyze_one; a library's file, its callers' programs
+ * merged: Analyze_merge) *)
+val main : < Analyze_flags.caps; .. > -> string array -> int

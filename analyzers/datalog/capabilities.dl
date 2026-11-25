@@ -171,6 +171,61 @@ requires('Unix.getcwd', env).
 requires('Unix.gethostname', env).
 requires('prim:sys_getcwd', env).
 
+% tiny-kernel's calls, mlsys.c's, TinyLibSystem/tinykernel's externals: the
+% same groups as Unix's, so that a t-IX program is read as it is linked, on
+% the kernel's calls, not on unix's TinyLibSystem standing for them
+requires('prim:u_open', open_in).
+requires('prim:u_open', open_out).
+% (a directory is read by opening it: tiny-kernel has no opendir)
+requires('prim:u_open', readdir).
+requires('prim:u_stat', open_in).
+% (a directory's too, as sys_is_directory's)
+requires('prim:u_stat', readdir).
+requires('prim:u_mkdir', open_out).
+requires('prim:u_unlink', open_out).
+requires('prim:u_link', open_out).
+requires('prim:u_chdir', chdir).
+requires('prim:u_getcwd', env).
+requires('prim:u_getpid', env).
+requires('prim:u_argc', argv).
+requires('prim:u_arg', argv).
+requires('prim:u_ticks', clock).
+requires('prim:u_time', clock).
+requires('prim:u_seed', random).
+requires('prim:u_fork', fork).
+requires('prim:u_exec', exec).
+requires('prim:u_spawn', exec).
+% (a new process too, as Unix.fork's: unix's TinyLibSystem.spawn asks both)
+requires('prim:u_spawn', fork).
+requires('prim:u_waits', wait).
+requires('prim:u_kill', kill).
+% (another process's registers and memory, as a kill is its life)
+requires('prim:u_trace', kill).
+requires('prim:u_pipe', pipe).
+% (a pair of mouse descriptors, a window's: TinyLibSystem.box)
+requires('prim:u_box', pipe).
+requires('prim:u_rawcons', keyboard).
+requires('prim:u_dial', network).
+requires('prim:ml_print_string', stdout).
+requires('prim:ml_print_char', stdout).
+requires('prim:ml_print_newline', stdout).
+% (print_string's buffer, written: mlsys.c's flush)
+requires('prim:u_flush', stdout).
+% (a program's first descriptors are numbers, TinyLibSystem.fd_stderr, and
+% a number given to the kernel's u_write is Unix.stderr: authority where a
+% function names both, TinyLibSystem/tinykernel's eprint; not where a
+% program passes fd_mouse to TinyLibSystem.read, the descriptor held)
+descriptor_number('TinyLibSystem.fd_stdin', stdin).
+descriptor_number('TinyLibSystem.fd_stdout', stdout).
+descriptor_number('TinyLibSystem.fd_stderr', stderr).
+descriptor_number('TinyLibSystem.fd_draw', draw).
+descriptor_number('TinyLibSystem.fd_mouse', mouse).
+on_number('prim:u_write').
+on_number('prim:u_read').
+% (in_channel_of_descr, out_channel_of_descr: TinyLibSystem.stdin's channel)
+on_number('prim:%identity').
+requires(S, C) :- descriptor_number(S, C).
+
 % xix's Cap.mli's groups
 cap_includes(console, stdin).
 cap_includes(console, stdout).
@@ -207,7 +262,7 @@ cap_includes(all_caps, exec).
 cap_includes(all_caps, network).
 cap_includes(all_caps, misc).
 
-authority(S) :- requires(S, _).
+authority(S) :- requires(S, _), \+ descriptor_number(S, _).
 
 % ---- the rest of Unix: on a descriptor held, or computing only
 
@@ -235,6 +290,11 @@ computes('Unix.inet_addr_of_string'). computes('Unix.string_of_inet_addr').
 % (plan9's Unix: any of Plan 9's calls by its number, Sys_plan9's way down;
 % each of its functions takes its capability by its type, but exits)
 raw_call('Unix.plan9_call').
+% tiny-kernel's, on a descriptor held
+on_descriptor('prim:u_write'). on_descriptor('prim:u_read').
+on_descriptor('prim:u_ready').
+on_descriptor('prim:u_dup'). on_descriptor('prim:u_close').
+on_descriptor('prim:u_seek').
 
 % the check, given unix_val(F), Unix.mli's (analyzers/tests/caps/groups.sh)
 syscall_prim('prim:unix_syscall').
@@ -251,11 +311,19 @@ unclassified(F) :- unix_val(F), reaches_syscall(F), \+ classified(F).
 
 known_callee(V, G) :- assign_address(V, G).
 known_callee(V, G) :- assign(V, W), known_callee(W, G).
+% (an external's declaration names its primitive in the unit's init, as
+% a toplevel's definition does: not a use, tiny-kernel's u_open the
+% init's otherwise)
+defines(V, F) :- global_def(V, F).
+defines(V, I) :- external_prim(V, _), init(I), var_in(V, I).
 names_known(R, H) :-
-  var_in(V, F), known_callee(V, H), root(F, R), \+ global_def(V, F).
+  var_in(V, F), known_callee(V, H), root(F, R), \+ defines(V, F).
 
 uses(R, S) :- names_known(R, S), authority(S).
 uses(R, S) :- var_in(S, G), authority(S), root(G, R), \+ global_def(S, G).
+uses(R, S) :-
+  descriptor_number(S, _), var_in(S, G), root(G, R), \+ global_def(S, G),
+  names_known(R, P), on_number(P).
 names_function(R, G) :- names_known(R, H), root(H, G), R \= G.
 
 % ---- what a function holds: given to it, or to what it is written in

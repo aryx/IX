@@ -491,7 +491,11 @@ ml/, report/, manifest/'s .ml.
 | A, tiny_check.sh's merge | bab77cc3 | 196 | 95 | 100 | 124 | 37 | 4,581 |
 | C, interface alone; tiny-machine | 456676db | 197 | 95 | 100 | 124 | 37 | 4,632 |
 | C, the SDL programs; tiny-mkfs | 5ea071c0 | 190 | 95 | 100 | 124 | 37 | 4,642 |
-| B, directories; one call | the next | 76 | 95 | 92 | 124 | 37 | 4,786 |
+| B, directories; one call | a00edaaf | 76 | 95 | 92 | 124 | 37 | 4,786 |
+| D, tiny-kernel's capabilities | the next | 69 | 95 | 92 | 124 | 37 | 4,786 |
+
+(D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
+420 to 488.)
 
 A, mini-analyze's part (2026-11-24): the reports return their lines
 (Caps_report, Exn_report, Bugs_report), every analysis's -summary has
@@ -594,3 +598,19 @@ tiny/TinyBuildSystem), TinyMachineWindow's Failure new; -caps: unix's
 seed, box, raw_console gone until D (tiny-kernel's 7 programs dune does
 not build, read on unix's TinyLibSystem before), TinyMachineWindow's 4
 new. -dead 6 s, -bugs 8, -exn 13, -caps 6, both builds.
+
+D, done (2026-11-25): tiny-kernel's 30 calls (mlsys.c's, TinyLibSystem/
+tinykernel's externals) in capabilities.dl's groups, as Unix's are
+(u_open Cap.open_in, open_out or readdir; u_spawn exec and fork; u_trace
+kill; u_flush stdout, print_string's buffer; u_write, u_read, u_seek...
+on a descriptor held), TinyLibCore's ml_print_string stdout; a program's
+first descriptors, numbers (TinyLibSystem.fd_stderr), authority where a
+function gives one to the kernel (u_write, %identity's channel), not
+where a program passes fd_mouse to TinyLibSystem.read; an external's
+declaration not a use by its unit's init. So -caps reads t-IX's
+manifests too, and tiny_check.sh has no -caps case left (O gone): its 7
+programs back. caps_tiny.txt: 15 new, tinykernel's helpers of no
+capability (names, entry, waits, said, main), the tracer's and
+debugger's own u_trace, tiny-kernel's stubs (no signal, no environment,
+an unbuffered stderr); unix's seed, box, raw_console stubs not said, no
+program reading them on unix's TinyLibSystem. -caps 10 s.

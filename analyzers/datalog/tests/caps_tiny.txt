@@ -1,8 +1,10 @@
-# TinyLibSystem/unix's seed, box, raw_console, may not need their capability: said through tiny-kernel's programs read on the host's TinyLibSystem, not read for -caps since tiny_check.sh reads programs as their builds link them (2026-11-24); back with tiny-kernel's capabilities (plan_analyzer_build_manifest.md, D)
+# t-IX's programs read on tiny-kernel's calls, their capabilities capabilities.dl's (2026-11-25): TinyLibSystem/tinykernel's helpers of no capability (names, entry, waits, said, main), the tracer's and debugger's own u_trace, tiny-kernel's stubs (no signal, no environment, stderr unbuffered: may not need); unix's seed, box, raw_console stubs no longer said, the programs read on unix's TinyLibSystem before
 # tiny/TinyLibSystem/sdl/: the window's host side, read since the SDL programs come from dune's manifests (2026-11-24), the unix one no longer standing for it; its calls not yet given capabilities
 lib_core/commons/Procs.ml:50: Procs.spawn: takes a capability of no written type
 lib_networking/http/Keep_alive.ml:87: Keep_alive.exchange: has < Cap.network; Cap.open_in >, needs Cap.clock (Keep_alive.take)
 tiny/TinyBuildSystem.ml:426: TinyBuildSystem.start: has < Cap.env; Cap.exec; Cap.fork; Cap.open_out >, may not need Cap.open_out
+tiny/TinyDebugger.ml:603: TinyDebugger.main: names u_trace itself
+tiny/TinyEditorLine.ml:519: TinyEditorLine.flush: has < Cap.stderr; Cap.stdout >, may not need Cap.stderr
 tiny/TinyKernel/host/TinyMkfs.ml:106: TinyMkfs:fun at line 106: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, names Unix.stat itself
 tiny/TinyLibSystem/sdl/TinyLibSystem.ml: init: no capability, needs Cap.clock (Unix.gettimeofday), Cap.env (Sys.getenv_opt), Cap.signal (Sys.set_signal)
 tiny/TinyLibSystem/sdl/TinyLibSystem.ml:126: TinyLibSystem.reserve: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
@@ -26,8 +28,20 @@ tiny/TinyLibSystem/sdl/TinyLibSystem.ml:487: TinyLibSystem:fun at line 487: has 
 tiny/TinyLibSystem/sdl/TinyLibSystem.ml:499: TinyLibSystem.raw_console: has < Cap.keyboard >, may not need Cap.keyboard
 tiny/TinyLibSystem/sdl/TinyLibSystem.ml:505: TinyLibSystem.spawn: has < Cap.exec; Cap.fork >, needs Cap.argv (Sys.argv), Cap.env (Sys.getenv_opt), Cap.open_in|Cap.readdir (sys_file_exists), Cap.stderr (Stdlib.flush_all, Unix.stderr), Cap.stdin (Unix.stdin), Cap.stdout (Stdlib.flush_all, Unix.stdout); may not need Cap.fork
 tiny/TinyLibSystem/sdl/TinyLibSystem.ml:532: TinyLibSystem.dial: has < Cap.network >, may not need Cap.network
+tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml:113: TinyLibSystem.main: no capability, needs Cap.argv (u_arg, u_argc), Cap.exit (Stdlib.exit)
+tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml:114: said: no capability, needs Cap.stderr (TinyLibSystem.fd_stderr), Cap.stdout (u_flush)
+tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml:275: TinyLibSystem.names: no capability, needs Cap.open_in|Cap.open_out|Cap.readdir (u_open)
+tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml:295: TinyLibSystem.path_names: no capability, needs Cap.env (u_getcwd)
+tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml:305: TinyLibSystem.entry: no capability, needs Cap.open_in|Cap.readdir (u_stat)
+tiny/TinyLibSystem/tinykernel/TinyLibSystem.ml:435: TinyLibSystem.waits: no capability, needs Cap.wait (u_waits)
 tiny/TinyLibSystem/unix/TinyLibSystem.ml:270: TinyLibSystem.spawn: has < Cap.exec; Cap.fork >, may not need Cap.exec, Cap.fork
 tiny/TinyMachine/TinyMachineWindow.ml: init: no capability, needs Cap.clock (Unix.gettimeofday), Cap.stdin (Stdlib.stdin, Unix.stdin), Cap.stdout (Printf.printf, Stdlib.stdout)
 tiny/TinyMachine/TinyMachineWindow.ml:32: key: no capability, needs Cap.stdout (Printf.printf)
 tiny/TinyMachine/TinyMachineWindow.ml:37: TinyMachineWindow:fun at line 37: no capability, needs Cap.exit (Stdlib.exit), Cap.stdin (Stdlib.stdin)
 tiny/TinyMachine/TinyMachineWindow.ml:48: TinyMachineWindow:fun at line 48: no capability, needs Cap.exit (Stdlib.exit)
+tiny/TinyShell.ml:807: TinyShell.interactive: has < Cap.chdir; Cap.exit; Cap.forkew; Cap.open_in; Cap.open_out; Cap.pipe; Cap.readdir; Cap.signal; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.signal
+tiny/TinyShell.ml:839: TinyShell.start: has < Cap.chdir; Cap.env; Cap.exit; Cap.forkew; Cap.open_in; Cap.open_out; Cap.pipe; Cap.readdir; Cap.signal; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.signal
+tiny/TinyShell.ml:872: TinyShell.main: has < Cap.chdir; Cap.env; Cap.exit; Cap.forkew; Cap.open_in; Cap.open_out; Cap.pipe; Cap.readdir; Cap.signal; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.signal
+tiny/TinyTracer.ml:172: TinyTracer.handle: names u_trace itself
+tiny/TinyTracer.ml:228: TinyTracer.main: has < Cap.forkew; Cap.kill; Cap.stderr >, names u_trace itself
+tiny/TinyVCS.ml:277: TinyVCS.getenv_opt: has < Cap.env >, may not need Cap.env

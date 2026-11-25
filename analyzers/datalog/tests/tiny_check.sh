@@ -12,10 +12,7 @@
 # mini-analyze runs each program as linked, its platform's files among
 # them, and merges their reports (-dead's: what every program that has
 # the file says, so a library's function one program does not call is
-# not dead). -caps reads the host's alone: the analyzer does not know
-# tiny-kernel's calls' capabilities yet, whose programs dune does not
-# build (windows, bigmem, square, temp, trace, debug, the kernel) wait
-# for that. tiny-cc's programs are not read (no ML unit).
+# not dead). tiny-cc's programs are not read (no ML unit).
 # Each report once, sorted, recorded: -caps caps_tiny.txt, -bugs
 # bugs_tiny.txt, -dead dead_tiny.txt, -exn exn_tiny.txt (a program's
 # toplevel exceptions, by the program, build or tiny/TinyBuildSystem,
@@ -43,13 +40,9 @@ if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
-programs=tiny
-if [ $flag != -caps ]; then
-  make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
-    { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
-  programs="-sources tiny $W/tix/src tiny"
-fi
-$ANALYZE $flag $programs > $W/answer 2> $W/err ||
+make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
+  { tail -5 $W/tix.log; echo "tiny_check.sh: t-IX's build failed"; exit 2; }
+$ANALYZE $flag -sources tiny $W/tix/src tiny > $W/answer 2> $W/err ||
   { grep -v WARNING $W/err | tail -5; echo "FAIL mini-analyze $flag on tiny/'s programs: not all read"; exit 1; }
 # (the reports, not the programs' list under them)
 sed '/^[0-9]* reports, over the/,$d' $W/answer |

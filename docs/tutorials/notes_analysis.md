@@ -753,7 +753,7 @@ No Soufflé or Doop here to compare with, so (plan_datalog.md, decision 7):
   than what made it, translation validation's idea (Pnueli, 1998).
 - **Against history**: each bug analysis on a fix's code before and
   after.
-- **Recordings**: the reports on ix (`bugs_ix.txt`, `dead_ix.txt`,
+- **Recordings**: the reports on ix (`bugs_ix.txt`, `dead_all_ix.txt`,
   `caps_ix.txt`) are kept, and a change to the rules shows as their diff.
 
 ## 13. What is not here

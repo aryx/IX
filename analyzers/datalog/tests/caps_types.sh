@@ -4,7 +4,8 @@
 #
 # capabilities_types.dl, OCaml's check again in Datalog, a test of the analysis.
 # On tests/caps_wrong/ (programs OCaml refuses): each planted mismatch found,
-# against expected.out. With programs (mkfiles' directories), or -all: every
+# against expected.out. With programs (directories, their programs those of
+# ix's build under them, MK's, _mk/7: make ix first), or -all: every
 # mismatch there is a mistake of the facts or the call graph, since OCaml accepts
 # them; a line each: the calls found, those checked, the mismatches, what is not
 # seen and why. Minutes with -all: by hand.
@@ -19,19 +20,17 @@ export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
 export DATALOG=${DATALOG:-$PWD/_build/default/languages/datalog/Main.exe}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 export W R D
-. $T/mk_units.sh
+MK=${MK:-_mk/7}
 
 queries() { # out, facts
   (ulimit -v 12000000 2> /dev/null; timeout ${LIMIT:-180} $DATALOG -q 'mismatch(R, I, H, C)' -q 'by_need(R, I, H, S)' -q 'cap_call(I, H)' -q 'checked(I, H)' -q 'not_seen(I, H, W)' -q 'handed_unknown(I, G, V)' -q 'handed_in_dead(I, V)' \
     $D/instructions.dl $D/contexts.dl $D/insensitive.dl $R/dead.dl $R/capabilities.dl $R/capabilities_types.dl $2 2> /dev/null) > $1
 }
 
-one() { # a mkfile
-  local mk=$1 dir=$(dirname $1) name flags files
-  name=$(echo $dir | tr / _)
-  case $(var $mk SRC) in *'`'*) return;; esac
-  read flags files < <(program_args $mk)
-  (ulimit -v 12000000 2> /dev/null; timeout 120 $ANALYZE -facts -L lib_core ${flags//,/ } $files) > $W/$name.facts 2> $W/$name.err
+one() { # a program's manifest (mini-ld -map's), in MK
+  local m=$1 dir name
+  dir=$(dirname ${m#$MK/}); name=$(echo ${m#$MK/} | tr / _)
+  (ulimit -v 12000000 2> /dev/null; timeout 120 $ANALYZE -facts $m) > $W/$name.facts 2> $W/$name.err
   if [ -s $W/$name.err ]; then printf '%-40s not read\n' $dir; return; fi
   queries $W/$name.out $W/$name.facts || { printf '%-40s past the limit\n' $dir; return; }
   printf '%-40s %5d %7d %6d  %s\n' $dir $(grep -c '^cap_call' $W/$name.out) $(grep -c '^checked' $W/$name.out) $(grep -c '^mismatch' $W/$name.out) \
@@ -41,12 +40,13 @@ one() { # a mkfile
   printf '%-40s by need %d; handed to a function not known to take one %d, in dead code %d\n' "" $(grep -c '^by_need' $W/$name.out) $(grep -c '^handed_unknown' $W/$name.out) $(grep -c '^handed_in_dead' $W/$name.out)
 }
 export -f one queries
-export SHOW LIMIT BLIND
+export SHOW LIMIT BLIND MK
 
 if [ "${1:-}" = -all ] || [ "${1:-}" != -record -a $# -gt 0 ]; then
   printf '%-40s %5s %7s %6s  %s\n' program calls checked wrong 'not seen'
-  if [ "$1" = -all ]; then list=$(programs); else list=$(for d in "$@"; do echo $d/mkfile; done); fi
-  echo "$list" | xargs -P 8 -n 1 bash -c '. analyzers/datalog/tests/mk_units.sh; one "$0"'
+  if [ "$1" = -all ]; then set -- .; fi
+  for d in "$@"; do find $MK/$d -name '*.manifest'; done | sort -u |
+    xargs -P 8 -n 1 bash -c 'one "$0"'
   exit 0
 fi
 

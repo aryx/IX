@@ -641,7 +641,7 @@ job "mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no except
 group m-ix
 # (ix_check.sh reads ix's build as mini-ld linked it, its manifests: the
 # one above, the programs it has; make check's, all of _mk/7. old: the
-# 44 programs read from their mkfiles, their lexers made by generated.sh)
+# 44 programs read from their mkfiles)
 job -after-ix "mini-analyze -caps on m-ix's programs as ix links them: no report but the recorded ones (caps_ix.txt)" env MK=$K analyzers/datalog/tests/ix_check.sh -caps -check
 
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it

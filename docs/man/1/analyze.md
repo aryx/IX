@@ -199,7 +199,7 @@ programs whose files name it (`analyzers/ml/Caller_finder.ml`). Without a build,
      the build makes, from a `.mll` or `.mly` of its name in a
      directory of the *files* (`Lexer.mll`, `Parser.mly`), is taken
      from dune's build directory, the project's `_build/default`
-     (`make generated` makes them alone), and never from another
+     (`dune build` makes them), and never from another
      directory of the project; not built, a warning says so.
      A unit found in the first *file*'s top directory of the project is the
      program's own (`tiny/` for `tiny/TinyBuildSystem.ml`), one found
@@ -416,8 +416,9 @@ utilities/calc/dc/Num.ml:64: dead: Num.sub, nothing names it
 
 `Num.sub` is called by nothing in ix. `Dc.feed` and `Dc.of_string`
 are dead in mini-dc, not in mini-bc, which links `Dc` and calls
-`feed`: **-dead** is of one program. `analyzers/datalog/tests/sweep.sh` runs a
-mode on each of ix's programs, `triage.sh` sorts what **-dead** says.
+`feed`: **-dead** is of one program. `mini-analyze -dead _mk/7`, ix's build,
+says what is dead in ix: every program that links a file saying it
+(`analyzers/datalog/tests/ix_check.sh`).
 
 One's own question: the facts, and rules over them. Which functions
 may `main` reach, calls through pointers too (`target`, of

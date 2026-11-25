@@ -1,8 +1,40 @@
-(* Programs given by their build, which knows their files: tiny-ld's
- * manifests (Tiny_manifest), dune's executables (Dune_manifest), or
- * directories of either; each read as linked, its platform's files
- * among them, nothing told by -L, -I, -own
- * (docs/plans/plan_analyzer_build_manifest.md). *)
+(* Programs given by their build, which knows their files: the linkers'
+ * manifests, mini-ld's and tiny-ld's (-map; Tiny_manifest reads both),
+ * dune's executables (Dune_manifest), or directories of either; each
+ * read as linked, its platform's files among them, nothing told by -L,
+ * -I, -own (docs/plans/plan_analyzer_build_manifest.md).
+ *
+ *     mini-analyze -caps _mk/7          ix's build, every program
+ *     mini-analyze -dead tiny/TinyShell.exe
+ *     mini-analyze -dead -project tiny tiny/TinyLibGUI.ml tix/src/*.manifest
+ *
+ * history:
+ * Before the manifests (2026-11-23), a program was told: tiny_check.sh's
+ * table of about 30 programs, each with its main file and flags (-L,
+ * -own, -I), and ix_check.sh's 44 programs read from their mkfiles by
+ * shell (mk_units.sh, generated.sh, sweep.sh, triage.sh): 607 lines of
+ * scripts, a copy of what the build files already said. What the
+ * manifests bought (2026-11-25), for about 1,100 lines of the analyzer
+ * and 250 of the linkers', and 380 of those scripts gone:
+ * - coverage: m-ix's 163 programs as ix builds them, not the 44 with a
+ *   mkfile's SRC, a program's library code in its part of the tree (all
+ *   of version_control's) its own, not -I's; t-IX's 55, each on its
+ *   real platform (tiny-kernel's TinyLibSystem, not unix's), the kernel
+ *   among them;
+ * - precision: nothing guessed by a name nor copied from a build file;
+ *   gone, the misreadings the copies hid: KRaw read from tiny-kernel's
+ *   file for the host's (11 functions dead that were not), the SDL
+ *   programs on unix's TinyLibSystem, TinyMachineWindow in no table;
+ * - bugs found: three programs that no longer linked (mini-singml, and
+ *   oberon's and squeak's kernels, docs/plans/bugs/ix.md), the mkfile
+ *   route reading their sources without building them; a dead global
+ *   said of what a toplevel read; about 850 new reports to read;
+ * - no drift: a new program, unit or library analyzed once built, no
+ *   table to keep;
+ * - one command, from anywhere, its answer the checks' (no filtering
+ *   before or after it in a script).
+ * Left: mini-9pi's kernel, linked by kernel.mk, no manifest (kernel.sh
+ * reads its mkfile); tiny-cc's C programs not read. *)
 
 (* the directories given: the manifests under each, every one, or with
  * none the executables dune builds under it, each named by its path from
@@ -21,6 +53,5 @@ val read : < Analyze_flags.caps; .. > -> Analyze_flags.t -> bool
 val library : < Analyze_flags.caps; .. > -> Analyze_flags.t -> int
 
 (* several programs: each run as linked, merged; a manifest of no ML
- * unit (tiny-cc's) left out, said; each manifest's -project, the
- * shallowest manifest's directory's -project, a deeper one's below it *)
+ * unit (tiny-cc's) left out, said; -project given to each run *)
 val several : < Analyze_flags.caps; .. > -> Analyze_flags.t -> int

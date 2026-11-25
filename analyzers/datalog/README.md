@@ -112,7 +112,13 @@ have called used. What cannot be seen counts as alive: given to a C function
 with no body, in ML's `ext`, or named by `-root` (`dead.dl`'s header).
 `analyzers/tests/dead/` says each kind, and each thing that only looks dead.
 
-## The sweep (`tests/sweep.sh`, `tests/triage.sh`, 2026-10-31)
+## The sweep (2026-10-31)
+
+(Its scripts, `sweep.sh`, `triage.sh` and `mk_units.sh`, are gone since
+2026-11-25: `tests/ix_check.sh` reads ix's build by its manifests, mini-ld
+`-map`'s, 163 programs as linked, and `dead_all_ix.txt` is what is dead in
+ix, every program that links the file saying it; `dead_ix.txt`, the grep's
+list below, went with them. The numbers here are of that time.)
 
 Every program with a mkfile's `SRC`, by its own units and `-I`'s (`mk_units.sh`:
 LIBI's, INCLUDES', LIBDIRS', a library's DIRS, the units made first): all 44
@@ -211,7 +217,7 @@ directory `Cap.env`'s (plan_caps_syscalls.md); `tests/run.sh` checks that each
 function of lib_core's two `Unix` that makes one is in a group (`unclassified`).
 `Cap.draw`, `keyboard`, `mouse` allow `Unix.openfile`, a device being a file.
 
-`sweep.sh` with `FLAG=-caps`, on the 44 programs: 149 functions
+`sweep.sh` with `FLAG=-caps` (2026-11, gone since), on the 44 programs: 149 functions
 (`tests/caps_ix.txt`; 173 when the clock, pipes and the pid first needed a
 capability, their 32 callers then given it; 151 before, 172 before a record's
 capabilities were held, 149 on the 35 read on 11-02, 40 on the 23 before them).

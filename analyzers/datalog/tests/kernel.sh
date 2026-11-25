@@ -2,7 +2,8 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-analyze on mini-9pi's kernel, as sweep.sh on the programs: its
+# mini-analyze on mini-9pi's kernel, by its mkfile (its build, kernel.mk's,
+# writes no manifest; the programs' are ix_check.sh's): its
 # units (kernels/9pi/mkfile's KML), their -Is (KI), their order of start
 # (-start, KML's: what bugs/init.dl compares), lib_core and lib_machine.
 # The kernel's lines of bugs_ix.txt (-bugs) are this one's.

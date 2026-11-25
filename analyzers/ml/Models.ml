@@ -33,7 +33,7 @@
  *
  * Measured, mini-analyze on this machine (64 arm64 cores, one run each,
  * 2026-11-03), HEAD before the models against the models; the units of
- * each program's mkfile (analyzers/datalog/tests/mk_units.sh):
+ * each program's mkfile (mk_units.sh's then; a build's manifests since):
  *
  *     mini-cc (41 units)  before            the models
  *     the call graph      36.1 s  1.1 GB    12.4 s  0.37 GB
@@ -62,7 +62,8 @@
  * List.iter's one call of f having been every closure given to any
  * List.iter; mini-cc's call graph 12 functions fewer reached (Signature's
  * decoders, called by List.init's one call of f). -dead's and -caps's
- * reports the same on the 44 programs (sweep.sh); dynamic.sh none missed.
+ * reports the same on the 44 programs (sweep.sh's then); dynamic.sh none
+ * missed.
  *
  * road-not-taken:
  * Contexts, the textbook answer to a polymorphic function's callers

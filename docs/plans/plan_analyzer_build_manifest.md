@@ -550,6 +550,23 @@ manifest's project for both. tiny_check.sh the same (-project tiny: the
 copy of tiny/ has no project mark, and none is wanted); the library mode
 on t-IX's manifests says -project tiny too.
 
+The mkfile scripts gone (2026-11-25; the author: "let's delete the
+mk_units.sh and other support script that are not needed anymore now
+that we use the manifest approach to get the source files to analyze!
+Finally a payoff for all this work"): mk_units.sh (a program's units and
+-I's from its mkfile), generated.sh (its lexers and parsers made apart),
+sweep.sh (each program run from those), triage.sh and its dead_ix.txt (a
+grep of the tree for what sweep.sh said dead in one program: what
+dead_all_ix.txt now says by the analysis, every program that links the
+file). Their last users read a build's manifests: dynamic.sh the
+program it builds (mini-analyze -facts prog.manifest, the same 121,072
+facts for mini-dc as by its mkfile), caps_types.sh the programs of MK
+(_mk/7) under the directories given, analysis_scale/measure.sh each of
+MK's programs, its own files -v's "a file given". kernel.sh stays:
+mini-9pi's kernel is linked by kernel.mk, no manifest. make generated
+gone too ("is it still needed?"): dune build makes the lexers and
+parsers, and mini-analyze is dune's; its warning says dune build.
+
 ### The ledger
 
 Lines (wc -l), at each step; the analyzer's: analyzers/Analyze.ml,
@@ -572,7 +589,12 @@ ml/, report/, manifest/'s .ml.
 | E, rules and lib_core from mini-analyze's tree | 7f84bdc0 | 56 | 95 | 92 | 124 | 37 | 4,974 |
 | 4a, mini-ld's manifests, project paths | 16e614d6 | 56 | 95 | 92 | 124 | 37 | 5,004 |
 | 4b, ix_check.sh on ix's build | 46fcd0f6 | 56 | 81 | 92 | 124 | 37 | 5,108 |
-| tiny-ld's project paths | the next | 56 | 81 | 92 | 124 | 37 | 5,081 |
+| tiny-ld's project paths | a3b44d79 | 56 | 81 | 92 | 124 | 37 | 5,081 |
+| the mkfile scripts gone | the next | 56 | 81 | 92 | — | — | 5,081 |
+
+(the mkfile scripts gone: mk_units.sh 124, generated.sh 37, sweep.sh 51,
+triage.sh 45 and dead_ix.txt, 300 lines with the list; caps_types.sh,
+dynamic.sh and analysis_scale/measure.sh read a build's manifests.)
 
 (4b: mk_units.sh and generated.sh no longer ix_check.sh's; caps_types.sh,
 dynamic.sh and sweep.sh, run by hand, still use them.)

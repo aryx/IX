@@ -36,7 +36,6 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 all="forth datalog rc prolog dc"
 
-. $T/mk_units.sh
 
 # one run: prog args, stdin from /dev/null unless $IN; profile added to $W/prof
 run() {
@@ -161,8 +160,8 @@ for p in ${@:-$all}; do
   (cd $dir && $ROOT/bin/mini-ld -g "$@" -o $W/prog) || { echo "$p: not linked with -g"; failures=$((failures + 1)); continue; }
   rm -rf $W/cwd $W/prof.*; mkdir $W/cwd; n=0
   workload $p
-  read flags files < <(program_args $mk)
-  $ANALYZE -facts -L lib_core ${flags//,/ } $files > $W/facts 2> $W/err
+  # (the program as linked: its manifest, mini-ld -map's)
+  $ANALYZE -facts $bin.manifest > $W/facts 2> $W/err
   [ -s $W/err ] && { echo "$p: not read: $(head -1 $W/err | cut -c1-90)"; failures=$((failures + 1)); continue; }
   ran_functions $W/prog.map $W/prof.* > $W/ran_all
   # (the units the models replace, analyzers/ml/Models: List's and Hashtbl's

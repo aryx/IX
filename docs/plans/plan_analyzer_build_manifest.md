@@ -494,7 +494,8 @@ ml/, report/, manifest/'s .ml.
 | B, directories; one call | a00edaaf | 76 | 95 | 92 | 124 | 37 | 4,786 |
 | D, tiny-kernel's capabilities | 3152ebc6 | 69 | 95 | 92 | 124 | 37 | 4,786 |
 | the library mode's test, toy programs | 52eb5894 | 56 | 95 | 92 | 124 | 37 | 4,804 |
-| Analyze.ml split, 80 columns | the next | 56 | 95 | 92 | 124 | 37 | 4,940 |
+| Analyze.ml split, 80 columns | c5c0ae77 | 56 | 95 | 92 | 124 | 37 | 4,940 |
+| dune's executables by dune rules @dir/all | the next | 56 | 95 | 92 | 124 | 37 | 4,933 |
 
 (D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
 420 to 488.)
@@ -640,3 +641,18 @@ runs' manifest files. The help 16 lines and the flags' (95 before), the
 man page saying the rest. Unit_finder renamed Module_finder (the author:
 "In the past I use Unit_xxx for unit testing modules"). The 136 more
 lines are the 80 columns' wrapping and the new modules' headers.
+
+A directory's dune executables by their links, dune rules @dir/all
+(2026-11-25): the links of what dune builds there, an .exe's, not a js
+stanza's .bc.js; dune describe workspace's stanzas and dune describe
+targets, on its standard error, gone (Dune_manifest 355 to 332 lines).
+The same 28 programs under tiny/. Procs.create_process_stderr stays:
+another dune holding the build directory is said on dune's standard
+error alone. The author asked whether @dir/all is t-IX's: no, dune's
+alias of every project, dir the one given. Two bugs found trying it from
+a subdirectory, older than it: the executables were said from the
+project's root, which dune does not read its targets from (now from the
+current directory, describe saying the root); and a merge's runs were
+given the command line without its words naming a directory, taken for
+programs, -r datalog's datalog among them (now the flags alone, Arg's
+place of each word read as a program or a file).

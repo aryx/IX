@@ -5,7 +5,7 @@
  *
  * dune says it in two answers, which mini-analyze asks it for (run),
  * given dune's executables (an .exe) or a directory of them
- * (executables, by dune describe targets too):
+ * (executables, by its links, dune rules @dir/all):
  *
  *     dune describe workspace     each library's modules and each
  *                                 executables stanza's, with their
@@ -59,10 +59,9 @@ val write :
   string list -> string * (string * string) list * (unit -> unit)
 
 (* [executables caps dirs]: the executables dune builds under dirs
- * (tiny), from the project's root: dune describe workspace's stanzas,
- * those of a tests' directory left out (tests/, *_tests/), and of
- * their names the ones dune describe targets says an .exe of
- * (tiny-machine-web's is a .bc.js) *)
+ * (tiny), from the project's root: those dune rules @dir/all links (an
+ * .exe, not tiny-machine-web's .bc.js), those of a tests' directory
+ * left out (tests/, *_tests/) *)
 val executables :
   < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. > ->
   string list -> string list

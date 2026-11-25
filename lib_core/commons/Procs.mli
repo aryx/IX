@@ -34,8 +34,8 @@ val spawn : < Cap.fork; Cap.exec; .. > -> string -> string list -> stdin:Unix.fi
  * cannot be run raises Unix_error, in the calling program. *)
 val create_process : < Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr -> stdout:Unix.file_descr -> int
 
-(* The same, its standard error the descriptor given (dune describe
- * targets answers on its standard error, Dune_manifest) *)
+(* The same, its standard error the descriptor given (dune's, read by
+ * Dune_manifest for another dune holding the build directory) *)
 val create_process_stderr :
   < Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr ->
   stdout:Unix.file_descr -> stderr:Unix.file_descr -> int

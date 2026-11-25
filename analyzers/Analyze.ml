@@ -100,11 +100,16 @@ let main (caps : < F.caps; .. >) (argv : string array) : int =
     else [ a ] in
   let argv = Array.of_list (List.concat_map split (Array.to_list argv)) in
   let options = options caps f in
-  match Arg.parse_argv argv options (anon caps f) usage with
+  (* (the words read as programs or files, by their place: the flags
+   * alone are the runs' of a merge) *)
+  let current = ref 0 and taken = ref [] in
+  let anon (a : string) : unit = taken := !current :: !taken; anon caps f a in
+  match Arg.parse_argv ~current argv options anon usage with
   | exception Arg.Help _ -> Console.print caps (Arg.usage_string options help); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
   | () ->
-      f.args <- List.tl (Array.to_list argv);
+      f.args <-
+        List.filteri (fun i _ -> i > 0 && not (List.mem i !taken)) (Array.to_list argv);
       (* (not a run of a merge's, nor the facts alone) *)
       let first = f.summary = "" && not f.facts in
       let one_ml =

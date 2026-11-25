@@ -31,7 +31,8 @@ type t = {
   mutable dirs : string list;
   names : (string, string) Hashtbl.t;
   mutable sources : string;  (* -sources, "" none *)
-  (* the command line's words, the runs of a merge given them again *)
+  (* the command line's flags, not its programs nor files: the runs of a
+   * merge given them again *)
   mutable args : string list;
   mutable rules : string;  (* -r *)
   mutable lib : string;  (* -L, "" none: found *)

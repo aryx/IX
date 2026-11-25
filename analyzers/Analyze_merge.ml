@@ -116,24 +116,17 @@ type run = { name : string; main : string; pid : int }
 let file_of (w : string) (name : string) (ext : string) : string =
   Filename.concat w (String.map (fun c -> if c = '/' then '_' else c) name ^ ext)
 
-(* each main run, at once, by mini-analyze itself: the flags given, not
- * the file, not a program, nor -sources (each run's its own), then its
- * extra flags and -summary; its name given, or its main's, made unique *)
+(* each main run, at once, by mini-analyze itself: the flags given but
+ * -sources (each run's its own), then its extra flags and -summary; its
+ * name given, or its main's, made unique *)
 let start (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
-    (file : string option) (w : string)
-    (mains : (string * string * string list) list) : run list =
-  let program (a : string) : bool =
-    List.exists (fun x -> Filename.check_suffix a x) [ ".manifest"; ".exe" ]
-    || directory caps a
-    || List.exists (fun ((_, m, _) : string * string * string list) -> m = a) mains in
+    (w : string) (mains : (string * string * string list) list) : run list =
   let rec without_sources (l : string list) : string list =
     match l with
     | "-sources" :: _ :: rest -> without_sources rest
     | a :: rest -> a :: without_sources rest
     | [] -> [] in
-  let flags =
-    List.filter (fun (a : string) -> Some (FS.cleanname a) <> file && not (program a))
-      (without_sources f.args) in
+  let flags = without_sources f.args in
   let names = Hashtbl.create 16 in
   List.map
     (fun ((given, main, extra) : string * string * string list) ->
@@ -193,7 +186,7 @@ let merged_runs (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
     Filename.concat (Filename.get_temp_dir_name ())
       (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
   FS.mkdir caps w 0o755;
-  let runs = start caps f file w mains in
+  let runs = start caps f w mains in
   let failed =
     List.filter (fun (r : run) -> Procs.waitpid caps r.pid <> Unix.WEXITED 0) runs in
   List.iter (fun (r : run) ->

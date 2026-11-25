@@ -251,11 +251,9 @@ let ask (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; ..
   let tmp = Filename.temp_file "mini-analyze" ".sexp" in
   let err = Filename.temp_file "mini-analyze" ".err" in
   let out = FS.open_out_fd caps tmp 0o644 and errs = FS.open_out_fd caps err 0o644 in
-  (* (describe targets answers on its standard error, the others on
-   * their standard output) *)
   let pid =
     Procs.create_process_stderr caps "dune" args ~stdin:Unix.stdin ~stdout:out
-      ~stderr:(if List.mem "targets" args then out else errs) in
+      ~stderr:errs in
   Unix.close out;
   Unix.close errs;
   let ok = Procs.waitpid caps pid = Unix.WEXITED 0 in
@@ -319,37 +317,33 @@ let tests (d : string) : bool =
   List.exists (fun (p : string) -> p = "tests" || String.ends_with ~suffix:"_tests" p)
     (String.split_on_char '/' d)
 
+(* a path from the project's root as a path from the current directory,
+ * which dune reads its targets from: analyzers/examples/Main.exe, from
+ * analyzers/, examples/Main.exe *)
+let from_here (caps : < Cap.readdir; .. >) (root : string) (p : string) : string =
+  let cwd = FS.getcwd caps () in
+  if cwd = root || not (prefix (root ^ "/") cwd) then p
+  else
+    let n = String.length root + 1 in
+    let sub = String.sub cwd n (String.length cwd - n) in
+    if prefix (sub ^ "/") p then
+      String.sub p (String.length sub + 1) (String.length p - String.length sub - 1)
+    else
+      String.concat "/"
+        (List.map (fun _ -> "..") (String.split_on_char '/' sub) @ [ p ])
+
 let executables (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; .. >)
     (dirs : string list) : string list =
   with_build caps (fun (b : string) ->
-  let answer = parse (ask caps ([ "describe"; "workspace"; "--build-dir"; b ] @ dirs)) in
-  let w, _ = describe answer in
-  let entries = match answer with [ List l ] -> l | l -> l in
-  (* (each stanza's directory, from its .eobjs, and its names) *)
-  let stanzas =
-    List.concat_map (fun (e : sexp) ->
-        match e with
-        | List [ Atom "executables"; fields ] -> (
-            match atoms (field "include_dirs" fields) with
-            | inc :: _ ->
-                let d = Filename.dirname (Filename.dirname (rel w inc)) in
-                if tests d then []
-                else List.map (fun (n : string) -> (d, n)) (atoms (field "names" fields))
-            | [] -> [])
-        | _ -> [])
-      entries in
-  let ds = List.sort_uniq compare (List.map fst stanzas) in
-  (* (an executable, not a js one, tiny-machine-web's: dune describe
-   * targets, its directories' targets as ls says them) *)
-  let built = Hashtbl.create 64 in
-  let here = ref "" in
-  if ds <> [] then
-    String.split_on_char '\n' (ask caps ([ "describe"; "targets"; "--build-dir"; b ] @ ds))
-    |> List.iter (fun (l : string) ->
-           if String.ends_with ~suffix:":" l then here := String.sub l 0 (String.length l - 1)
-           else if l <> "" then Hashtbl.replace built (Filename.concat !here l) ());
-  List.filter_map (fun ((d, n) : string * string) ->
-      let exe = Filename.concat d (n ^ ".exe") in
-      if Hashtbl.mem built exe then Some exe else None)
-    stanzas)
-
+      (* (the project's root and build context, describe's) *)
+      let w, _ = describe (parse (ask caps [ "describe"; "workspace"; "--build-dir"; b ])) in
+      (* (each directory's @all: the links of the executables dune builds
+       * there and below, an .exe's, not a js one's, tiny-machine-web's
+       * .bc.js) *)
+      let all = List.map (fun d -> "@" ^ d ^ "/all") dirs in
+      let rules = ask caps ([ "rules"; "--build-dir"; b ] @ all) in
+      List.filter_map (fun ((exe, _) : string * string list) ->
+          let exe = rel w exe in
+          if tests (Filename.dirname exe) then None else Some (from_here caps w.root exe))
+        (links (parse rules))
+      |> List.sort_uniq compare)

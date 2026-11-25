@@ -1,40 +1,27 @@
 # mini-turbopascal in a terminal, built by ix's tools: the IDE
 # (../editor), a session with no screen (../Keys), and its screen as a
 # picture (lib_terminal/hosts: Cells, Picture, with lib_graphics's
-# font), over mini-pascal (languages/pascal) and lib_terminal with its
-# Tty_unix. Their units are taken from their directories, each by its
-# name.
+# font), over mini-pascal (languages/pascal), whose units are taken from
+# their directories, each by its name, and the library lib_terminal
+# with its Tty_unix.
 TOP=../../..
 DIR=editors/turbopascal/tty
 PROG=mini-turbopascal-tty
 T=$TOP/lib_terminal
-R=$TOP/lib_playground/random
 PAS=$TOP/languages/pascal
 KIT=../editor
-SRC=Lehmer Line_discipline Vt Talk Curses Tui Tty_unix Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Font_default Cells Picture Main
-LOCAL=`{ls *.ml ../*.ml ../*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/Font_default.ml ../editor/*.ml ../editor/*.mli ../../../lib_terminal/*.ml ../../../lib_terminal/*.mli ../../../lib_terminal/unix/*.ml ../../../lib_terminal/unix/*.mli ../../../languages/pascal/*.ml ../../../languages/pascal/*.mli ../../../lib_playground/random/*.ml ../../../lib_playground/random/*.mli}
+SRC=Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Font_default Cells Picture Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/Font_default.ml ../editor/*.ml ../editor/*.mli ../../../languages/pascal/*.ml ../../../languages/pascal/*.mli}
 GEN=
-LIBI=-I .. -I ../editor -I ../../../lib_terminal/hosts -I ../../../lib_graphics -I ../../../lib_terminal -I ../../../lib_terminal/unix -I ../../../languages/pascal -I ../../../lib_playground/random
+LIBI=-I .. -I ../editor -I ../../../lib_terminal/hosts -I ../../../lib_graphics -I ../../../languages/pascal
 LIBUNITS=
+# (lib_terminal, with Tty_unix; Lehmer, the numbers its Talk draws)
+LIBDIRS=lib_playground/random lib_terminal
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
 # the other directories' units, each by its name
-$D/Lehmer.$O: $R/Lehmer.ml $LOCAL
-	$ML $INCLUDES -o $target $R/Lehmer.ml
-$D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Line_discipline.ml
-$D/Vt.$O: $T/Vt.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Vt.ml
-$D/Talk.$O: $T/Talk.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Talk.ml
-$D/Curses.$O: $T/Curses.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Curses.ml
-$D/Tui.$O: $T/Tui.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Tui.ml
-$D/Tty_unix.$O: $T/unix/Tty_unix.ml $LOCAL
-	$ML $INCLUDES -o $target $T/unix/Tty_unix.ml
 $D/Pcode.$O: $PAS/Pcode.ml $LOCAL
 	$ML $INCLUDES -o $target $PAS/Pcode.ml
 $D/Pascal_lexer.$O: $PAS/Pascal_lexer.ml $LOCAL

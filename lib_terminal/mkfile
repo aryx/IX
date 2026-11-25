@@ -1,0 +1,19 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# lib_terminal, a library of ix's tools (mkfiles/mklib): what a program
+# that talks stands on: Line_discipline, Vt, Talk, Curses, Tui, and on
+# Linux unix/'s Tty_unix, the host that is a terminal (Plan 9 has none:
+# turbopascal draws in a window there). hosts/ (Cells, Picture, over
+# lib_graphics's font) is not in it yet: its programs compile it. Before,
+# mini-pascal, both turbopascals and mini-emacs-tty each compiled these
+# units (plan_simpler_builds.md, step 4).
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_terminal
+TTYDIR=`{~ $OS linux && echo unix}
+TTY=`{~ $OS linux && echo Tty_unix}
+DIRS=. $TTYDIR
+NEEDS=lib_playground/random
+UNITS=Line_discipline Vt Talk Curses Tui $TTY
+<$TOP/mkfiles/mklib

@@ -1,27 +1,16 @@
 # mini-pascal, built by ix's tools. The P-machine talks (lib_terminal's
 # Talk, with what it stands on) and draws its numbers from Lehmer
-# (lib_playground/random); their units are taken from their
-# directories.
+# (lib_playground/random): two libraries.
 TOP=../..
 DIR=languages/pascal
 PROG=mini-pascal
-T=../../lib_terminal
-R=../../lib_playground/random
-SRC=Lehmer Line_discipline Vt Talk Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk CLI Main
-LOCAL=`{ls *.ml *.mli ../../lib_terminal/*.ml ../../lib_terminal/*.mli ../../lib_playground/random/*.ml ../../lib_playground/random/*.mli}
+SRC=Pcode Pascal_lexer Pascal_compile Pmachine Pdebug Pascal_disk CLI Main
+LOCAL=`{ls *.ml *.mli}
 GEN=
-LIBI=-I ../../lib_terminal -I ../../lib_playground/random
+LIBI=
 LIBUNITS=
+# (lib_terminal: Talk, with what it stands on; Lehmer, its numbers)
+LIBDIRS=lib_playground/random lib_terminal
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
-
-# the libraries' units, by their names
-$D/Lehmer.$O: $R/Lehmer.ml $LOCAL
-	$ML $INCLUDES -o $target $R/Lehmer.ml
-$D/Line_discipline.$O: $T/Line_discipline.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Line_discipline.ml
-$D/Vt.$O: $T/Vt.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Vt.ml
-$D/Talk.$O: $T/Talk.ml $LOCAL
-	$ML $INCLUDES -o $target $T/Talk.ml

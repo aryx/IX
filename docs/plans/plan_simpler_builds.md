@@ -13,7 +13,8 @@ things for m-ix (and t-ix) when possible, cheapest first".
 **Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2
 (7a7da7c5); step 4's first groups. Step 3 is t-IX's session's (f0601cfb:
 t-IX built beside its sources). Done in step 4: lib_code,
-languages/dotnet/assembly. Next: lib_terminal.**
+languages/dotnet/assembly, lib_playground/random, lib_terminal. Next:
+the interpreters (scheme, pascal).**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -181,6 +182,13 @@ first requirement.
    smoke.sh builds the two libraries for its part of ix, and
    languages/ml/dotnet/tests/run.sh takes mini-cc's libraries' units
    (LIBDIRS's UNITS) before its SRC, as its link does.
+   Done: lib_playground/random (Lehmer), split from lib_playground as
+   dune's ix_random is, lib_playground needing it, javascript and
+   netcode naming it alone; then lib_terminal (Line_discipline Vt Talk
+   Curses Tui, and Tty_unix on Linux), linked by mini-pascal, both
+   turbopascals and mini-emacs-tty. Left of lib_terminal: hosts/
+   (Cells, Picture), over lib_graphics's Font_default, which emacs and
+   turbopascal compile themselves.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

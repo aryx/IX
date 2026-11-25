@@ -124,8 +124,12 @@ test-long: host
 # the kernels make ix does not build, mini-9pi's, oberon's, squeak's,
 # Singularity's): a minute for each analysis, -exn two.
 check: check-tix check-mix
+# (tiny/'s -dead, -bugs and -exn are recorded on OCaml 5's build: on
+# 4.14's, Parallel's spawn calls nothing; tests/lite.sh says more)
 check-tix:
-	@st=0; for f in -caps -dead -bugs -exn; do \
+	@case $$(ocamlc -version) in 5.*) fs="-caps -dead -bugs -exn";; \
+	  *) fs=-caps; echo "check-tix: -dead, -bugs, -exn skipped (OCaml 4)";; esac; \
+	st=0; for f in $$fs; do \
 	  ./analyzers/datalog/tests/check.sh tiny $$f -check || st=1; done; exit $$st
 check-mix: ix
 	@for d in kernels/9pi kernels/oberon kernels/squeak kernels/singularity; do \

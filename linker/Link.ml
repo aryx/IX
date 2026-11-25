@@ -236,22 +236,24 @@ let load caps t ~decode ~needs files =
   let version = ref 0 in
   let next () = incr version; !version in
   let libs = ref [] in
-  (* (what was taken, in its order: each object, the source it names as
-   * its compiler was given it, from the directory it compiled in, and
-   * the archive it came from; -map's manifest, CLI's) *)
+  (* (what was taken: each object, the source it names, the archive it
+   * came from; -map's manifest, CLI's. In the link's order: a member at
+   * its archive's place on the command line, in the archive's order,
+   * not in the order it was taken; mkprog's start lists the units so,
+   * the order they start in) *)
   let taken = ref [] in
-  let took (obj : string) (o : Asm.obj) (archive : string option) : unit =
-    taken := (obj, Fpath.to_string o.file, archive) :: !taken in
-  List.iter (fun f ->
+  let took (key : int * int) (obj : string) (o : Asm.obj) (archive : string option) : unit =
+    taken := (key, (obj, Fpath.to_string o.file, archive)) :: !taken in
+  List.iteri (fun (p : int) f ->
     if Fpath.has_ext ".a" f then begin
       Logs.info (fun m -> m "library %a" Fpath.pp f);
       (* ar's index lists the objects last first *)
-      libs := !libs @ [ (Fpath.to_string f, Array.of_list (List.rev (read_members caps f))) ]
+      libs := !libs @ [ (p, Fpath.to_string f, Array.of_list (List.rev (read_members caps f))) ]
     end
     else begin
       Logs.info (fun m -> m "object %a" Fpath.pp f);
       let o : Asm.obj = Asm.load caps f in
-      took (Fpath.to_string f) o None;
+      took (p, 0) (Fpath.to_string f) o None;
       add_object t (next ()) o
     end) files;
   (* 5l's loadlib: take the members that define an undefined name, until
@@ -267,13 +269,14 @@ let load caps t ~decode ~needs files =
    * once taken, and its bytes kept in the library's list *)
   let rec again () =
     let added = ref false in
-    List.iter (fun (a, lib) ->
+    List.iter (fun (p, a, lib) ->
       Array.iteri (fun mi (bytes, names) ->
         if bytes <> "" && List.exists (wanted t) names
         then begin
           lib.(mi) <- ("", names);
           let o : Asm.obj = member bytes in
-          took (Filename.basename (Fpath.to_string o.file)) o (Some a);
+          (* (the array the index's, last first: its place in the archive) *)
+          took (p, Array.length lib - mi) (Filename.basename (Fpath.to_string o.file)) o (Some a);
           Logs.info (fun m -> m "from a library: %a, for %s" Fpath.pp o.file
             (String.concat " " (List.filter (wanted t) names)));
           add_object t (next ()) o;
@@ -287,7 +290,9 @@ let load caps t ~decode ~needs files =
   again ();
   (* (the first instruction first, from here on: see add_object) *)
   t.progs <- List.rev t.progs;
-  List.rev !taken
+  let first ((a, _) : (int * int) * (string * string * string option))
+      ((b, _) : (int * int) * (string * string * string option)) : int = compare a b in
+  List.map snd (List.sort first !taken)
 
 let load_objects t ~decode objs =
   let decode_op = shared_decode decode in

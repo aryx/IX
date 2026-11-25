@@ -19,7 +19,12 @@ let to_string = Manifest.to_string
 let rec standard_library (caps : < Cap.open_in; .. >) (d : string) :
     string option =
   let has (f : string) = FS.read_opt caps (Fpath.v (Filename.concat d f)) <> None in
-  if has "units.txt" || has "Stdlib.mli" then Some d
+  let up = Filename.dirname d in
+  if has "units.txt" then Some d
+  (* (lib_core/core's Stdlib.mli is lib_core's, whose units.txt is above;
+   * TinyLibCore's, with none, its own) *)
+  else if has "Stdlib.mli" then
+    (if FS.read_opt caps (Fpath.v (Filename.concat up "units.txt")) <> None then Some up else Some d)
   else
     let up = Filename.dirname d in
     if up = d || d = "." || d = "/" then None else standard_library caps up
@@ -76,15 +81,7 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
     match library with
     | None -> []
     | Some l -> (
-        (* (lib_core/core has a Stdlib.mli, lib_core its units.txt) *)
-        let units (d : string) = FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) in
-        let l, txt =
-          match units l with
-          | Some t -> (l, Some t)
-          | None -> (match units (Filename.dirname l) with
-                     | Some t -> (Filename.dirname l, Some t)
-                     | None -> (l, None)) in
-        match txt with
+        match FS.read_opt caps (Fpath.v (Filename.concat l "units.txt")) with
         | None -> [ l ]
         | Some text ->
             Filename.concat l "commons"

@@ -131,7 +131,8 @@ val sym_of : 'm t -> int -> Asm.name -> sym
  * objects that define what is still undefined, until nothing new is
  * defined (5l's objfile, loadlib and ldobj; xix's Load). [needs] gives
  * the names that the machine's rewriting will call, which the libraries
- * must define too (5l's needsdiv). What it took, in its order: each
+ * must define too (5l's needsdiv). What it took, in the link's order (a
+ * member at its archive's place, in the archive's order): each
  * object (a member by its name), the source it names, as its compiler
  * was given it, and the archive a member came from (-map's manifest). *)
 val load :

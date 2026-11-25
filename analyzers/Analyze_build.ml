@@ -31,6 +31,10 @@ let linked (f : F.t) (what : string) (p : Tiny_manifest.program) : unit =
   if f.lib = "" then
     f.lib <- (match p.library with Some d -> d | None -> Analyze_one.lib_core f);
   if f.program = "" then f.program <- p.name;
+  (* (-bugs's init: the order the units start in, the link's: mkprog's
+   * start lists them as mini-ld links them, a member at its archive's
+   * place in the archive's order; tiny-ld's and dune's link the same) *)
+  if f.start = "" then f.start <- String.concat " " (List.map fst p.units);
   List.iter (fun (u, file) -> Hashtbl.replace Ml_front.linked u file) p.units;
   (* (-dead on the program alone: its components' dead code, not its
    * libraries', which another program may call; a run of a merge,

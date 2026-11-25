@@ -1,12 +1,23 @@
-# mini-scheme, built by ix's tools
+# languages/scheme as a library (mkfiles/mklib): the language, its
+# reader, prims and evaluators, for mini-drscheme too, which compiled
+# them from here before (games/mkgames's WITH=scheme;
+# plan_simpler_builds.md, step 4); and mini-scheme, its SECD machine,
+# CLI and Main linked with that library.
 TOP=../..
-DIR=languages/scheme
-PROG=mini-scheme
-SRC=Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_secd Scheme_step CLI Main
-LOCAL=`{ls *.ml *.mli}
-GEN=
-LIBI=
-LIBUNITS=
-LIBOBJS=
 <$TOP/mkfiles/mkconfig
-<$TOP/mkfiles/mkprog
+LIB=languages/scheme
+DIRS=.
+NEEDS=
+UNITS=Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step
+# (mini-scheme's own units, after the library's units they name)
+DEPMORE=Scheme_secd CLI Main
+<$TOP/mkfiles/mklib
+
+all:V: $D/mini-scheme
+
+# (its units: libs.rc's rule for ., as the library's)
+PROGOBJS=${DEPMORE:%=$D/%.$O}
+$PROGOBJS: $LOCAL $MLEXE
+$D/mini-scheme: $PROGOBJS $D/lib.a $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $D/lib.a} $DEPMORE Std_exit -o $D/mini-scheme.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-scheme.start.$O $STDOBJS $D/lib.a $PROGOBJS $STDEND

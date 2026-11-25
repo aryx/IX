@@ -14,7 +14,8 @@ things for m-ix (and t-ix) when possible, cheapest first".
 (7a7da7c5); step 4's first groups. Step 3 done, t-IX's session's (t-IX built
 beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
 languages/dotnet/assembly, lib_playground/random, lib_terminal,
-languages/pascal. Next: languages/scheme.**
+languages/pascal, languages/scheme. Next: the linker's units
+(mini-dotnet).**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -195,6 +196,11 @@ first requirement.
    Pdebug Pascal_disk), a library and mini-pascal in one mkfile, as
    browsers/javascript and mini-node: both turbopascals link it, their
    six rules gone; it moves from the top mkfile's BOTH to its libraries.
+   Done: languages/scheme (Sexpr Sexpr_read Scheme_image Scheme
+   Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step),
+   a library and mini-scheme (Scheme_secd CLI Main) in one mkfile;
+   games/mkgames links it for WITH=scheme (mini-drscheme) instead of
+   compiling the nine units in $B/lib_playground/scheme.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

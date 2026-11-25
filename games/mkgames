@@ -29,11 +29,11 @@ BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/$DIR$BESIDE
 MADE=`{mkdir -p $D}
 # (each after the ones it names)
+# (scheme: the language, languages/scheme's library, for mini-drscheme)
+SCHEMELIB=`{~ $WITH *scheme* && echo languages/scheme}
 LIBDIRS=lib_compression lib_graphics lib_playground/random lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
- lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
+ lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM $SCHEMELIB
 <$TOP/mkfiles/mklibs
-S=$TOP/languages/scheme
-SO=$B/lib_playground/scheme
 M=$TOP/apps/office/formula
 MO=$B/lib_playground/formula
 X=$TOP/lib_gui/examples/gui4
@@ -50,10 +50,10 @@ DRO=$B/lib_playground/drscheme
 OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu suite
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $K -I $R -I $DR -I $S -I $M -I $X $OFFICEI $LIBI $STDI
+INCLUDES=-I . -I $K -I $R -I $DR -I $M -I $X $OFFICEI $LIBI $STDI
 # (what only some programs ask, other programs' units: a directory's
-# mkfile says WITH=scheme. scheme, the language, languages/scheme's
-# units but its command; formula, a sheet's formulas
+# mkfile says WITH=scheme. scheme, the language, a library (above);
+# formula, a sheet's formulas
 # (apps/office/formula); undo, apps/office's Undo alone; gui4, the tasks
 # written four ways (lib_gui/examples/gui4); office, what mini-office stands on
 # (apps/office's folders: a text with looks and its page, a picture as
@@ -66,8 +66,6 @@ REBIRTH=`{~ $WITH *rebirth* && echo Patch_text Voice_tb303 Voice_tr808 Studio_re
 REBIRTHOBJS=`{for(u in $REBIRTH) echo $RBO/$u.$O}
 KIT=`{~ $WITH *shmup* && echo Shots}
 KITOBJS=`{for(u in $KIT) echo $KO/$u.$O}
-SCHEME=`{~ $WITH *scheme* && echo Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step}
-SCHEMEOBJS=`{for(u in $SCHEME) echo $SO/$u.$O}
 DRSCHEME=`{~ $WITH *drscheme* && echo DrScheme_model DrScheme_draw DrScheme_run DrScheme_update DrScheme_view}
 DRSCHEMEOBJS=`{for(u in $DRSCHEME) echo $DRO/$u.$O}
 FORMULA=`{~ $WITH *formula* && echo Formula}
@@ -78,9 +76,9 @@ GUI4=`{~ $WITH *gui4* && echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Ti
 GUI4OBJS=`{for(u in $GUI4) echo $XO/$u.$O}
 OFFICE=`{if(~ $WITH *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart Part_image File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export; if not if(~ $WITH *sheet*) echo Sheet Sheet_view}
 OFFICEOBJS=`{for(u in $OFFICE) echo $QO/$u.$O}
-LIB=$REBIRTH $FORMULA $KITS $GUI4 $KIT $SCHEME $DRSCHEME $OFFICE
-LIBOBJS=$REBIRTHOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS $KITOBJS $SCHEMEOBJS $DRSCHEMEOBJS $OFFICEOBJS
-LOCAL=`{ls *.ml $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli $DR/*.ml $DR/*.mli >[2]/dev/null} $LIBSRC
+LIB=$REBIRTH $FORMULA $KITS $GUI4 $KIT $DRSCHEME $OFFICE
+LIBOBJS=$REBIRTHOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS $KITOBJS $DRSCHEMEOBJS $OFFICEOBJS
+LOCAL=`{ls *.ml $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli $DR/*.ml $DR/*.mli >[2]/dev/null} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBA $LIBOBJS
@@ -92,9 +90,6 @@ $RBO/%.$O: $R/%.ml $LOCAL
 $KO/%.$O: $K/%.ml $LOCAL
 	mkdir -p $KO
 	$ML $INCLUDES -o $target $K/$stem.ml
-$SO/%.$O: $S/%.ml $LOCAL
-	mkdir -p $SO
-	$ML $INCLUDES -o $target $S/$stem.ml
 $DRO/%.$O: $DR/%.ml $LOCAL
 	mkdir -p $DRO
 	$ML $INCLUDES -o $target $DR/$stem.ml
@@ -124,14 +119,12 @@ $D/%.linked: $D/%.$O $LIBS
 depend:V:
 	{ cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-QO QO -- $KITS $OFFICE
 	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-XO XO -- $GUI4
-	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-SO SO -- $SCHEME
 	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-DRO DRO -- $DRSCHEME
 	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-MO MO -- $FORMULA
 	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-RBO RBO -- $REBIRTH
 	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-KO KO -- $KIT } > /dev/null
 <|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-QO QO -- $KITS $OFFICE
 <|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-XO XO -- $GUI4
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-SO SO -- $SCHEME
 <|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-DRO DRO -- $DRSCHEME
 <|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-MO MO -- $FORMULA
 <|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-RBO RBO -- $REBIRTH
@@ -139,4 +132,4 @@ depend:V:
 
 clean:V:
 	rm -rf $D
-	if(~ $DIR games) rm -rf $B/lib_playground/scheme $B/lib_playground/formula $B/lib_playground/gui4 $B/lib_playground/office $B/lib_playground/shmup $B/lib_playground/rebirth $B/lib_playground/drscheme
+	if(~ $DIR games) rm -rf $B/lib_playground/formula $B/lib_playground/gui4 $B/lib_playground/office $B/lib_playground/shmup $B/lib_playground/rebirth $B/lib_playground/drscheme

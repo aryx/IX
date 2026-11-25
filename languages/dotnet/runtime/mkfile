@@ -1,0 +1,16 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# languages/dotnet/runtime, a library of ix's tools (mkfiles/mklib):
+# what mini-dotnet's interpreter and JIT stand on, Value (the types and
+# values), Library (System's classes, over lib_core) and Types (the
+# loader), over the assembly's tables (languages/dotnet/assembly).
+# mini-csc links it too, for Value and Library, which it compiled
+# itself before, by rules in its mkfile (plan_simpler_builds.md, step 4).
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+LIB=languages/dotnet/runtime
+DIRS=.
+NEEDS=languages/dotnet/assembly
+UNITS=Value Library Types
+<$TOP/mkfiles/mklib

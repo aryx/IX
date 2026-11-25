@@ -8,14 +8,15 @@
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
-SRC=Value Library Types Frame Arith Machine Verifier Jit Code_memory Jit_run CLI Main
-LOCAL=`{ls *.ml *.mli runtime/*.ml* interpreter/*.ml* jit/*.ml* jit/mini-ml/*.ml}
+SRC=Frame Arith Machine Verifier Jit Code_memory Jit_run CLI Main
+LOCAL=`{ls *.ml *.mli interpreter/*.ml* jit/*.ml* jit/mini-ml/*.ml}
 GEN=
-LIBI=-I runtime -I interpreter -I jit -I ../../assembler -I ../../linker -I ../../linker/debug
+LIBI=-I interpreter -I jit -I ../../assembler -I ../../linker -I ../../linker/debug
 LIBUNITS=Asm Show_asm Lexer_asm Parser_asm Program Debug_link Link Arm Arm64
 # (assembly/, the file's tables, read and written: a library, which
-# mini-cc, mini-ml, mini-csc, mini-tiger and mini-datalog link too)
-LIBDIRS=languages/dotnet/assembly
+# mini-cc, mini-ml, mini-csc, mini-tiger and mini-datalog link too;
+# runtime/, Value, Library and Types, one too, which mini-csc links)
+LIBDIRS=languages/dotnet/assembly languages/dotnet/runtime
 <$TOP/mkfiles/mkconfig
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O \
  $B/linker/Program.$O $B/linker/Debug_link.$O $B/linker/Link.$O $B/linker/Arm.$O $B/linker/Arm64.$O
@@ -31,8 +32,6 @@ $D/Code_memory.$O: jit/mini-ml/Code_memory.ml
 # the units in folders (dune's comment says which): each one is
 # compiled from the folder that has it, and mkprog's rule (for a unit
 # here) is not used for them
-$D/%.$O: runtime/%.ml
-	$ML $INCLUDES -o $target runtime/$stem.ml
 $D/%.$O: interpreter/%.ml
 	$ML $INCLUDES -o $target interpreter/$stem.ml
 $D/%.$O: jit/%.ml

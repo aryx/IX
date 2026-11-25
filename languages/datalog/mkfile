@@ -1,28 +1,21 @@
 # mini-datalog, built by ix's tools. It stands on mini-prolog's terms
-# and its reader (../prolog), whose units are taken from their
-# directory, each by its name. It also has dotnet/'s compiler of rules
+# and its reader, the library languages/prolog. It also has dotnet/'s compiler of rules
 # to .NET, over mini-dotnet's writer.
 TOP=../..
 DIR=languages/datalog
 PROG=mini-datalog
-PL=$TOP/languages/prolog
-SRC=Prolog Prolog_read Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval \
+SRC=Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eval \
  Compile_il CLI Main
-LOCAL=`{ls *.ml *.mli ../prolog/Prolog.ml ../prolog/Prolog.mli ../prolog/Prolog_read.ml ../prolog/Prolog_read.mli dotnet/*.ml dotnet/*.mli}
+LOCAL=`{ls *.ml *.mli dotnet/*.ml dotnet/*.mli}
 GEN=
-LIBI=-I ../prolog -I dotnet
+LIBI=-I dotnet
 LIBUNITS=
-# (the writer of assemblies, Writer and what it stands on)
-LIBDIRS=languages/dotnet/assembly
+# (the writer of assemblies, Writer and what it stands on; Prolog's
+# terms and reader)
+LIBDIRS=languages/dotnet/assembly languages/prolog
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
-
-# the other directories' units, each by its name
-$D/Prolog.$O: $PL/Prolog.ml $LOCAL
-	$ML $INCLUDES -o $target $PL/Prolog.ml
-$D/Prolog_read.$O: $PL/Prolog_read.ml $LOCAL
-	$ML $INCLUDES -o $target $PL/Prolog_read.ml
 
 # (Parallel uses the host's cores where OCaml has domains, for -j.
 # mini-ml has none yet (plan_ml_multicore.md), so this is

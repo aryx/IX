@@ -15,7 +15,8 @@ things for m-ix (and t-ix) when possible, cheapest first".
 beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
 languages/dotnet/assembly, lib_playground/random, lib_terminal,
 languages/pascal, languages/scheme; the linker's units for mini-dotnet;
-languages/dotnet/runtime. Next: languages/prolog (Prolog_read).**
+languages/dotnet/runtime; languages/prolog. Next: mini-ml's Ast and
+Annotations (mini-emacs-tty, mini-singml).**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -212,6 +213,11 @@ first requirement.
    its own mkfile, over the assembly's; mini-dotnet and mini-csc link
    it, mini-csc's two rules gone (it links Types too, the loader, 560
    lines it does not use: a library is linked whole).
+   Done: languages/prolog (Prolog Prolog_read, the terms and their
+   reader), a library and mini-prolog in one mkfile, as pascal's;
+   mini-datalog links it, its two rules gone. languages/ml/dotnet/
+   tests/run.sh's pipeline (-ms only) takes mini-datalog's libraries'
+   units, as its front_end does mini-cc's.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

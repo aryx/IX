@@ -181,7 +181,10 @@ front_end() {
 # (with -ms: Microsoft's dotnet, 18 s; mini-dotnet's interpreter takes 81)
 pipeline() {
   local ml=$(abs $1) run=$2 D=languages/datalog P=$(abs $MK/languages/datalog) u f files=
-  for u in $(sed -n '/^SRC=/,/[^\\]$/p' $D/mkfile | sed 's/^SRC=//; s/\\$//'); do
+  # (its libraries' units first, LIBDIRS's, as front_end's)
+  local libs=$(sed -n 's/^LIBDIRS=//p' $D/mkfile) l lu=
+  for l in $libs; do lu="$lu $(sed -n 's/^UNITS=//p' $l/mkfile)"; done
+  for u in $lu $(sed -n '/^SRC=/,/[^\\]$/p' $D/mkfile | sed 's/^SRC=//; s/\\$//'); do
     for f in $D/$u.ml $D/dotnet/$u.ml languages/prolog/$u.ml languages/dotnet/assembly/$u.ml $P/$u.ml; do [ -f $f ] && break; done
     files="$files $(realpath $f)"
   done

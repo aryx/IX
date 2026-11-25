@@ -1,12 +1,23 @@
-# mini-prolog, built by ix's tools
+# languages/prolog as a library (mkfiles/mklib): Prolog's terms and
+# their reader, for mini-datalog too, which compiled them from here
+# before (plan_simpler_builds.md, step 4); and mini-prolog, its
+# database, machines (the interpreter's, the WAM's) and builtins, linked
+# with that library.
 TOP=../..
-DIR=languages/prolog
-PROG=mini-prolog
-SRC=Prolog Prolog_read Prolog_db Prolog_machine Prolog_prelude Prolog_builtins Wam Wam_compile Wam_machine CLI Main
-LOCAL=`{ls *.ml *.mli}
-GEN=
-LIBI=
-LIBUNITS=
-LIBOBJS=
 <$TOP/mkfiles/mkconfig
-<$TOP/mkfiles/mkprog
+LIB=languages/prolog
+DIRS=.
+NEEDS=
+UNITS=Prolog Prolog_read
+# (mini-prolog's own units, after the library's units they name)
+DEPMORE=Prolog_db Prolog_machine Prolog_prelude Prolog_builtins Wam Wam_compile Wam_machine CLI Main
+<$TOP/mkfiles/mklib
+
+all:V: $D/mini-prolog
+
+# (its units: libs.rc's rule for ., as the library's)
+PROGOBJS=${DEPMORE:%=$D/%.$O}
+$PROGOBJS: $LOCAL $MLEXE
+$D/mini-prolog: $PROGOBJS $D/lib.a $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $D/lib.a} $DEPMORE Std_exit -o $D/mini-prolog.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-prolog.start.$O $STDOBJS $D/lib.a $PROGOBJS $STDEND

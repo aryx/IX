@@ -87,8 +87,9 @@ good)" (the rethink, below the steps).
 
 t-IX shows the way already. tiny/Buildfile builds beside the sources (in
 TinyKernel/Makefile's copy of tiny/, so that the tree shows only
-sources), has a rule for each directory (`user/&.o: user/&.ml`, mk's &,
-a stem with no /), and compiles every unit against the standard
+sources; in tiny/ itself since e10520b9, below), has a rule for each
+directory (`user/&.o: user/&.ml`, mk's &, a stem with no /), and
+compiles every unit against the standard
 library's interfaces made with it, by one `-L TinyLibCore`: habits 1, 2
 and 3. What t-IX keeps of OCaml's needs is small: the start's rule
 (`%.start.o`, its units on each program's line) and the library's units
@@ -146,7 +147,10 @@ first requirement.
    tar of tiny/, the links ml, cc... to the tools) with absolute paths
    of 200 characters; a no-op could print tiny-build's lines alone. To
    do with the session reshaping tiny/Makefile (make host, make
-   building t-IX with its own tools).
+   building t-IX with its own tools). Half done (e10520b9, the build in
+   tiny/ itself): the sums, the tar and the links gone; the setup's
+   own lines (mkdir, the copy's test, rm, cd) still printed, about as
+   many lines.
 
 4. **One object per source.** Measured on step 1's full build (703
    compiles; the `cd x && mini-mk` lines give each compile's
@@ -231,7 +235,7 @@ requirement), before step 5. What else it needs:
   other Unix interfaces; the games again for Plan 9's software platform
   (mkgames's BESIDE). The default build (O=7, Linux) beside the
   sources, the others in a copy of the tree (git ls-files, 69 MB), as
-  TinyKernel/Makefile builds t-IX in a copy of tiny/; the card builds
+  TinyKernel/Makefile builds t-IX for another O; the card builds
   in its own /src already.
 - **make test in a copy.** tests/lite.sh builds ix in its own B so
   that two runs, or a session's build, do not meet (memory: private
@@ -239,10 +243,41 @@ requirement), before step 5. What else it needs:
 - **The tree's users of `_mk/`**: 162 lines of scripts and Makefiles
   (ix_check.sh's MK, caps_types.sh, kernels/9pi's card, install.rc,
   examples/), .gitignore (`*.[57]`, `*.a`), make clean, TinyKernel/
-  Makefile's copy (it must leave out `*.[57]`).
+  Makefile's copy (git's list of sources since e10520b9: .gitignore
+  leaves them out).
 
 Order, if taken: the generated sources' place, then mkprog and mklib
 with a few directories of each, then the rest, then the scripts.
+
+### t-IX first (e10520b9)
+
+The author: "what if we start now to avoid those tiny/ copy and
+_make/src/ and build the object next to their source?". tiny/'s make
+runs `tiny-build TINY=tiny-` in tiny/, as `build` in /src under t-IX
+(f0601cfb; any other target is the Buildfile's: make rc), and
+TinyKernel/Makefile's default build runs there too: `_make/src`, the
+links to the tools under t-IX's names and the tools' sums gone.
+Another O (make test's, tiny_check.sh's, MEMORY's) builds in a copy of
+tiny/'s sources. The images are byte for byte the copy's. What it
+taught, which m-IX will meet:
+
+- **The sources are a list, git's.** A directory holding what was built
+  beside its sources cannot be copied by excluding patterns:
+  TinyKernel's `--exclude` list lacked the programs (rc, ml...), and
+  src.img, /src, overflowed its 8 MB with them. `git ls-files -co
+  --exclude-standard`, less the deleted files, gives the sources, for
+  a copy and for src.img; .gitignore is the one list of what the
+  build makes.
+- **The tools are not in the digests.** tiny-build's digests are of
+  recipes and sources, so a new tiny-ml remakes nothing; the copy used
+  to start afresh when a tool's sum changed. Kept simple, as t-IX: make
+  clean after a tool's change. Met the same day: tiny-as's new object
+  format, the old objects refused by tiny-ld ("rebuild it").
+- **A directory holds two builds.** mini-analyze takes a directory's
+  manifests, or with none the programs dune builds there; with t-IX's
+  manifests in tiny/, tiny_check.sh's `tiny` gave those instead of
+  dune's programs (their reports "gone"). dune's are now named by
+  their build directory, `_build/default/tiny`.
 
 ## Checks for each step
 

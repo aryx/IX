@@ -20,7 +20,9 @@ analyze – what C and ML programs may do, by facts and Datalog rules
 [ **-alone** ]
 [ **-no-models** ]
 [ **-fingerprint** ]
+[ **-sources** *dir* ]
 [ **-v** | **-debug** | **-quiet** ]
+*program*`.exe` ... | *program*`.manifest` ... | *dir* ... |
 *file*`.c` ... | *file*`.ml` ...
 
 # DESCRIPTION
@@ -37,6 +39,28 @@ With no option, each call through a pointer (C) or through a variable
 it may reach, and for C the bugs the same answers show (`bugs/pointers.dl`): a
 `free` of what is not the heap's, a local's address returned. An ML
 program's library, lib_core's units it names, is read with it.
+
+An ML program is best given by its build, which knows its files: an
+*`.exe`* dune builds (`tiny/TinyShell.exe`, or `_build/default`'s),
+whose link mini-analyze asks dune for (`dune describe`, `dune rules`,
+in a build directory of its own: `analyzers/ml/Dune_manifest.ml`); a
+*`.manifest`*, what tiny-ld **-map** writes beside the program it
+links, each unit and its source (t-IX's build writes one for each
+program, `tiny/TinyKernel/_make/src/temp.manifest`); a directory, the
+manifests under it, or with none the executables dune builds under it,
+those of tests' directories left out. The program is then read as
+linked, its platform's files among them, and nothing is told by
+**-L**, **-I** or **-own**: its own files are those given to the
+linker, its library's units are reported on when they are of the
+program's part of the project (`tiny/`'s `TinyLib*.ml`), and **-dead**
+of one program reports on its own components, the files no other
+program of the build links. Several programs, or a directory of them,
+are each run and merged: **-dead** keeps what every program that has
+the file says (`dead_all.dl`), the others every program's reports
+(`said_all.dl`). A library's file and manifests,
+`mini-analyze -dead tiny/TinyLibGUI.ml tiny/TinyKernel/_make/src/*.manifest`,
+say its dead code over the programs that link it. Without a build, the
+*files* given are the program (**-L**, **-I**, **-own** below).
 
 **-dead**
 :    What no run can reach, from `main` and the toplevels (`dead.dl`):
@@ -119,6 +143,12 @@ program's library, lib_core's units it names, is read with it.
      answers on those facts, their liveness and dominators, as facts:
      what the rules must find (the tests compare them).
 
+**-sources** *dir*
+:    Where a manifest's paths are read, the build having run in a copy
+     of *dir* (t-IX's, in `tiny/TinyKernel/_make/src` of `tiny`); the
+     reports then name *dir*'s files; without it, a manifest's paths
+     are read in its directory.
+
 **-r** *rules*
 :    The directory of the `.dl` files and `points_to/`; by default
      `analyzers/datalog` of the current directory.
@@ -178,9 +208,8 @@ program's library, lib_core's units it names, is read with it.
      **-I**, found in the project), a unit read by its interface alone,
      and a tie as a warning. A
      library's functions that
-     this one program does not call are said dead too:
-     `analyzers/datalog/tests/tiny_check.sh` gives each t-IX program this
-     way and keeps what every build that has the file says. For one
+     this one program does not call are said dead too (by its build,
+     its components alone: above). For one
      file of a program, give it and the main file, the libraries by
      **-I**; for a t-IX program as tiny-kernel runs it:
      `mini-analyze -dead -L tiny/TinyLibCore -I tiny/TinyLibSystem/tinykernel tiny/user/temp.ml tiny/TinyAppTemperature.ml`
@@ -215,8 +244,9 @@ program's library, lib_core's units it names, is read with it.
      (the first file's if not given) tells the programs apart.
      `analyzers/datalog/dead_all.dl` merges several programs' facts:
      a report is kept where every program that has the file, or another
-     implementation of its interface, says it. `tiny_check.sh` and
-     `ix_check.sh` merge their programs so:
+     implementation of its interface, says it. Several programs given
+     are merged so by mini-analyze itself; `ix_check.sh`'s, given by
+     their files, are merged so:
 
          mini-analyze -dead -summary a.dl -program a ... a.ml
          mini-analyze -dead -summary b.dl -program b ... b.ml
@@ -243,7 +273,7 @@ program's library, lib_core's units it names, is read with it.
 
 # EXAMPLES
 In ix's root, `bin/` first on the path; elsewhere **-r** and **-L**
-say where ix is (`IX`). Each report's last line, its counts, is left
+say where ix is (`IX`), for files given without their build. Each report's last line, its counts, is left
 out here, and long lines are cut. The files are in
 `analyzers/examples/`, and its `run.sh` runs these commands against
 the reports in full (`expected.out`).
@@ -318,6 +348,28 @@ let () =
     ignore (first []))
 ```
 
+The program built by dune (`analyzers/examples/dune`: `Log` and `Main`, on
+lib_core), given by its executable, in ix's root:
+
+```
+% mini-analyze analyzers/examples/Main.exe
+analyzers/examples/Main.ml:11: in Main:fun at line 11, through h:
+  Main:fun at line 6, Main:fun at line 7
+never reached: Log.unused (analyzers/examples/Log.ml:3)
+% mini-analyze -dead analyzers/examples/Main.exe
+analyzers/examples/Log.ml:3: dead: Log.unused, nothing names it
+% mini-analyze -caps analyzers/examples/Main.exe
+analyzers/examples/Log.ml:2: Log.shout: no capability, needs
+  Cap.stdout (Stdlib.print_string)
+% mini-analyze -exn analyzers/examples/Main.exe
+Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3
+  (Main.first)
+Main.ml: the toplevel may let Invalid_argument escape, raised at
+  String.ml:153 (String.map)
+```
+
+Or without a build, anywhere, by its files, the library by **-L**:
+
 ```
 % mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core Log.ml Main.ml
 Main.ml:11: in Main:fun at line 11, through h: Main:fun at line 6,
@@ -325,20 +377,25 @@ Main.ml:11: in Main:fun at line 11, through h: Main:fun at line 6,
 never reached: Log.unused (Log.ml:3)
 % mini-analyze ... -dead Log.ml Main.ml
 Log.ml:3: dead: Log.unused, nothing names it
-% mini-analyze ... -caps Log.ml Main.ml
-Log.ml:2: Log.shout: no capability, needs Cap.stdout
-  (Stdlib.print_string)
-% mini-analyze ... -exn Log.ml Main.ml
-Main.ml: the toplevel may let Main.Empty escape, raised at Main.ml:3
-  (Main.first)
-Main.ml: the toplevel may let Invalid_argument escape, raised at
-  String.ml:153 (String.map)
 ```
 
 `Invalid_argument` is lib_core's: `Log.shout`'s `String.uppercase_ascii`
 is a `String.map`, whose new string's primitive may refuse its length
 (its `[@@raise]`). Each line names the raises on its own toplevel's way
 out, not those of the library's other units.
+
+A t-IX program, by the manifest its build wrote (tiny-ld **-map**),
+its paths read in `tiny/`, which the build copied:
+
+```
+% make -C tiny/TinyKernel
+% mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src/build.manifest
+```
+
+says what is dead in `TinyBuildSystem.ml`, the one file no other
+program links; `mini-analyze -dead -sources tiny tiny/TinyKernel/_make/src tiny`,
+every t-IX program and every one dune builds under `tiny/`, merged
+(`analyzers/datalog/tests/tiny_check.sh`).
 
 One of ix's programs, all its units, in ix's root (a second):
 
@@ -417,5 +474,6 @@ Built by dune only, not by ix. A C function of the same name in two
 files is one function. A capability is held by its type alone: a
 `< .. >`, or a parameter named `caps` of no written type, holds none
 that can be named. `Unix.openfile`'s flags are not read, so it needs
-`Cap.open_in` or `Cap.open_out`. **-exn** on mini-cc or mini-ml takes
+`Cap.open_in` or `Cap.open_out`. A manifest's C programs (tiny-cc's)
+are not read. **-exn** on mini-cc or mini-ml takes
 a minute and 4 to 6 GB.

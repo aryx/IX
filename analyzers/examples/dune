@@ -1,0 +1,6 @@
+; the man page's ML example (docs/man/1/analyze.md), built so that
+; mini-analyze reads it as dune links it: mini-analyze analyzers/examples/Main.exe
+(executable
+ (name Main)
+ (modules Log Main)
+ (libraries ix_core caps))

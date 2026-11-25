@@ -19,7 +19,8 @@ case $DATALOG in /*) ;; *) DATALOG=$IX/$DATALOG;; esac
 E=$IX/analyzers/examples
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 # The commands write calc.dl and flow.dl where they run, as on the page,
-# so they run in a copy of this directory.
+# so they run in a copy of this directory; those on Main.exe, the program
+# by its build (dune's, this directory's dune), in ix's root.
 cp $E/calc.c $E/Log.ml $E/Main.ml $E/graph.dl $W
 cd $W
 mini-analyze() { "$ANALYZE" "$@"; }
@@ -29,10 +30,14 @@ t() { echo "% $1"; eval "$1" 2>&1; }
 {
   t 'mini-analyze -r $IX/analyzers/datalog calc.c'
   t 'mini-analyze -r $IX/analyzers/datalog -dead calc.c'
+  cd $IX
+  t 'mini-analyze analyzers/examples/Main.exe'
+  t 'mini-analyze -dead analyzers/examples/Main.exe'
+  t 'mini-analyze -caps analyzers/examples/Main.exe'
+  t 'mini-analyze -exn analyzers/examples/Main.exe'
+  cd $W
   t 'mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core Log.ml Main.ml'
   t 'mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -dead Log.ml Main.ml'
-  t 'mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -caps Log.ml Main.ml'
-  t 'mini-analyze -r $IX/analyzers/datalog -L $IX/lib_core -exn Log.ml Main.ml'
   t 'mini-analyze -facts calc.c > calc.dl'
   t 'P=$IX/analyzers/datalog/points_to'
   t 'mini-datalog -q '\''reaches(main, F)'\'' $P/instructions.dl $P/contexts.dl $P/insensitive.dl calc.dl graph.dl 2> /dev/null'

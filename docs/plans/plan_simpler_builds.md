@@ -10,8 +10,9 @@ remove the needs for the complexity here?", "let's make it a plan
 document recording your analysis and proposing a plan to simplify
 things for m-ix (and t-ix) when possible, cheapest first".
 
-**Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2. Next:
-step 3.**
+**Status: proposed (2026-11-25). Done: steps 1 (233faef6) and 2
+(7a7da7c5); step 4, lib_code. Step 3 is t-IX's session's (f0601cfb:
+t-IX built beside its sources). Next: step 4's other groups.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -161,6 +162,13 @@ first requirement.
    62, turbopascal's 24): to read group by group, the same answer where
    a group is a library in all but name. Cost: a commit per group,
    each small.
+   The author (2026-11-25): "each lib should have its own mkfile, to
+   follow principia's build system simplicity". Done: lib_code, which
+   had none (Highlight_code alone at first, 2026-10-09, mini-emacs's,
+   before plan_mk_libraries.md's libraries; the SSA algorithms added
+   2026-10-29 by a rule in each compiler's mkfile): its mkfile, in the
+   top mkfile's LIBS, in LIBDIRS of mini-cc, mini-ml and both
+   mini-emacs; 9 compiles fewer in a full build.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

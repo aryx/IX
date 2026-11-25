@@ -6,11 +6,14 @@ TOP=../..
 DIR=languages/c
 PROG=mini-cc
 SRC=Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lexer \
- Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Dominators Braun Liveness Coloring Ssa Ssa_build Alloc Ssa_gen \
+ Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Ssa Ssa_build Alloc Ssa_gen \
  Metadata Signature Il Writer Cil_types Cil_strings Cil_exprs Lower_cil CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
-LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I dotnet -I ../dotnet/assembly -I ../../lib_code
+LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli}
+LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I dotnet -I ../dotnet/assembly
 LIBUNITS=Asm Show_asm
+# (lib_code: the SSA form's algorithms, Dominators Braun Liveness
+# Coloring, which mini-ml links too)
+LIBDIRS=lib_code
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
@@ -43,12 +46,6 @@ $D/%.$O: simple/%.ml
 # orders each one
 $D/%.$O: opti/%.ml
 	$ML $INCLUDES -o $target opti/$stem.ml
-
-# lib_code's units (Dominators Braun Liveness Coloring, SSA's algorithms,
-# which mini-ml uses too), with one recipe each, so that .depend orders
-# each one
-$D/%.$O: $TOP/lib_code/%.ml
-	$ML $INCLUDES -o $target $TOP/lib_code/$stem.ml
 
 # ssa/'s units (Ssa Ssa_build Alloc Ssa_gen), with one recipe each, so
 # that .depend orders each one

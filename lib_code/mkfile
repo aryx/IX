@@ -1,0 +1,16 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# lib_code, a library of ix's tools (mkfiles/mklib): code as the object,
+# whatever its language: Highlight_code (mini-emacs's highlighters'
+# categories) and the SSA form's algorithms, Dominators, Braun, Liveness
+# and Coloring, which mini-ml's and mini-cc's ssa/ share. Each program
+# compiled them itself before, from here (a rule in each mkfile), each
+# an object of its own (plan_simpler_builds.md, step 4).
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_code
+DIRS=.
+NEEDS=
+UNITS=Highlight_code Dominators Braun Liveness Coloring
+<$TOP/mkfiles/mklib

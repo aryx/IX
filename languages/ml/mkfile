@@ -6,10 +6,13 @@
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Dominators Braun Liveness Coloring Ssa Ssa_build Unbox Untag Cse Licm Alloc Zero_alloc Gen Emit Lines_ml Acid_ml Metadata Signature Il Writer Il_code Il_types Il_functions Il_patterns Il_externals Il_printf Il_prims Il_exprs Lower_il CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli debug/*.ml debug/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
-LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I debug -I dotnet -I ../dotnet/assembly -I ../../lib_code
+SRC=Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Ssa Ssa_build Unbox Untag Cse Licm Alloc Zero_alloc Gen Emit Lines_ml Acid_ml Metadata Signature Il Writer Il_code Il_types Il_functions Il_patterns Il_externals Il_printf Il_prims Il_exprs Lower_il CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli debug/*.ml debug/*.mli dotnet/*.ml dotnet/*.mli ../dotnet/assembly/*.ml ../dotnet/assembly/*.mli}
+LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I debug -I dotnet -I ../dotnet/assembly
 LIBUNITS=Asm Lexer_asm Parser_asm
+# (lib_code: the SSA form's algorithms, Dominators Braun Liveness
+# Coloring, which mini-cc links too)
+LIBDIRS=lib_code
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
@@ -22,12 +25,6 @@ $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
-
-# lib_code's units (Dominators Braun Liveness Coloring, SSA's algorithms,
-# which mini-cc uses too), with one recipe each, so that .depend orders
-# each one
-$D/%.$O: $TOP/lib_code/%.ml
-	$ML $INCLUDES -o $target $TOP/lib_code/$stem.ml
 
 # pp/'s units (Bits Derive Pp), with one recipe each, so that .depend
 # orders each one

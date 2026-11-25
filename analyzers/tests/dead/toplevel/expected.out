@@ -1,0 +1,3 @@
+analyzers/tests/dead/toplevel/Top.ml: dead global: Top.unread, nothing live names it
+analyzers/tests/dead/toplevel/Top.ml:8: dead: Top.never, nothing names it
+1 functions dead (1 nothing names), 0 only through a pointer; 1 globals, 0 fields, 0 constructors, 0 statements

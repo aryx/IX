@@ -666,3 +666,20 @@ same day: after a parameter, a , or the ) must come, else "expected )"
 TinyC_test.sh's errors have both cases, `int f( {` and a file ending
 in `int g(int a`. The analysis that would find it, and its like in
 ix's other readers: plan_bug_analyses.md's A13 (proposed).
+
+## mini-analyze -dead: a global read at its own toplevel said dead (2026-11-25, fixed)
+
+`printf 'let a = 1 + 2\nlet () = if a = 0 then exit 1\n' > G.ml;
+mini-analyze -dead -L lib_core G.ml`: "G.ml: dead global: G.a, nothing
+live names it" (seen on analyzers/tests/callers' CallersA.a and
+CallersB.b, run as programs). dead.dl's used_global counts a global's
+mention in a reached function but the one of its definition, its
+unit's init, so as not to take the definition for a use; a read in
+that same init is told apart only by another fact (copy, an argument),
+and the argument of a primitive that moves no value (=, lsl, *) gives
+none. Fixed the same day: Closure_facts says each global read, by the
+function reading it (read_global), and dead.dl counts it when that
+function is reached; a global read only by dead code is still dead.
+analyzers/tests/dead/toplevel has both. Gone from dead_all_ix.txt:
+Mmu32.tlb_bits, Mmu64.tlb_bits (1 lsl tlb_bits), Tone.pairs (4 *
+pairs), all read at their toplevel.

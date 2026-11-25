@@ -471,6 +471,7 @@ vtype('Kit:x/25', 'int').
 vfull('Kit:x/25', 'int').
 bound_var('Kit.dead', 'Kit:x/25').
 assign('Kit:x/25', 'Kit.dead:arg').
+read_global('Kit.helper', 'Kit.dead').
 var_in('Kit.helper', 'Kit.dead').
 in_function('Kit:23:c16', 'Kit.dead').
 site_key('Kit:23:c16', 'Kit:813-819').
@@ -559,6 +560,7 @@ htype('Kit:block2@28', 'Kit.handler').
 hfull('Kit:block2@28', 'Kit.handler').
 var_in('Kit:const', 'Kit:init').
 assign_store_field('Kit:t16', 'fld:name', 'Kit:const').
+read_global('Kit.double', 'Kit:init').
 assign_store_field('Kit:t16', 'fld:run', 'Kit.double').
 assign_store_field('Kit:handlers/31', 'con:::.0', 'Kit:t16').
 var_in('Kit:t17', 'Kit:init').
@@ -633,6 +635,7 @@ htype('prim:%makemutable:block', 'Stdlib.ref').
 assign_store_field('prim:%makemutable:ret', 'fld:contents', 'prim:%makemutable:arg1').
 assign_address('Kit:t22', 'prim:%makemutable').
 site_key('Kit:29:c20', 'Kit:1078-1081').
+read_global('Kit.negate', 'Kit:init').
 scalar('Kit:current/32').
 new_block('Kit:current/32', 'Kit:29:c20:block').
 htype('Kit:29:c20:block', 'Stdlib.ref').
@@ -687,6 +690,7 @@ alloc_in('Kit:block5@30', 'Kit').
 htype('Kit:block5@30', 'exn').
 hfull('Kit:block5@30', 'exn').
 exn_block('Kit:block5@30', 'Kit.Stop').
+read_global('Kit.square', 'Kit.last').
 var_in('Kit.square', 'Kit.last').
 assign_store_field('Kit:t24', 'con:Stop.0', 'Kit.square').
 scalar('Kit.last:ret').
@@ -1131,6 +1135,7 @@ store_in('prim:%setfield0:arg1', 'fld:contents', 'prim:%setfield0:arg2', 'prim:%
 store_site('prim:%setfield0').
 assign_address('Use:t2', 'prim:%setfield0').
 site_key('Use:6:c2', 'Use:211-213').
+read_global('Use.total', 'Use:go/3').
 var_in('Use.total', 'Use:go/3').
 var_in('Use:t3', 'Use:go/3').
 vtype('Use:t3', 'int').
@@ -1205,6 +1210,7 @@ in_function('Use:7:c7', 'Use.run_all').
 site_key('Use:7:c7', 'Use:245-247').
 tail('Use:7:c7').
 call_indirect('Use:7:c7', 'Use:go/3').
+read_global('Kit.handlers', 'Use.run_all').
 global_var('Kit.handlers').
 var_in('Kit.handlers', 'Use.run_all').
 argument('Use:7:c7', 1, 'Kit.handlers').
@@ -1216,10 +1222,12 @@ assign('Use.run_all', 'Use:run_all/7').
 var_in('Use:t9', 'Use:init').
 vtype('Use:t9', 'unit').
 vfull('Use:t9', 'unit').
+read_global('Use.run_all', 'Use:init').
 in_function('Use:10:c8', 'Use:init').
 site_key('Use:10:c8', 'Use:273-280').
 call_indirect('Use:10:c8', 'Use.run_all').
 argument('Use:10:c8', 1, 'Use:const').
+read_global('Kit.iter', 'Use:init').
 global_var('Kit.iter').
 var_in('Kit.iter', 'Use:init').
 var_in('Use:t10', 'Use:init').
@@ -1251,6 +1259,7 @@ vtype('Use:t12', '->').
 vfull('Use:t12', '(int Stdlib.ref -> (int -> unit))').
 assign_address('Use:t12', 'prim:%setfield0').
 site_key('Use:11:c10', 'Use:319-321').
+read_global('Use.total', 'Use:fun1@11').
 var_in('Use.total', 'Use:fun1@11').
 var_in('Use:t13', 'Use:fun1@11').
 vtype('Use:t13', 'int').
@@ -1282,6 +1291,7 @@ vtype('Use:t19', '->').
 vfull('Use:t19', '((int -> int) Stdlib.ref -> (int -> int))').
 assign_address('Use:t19', 'prim:%field0').
 site_key('Use:11:c13', 'Use:331-343').
+read_global('Kit.current', 'Use:fun1@11').
 global_var('Kit.current').
 var_in('Kit.current', 'Use:fun1@11').
 scalar('Use:t18').
@@ -1331,15 +1341,18 @@ vtype('Use:t23', '->').
 vfull('Use:t23', '(int Stdlib.ref -> (int -> unit))').
 assign_address('Use:t23', 'prim:%setfield0').
 site_key('Use:12:c16', 'Use:365-367').
+read_global('Use.total', 'Use:init').
 var_in('Use:t24', 'Use:init').
 vtype('Use:t24', 'int').
 vfull('Use:t24', 'int').
+read_global('Kit.fold', 'Use:init').
 global_var('Kit.fold').
 var_in('Kit.fold', 'Use:init').
 var_in('Use:t25', 'Use:init').
 in_function('Use:12:c17', 'Use:init').
 site_key('Use:12:c17', 'Use:368-376').
 call_indirect('Use:12:c17', 'Kit.fold').
+read_global('Kit.add', 'Use:init').
 global_var('Kit.add').
 var_in('Kit.add', 'Use:init').
 argument('Use:12:c17', 1, 'Kit.add').
@@ -1395,6 +1408,7 @@ var_in('Use:half/8', 'Use:init').
 vtype('Use:half/8', '->').
 vfull('Use:half/8', '(int -> int)').
 bound_var('Use:init', 'Use:half/8').
+read_global('Kit.scale', 'Use:init').
 global_var('Kit.scale').
 var_in('Kit.scale', 'Use:init').
 in_function('Use:13:c21', 'Use:init').
@@ -1420,6 +1434,7 @@ vtype('Use:t33', '->').
 assign_address('Use:t33', 'prim:%ignore').
 site_key('Use:15:c23', 'Use:465-471').
 var_in('Use:t34', 'Use:init').
+read_global('Kit.last', 'Use:init').
 global_var('Kit.last').
 var_in('Kit.last', 'Use:init').
 in_function('Use:15:c24', 'Use:init').
@@ -1473,6 +1488,7 @@ store_in('Use.total', 'fld:contents', 'Use:t36', 'Use:init').
 store_site('Use:15:c25').
 vtype('Stdlib.print_int', '->').
 vfull('Stdlib.print_int', '(int -> unit)').
+read_global('Stdlib.print_int', 'Use:init').
 global_var('Stdlib.print_int').
 var_in('Stdlib.print_int', 'Use:init').
 in_function('Use:16:c28', 'Use:init').

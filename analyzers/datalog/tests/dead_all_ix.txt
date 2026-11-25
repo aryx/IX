@@ -1,31 +1,31 @@
 _mk/7/editors/emacs/draw/Lexer_c.ml:134: dead field: pp stored in go, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:2726: dead field: tkind stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:2726: dead field: tloc stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:2726: dead field: tmanifest stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:2726: dead field: tname stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:2726: dead field: tparams stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:2726: dead field: tspan stored in Parser:fun at line 2726, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tkind stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tloc stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tmanifest stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tname stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tparams stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tspan stored in Parser:fun at line 2730, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:32: dead field: ploc stored in Parser.mkpat, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:33: dead field: iloc stored in Parser.mkitem, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:34: dead field: s stored in Parser.mksig, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:34: dead field: sloc stored in Parser.mksig, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:3613: dead: Parser.interface, nothing names it
-_mk/7/editors/emacs/draw/Parser.ml:98: dead field: aend stored in Parser.attribute, nothing live reads it
-_mk/7/editors/emacs/draw/Parser.ml:98: dead field: aloc stored in Parser.attribute, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:3617: dead: Parser.interface, nothing names it
+_mk/7/editors/emacs/draw/Parser.ml:99: dead field: aend stored in Parser.attribute, nothing live reads it
+_mk/7/editors/emacs/draw/Parser.ml:99: dead field: aloc stored in Parser.attribute, nothing live reads it
 _mk/7/editors/emacs/tty/Lexer_c.ml:134: dead field: pp stored in go, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:2726: dead field: tkind stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:2726: dead field: tloc stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:2726: dead field: tmanifest stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:2726: dead field: tname stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:2726: dead field: tparams stored in Parser:fun at line 2726, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:2726: dead field: tspan stored in Parser:fun at line 2726, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2730: dead field: tkind stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2730: dead field: tloc stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2730: dead field: tmanifest stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2730: dead field: tname stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2730: dead field: tparams stored in Parser:fun at line 2730, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:2730: dead field: tspan stored in Parser:fun at line 2730, nothing live reads it
 _mk/7/editors/emacs/tty/Parser.ml:32: dead field: ploc stored in Parser.mkpat, nothing live reads it
 _mk/7/editors/emacs/tty/Parser.ml:33: dead field: iloc stored in Parser.mkitem, nothing live reads it
 _mk/7/editors/emacs/tty/Parser.ml:34: dead field: s stored in Parser.mksig, nothing live reads it
 _mk/7/editors/emacs/tty/Parser.ml:34: dead field: sloc stored in Parser.mksig, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:3613: dead: Parser.interface, nothing names it
-_mk/7/editors/emacs/tty/Parser.ml:98: dead field: aend stored in Parser.attribute, nothing live reads it
-_mk/7/editors/emacs/tty/Parser.ml:98: dead field: aloc stored in Parser.attribute, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:3617: dead: Parser.interface, nothing names it
+_mk/7/editors/emacs/tty/Parser.ml:99: dead field: aend stored in Parser.attribute, nothing live reads it
+_mk/7/editors/emacs/tty/Parser.ml:99: dead field: aloc stored in Parser.attribute, nothing live reads it
 assembler/Asm.ml:179: dead: Asm.invert, nothing names it
 assembler/Asm.ml:184: dead: Asm.cond_bits, nothing names it
 assembler/Asm.ml:212: dead field: s_arch stored in Asm.stored, nothing live reads it
@@ -75,7 +75,6 @@ editors/turbopascal/editor/Tui_turbo.ml:28: dead: Tui_turbo.cursor, nothing name
 editors/turbopascal/editor/Tui_turbo.ml:29: dead: Tui_turbo.error, nothing names it
 editors/turbopascal/editor/Tui_turbo.ml:31: dead: Tui_turbo.screen, nothing names it
 editors/turbopascal/editor/Tui_turbo.ml:41: dead: Tui_turbo.file, nothing names it
-kernels/9pi/tests/tone/Tone.ml: dead global: Tone.pairs, nothing live names it
 kernels/oberon/display/Display.ml: dead global: Display.cross, nothing live names it
 kernels/oberon/display/Display.ml: dead global: Display.grey, nothing live names it
 kernels/oberon/machine/Machine.ml:147: dead: Machine.le16, in init but no call goes through the pointer
@@ -308,7 +307,6 @@ machine/arm32/Mmu32.ml: dead global: Mmu32.m12, nothing live names it
 machine/arm32/Mmu32.ml: dead global: Mmu32.m16, nothing live names it
 machine/arm32/Mmu32.ml: dead global: Mmu32.m20, nothing live names it
 machine/arm32/Mmu32.ml: dead global: Mmu32.m24, nothing live names it
-machine/arm32/Mmu32.ml: dead global: Mmu32.tlb_bits, nothing live names it
 machine/arm32/Mmu32.ml:102: dead: Mmu32.translate, nothing names it
 machine/arm32/Mmu32.ml:16: dead: Mmu32.create, nothing names it
 machine/arm32/Mmu32.ml:20: dead: Mmu32.flush, nothing names it
@@ -331,7 +329,6 @@ machine/arm64/Arm64.ml:413: dead field: aarch32 stored in Arm64.create, nothing 
 machine/arm64/Arm64.ml:590: dead: Arm64.take, nothing names it
 machine/arm64/Arm64.ml:606: dead: Arm64.syndrome, nothing names it
 machine/arm64/Mmu64.ml: dead global: Mmu64.permission, nothing live names it
-machine/arm64/Mmu64.ml: dead global: Mmu64.tlb_bits, nothing live names it
 machine/arm64/Mmu64.ml:11: dead: Mmu64.create, nothing names it
 machine/arm64/Mmu64.ml:15: dead: Mmu64.flush, nothing names it
 machine/arm64/Mmu64.ml:17: dead: Mmu64.enabled, nothing names it

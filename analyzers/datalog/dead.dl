@@ -122,6 +122,8 @@ read_var(V) :- argument(_, _, V).
 read_var(V) :- call_indirect(_, V).
 used_global(G) :- read_var(G).
 used_global(G) :- var_in(G, F), \+ global_def(G, F), root(F, R), reach(R).
+% (read where it is defined, a toplevel's: let () = if a = 0 ...)
+used_global(G) :- read_global(G, F), root(F, R), reach(R).
 dead_global(G) :- global_def(G, _), \+ function(G), \+ used_global(G).
 
 live_var(V) :- owner(V, R), reach(R).

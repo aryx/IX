@@ -193,6 +193,16 @@ let read (v : var) : string =
   end;
   n
 
+(* a global read in the function f, its value used (said once):
+ * dead.dl's, a toplevel's own globals, read where they are defined
+ * (let () = if a = 0 ..., given to a primitive that moves no value) *)
+let global_reads : (string * string, unit) Hashtbl.t = Hashtbl.create 256
+let read_global (g : string) (f : string) : unit =
+  if not (Hashtbl.mem global_reads (g, f)) then begin
+    Hashtbl.add global_reads (g, f) ();
+    fact "read_global" [ g; f ]
+  end
+
 (* where a value no one reads goes *)
 let junk () : string = !unit_name ^ ":_"
 
@@ -1045,7 +1055,10 @@ and applied (x : expr) (f : expr) (args : expr list) (dst : string) : unit =
 and operand (x : expr) : string =
   match x.e with
   | Evar (Local v) -> read v
-  | Evar (Global g) -> typed "vtype" g.gsym g.gtype; global g.gsym !inside
+  | Evar (Global g) ->
+      typed "vtype" g.gsym g.gtype;
+      read_global g.gsym !inside;
+      global g.gsym !inside
   | Econstraint (e, _) -> operand e
   | Econst _ -> literal x; constant ()
   | _ ->
@@ -1076,6 +1089,7 @@ let unit_ (file : string) (name : string) (items : item list) : string =
   Hashtbl.reset prims;
   Hashtbl.reset mentioned;
   Hashtbl.reset reads;
+  Hashtbl.reset global_reads;
   unit_name := name;
   unit_file := file;
   temps := 0;

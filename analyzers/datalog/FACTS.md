@@ -175,6 +175,15 @@ global_def('Toy.inc', 'Toy:init').
 assign('Toy.inc', 'Toy:inc/2').
 ```
 
+A global's value read, in which function: `dead.dl` counts a read where the
+global is defined, its unit's toplevel, which `var_in` of the definition's
+function cannot tell from the definition (`let () = if limit = 0 ...`, a
+primitive moving no value). `Toy.inc` read by the toplevel:
+
+```
+read_global('Toy.inc', 'Toy:init').
+```
+
 **Blocks**, each made where it is written. A record, a tuple, a constructor
 applied; `{ fn = f; label = "box" }`, `(inc, 2)`:
 
@@ -547,7 +556,7 @@ with: `own_live_out(V, P)`, and for ML `own_live_in(V, B)`, `own_idom(D, B)`.
 | `points_to/contexts.dl` | `var_in`, `global_var`, `in_function`, `init`, `closure`, `curried`, `alloc_in`, `scalar` |
 | `calls.dl` | `closure`, `inner`, `in_function`, `init`, over `call_edge` |
 | `exceptions.dl` | `raise_in`, `raise_of`, `reraises`, `exn_block`, the `try`'s, `catches*`, over `call_edge`, `pt`, `reached` |
-| `dead.dl` | `defined`, `closure`, `global_def`, `dead_stmt`, `allocator_call`, `runtime_builds`, `annotation`, and mini-analyze's `built_outside` |
+| `dead.dl` | `defined`, `closure`, `global_def`, `read_global`, `dead_stmt`, `allocator_call`, `runtime_builds`, `annotation`, and mini-analyze's `built_outside` |
 | `capabilities.dl`, `capabilities_types.dl` | `takes_cap`, `declares`, `assign_address`, `global_def` |
 | `bugs/pointers.dl` | `call_direct`, `return`, and `heap`, `local`, `literal`, which mini-analyze makes of the names |
 | `bugs/physeq.dl` | `phys_compare`, `fresh_operand`, `compared`, `store_in`, `assign_load_field`, over `pts`, `reach` |

@@ -4,13 +4,18 @@
 # Build and test t-IX from tiny/ itself, as ../Makefile's tix, test-tix
 # and self-tix targets do from the top:
 #
-#   make         builds the tiny programs with dune (from here, dune
-#                builds tiny/ alone: a no-op takes 0.6 s, against 4 s
-#                for the whole tree)
+#   make         builds t-IX with its own tools: make host, then the
+#                tiny programs compiled by tiny-ml and linked by tiny-ld
+#                into TinyKernel/'s boot, disk and source images (with
+#                the manifests mini-analyze reads)
+#   make host    builds the tiny tools for the host with dune (from here,
+#                dune builds tiny/ alone: a no-op takes 0.6 s, against 4 s
+#                for the whole tree); a convenience, ix built by ix being
+#                the way to build it
 #   make test    runs the shared jobs of make test-lite and t-IX's own
 #                (a minute)
 #   make run     runs tiny-kernel on tiny-machine, with sh on the console
-#                (dune runs first, for the tools; then TinyKernel/'s make
+#                (make host first, for the tools; then TinyKernel/'s make
 #                run, which builds the boot image)
 #   make run-window  does the same in a window (tiny-machine -window)
 #   make self-quick  has t-IX build a few of its own targets on
@@ -37,13 +42,15 @@
 # TinyKernel/'s targets, run after dune has built the tools they use
 KERNEL_TARGETS = run run-window self self-quick
 
-all:
+all: host
+	$(MAKE) -C TinyKernel all
+host:
 	dune build
 test:
 	../tests/lite.sh tix
-$(KERNEL_TARGETS): all
+$(KERNEL_TARGETS): host
 	$(MAKE) -C TinyKernel $@
-check: all
+check: host
 	dune build ../analyzers/Main.exe
 	$(MAKE) -C .. check-tix
 loc:
@@ -53,4 +60,4 @@ clean:
 	$(MAKE) -C TinyKernel/steps clean
 	find . -name .tiny-build -type f -exec rm -f {} +
 
-.PHONY: all test $(KERNEL_TARGETS) check loc clean
+.PHONY: all host test $(KERNEL_TARGETS) check loc clean

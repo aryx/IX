@@ -1,5 +1,5 @@
 (* What mini-ld linked into a program, for the tools that read a program
- * whole, mini-analyze first (docs/plans/plan_analyzer_build_manifest.md):
+ * whole, mini-analyze first (docs/plans/done/plan_analyzer_build_manifest.md):
  * the objects it took, in their order, and the source of each, so that a
  * reader knows the exact files of the program, its libraries' and its
  * generated ones among them (a lexer in _mk/7), without being told them

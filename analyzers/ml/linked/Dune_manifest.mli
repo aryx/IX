@@ -31,7 +31,7 @@
  *
  * Like Coverity's capture of a build or clang's compile_commands.json,
  * but of the link, which a whole-program analysis needs
- * (docs/plans/plan_analyzer_build_manifest.md). *)
+ * (docs/plans/done/plan_analyzer_build_manifest.md). *)
 
 (* [of_dune caps describe rules]: the two answers' texts; the project's
  * root, and each executable's manifest by its path from the root

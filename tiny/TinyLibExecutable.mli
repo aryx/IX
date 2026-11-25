@@ -89,7 +89,7 @@ val address : symbols -> string -> int option
 (*****************************************************************************)
 
 (* What tiny-ld linked into a program, for the tools that read a program
- * whole, mini-analyze first (docs/plans/plan_analyzer_build_manifest.md):
+ * whole, mini-analyze first (docs/plans/done/plan_analyzer_build_manifest.md):
  * the objects it took, in their order (in the Buildfile's links, the
  * order the units start in), and the source of each, so that a reader
  * knows the exact files of the program, its platform's among them

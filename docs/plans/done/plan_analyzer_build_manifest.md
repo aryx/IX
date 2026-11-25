@@ -16,11 +16,38 @@ and other flags from mini-analyzer?", "and maybe also the make generated
 target, we can remove, and use instead again the metadata to specify the
 path to the generated file".
 
-**Status: proposed (2026-11-24). Done: tiny/TinyLibExecutable.ml made
-from TinyLibMachine; tiny-ld -map writes out.manifest (step 2, its
-tiny-ld-only version); mini-analyze reads it, tiny_check.sh's tiny-kernel
-runs by manifests, K gone; dune's manifests (step 3), 17 of tiny_check.sh's
-27 host runs by them. Next: step 4, m-ix's toolchain.**
+**Status: done (2026-11-25).** Every program the analyses read comes
+from what its build linked: the linkers write a manifest with their map
+(mini-ld -map, tiny-ld -map), each unit with its source's project path,
+its compile's flags (a C file's -I and -D, which mini-cc and tiny-cc
+record in the object) and the link's order (the units' start order);
+dune's programs' are made by asking dune (Dune_manifest). The type is
+lib_executable/Manifest's, tiny/TinyLibExecutable's the same text.
+mini-analyze takes a program by its build (an .exe, a .manifest, a
+directory of either), from anywhere, no -L, -I, -own to give; several
+programs each run and merged, a library's file over the programs that
+link it. One check script, analyzers/datalog/tests/check.sh tiny|ix:
+t-IX's 55 programs (its kernel and tiny-cc's C among them), m-ix's 168
+(the kernels, C programs too), not the 44 the mkfiles gave; the scripts
+that read mkfiles (mk_units.sh, generated.sh, sweep.sh, triage.sh,
+kernel.sh) gone. What it bought: Analyze_build.mli's header. The steps
+below, and the ledger, say how it went, where it left this design and
+why (the type in lib_executable after a detour by linker/; the project
+path in each object after a -build mirror; step 5, the flags, kept for a
+tree not built). -bugs reads an ML program's C given to the linker
+with it (its runtime, a kernel's machine.c): bugs/raises.dl's check of
+each external's [@@raise] against what its C raises, both languages'
+facts in one analysis, on every program as linked (raises.sh, which gave
+lib_core's files by hand, gone; 23 lines more, the kernels' machine.c
+and Singularity's Abi). Left:
+- tiny's C (its runtime, tiny-cc's dialect) not read by mini-cc's front
+  end: t-IX's externals, which say no [@@raise], not checked;
+- a dune workspace of several contexts read on its first;
+- step 6 in part: check.sh ix finds a partial build's unknown lines by
+  grepping the manifests;
+- the reports recorded since the manifests not read yet (about a
+  thousand: caps_ix.txt, dead_ix.txt, bugs_ix.txt, exn_ix.txt's notes
+  say which).
 
 ## The problem
 

@@ -510,6 +510,33 @@ mkfiles' -I made a library's (version_control's, lib_graphics' Cursor
 and Display), and the linker's tools sweep.sh skipped. A full ix build
 for the host: 283 s, 140 programs.
 
+4b, ix_check.sh on ix's build (2026-11-25; the author, after weighing
+dune's build for make test and make check: "let's follow your
+recommendation for now"): mini-analyze FLAG MK, one call over the
+build's manifests, MK _mk/7 (make check: check-mix depends on make ix,
+the whole of ix built or brought up to date) or make test's own build
+(its -caps job after "ix built by ix", a part: a recorded line of a file
+or program it has not, or not given by it, not known there; a new line
+fails). The recordings: ix's whole build, the top mkfile's for Linux and
+its Plan 9 directories, and make test's two test directories: 163
+programs, not the 44 the mkfiles gave. Against the old ones, numbers in
+the text aside: -caps 239 kept, 171 new; -bugs 208 kept, 138 new; -exn
+103 kept, 145 new (its programs named by their path); -dead 274 kept,
+383 new, 72 gone, each a function a program the 44 did not have calls
+(mini-ar's Link.member_of, mini-bc's Dc.feed). None read yet. Needed on
+the way: mini-analyze -j (a merge's runs at once, 8: 160 programs' -exn
+at once would not fit); a dune build's ocamllex and ocamlyacc output
+read by its interface alone (their tables OCaml's Lexing's); quoted
+strings ({|...|}) not read for unit names (mini-ml's help named
+"Unit"); Singularity's application manifests not taken for ours; a
+kernel's lib_core objects, given one by one, the library's
+(units.txt's directories); dune's lock file met while another dune
+makes it, as a lock held. Bugs found: oberon's and squeak's kernels and
+mini-singml no longer linked (docs/plans/bugs/ix.md), fixed. -bugs's
+init: no -start (the link's order is not the start's): the library's
+units start before the program's. Timing: -caps 40 s, -dead 37 s, -bugs
+66 s, -exn 101 s on the whole build.
+
 ### The ledger
 
 Lines (wc -l), at each step; the analyzer's: analyzers/Analyze.ml,
@@ -530,7 +557,11 @@ ml/, report/, manifest/'s .ml.
 | dune's executables by dune rules @dir/all | 9e216fac | 56 | 95 | 92 | 124 | 37 | 4,933 |
 | a toplevel's global read (dead.dl) | e01478d6 | 56 | 95 | 92 | 124 | 37 | 4,940 |
 | E, rules and lib_core from mini-analyze's tree | 7f84bdc0 | 56 | 95 | 92 | 124 | 37 | 4,974 |
-| 4a, mini-ld's manifests, project paths | the next | 56 | 95 | 92 | 124 | 37 | 5,004 |
+| 4a, mini-ld's manifests, project paths | 16e614d6 | 56 | 95 | 92 | 124 | 37 | 5,004 |
+| 4b, ix_check.sh on ix's build | the next | 56 | 81 | 92 | 124 | 37 | 5,108 |
+
+(4b: mk_units.sh and generated.sh no longer ix_check.sh's; caps_types.sh,
+dynamic.sh and sweep.sh, run by hand, still use them.)
 
 (D's lines are Datalog's, not the analyzer's OCaml: capabilities.dl,
 420 to 488.)

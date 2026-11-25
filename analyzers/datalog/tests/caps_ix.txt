@@ -1,6 +1,62 @@
+# 2026-11-25: ix's build as mini-ld links it (ix_check.sh, its manifests): every program make ix builds, 140, not the 44 the mkfiles gave, and the library code in a program's part (version_control's) its own: 151 more, not read yet
+_mk/7/apps/maps/Worker_spawn.ml:9: Worker_spawn.spawn: no capability, needs Cap.exit (Thread.create_large), Cap.stderr (Thread.create_large), Cap.stdout (Thread.create_large)
+_mk/7/browsers/netscape/Worker_spawn.ml:9: Worker_spawn.spawn: no capability, needs Cap.exit (Thread.create_large), Cap.stderr (Thread.create_large), Cap.stdout (Thread.create_large)
 _mk/7/database/Lexer.ml:238: Lexer.comment: no capability, needs Cap.stderr (Printf.eprintf)
 _mk/7/database/Parser.ml:15: Parser.warn: no capability, needs Cap.stderr (Printf.eprintf)
+apps/files/Files.ml:104: Files.with_kind: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:111: Files.with_selected: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:117: Files.read: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:137: Files.enter: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:141: Files.initial: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:147: Files.open_selected: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.env, Cap.exit, Cap.fork; names Helpers.windows itself
+apps/files/Files.ml:235: Files.sorted: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:253: Files.shown: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:265: Files.delete: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:274: Files.named: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:291: Files.paste: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:310: Files.answer: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:352: Files.drop: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:362: Files.click: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.env, Cap.exit, Cap.fork
+apps/files/Files.ml:380: Files.browse: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.env, Cap.fork
+apps/files/Files.ml:428: Files.learn_kinds: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:437: Files.update: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.env, Cap.fork
+apps/files/Files.ml:526: Files.absolute: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_in, Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Files.ml:96: Files.rule_of: has < Cap.argv; Cap.draw; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.keyboard; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.argv, Cap.draw, Cap.env, Cap.exec, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout, Cap.wait
+apps/files/Folder.ml:117: Folder.check_free: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_out, Cap.readdir
+apps/files/Folder.ml:128: Folder.rename: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.readdir
+apps/files/Folder.ml:138: Folder.make_folder: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.readdir
+apps/files/Folder.ml:66: Folder.exists: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_out, Cap.readdir
+apps/files/Folder.ml:83: Folder.copy_file: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.readdir
+apps/files/Folder.ml:9: Folder.list: has < Cap.readdir >, names Sys_plan9.dirread itself
+apps/files/Open.ml:20: Open.fail: has < Cap.env; Cap.exec; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.env, Cap.exec, Cap.open_in, Cap.open_out, Cap.readdir, Cap.stdout, Cap.wait
+apps/maps/Map_services.ml:26: Map_services.cache_dir: has < Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.network; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, may not need Cap.clock, Cap.fork, Cap.kill, Cap.network, Cap.open_in, Cap.open_out, Cap.pipe, Cap.wait
+apps/maps/Map_services.ml:38: Map_services.places_file: has < Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.network; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, may not need Cap.clock, Cap.fork, Cap.kill, Cap.network, Cap.open_in, Cap.open_out, Cap.pipe, Cap.wait
+apps/maps/Map_services.ml:41: Map_services.known_places: has < Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.network; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, may not need Cap.clock, Cap.fork, Cap.kill, Cap.network, Cap.open_out, Cap.pipe, Cap.wait
+apps/maps/Map_services.ml:46: Map_services.save_places: has < Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.network; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, may not need Cap.clock, Cap.fork, Cap.kill, Cap.network, Cap.open_in, Cap.pipe, Cap.wait
+apps/maps/Map_window.ml:300: Map_window.worker_waits: has < Cap.clock; Cap.env; Cap.fork; Cap.kill; Cap.network; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, may not need Cap.env, Cap.network, Cap.open_in, Cap.open_out, Cap.wait
+apps/maps/Routing.ml:120: Routing.asked_beside: has < Cap.clock; Cap.fork; Cap.kill; Cap.network; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Filename.temp_file, Unix._exit, sys_file_exists itself
+apps/maps/Tile_cache.ml:83: Tile_cache.made: has < Cap.open_in; Cap.open_out >, names sys_file_exists itself
+apps/media/play/Film.ml:131: Film.update: has < Cap.all_caps >, asks only for Cap.exit
+apps/media/play/Film.ml:331: Film.run: has < Cap.all_caps >, asks only for Cap.argv, Cap.clock, Cap.draw, Cap.exit, Cap.fork, Cap.keyboard, Cap.mouse, Cap.open_out, Cap.stderr, Cap.stdout
+apps/office/file_menu/File_menu.ml:36: File_menu.save: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.open_in, Cap.readdir
+apps/office/file_menu/File_menu.ml:41: File_menu.open_: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.open_out, Cap.readdir
+apps/office/file_menu/File_menu.ml:46: File_menu.command: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_in
+apps/office/file_menu/File_menu.ml:66: File_menu.export: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.env, Cap.exit, Cap.open_in, Cap.readdir
+apps/office/file_menu/File_menu.ml:71: File_menu.choose: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.open_in, Cap.open_out
+apps/office/file_menu/File_menu.ml:94: File_menu.dialog: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.readdir
+apps/page/Pageview.ml:781: open_url: names Unix.stdin, Unix.stdout itself
 assembler/CLI.ml:33: CLI.data_items: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr, Cap.stdout
+browsers/engine/tests/Boxes.ml: init: no capability, needs Cap.argv (Sys.argv), Cap.clock (sys_time), Cap.exit (Stdlib.exit), Cap.stderr (Stdlib.prerr_endline)
+browsers/engine/tests/Boxes.ml:17: Boxes.show: no capability, needs Cap.stdout (Printf.printf)
+browsers/engine/tests/Boxes.ml:31: read: no capability, needs Cap.open_in (Stdlib.open_in, Stdlib.open_in_bin)
+browsers/javascript/eval/Js_coroutine.ml:33: Js_coroutine.start: no capability, needs Cap.fork (Thread.create)
+browsers/lynx/Lynx.ml:91: Lynx.open_: has < Cap.network; Cap.open_in; Cap.readdir >, names sys_file_exists, sys_is_directory itself
+browsers/netscape/Browser_profile.ml:87: make: has < Cap.open_out >, needs Cap.open_in|Cap.readdir (sys_file_exists)
+browsers/netscape/Netscape.ml:431: Netscape.saved: has < Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.stderr; Cap.wait >, may not need Cap.env, Cap.exec, Cap.fork, Cap.network, Cap.wait
+browsers/netscape/Netscape.ml:886: Netscape.helped: has < Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.stderr; Cap.wait >, may not need Cap.fork, Cap.network
+browsers/netscape/Netscape.ml:914: Netscape.profile_dir: has < Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.stderr; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.network, Cap.open_in, Cap.open_out, Cap.stderr, Cap.wait
+browsers/netscape/Tab.ml:147: Tab.fetch_any: has < Cap.network; Cap.open_in >, names sys_file_exists, sys_is_directory itself
+browsers/netscape/Tab.ml:522: Tab.visit: no capability, needs Cap.open_in|Cap.readdir (sys_file_exists)
 builder/CLI.ml:221: digest: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Digest.file itself
 builder/CLI.ml:41: CLI.print: has < Cap.stdout >, may not need Cap.stdout
 builder/CLI.ml:42: CLI.flush_out: has < Cap.stdout >, names Stdlib.print_string, Stdlib.stdout itself
@@ -53,16 +109,32 @@ editors/ed/Out.ml:13: Out.flush: no capability, needs Cap.stderr (Unix.stderr), 
 editors/emacs/features/Multi_buffers.ml:13: Multi_buffers.is_directory: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_out, Cap.readdir
 editors/emacs/features/Multi_buffers.ml:23: Multi_buffers.complete_filename: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_in, Cap.open_out; names Sys_plan9.dirread itself
 editors/emacs/modes/Dired.ml:24: Dired.listing: has < Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.open_in, Cap.open_out; names Sys_plan9.dirread itself
+games/arcade/TinyBreakout.ml:538: TinyBreakout:fun at line 538: names Stdlib.print_string itself
+games/arcade/TinyCameltry.ml:259: TinyCameltry:fun at line 259: names Stdlib.print_string itself
+games/arcade/TinyTronscroll.ml:495: TinyTronscroll.app: has < Cap.fork; Cap.network >, needs Cap.stderr (Multiplayer.game)
+games/arcade/TinyTronscroll.ml:498: TinyTronscroll:fun at line 498: names Stdlib.print_string itself
+games/fps/doom/Doom.ml:259: Doom:fun at line 259: names sys_file_exists itself
+games/fps/doom/sound/Sound.ml:119: Sound.music: no capability, needs Cap.stderr (Audio.play_midi)
+games/fps/doom/sound/Sound.ml:60: Sound:fun at line 60: no capability, needs Cap.stderr (Audio.wav)
+games/fps/quake/Quake.ml:266: Quake:fun at line 266: names sys_file_exists itself
+games/fps/quake/sound/Cdaudio.ml:17: Cdaudio.play: no capability, needs Cap.stderr (Audio.play_ogg)
+games/fps/quake/sound/Sound.ml:17: Sound.sound: no capability, needs Cap.stderr (Audio.wav)
 kernels/9pi/buses/user/usbd/Usbd.ml:53: Usbd.drive: has < Cap.argv; Cap.clock; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, may not need Cap.argv, Cap.clock, Cap.stderr; names Sys_plan9.rfork, Unix._exit itself
 kernels/9pi/buses/user/usbd/Usbd.ml:73: Usbd:fun at line 73: has < Cap.argv; Cap.clock; Cap.fork; Cap.open_in; Cap.open_out; Cap.stderr >, names Sys_plan9.rfork itself
 kernels/9pi/filesystems/user/dossrv/Dossrv.ml:129: Dossrv.main: has < Cap.clock; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr >, names Sys_plan9.rfork, Unix._exit itself
 kernels/9pi/filesystems/user/dossrv/Dossrv.ml:79: Dossrv.fs: has < Cap.clock; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr >, may not need Cap.clock, Cap.fork, Cap.pipe, Cap.stderr
 kernels/9pi/tests/hello/Hello.ml: init: no capability, needs Cap.argv (Sys.argv), Cap.exit (Stdlib.exit), Cap.stdout (Printf.printf)
 kernels/9pi/tests/hog/Hog.ml: init: no capability, needs Cap.argv (Sys.argv), Cap.stdout (Printf.printf)
+kernels/9pi/tests/self/Hello.ml: init: no capability, needs Cap.stdout (Stdlib.print_string)
 kernels/9pi/tests/threads/Threads.ml: init: no capability, needs Cap.fork (Thread.create), Cap.stdout (Printf.printf, Stdlib.print_endline, Stdlib.print_newline)
 kernels/9pi/tests/threads/Threads.ml:19: Threads:fun at line 19: no capability, needs Cap.fork (Thread.create)
 kernels/9pi/tests/threads/Threads.ml:43: Threads:fun at line 43: no capability, needs Cap.stdout (Printf.printf)
 kernels/9pi/tests/tone/Tone.ml: init: no capability, needs Cap.stdout (Stdlib.print_string)
+kernels/steps/step1/Main.ml: init: no capability, needs Cap.stdout (Printf.printf, Stdlib.print_string)
+kernels/tools/Mkbootdir.ml:56: Mkbootdir.kerndate_9pi: has < Cap.clock; Cap.open_in >, names Unix.stat itself
+kernels/tools/Mkbootdir.ml:69: Mkbootdir.main: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, names sys_file_exists itself
+kernels/tools/Mkpixdata.ml:102: Mkpixdata.font_default: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.stderr
+kernels/tools/Mkpixdata.ml:82: Mkpixdata.memdata: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
 languages/c/CLI.ml:103: CLI.dotnet_backend: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.stderr, Cap.stdout
 languages/c/CLI.ml:131: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr
 languages/c/CLI.ml:73: CLI.simple_backend: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.open_out, Cap.stderr
@@ -87,21 +159,34 @@ languages/ml/debug/Lines_ml.ml:6: Lines_ml.source: has < Cap.open_in; Cap.readdi
 languages/pascal/CLI.ml:29: CLI.run: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.open_in
 languages/tiger/CLI.ml:10: CLI.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, may not need Cap.stderr, Cap.stdout
 lib_core/commons/FS.ml:69: FS.getcwd: has < Cap.readdir >, needs Cap.env (Unix.getcwd)
+lib_core/commons/Procs.ml:50: Procs.spawn: takes a capability of no written type
+lib_core/commons/Procs.ml:68: Procs.create_process_stderr: has < Cap.exec >, needs Cap.stderr (Stdlib.flush_all), Cap.stdout (Stdlib.flush_all)
+lib_core/commons/Procs.ml:73: Procs.create_process: takes a capability of no written type
 lib_core/commons/Sys_plan9.ml:36: Sys_plan9.dirstat: has < Cap.readdir >, needs Cap.open_in (Sys_plan9.dir_of)
+lib_core/commons/Sys_plan9.ml:40: Sys_plan9.is_link: has < Cap.readdir >, needs Cap.open_in (Unix.lstat)
+lib_core/commons/Sys_plan9.ml:41: Sys_plan9.is_device: has < Cap.readdir >, needs Cap.open_in (Unix.stat)
 lib_core/commons/tests/Sources.ml:11: Sources.main: has < Cap.fork; Cap.pipe; Cap.stdout >, names Thread.create itself
 lib_core/concurrency/Source.ml:119: Source.alarm: has < Cap.clock; Cap.fork >, needs Cap.pipe (Unix.pipe)
 lib_core/concurrency/Source.ml:71: Source.source: has < Cap.fork >, needs Cap.kill (Source.start), Cap.pipe (Source.start, Unix.pipe), Cap.stderr (Unix.stderr)
+lib_crypto/tests/Speed.ml: init: no capability, needs Cap.argv (Sys.argv), Cap.exit (Stdlib.exit), Cap.stderr (Stdlib.prerr_endline)
+lib_crypto/tests/Vectors.ml:10: Vectors.say: no capability, needs Cap.stdout (Stdlib.print_endline)
+lib_graphics/Cursor.ml:43: Cursor.set: has < Cap.mouse >, names Unix.openfile itself
 lib_graphics/Display.ml:100: Display.init: has < Cap.draw >, names Unix.openfile itself
+lib_graphics/Display.ml:223: Display.screen: names Unix.openfile itself
 lib_graphics/Display.ml:223: Display.screen: no capability, needs Cap.open_in|Cap.open_out (Unix.openfile)
 lib_graphics/Keyboard.ml:31: Keyboard.held: has < Cap.fork; Cap.keyboard >, names Unix.openfile itself
 lib_graphics/Keyboard.ml:9: Keyboard.init: has < Cap.fork; Cap.keyboard >, names Unix.openfile itself
 lib_graphics/Mouse.ml:13: Mouse.init: has < Cap.fork; Cap.mouse >, names Unix.openfile itself
+lib_mime/Helpers.ml:130: Helpers.run: has < Cap.exec; Cap.open_out; Cap.wait >, needs Cap.open_in|Cap.readdir (Helpers.windows), Cap.stdin (Unix.stdin), Cap.stdout (Unix.stdout)
+lib_networking/http/Keep_alive.ml:87: Keep_alive.exchange: has < Cap.network; Cap.open_in >, needs Cap.clock (Keep_alive.take)
 lib_terminal/unix/Tty_unix.ml:13: Tty_unix.available: no capability, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:24: answer: no capability, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:37: Tty_unix.run_: has < Cap.clock >, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:45: Tty_unix:fun at line 45: has < Cap.clock >, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:52: loop: has < Cap.clock >, needs Cap.stdin (Unix.stdin)
 lib_terminal/unix/Tty_unix.ml:9: go: no capability, needs Cap.stdout (Unix.stdout)
+linker/tools/Ar.ml:50: Ar.main: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdout >, names sys_file_exists itself
+linker/tools/Nm.ml:67: Nm.print: has < Cap.open_in; Cap.stderr; Cap.stdout >, may not need Cap.open_in, Cap.stderr
 machine/CLI.ml:104: run: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.exit (Stdlib.exit); names Stdlib.flush_all itself
 machine/CLI.ml:26: CLI.main: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.signal (Sys.set_signal); names Unix.environment itself
 machine/CLI.ml:86: report: has < Cap.argv; Cap.chdir; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.kill; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Stdlib.stdout itself
@@ -123,6 +208,14 @@ machine/process/Host.ml:93: Host:fun at line 93: has < Cap.chdir; Cap.clock; Cap
 machine/process/Linux.ml:222: Linux.syscall32: no capability, needs Cap.stderr (Stdlib.prerr_endline)
 machine/process/Linux.ml:350: Linux.syscall64: no capability, needs Cap.stderr (Stdlib.prerr_endline)
 machine/process/Plan9.ml:725: Plan9.syscall: no capability, needs Cap.stderr (Stdlib.prerr_endline)
+networking/Httpd.ml:132: Httpd.listing: has < Cap.readdir >, names sys_read_directory itself
+networking/Httpd.ml:134: is_dir: has < Cap.readdir >, names sys_is_directory itself
+networking/Httpd.ml:140: Httpd.answer: has < Cap.open_in; Cap.readdir >, names sys_file_exists, sys_is_directory itself
+networking/Httpd.ml:179: Httpd.listen: has < Cap.network >, names Unix.bind, Unix.listen, Unix.socket itself
+networking/Httpd.ml:205: Httpd.serve: has < Cap.network; Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.stderr; names Unix.accept itself
+networking/Httpd.ml:222: Httpd.main: has < Cap.network; Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, names sys_file_exists, sys_is_directory itself
+networking/Httpd.ml:235: Httpd:fun at line 235: has < Cap.network; Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, needs Cap.signal (Sys.set_signal)
+networking/Timesync.ml:36: Timesync.main: has < Cap.argv; Cap.network; Cap.open_in; Cap.stderr; Cap.stdout >, may not need Cap.argv
 shell/Builtin.ml:54: Builtin.dot: has < Cap.chdir; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Unix.openfile itself
 shell/CLI.ml:115: CLI.run: has < Cap.argv; Cap.chdir; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stdout; Cap.wait >, needs Cap.signal (Sys.set_signal), Cap.stderr (Stdlib.prerr_endline), Cap.stdin (Unix.stdin)
 shell/CLI.ml:150: finish: has < Cap.argv; Cap.chdir; Cap.env; Cap.exec; Cap.exit; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stdout; Cap.wait >, names Stdlib.stdout itself
@@ -138,7 +231,20 @@ shell/Process.ml:28: Process.exec: names Stdlib.prerr_endline, Unix._exit itself
 shell/Process.ml:40: Process.fork: names Stdlib.prerr_endline, Stdlib.stderr, Stdlib.stdout, Sys.set_signal, Unix._exit itself
 shell/Process.ml:69: Process.status_of: no capability, needs Cap.stderr (Stdlib.prerr_endline)
 shell/Process.ml:97: Process.with_fds: no capability, needs Cap.stderr (Stdlib.stderr), Cap.stdout (Stdlib.stdout)
+tiny/TinyBuildSystem.ml:426: TinyBuildSystem.start: has < Cap.env; Cap.exec; Cap.fork; Cap.open_out >, may not need Cap.open_out
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:270: TinyLibSystem.spawn: has < Cap.exec; Cap.fork >, may not need Cap.exec, Cap.fork
 typesetting/man/Main.ml:109: Main:fun at line 109: has < Cap.open_in; Cap.readdir >, names Sys_plan9.dirread itself
+utilities/archive/Gunzip.ml:119: Gunzip.main: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.readdir
+utilities/archive/Gunzip.ml:73: Gunzip.gunzip: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.open_in, Cap.readdir, Cap.stdin
+utilities/archive/Gunzip.ml:95: Gunzip.gunzipf: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.readdir, Cap.stdin
+utilities/archive/Gzip.ml:54: Gzip.gzipf: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.clock, Cap.readdir, Cap.stdin
+utilities/archive/Gzip.ml:76: Gzip.main: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.readdir
+utilities/archive/Tar.ml:187: Tar.add: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.clock, Cap.stderr, Cap.stdin, Cap.stdout
+utilities/archive/Tar.ml:192: Tar:fun at line 192: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, names Sys_plan9.dirread itself
+utilities/archive/Tar.ml:247: Tar.exists: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdin, Cap.stdout
+utilities/archive/Tar.ml:251: Tar.make: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.clock, Cap.readdir, Cap.stderr, Cap.stdin, Cap.stdout
+utilities/archive/Tar.ml:280: Tar.extract1: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.clock, Cap.readdir, Cap.stderr, Cap.stdin
+utilities/archive/Tar.ml:309: Tar.extract: has < Cap.clock; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.clock, Cap.readdir, Cap.stderr, Cap.stdin
 utilities/calc/bc/State.ml: init: no capability, needs Cap.stdout (Stdlib.print_string)
 utilities/calc/dc/CLI.ml:22: CLI.main: has < Cap.exec; Cap.fork; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, names Unix.stat itself
 utilities/calc/dc/Dc.ml:359: Dc.shell: has < Cap.exec; Cap.fork; Cap.open_in; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.open_in; names Stdlib.stdout itself
@@ -147,6 +253,7 @@ utilities/calc/dc/Dc.ml:386: Dc.bang: has < Cap.exec; Cap.fork; Cap.open_in; Cap
 utilities/calc/dc/Dc.ml:397: Dc.command: has < Cap.exec; Cap.fork; Cap.open_in; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.open_in
 utilities/calc/dc/Dc.ml:610: Dc.flush_out: has < Cap.exec; Cap.fork; Cap.open_in; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.open_in, Cap.stdin, Cap.wait
 utilities/calc/dc/Dc.ml:618: Dc.commands: has < Cap.exec; Cap.fork; Cap.open_in; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.open_in
+utilities/calc/dc/Dc.ml:627: Dc.feed: has < Cap.exec; Cap.fork; Cap.open_in; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.open_in
 utilities/calc/hoc/Eval.ml:100: Eval.call: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stdin
 utilities/calc/hoc/Eval.ml:123: Eval.read: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stdin, Cap.stdout
 utilities/calc/hoc/Eval.ml:140: Eval.run: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stdin
@@ -155,6 +262,37 @@ utilities/calc/hoc/Eval.ml:37: Eval.eval: has < Cap.open_in; Cap.stderr; Cap.std
 utilities/calc/hoc/Eval.ml:85: Eval.exec: has < Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stdin
 utilities/calc/hoc/Input.ml:26: Input.start: has < Cap.open_in; Cap.stderr; Cap.stdin >, may not need Cap.open_in, Cap.stderr
 utilities/calc/hoc/Input.ml:31: Input.more: has < Cap.open_in; Cap.stderr; Cap.stdin >, may not need Cap.stdin
+utilities/files/Chmod.ml:62: Chmod.main: has < Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.readdir
+utilities/files/Cp.ml:39: Cp.copy: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.readdir, Cap.stderr
+utilities/files/Cp.ml:54: Cp.main: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.readdir
+utilities/files/Ls.ml:130: Ls.output: has < Cap.clock; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.readdir, Cap.stderr
+utilities/files/Ls.ml:151: Ls.ls: has < Cap.clock; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock; names Sys_plan9.dirread itself
+utilities/files/Mkdir.ml:28: Mkdir.main: has < Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.readdir
+utilities/files/Mtime.ml:11: Mtime.main: has < Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir
+utilities/files/Mv.ml:42: Mv.stat: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.open_out, Cap.readdir, Cap.stderr
+utilities/files/Mv.ml:46: Mv.samefile: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.open_out, Cap.readdir, Cap.stderr
+utilities/files/Mv.ml:53: Mv.hardremove: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.open_in, Cap.readdir, Cap.stderr
+utilities/files/Mv.ml:70: Mv.mv: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.readdir, Cap.stderr
+utilities/files/Mv.ml:98: Mv.main: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr >, may not need Cap.readdir
+utilities/files/Pwd.ml:28: Pwd.main: has < Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir
+utilities/files/Rm.ml:35: rmdir: has < Cap.open_out; Cap.readdir; Cap.stderr >, names Sys_plan9.dirread itself
+utilities/files/Walk.ml:54: walk: has < Cap.readdir; Cap.stderr; Cap.stdout >, names Sys_plan9.dirread itself
+utilities/misc/Du.ml:62: du: has < Cap.readdir; Cap.stderr; Cap.stdout >, names Sys_plan9.dirread itself
+utilities/misc/Test.ml:46: Test.main: has < Cap.clock; Cap.readdir; Cap.stderr >, may not need Cap.readdir
+utilities/misc/Test.ml:95: e3: has < Cap.clock; Cap.readdir; Cap.stderr >, needs Cap.stdin (Unix.stdin), Cap.stdout (Unix.stdout); names Unix.stderr itself
+utilities/namespace/Bind.ml:49: Bind.main: has < Cap.bind; Cap.readdir; Cap.stderr >, may not need Cap.readdir; names Sys_plan9.bind itself
+utilities/namespace/Mount.ml:66: Mount:fun at line 66: has < Cap.mount; Cap.open_in; Cap.open_out; Cap.stderr >, names Sys_plan9.mount itself
+utilities/namespace/Unmount.ml:12: Unmount.main: has < Cap.mount; Cap.stderr >, may not need Cap.mount
+utilities/pipe/Tee.ml:32: Tee:fun at line 32: has < Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.signal (Sys.signal)
+utilities/pipe/Xargs.ml:55: run: has < Cap.exec; Cap.fork; Cap.stderr; Cap.stdin; Cap.wait >, needs Cap.argv (Sys.argv), Cap.exit (Sys_plan9.exits)
+utilities/process/Free.ml:21: Free.contents: has < Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr, Cap.stdout
+utilities/process/Free.ml:48: Free.main: has < Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, names Sys_plan9.dirread itself
+utilities/process/Ps.ml:41: Ps.contents: has < Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir, Cap.stderr, Cap.stdout
+utilities/process/Ps.ml:50: Ps.main: has < Cap.open_in; Cap.readdir; Cap.stderr; Cap.stdout >, names Sys_plan9.dirread itself
+utilities/process/Sleep.ml:11: Sleep.main: has < Cap.clock; Cap.stderr >, may not need Cap.stderr
+utilities/process/Spin.ml:85: Spin:fun at line 85: has < Cap.clock; Cap.fork; Cap.stderr; Cap.stdout; Cap.wait >, names Unix._exit itself
+utilities/process/Time.ml:14: Time.main: has < Cap.exec; Cap.fork; Cap.stderr; Cap.wait >, needs Cap.exit (Sys_plan9.exits)
+utilities/text/Sed.ml:100: Sed.compile: has < Cap.open_in; Cap.open_out; Cap.stderr; Cap.stdin; Cap.stdout >, may not need Cap.stderr, Cap.stdin, Cap.stdout
 utilities/text/awk/CLI.ml:62: CLI.main: has < Cap.argv; Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.argv
 utilities/text/awk/Io.ml: init: no capability, needs Cap.stderr (Unix.stderr), Cap.stdin (Unix.stdin), Cap.stdout (Unix.stdout)
 utilities/text/awk/Io.ml:102: Io.close_all: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.env, Cap.exec, Cap.fork, Cap.open_in, Cap.open_out, Cap.pipe, Cap.stderr, Cap.stdin, Cap.stdout
@@ -167,45 +305,74 @@ utilities/text/awk/Io.ml:97: Io.close: has < Cap.clock; Cap.env; Cap.exec; Cap.f
 version_control/commands/Commands.ml:167: Commands.whoami: names Sys.getenv_opt, Unix.gethostname itself
 version_control/commands/Commands.ml:17: Commands.store_caps: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.env, Cap.exec, Cap.fork, Cap.open_in, Cap.open_out, Cap.pipe, Cap.stderr, Cap.stdout, Cap.wait
 version_control/commands/Commands.ml:187: Commands.commit: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Filename.temp_file, In_channel.with_open_bin, Out_channel.with_open_bin, Sys.getenv_opt, sys_remove, sys_system_command itself
+version_control/commands/Commands.ml:24: Commands.exists: names sys_file_exists itself
 version_control/commands/Commands.ml:24: Commands.exists: no capability, needs Cap.open_in|Cap.readdir (sys_file_exists)
+version_control/commands/Commands.ml:262: Commands.checkout_file: names Out_channel.with_open_gen, sys_remove itself
 version_control/commands/Commands.ml:262: Commands.checkout_file: no capability, needs Cap.open_out (Out_channel.with_open_gen, sys_remove)
+version_control/commands/Commands.ml:29: Commands.mkdir_p: names Unix.mkdir, sys_file_exists itself
 version_control/commands/Commands.ml:29: Commands.mkdir_p: no capability, needs Cap.open_in|Cap.readdir (sys_file_exists), Cap.open_out (Unix.mkdir)
+version_control/commands/Commands.ml:302: Commands.disk_side: names Unix.stat itself
 version_control/commands/Commands.ml:302: Commands.disk_side: no capability, needs Cap.open_in (Unix.stat)
+version_control/commands/Commands.ml:304: Commands:fun at line 304: names In_channel.with_open_bin itself
 version_control/commands/Commands.ml:304: Commands:fun at line 304: no capability, needs Cap.open_in (In_channel.with_open_bin)
 version_control/commands/Commands.ml:314: Commands.merge1: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.env, Cap.exec, Cap.fork, Cap.pipe, Cap.stdout, Cap.wait; names Out_channel.with_open_bin, Unix.chmod, sys_remove itself
+version_control/commands/Commands.ml:314: Commands.merge1: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Out_channel.with_open_bin, Unix.chmod, sys_remove itself
 version_control/commands/Commands.ml:341: Commands.branch: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names sys_file_exists, sys_remove itself
+version_control/commands/Commands.ml:35: Commands.rm_rf: names Unix.lstat itself
 version_control/commands/Commands.ml:35: Commands.rm_rf: no capability, needs Cap.open_in (Unix.lstat)
+version_control/commands/Commands.ml:36: Commands:fun at line 36: names Unix.rmdir, sys_read_directory, sys_remove itself
 version_control/commands/Commands.ml:36: Commands:fun at line 36: no capability, needs Cap.open_out (Unix.rmdir, sys_remove), Cap.readdir (sys_read_directory)
 version_control/commands/Commands.ml:397: Commands:fun at line 397: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names sys_file_exists, sys_is_directory itself
 version_control/commands/Commands.ml:402: Commands:fun at line 402: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names sys_file_exists, sys_is_directory itself
+version_control/commands/Commands.ml:42: Commands.walk_files: names Unix.stat itself
 version_control/commands/Commands.ml:42: Commands.walk_files: no capability, needs Cap.open_in (Unix.stat)
+version_control/commands/Commands.ml:44: Commands:fun at line 44: names sys_read_directory itself
 version_control/commands/Commands.ml:44: Commands:fun at line 44: no capability, needs Cap.readdir (sys_read_directory)
+version_control/commands/Commands.ml:508: Commands.repack: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names sys_file_exists, sys_read_directory itself
 version_control/commands/Commands.ml:508: Commands.repack: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.readdir (sys_read_directory); names sys_file_exists itself
 version_control/commands/Commands.ml:520: Commands:fun at line 520: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names sys_remove itself
 version_control/commands/Commands.ml:57: Commands.init: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.exec, Cap.fork, Cap.pipe, Cap.stderr, Cap.stdout, Cap.wait; names Sys.getenv_opt, sys_file_exists itself
+version_control/commands/Commands.ml:57: Commands.init: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Sys.getenv_opt, sys_file_exists itself
+version_control/commands/Commands.ml:589: Commands:fun at line 589: names Out_channel.with_open_gen itself
 version_control/commands/Commands.ml:589: Commands:fun at line 589: no capability, needs Cap.open_out (Out_channel.with_open_gen)
+version_control/commands/Commands.ml:605: Commands.clone: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Unix.realpath, sys_chdir, sys_file_exists, sys_is_directory, sys_read_directory itself
 version_control/commands/Commands.ml:605: Commands.clone: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, needs Cap.chdir (sys_chdir), Cap.readdir (sys_read_directory); names Unix.realpath, sys_file_exists, sys_is_directory itself
 version_control/commands/Commands.ml:693: Commands:fun at line 693: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.stderr; Cap.stdout; Cap.wait >, names Unix.stat itself
 version_control/commands/Save.ml:33: loop: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names In_channel.with_open_bin, Unix.stat itself
 version_control/diff/Difftool.ml:14: Difftool.stat: names Unix.stat itself
+version_control/diff/Difftool.ml:14: Difftool.stat: no capability, needs Cap.open_in (Unix.stat)
 version_control/diff/Difftool.ml:22: Difftool.contents: names In_channel.with_open_bin, Stdlib.stdin itself
+version_control/diff/Difftool.ml:22: Difftool.contents: no capability, needs Cap.open_in (In_channel.with_open_bin), Cap.stdin (Stdlib.stdin)
 version_control/diff/Difftool.ml:45: Difftool.diff_main: has < Cap.argv; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, names Stdlib.exit itself
+version_control/diff/Difftool.ml:45: Difftool.diff_main: has < Cap.argv; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.exit (Stdlib.exit)
 version_control/diff/Difftool.ml:48: usage: has < Cap.argv; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, names Stdlib.exit itself
+version_control/diff/Difftool.ml:48: usage: has < Cap.argv; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.exit (Stdlib.exit)
 version_control/diff/Difftool.ml:82: scan: has < Cap.argv; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, names sys_read_directory itself
+version_control/diff/Difftool.ml:82: scan: has < Cap.argv; Cap.open_in; Cap.stderr; Cap.stdin; Cap.stdout >, needs Cap.readdir (sys_read_directory)
+version_control/objects/Loose.ml:24: Loose.write: has < Cap.env; Cap.open_out >, names Unix.mkdir, Unix.rename, sys_file_exists itself
 version_control/objects/Loose.ml:24: Loose.write: has < Cap.env; Cap.open_out >, needs Cap.open_in|Cap.readdir (sys_file_exists); names Unix.mkdir, Unix.rename itself
+version_control/objects/Loose.ml:37: Loose.all: names sys_file_exists, sys_read_directory itself
 version_control/objects/Loose.ml:37: Loose.all: no capability, needs Cap.open_in|Cap.readdir (sys_file_exists), Cap.readdir (sys_read_directory)
+version_control/objects/Loose.ml:42: Loose:fun at line 42: names sys_read_directory itself
 version_control/objects/Loose.ml:42: Loose:fun at line 42: no capability, needs Cap.readdir (sys_read_directory)
+version_control/objects/Pack.ml:100: Pack.all: names sys_read_directory itself
 version_control/objects/Pack.ml:100: Pack.all: no capability, needs Cap.readdir (sys_read_directory)
+version_control/objects/Packer.ml:54: loadtree: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Stdlib.prerr_endline itself
 version_control/objects/Packer.ml:54: loadtree: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, needs Cap.stderr (Stdlib.prerr_endline)
+version_control/objects/Packer.ml:67: loadcommit: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Stdlib.prerr_endline itself
 version_control/objects/Packer.ml:67: loadcommit: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, needs Cap.stderr (Stdlib.prerr_endline)
 version_control/objects/Store.ml:58: Store.mem: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names sys_file_exists itself
 version_control/objects/Store.ml:82: mkdirs: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Unix.mkdir, sys_file_exists itself
 version_control/objects/Store.ml:86: save: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Unix.rename, sys_file_exists itself
+version_control/repo/Conf.ml:33: Conf.default_files: names Sys.getenv_opt itself
 version_control/repo/Conf.ml:33: Conf.default_files: no capability, needs Cap.env (Sys.getenv_opt)
+version_control/repo/Fs.ml:44: Fs.branch: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names sys_file_exists, sys_is_directory, sys_read_directory itself
 version_control/repo/Fs.ml:44: Fs.branch: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, needs Cap.readdir (sys_read_directory); names sys_file_exists, sys_is_directory itself
 version_control/repo/Index9.ml:57: Index9.write: names Unix.rename itself
+version_control/repo/Query.ml:79: Query.warn: names Stdlib.prerr_endline itself
 version_control/repo/Query.ml:79: Query.warn: no capability, needs Cap.stderr (Stdlib.prerr_endline)
 version_control/repo/Refs.ml:43: Refs.head_ref: names In_channel.with_open_bin itself
+version_control/repo/Refs.ml:49: walk: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names sys_read_directory itself
 version_control/repo/Refs.ml:49: walk: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, needs Cap.readdir (sys_read_directory)
 version_control/repo/Refs.ml:53: Refs:fun at line 53: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names sys_is_directory itself
 version_control/repo/Refs.ml:66: Refs.write_string: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Unix.rename itself
@@ -213,6 +380,7 @@ version_control/repo/Refs.ml:68: mkdirs: has < Cap.clock; Cap.env; Cap.open_in; 
 version_control/repo/Refs.ml:76: Refs.remove: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names sys_remove itself
 version_control/repo/Repo.ml:13: up: names sys_file_exists itself
 version_control/repo/Walk.ml:125: loadwdir: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Unix.stat itself
+version_control/repo/Walk.ml:129: Walk:fun at line 129: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names sys_read_directory itself
 version_control/repo/Walk.ml:129: Walk:fun at line 129: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, needs Cap.readdir (sys_read_directory)
 version_control/repo/Walk.ml:136: loadent: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Unix.stat itself
 version_control/repo/Walk.ml:165: samedata: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names In_channel.with_open_bin itself
@@ -220,18 +388,27 @@ version_control/repo/Walk.ml:176: Walk:fun at line 176: has < Cap.clock; Cap.env
 version_control/repo/Walk.ml:50: Walk.run: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out >, names Unix.stat itself
 version_control/wire/Proto.ml:123: Proto.spawn: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, names Unix.socketpair itself
 version_control/wire/Proto.ml:139: Proto.curl: names Unix.stdin itself
+version_control/wire/Proto.ml:145: Proto.temp: names Filename.temp_file itself
 version_control/wire/Proto.ml:145: Proto.temp: no capability, needs Cap.open_in|Cap.open_out (Filename.temp_file)
 version_control/wire/Proto.ml:147: Proto.dial_http: names Unix.openfile itself
+version_control/wire/Proto.ml:168: Proto.write_phase: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, names Unix.openfile itself
 version_control/wire/Proto.ml:168: Proto.write_phase: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, needs Cap.open_in|Cap.open_out (Unix.openfile)
 version_control/wire/Proto.ml:191: Proto.connect: names Sys.getenv_opt, Unix.getaddrinfo, Unix.realpath, sys_file_exists, sys_is_directory itself
 version_control/wire/Proto.ml:206: dial: names Unix.connect, Unix.socket itself
 version_control/wire/Proto.ml:222: Proto.stdio: names Unix.stdin, Unix.stdout itself
+version_control/wire/Proto.ml:237: Proto:fun at line 237: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, names sys_remove itself
 version_control/wire/Proto.ml:237: Proto:fun at line 237: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, needs Cap.open_out (sys_remove)
+version_control/wire/Serve.ml:118: Serve.serve: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, names sys_file_exists itself
 version_control/wire/Serve.ml:118: Serve.serve: has < Cap.exec; Cap.fork; Cap.pipe; Cap.wait >, needs Cap.open_in|Cap.readdir (sys_file_exists)
+version_control/wire/Serve.ml:61: Serve.receive: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Stdlib.prerr_string itself
 version_control/wire/Serve.ml:61: Serve.receive: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, needs Cap.stderr (Stdlib.prerr_string)
 version_control/wire/Serve.ml:64: negotiate: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Unix.access, sys_file_exists itself
 version_control/wire/Serve.ml:91: take: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names Unix.openfile itself
 version_control/wire/Serve.ml:96: release: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.open_in; Cap.open_out; Cap.pipe; Cap.wait >, names sys_remove itself
+windows/desktop/Desk.ml:51: Desk:fun at line 51: has < Cap.draw; Cap.env; Cap.fork; Cap.mouse; Cap.open_in; Cap.open_out >, names sys_file_exists itself
+windows/desktop/Startmenu.ml:51: Startmenu.newest: has < Cap.readdir >, names Sys_plan9.dirread itself
+windows/desktop/Startmenu.ml:65: Startmenu:fun at line 65: has < Cap.draw; Cap.fork; Cap.mouse; Cap.open_in; Cap.open_out; Cap.readdir >, names sys_file_exists itself
+windows/desktop/lib/Wsys.ml:11: Wsys.windows: has < Cap.open_in; Cap.readdir >, names Sys_plan9.dirread itself
 windows/rio/Processes_winshell.ml:20: Processes_winshell.start: has < Cap.bind; Cap.chdir; Cap.exec; Cap.fork; Cap.mount; Cap.open_in; Cap.open_out >, needs Cap.stderr (Stdlib.prerr_string, Unix.stderr), Cap.stdin (Unix.stdin), Cap.stdout (Unix.stdout); names Sys_plan9.rfork, Unix._exit itself
 windows/rio/Processes_winshell.ml:35: Processes_winshell.init: has < Cap.bind; Cap.exec; Cap.fork; Cap.mount; Cap.open_in; Cap.open_out >, needs Cap.stderr (Stdlib.prerr_string); names Sys_plan9.rfork, Unix._exit itself
 windows/rio/Processes_winshell.ml:9: Processes_winshell.mount_files: names Sys_plan9.bind, Sys_plan9.mount itself

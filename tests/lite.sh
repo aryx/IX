@@ -639,10 +639,10 @@ job "mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no dead 
 job "mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -bugs -check
 job "mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)" analyzers/datalog/tests/tiny_check.sh -exn -check
 group m-ix
-# (ix_check.sh makes the units ix's build makes, its lexers and parsers:
-# no ix build wanted, nor arm64. old: with the developers' _mk/7, whole,
-# skipped without it)
-job "mini-analyze -caps on m-ix's 44 programs: no report but the recorded ones (caps_ix.txt)" analyzers/datalog/tests/ix_check.sh -caps -check
+# (ix_check.sh reads ix's build as mini-ld linked it, its manifests: the
+# one above, the programs it has; make check's, all of _mk/7. old: the
+# 44 programs read from their mkfiles, their lexers made by generated.sh)
+job -after-ix "mini-analyze -caps on m-ix's programs as ix links them: no report but the recorded ones (caps_ix.txt)" env MK=$K analyzers/datalog/tests/ix_check.sh -caps -check
 
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it
 # a line a family, each with its bar, its jobs ended and its failures,

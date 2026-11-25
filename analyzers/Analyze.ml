@@ -77,6 +77,8 @@ let options (caps : < Cap.open_in; .. >) (f : F.t) :
            List.iter (fun (x, m) -> Hashtbl.replace Models.derived x m)
              (Summaries.of_text (FS.read caps (Fpath.v s)))),
        " file: ML: the library's summaries (analyzers/summaries/)");
+      ("-j", Arg.Int (fun n -> f.jobs <- n),
+       " n: a merge's runs at once (8; -exn's up to 6 GB each)");
       ("-fingerprint", on (fun () -> f.fingerprint <- true),
        " one number of every answer") ]
 
@@ -108,7 +110,7 @@ let main (caps : < F.caps; .. >) (argv : string array) : int =
       names = Hashtbl.create 64; project = ""; args = []; home = "."; rules = "";
       lib = ""; incs = []; defs = []; roots = []; start = ""; context = "";
       library = false; summary = ""; program = ""; facts = false; flow = false;
-      answers = false; fingerprint = false } in
+      answers = false; fingerprint = false; jobs = 8 } in
   (* (-Idir and -Dx in one word too, as mini-cc's) *)
   let split (a : string) : string list =
     let n = String.length a in

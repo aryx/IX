@@ -99,13 +99,14 @@ test-long: all
 # -exn, each compared with its recording, the baseline. It prints the
 # new reports whole, and the reports that are gone. make test runs
 # tiny/'s four and m-ix's -caps; make check runs them all, with a
-# longer budget. check-mix takes a minute for each analysis (the units
-# ix's build makes, its lexers and parsers, made first: generated.sh).
+# longer budget. check-mix reads ix's build, _mk/7, as mini-ld linked
+# it (its manifests), made or brought up to date first (make ix): a
+# minute for each analysis, -exn two.
 check: check-tix check-mix
 check-tix:
 	@st=0; for f in -caps -dead -bugs -exn; do \
 	  ./analyzers/datalog/tests/tiny_check.sh $$f -check || st=1; done; exit $$st
-check-mix:
+check-mix: ix
 	@st=0; for f in -caps -dead -bugs -exn; do \
 	  ./analyzers/datalog/tests/ix_check.sh $$f -check || st=1; done; exit $$st
 

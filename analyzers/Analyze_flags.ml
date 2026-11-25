@@ -51,4 +51,5 @@ type t = {
   mutable flow : bool;  (* -flow *)
   mutable answers : bool;  (* -flow-answers *)
   mutable fingerprint : bool;
+  mutable jobs : int;  (* -j: a merge's runs at once *)
 }

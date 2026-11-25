@@ -56,8 +56,13 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
     List.filter_map (fun (f, t) ->
         match t with Archive_member _ -> Some f | Command_line -> None)
       ml in
+  (* (from an archive's member, else from a unit given to the linker: a
+   * kernel links lib_core's objects one by one, mkkernel's STDOBJS) *)
   let library =
-    List.find_map (fun f -> standard_library caps (Filename.dirname f)) members in
+    match List.find_map (fun f -> standard_library caps (Filename.dirname f)) members with
+    | Some l -> Some l
+    | None ->
+        List.find_map (fun (f, _) -> standard_library caps (Filename.dirname f)) ml in
   let under (d : string) (f : string) : bool =
     let d = d ^ "/" in
     String.length f > String.length d && String.sub f 0 (String.length d) = d in
@@ -66,11 +71,28 @@ let of_manifest (caps : < Cap.open_in; Cap.readdir; .. >) (m : manifest)
    * the directories of its archive's members; lib_core's own tests are
    * programs) *)
   let library_dirs =
-    List.filter_map (fun f ->
-        match library with
-        | Some l when under l f -> Some (Filename.dirname f)
-        | _ -> None)
-      members in
+    (* (its own directories: units.txt's, and commons/, as Ml_front's
+     * search; TinyLibCore's, one, its Stdlib.mli's) *)
+    match library with
+    | None -> []
+    | Some l -> (
+        (* (lib_core/core has a Stdlib.mli, lib_core its units.txt) *)
+        let units (d : string) = FS.read_opt caps (Fpath.v (Filename.concat d "units.txt")) in
+        let l, txt =
+          match units l with
+          | Some t -> (l, Some t)
+          | None -> (match units (Filename.dirname l) with
+                     | Some t -> (Filename.dirname l, Some t)
+                     | None -> (l, None)) in
+        match txt with
+        | None -> [ l ]
+        | Some text ->
+            Filename.concat l "commons"
+            :: List.filter_map (fun (line : string) ->
+                   let line = String.trim line in
+                   if line = "" || line.[0] = '#' then None
+                   else Some (Filename.concat l (Filename.dirname line)))
+                 (String.split_on_char '\n' text)) in
   let given =
     List.filter_map (fun (f, t) ->
         if t = Command_line && not (List.mem (Filename.dirname f) library_dirs)

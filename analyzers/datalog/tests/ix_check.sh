@@ -2,94 +2,80 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-analyze FLAG on the 44 programs (sweep.sh's), each report once,
-# sorted, recorded: -caps caps_ix.txt, -bugs bugs_ix.txt (and the
-# kernel's, kernel.sh's, its paths the tree's), -dead dead_all_ix.txt
-# (what is dead in every program that has the file: a function of a
-# shared unit unused by one program is not dead in ix; triage.sh's
-# dead_ix.txt is another list, to read), -exn exn_ix.txt (a program's
-# toplevel exceptions, but lib_core's every program may raise). The
-# reports are known ones,
-# read (analyzers/datalog/README.md); -check (make test's) fails on any
-# other answer, a new report the first: new code that goes around a
-# capability, or dead, or a bug the rules know, is said the day it
-# comes. Compared without line numbers, the reports' own too (an edit above
-# a function moves it). Under a minute each.
-# usage: analyzers/datalog/tests/ix_check.sh -caps|-dead|-bugs|-exn out-file|-check
-#   (dune build first; the units ix's build makes, its lexers and parsers,
-#   made here by generated.sh, or MK's: an ix build, _mk/7 say)
-# ANALYZE, DATALOG: the programs, if not dune's.
+# mini-analyze FLAG on m-ix's programs as ix's build links them: one
+# call over the build's manifests (mini-ld -map's), each program read as
+# linked, its library's and its generated files (mini-lex's, mini-yacc's)
+# among them, the runs merged by mini-analyze. Each report once, sorted,
+# recorded: -caps caps_ix.txt, -bugs bugs_ix.txt (and the kernel's,
+# kernel.sh's), -dead dead_all_ix.txt (what every program that has the
+# file says), -exn exn_ix.txt (by program, lib_core's that every program
+# may raise left out: compare.sh's exn_lines). The reports are known
+# ones, read (analyzers/datalog/README.md); -check fails on any other
+# answer, a new report the first. Compared without line numbers (an edit
+# above a function moves it); a generated file by its place in _mk/7.
+# A build of a part (make test's): the recorded lines of files no
+# manifest of it names, or that it does not give, not known here, left
+# out; a new line fails.
+# (old, before the manifests: the 44 programs read from their mkfiles,
+# mk_units.sh, sweep.sh, their lexers by generated.sh, merged here)
+# usage: analyzers/datalog/tests/ix_check.sh -caps|-dead|-bugs|-exn [out-file|-check]
+#   MK: the build (_mk/7: make ix first); ANALYZE: the analyzer, if not dune's.
 cd "$(dirname "$0")/../../.."
 export LC_ALL=C
-export ANALYZE=${ANALYZE:-$PWD/_build/default/analyzers/Main.exe}
-DATALOG=${DATALOG:-_build/default/languages/datalog/Main.exe}
-# (no analyzer, being rebuilt say: every program would say nothing)
+ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
+MK=${MK:-_mk/7}
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
-flag=$1; out=$2; check=
+flag=$1; out=$2; check=; show=
 case $flag in
-  -caps) expected=caps_ix.txt;; -bugs) expected=bugs_ix.txt;;
-  -dead) expected=dead_all_ix.txt;; -exn) expected=exn_ix.txt;;
-  *) echo "usage: ix_check.sh -caps|-dead|-bugs|-exn out-file|-check"; exit 2;;
+  -caps|-bugs|-exn) expected=analyzers/datalog/tests/${flag#-}_ix.txt;;
+  -dead) expected=analyzers/datalog/tests/dead_all_ix.txt;;
+  *) echo "usage: ix_check.sh -caps|-dead|-bugs|-exn [out-file|-check]"; exit 2;;
 esac
-expected=analyzers/datalog/tests/$expected
+[ -n "$(find $MK -name '*.manifest' 2> /dev/null | head -1)" ] ||
+  { echo "ix_check.sh: no ix build in $MK (make ix)"; exit 2; }
 if [ "$out" = -check ]; then check=1; out=$(mktemp); fi
+if [ -z "$out" ]; then show=1; out=$(mktemp); fi
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
-# (old: MK=${MK:-_mk/7}, the developers' ix build, make ix first)
-[ -n "${MK:-}" ] || { analyzers/datalog/tests/generated.sh $W/gen7 || exit 2; export MK=$W/gen7; }
-FLAG=$flag analyzers/datalog/tests/sweep.sh $W/sweep 300 > $W/sweep.log 2>&1
 . analyzers/datalog/tests/compare.sh
 notes=$(notes_of $expected)
-# (a generated file by its place in _mk/7, wherever MK built it)
-gen() { sed "s|^${MK:-_mk/7}/|_mk/7/|"; }
-case $flag in
-  -caps) cat $W/sweep/*.out 2> /dev/null | grep -E ': (no capability|has <|names .* itself)' |
-           gen | sort -u > $out;;
-  -bugs)
-    analyzers/datalog/tests/kernel.sh -bugs $W/kernel.out
-    { cat $W/sweep/*.out; } 2> /dev/null | grep '^bug? ' | sed 's/^bug? //' |
-      gen > $W/all
-    # (the kernel's paths are kernels/9pi's: the tree's)
-    grep '^bug? ' $W/kernel.out | sed 's/^bug? //' |
-      sed -E -e 's|^\.\./\.\./||' -e t -e 's|^|kernels/9pi/|' >> $W/all
-    sort -u $W/all > $out;;
-  -exn)
-    # (a program's name first: many have a Main.ml)
-    for f in $W/sweep/*.out; do
-      n=$(basename $f .out); exn_lines < $f | gen | sed "s|^|$n: |"
-    done | sort -u > $out;;
-  -dead)
-    # each program's files and reports as facts (sweep.sh's -summary),
-    # kept where every program that has the file says it: dead_all.dl's.
-    # A program not read is given its files (sweep.sh's name.files) as its
-    # own, saying nothing: what they have is not dead for ix unless it says
-    # so.
-    for f in $W/sweep/*.files; do
-      n=$(basename $f .files)
-      [ -s $W/sweep/$n.dl ] || tr ' ' '\n' < $f | grep . | sed "s|.*|own('$n', '&').|" > $W/sweep/$n.dl
-    done
-    # (its warnings, a relation with no fact, said only if it fails)
-    $DATALOG analyzers/datalog/dead_all.dl $W/sweep/*.dl 2> $W/datalog.err > $W/dead_all ||
-      { cat $W/datalog.err; exit 2; }
-    dead_lines < $W/dead_all | gen | sort -u > $out;;
-esac
+$ANALYZE $flag $MK > $W/answer 2> $W/err ||
+  { grep -v WARNING $W/err | tail -5; echo "FAIL mini-analyze $flag on m-ix's programs: not all read"; exit 1; }
+# (the reports, not the programs' list under them; a generated file by
+# its place in _mk/7, wherever MK is)
+gen() { sed "s|^$(cd $MK && pwd)/|_mk/7/|; s|^${MK%/}/|_mk/7/|"; }
+sed '/^[0-9]* reports, over the/,$d' $W/answer | gen |
+  if [ $flag = -exn ]; then exn_lines by; else cat; fi > $W/all
+# (the kernel's, its paths the tree's)
+if [ $flag = -bugs ]; then
+  analyzers/datalog/tests/kernel.sh -bugs $W/kernel.out
+  grep '^bug? ' $W/kernel.out | sed 's/^bug? //' |
+    sed -E -e 's|^\.\./\.\./||' -e t -e 's|^|kernels/9pi/|' > $W/kernel
+  cat $W/kernel >> $W/all
+fi
+touch $W/kernel
+sort -u $W/all > $out
+if [ -n "$show" ]; then cat $out; rm -f $out; exit 0; fi
 if [ -z "$check" ]; then
   keep_notes "$notes" $out; echo "$(grep -vc '^#' $out) reports: $out"; exit 0
 fi
-# (a program not read here, a unit of its not built in this ix, as make
-# test's builds part of it: its lines left out, the recorded ones too)
-# (its files: a report in one, or dead there for every program, cannot be
-# known here; its generated ones by their place in _mk/7)
-skipped=$(grep 'NOT READ' $W/sweep.log | awk '{print $1}' | tr '\n' ' ')
-# (-exn's lines are a program's: its name)
-for d in $skipped; do
-  cat $W/sweep/$(echo $d | tr / _).files 2> /dev/null | tr ' ' '\n'
-  echo $d | tr / _
-done | grep . | gen | sort -u > $W/unknown
-# (and a generated file this ix did not make: no build, CI's fresh tree)
-for g in $(grep -ho '^_mk/7/[^:]*' $expected $out | sort -u); do
-  [ -f "${MK:-_mk/7}/${g#_mk/7/}" ] || echo $g
-done >> $W/unknown
-compare "mini-analyze $flag on the 44 programs" $out $expected $W/unknown
+# (a file no manifest of this build names, or a program it has not, not
+# known here: a part's; -exn's lines are a program's)
+find $MK -name '*.manifest' -exec cat {} + | tr -c '[:print:]' '\n' > $W/named
+sed -n '/^[0-9]* reports, over the/,$p' $W/answer | tail -n +2 | tr ' ' '\n' | grep . > $W/programs
+grep -hv '^#' $expected $out | sed 's/: .*//; s/:[0-9]*$//' | sort -u | while read -r f; do
+  case $f in
+    _mk/7/*) [ -f "$MK/${f#_mk/7/}" ] || echo "$f";;
+    *.ml|*.mli|*.c) grep -qaF "$f" $W/named || grep -q "^$f:" $W/kernel || echo "$f";;
+    *) grep -qxF "$f" $W/programs || echo "$f";;
+  esac
+done > $W/unknown
+# (a part, some lines not known: a line it does not give, of a file a
+# program it has not reported on (lib_graphics' Display, one program's
+# of the whole), not known either; a new line fails all the same)
+if [ -s $W/unknown ]; then
+  bare_line < $out | sort -u > $W/now
+  grep -v '^#' $expected | bare_line | sort -u | comm -23 - $W/now | sed 's/: .*//; s/:[0-9]*$//' >> $W/unknown
+fi
+compare "mini-analyze $flag on m-ix's programs" $out $expected $W/unknown
 st=$?
-[ -n "$skipped" ] && echo "  (not read here: $(echo $skipped | sed 's/ /, /g'))"
 rm -f $out; exit $st

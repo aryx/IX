@@ -247,6 +247,17 @@ let own_dirs : Fpath.t list ref = ref []
 let components : (string, unit) Hashtbl.t = Hashtbl.create 16
 let built_outside : string list ref = ref []
 
+(* OCaml's ocamllex's or ocamlyacc's output (dune's build of a .mll or
+ * .mly; ix's own are mini-lex's and mini-yacc's): its tables, OCaml's
+ * Lexing's and Parsing's, which lib_core's do not have (Menhir's output
+ * is plain code, read) *)
+let ocaml_tools (text : string) : bool =
+  let has (x : string) : bool =
+    let n = String.length text and k = String.length x in
+    let rec at (i : int) = i + k <= n && (String.sub text i k = x || at (i + 1)) in
+    at 0 in
+  has "let __ocaml_lex_tables = {" || has "let yytables ="
+
 let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (paths : Fpath.t list) : string list =
   let errors = ref [] in
   let todo = Queue.create () in
@@ -338,6 +349,11 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
    * functions given to it would look never called) *)
   let readable (file : Fpath.t) (text : string) : bool =
     let f = Fpath.to_string file in
+    if ocaml_tools text then begin
+      Logs.warn (fun l -> l "%s: its interface alone (ocamllex's or ocamlyacc's code)" f);
+      false
+    end
+    else
     match parse f text with
     | Error m ->
         Logs.warn (fun l -> l "%s: its interface alone (its code not read: %s)" f m);
@@ -400,6 +416,19 @@ let program (caps : < Cap.open_in; Cap.readdir; .. >) (dirs : Fpath.t list) (pat
     match unit_ caps look file text with
     | Ok named -> List.iter (fun u -> Queue.add (u, Fpath.to_string file) todo) named
     | Error m -> if mine then errors := m :: !errors else unread := m :: !unread in
+  (* (a file given that OCaml's tools made, dune's lexer or parser: its
+   * interface alone, as a library's unit, before any is read) *)
+  let paths =
+    List.filter (fun (p : Fpath.t) ->
+        match FS.read_opt caps p with
+        | Some text when ocaml_tools text ->
+            let u = String.capitalize_ascii (Filename.remove_extension (Filename.basename (Fpath.to_string p))) in
+            Logs.warn (fun l -> l "%s: its interface alone (ocamllex's or ocamlyacc's code)" (Fpath.to_string p));
+            Hashtbl.replace bodies u false;
+            Hashtbl.replace files u "";
+            false
+        | _ -> true)
+      paths in
   List.iter
     (fun (p : Fpath.t) ->
       Hashtbl.replace own (String.capitalize_ascii (Filename.remove_extension (Filename.basename (Fpath.to_string p)))) ();

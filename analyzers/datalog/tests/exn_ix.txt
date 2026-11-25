@@ -59,128 +59,286 @@
 #     caught by CLI.main, its line gone (lib_core's Arg alone left).
 #     A unit's line no longer the same as another's is said apart
 #     (oberon's Edit, FileDir, System; rio's Rio)
-assembler: Main.ml: the toplevel may let Division_by_zero escape
-assembler: Main.ml: the toplevel may let Failure escape, raised in go, Lexer_asm:fun at line 52, lines
-assembler: Main.ml: the toplevel may let Not_found escape, raised in Parser_asm.unary
-builder: Main.ml: the toplevel may let Failure escape, raised in CLI.run
-builder: Main.ml: the toplevel may let Not_found escape, raised in lookup, check, Outofdate.arc
-builder: Main.ml: the toplevel may let Sys_error escape, raised in CLI.path
-database: Main.ml: the toplevel may let Btree.Bad_node escape
-database: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Codegen.insert, Codegen.is_pk, Codegen.name_at, Sql.parse
-database: Main.ml: the toplevel may let Not_found escape, raised in Codegen:fun at line 33, Shell.usage
-database: Main.ml: the toplevel may let Pager.Bad_page escape
-database: Main.ml: the toplevel may let Record.Invalid_type escape
-debuggers_acid: Main.ml: the toplevel may let Failure escape, raised in CLI.main, unwind, Eval:fun at line 390, Lexer.integer, Lexer.token, hex
-debuggers_where: Where.ml: the toplevel may let Failure escape, raised in Where.main
-editors_ed: Main.ml: the toplevel may let Failure escape, raised in CLI.main
-editors_ed: Main.ml: the toplevel may let Sys.Break escape
-editors_emacs_draw: Main.ml: the toplevel may let Failure escape, raised in num, Highlight_st:fun at line 290
-editors_emacs_draw: Main.ml: the toplevel may let Not_found escape, raised in Top_window.of_frame
-editors_emacs_tty: Main.ml: the toplevel may let Failure escape, raised in Highlight_st:fun at line 290, Main.nearest, num
-editors_emacs_tty: Main.ml: the toplevel may let Not_found escape, raised in Top_window.of_frame
-editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Failure escape, raised in num, Pascal_compile.block, Pascal_compile.procedure, Pascal_compile:fun at line 928, Pdebug.watch, Turbo_menus.menu_key, Turbo_update.key_now, Turbo_view.dropdown
-editors_turbopascal_hosts_draw: Main.ml: the toplevel may let Pmachine.Runtime escape
-editors_turbopascal_tty: Main.ml: the toplevel may let Failure escape, raised in Pascal_compile.block, Pascal_compile.procedure, Pascal_compile:fun at line 928, Pdebug.watch, num, Turbo_menus.menu_key, Turbo_update.key_now, Turbo_view.dropdown
-editors_turbopascal_tty: Main.ml: the toplevel may let Pmachine.Runtime escape
-generators_lex: Main.ml: the toplevel may let Failure escape, raised in Output:fun at line 68
-generators_yacc: Main.ml: the toplevel may let Failure escape, raised in go, Output:fun at line 93
-generators_yacc: Main.ml: the toplevel may let Not_found escape, raised in Lalr:fun at line 139, Lalr.make, Output:fun at line 18
-kernels_9pi_devices_storage_user_fdisk: Fdisk.ml: the toplevel may let Failure escape, raised in Fdisk.main
-kernels_9pi_filesystems_user_dossrv: Dossrv.ml: the toplevel may let Failure escape, raised in Dossrv.main
-kernels_9pi_tests_hello: Hello.ml: the toplevel may let Failure escape, raised in init
-kernels_9pi_tests_hog: Hog.ml: the toplevel may let Failure escape, raised in init
-kernels_oberon: Edit.ml: the toplevel may let Failure escape, raised in MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, after
-kernels_oberon: FileDir.ml: the toplevel may let Failure escape, raised in read
-kernels_oberon: Main.ml: the toplevel may let Not_found escape, raised in runs, Viewers.track_of
-kernels_oberon: Oberon.ml: the toplevel may let Not_found escape, raised in runs
-kernels_oberon: System.ml: the toplevel may let Failure escape, raised in MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, Viewers.locate, Viewers.filler, after
-kernels_singularity_singml: Main.ml: the toplevel may let Failure escape, raised in target, Description:fun at line 139, Description:fun at line 156
-kernels_squeak: Main.ml: the toplevel may let Failure escape, raised in go, St_compile:fun at line 148, number, St_lexer.small_of_bytes, St_primitives.float_string
-kernels_squeak: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
-kernels_squeak: Main.ml: the toplevel may let St_boot.Error escape
-kernels_squeak: Main.ml: the toplevel may let St_chunk.Error escape
-languages_c: Main.ml: the toplevel may let Division_by_zero escape
-languages_c: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cgen.doswit, Emit:fun at line 205, value, Emit.p, pop, moves, machine, Writer.set_body, Writer.max_stack
-languages_c: Main.ml: the toplevel may let Il.Bad_il escape
-languages_c: Main.ml: the toplevel may let Not_found escape, raised in Alloc.def, Alloc.is_float, loc, Alloc:fun at line 179, Alloc:fun at line 59, Check.evconst, at, Cil_types.ptr_class, Com64.com64, operand, Opti:fun at line 287, Opti:fun at line 289, ty, var_ty, Ssa_build:fun at line 154, find, Ssa_build:fun at line 204, Ssa_build:fun at line 178, Ssa_build:fun at line 369, Ssa_build:fun at line 378, before, Ssa_build:fun at line 427, Ssa_build:fun at line 434, Ssa_build:fun at line 499, reads, fold, Ssa_build:fun at line 570, Ssa_gen:fun at line 328, def, Tree_helpers.ty, Tree_helpers.tname, Tree_helpers.arith_tab, Tree_helpers.binop_name, Tree_helpers.unop_name
-languages_c: Main.ml: the toplevel may let Tree_helpers.Error escape
-languages_datalog: Main.ml: the toplevel may let Il.Bad_il escape
-languages_datalog: Main.ml: the toplevel may let Not_found escape, raised in at, Datalog:fun at line 182, safe, Datalog_eval.pool_run, text
-languages_dotnet: Main.ml: the toplevel may let Division_by_zero escape
-languages_dotnet: Main.ml: the toplevel may let Il.Bad_il escape
-languages_dotnet: Main.ml: the toplevel may let Jit.Refused escape
-languages_dotnet: Main.ml: the toplevel may let Link.Error escape
-languages_dotnet: Main.ml: the toplevel may let Not_found escape, raised in go, Jit:fun at line 663, Jit:fun at line 1188, Jit:fun at line 1185, Jit.symbol_of, Jit.instance_code, Jit.method_text, Jit_run:fun at line 137, Jit_run:fun at line 24, cell, Jit_run:fun at line 242, Jit_run:fun at line 245, Jit_run:fun at line 37, Link:fun at line 322, Machine:fun at line 228, Machine.call_method, Machine:fun at line 649, Parser_asm.unary, Types.extra
-languages_dotnet: Main.ml: the toplevel may let Parser_asm.Error escape
-languages_dotnet: Main.ml: the toplevel may let Signature.Bad escape
-languages_dotnet: Main.ml: the toplevel may let Types.Load_error escape
-languages_dotnet: Main.ml: the toplevel may let Value.Thrown escape
-languages_dotnet: Main.ml: the toplevel may let Verifier.Bad escape
-languages_dotnet_csc: Main.ml: the toplevel may let Failure escape, raised in Csc_emit.target, Csc_emit.stmt, Csc_emit:fun at line 729, Csc_emit.loop, Csc_lexer.token, Csc_parser.binary, typ, Csc_types.subst, Writer.set_body, Writer.max_stack
-languages_dotnet_csc: Main.ml: the toplevel may let Il.Bad_il escape
-languages_dotnet_csc: Main.ml: the toplevel may let Not_found escape, raised in Csc_emit.type_token, pos
-languages_forth: Main.ml: the toplevel may let Forth.Error escape
-languages_ml: Main.ml: the toplevel may let Division_by_zero escape
-languages_ml: Main.ml: the toplevel may let Failure escape, raised in n, Bits:fun at line 94, CLI:fun at line 472, Emit:fun at line 978, vreg, freg, Il_exprs.expr, Il_exprs:fun at line 624, Il_functions.level, Il_functions:fun at line 211, Il_patterns.pattern, Il_prims:fun at line 72, Il_printf.compile, Il_types.field_tok, go, Lexer_asm:fun at line 52, Lower.app, Lower:fun at line 1089, Lower:fun at line 1101, Lower:fun at line 1109, Lower.float_block, Lower.boxed_int_block, part, lines, Pp.bits_clause, Pp.directive_at, Resolve.add_instance, Resolve:fun at line 305, Resolve.label, Resolve.inline_label, Resolve.expr, Resolve:fun at line 958, Writer.set_body, Writer.max_stack
-languages_ml: Main.ml: the toplevel may let Il.Bad_il escape
-languages_ml: Main.ml: the toplevel may let Not_found escape, raised in body_ok, Alloc:fun at line 156, Alloc:fun at line 188, Alloc.def, Alloc:fun at line 83, CLI:fun at line 506, def, Emit:fun at line 982, Emit:fun at line 1211, src, rsrc, Emit:fun at line 858, Emit:fun at line 877, fused, small, Gas:fun at line 152, Gen:fun at line 210, at, Il_exprs.expr, Il_exprs.tail_expr, Il_exprs:fun at line 745, Il_types.cts, Il_types.constant, Il_types.case, Il_types.exn, Il_types:fun at line 774, Il_types.instance_tok, Licm:fun at line 67, Lower:fun at line 1233, Lower:fun at line 213, Lower.prim, Lower.app, alias, var, Parser_asm.unary, expr, Resolve.label, Resolve.cons_in, Resolve:fun at line 565, Resolve.rename, Ssa_build:fun at line 275, Ssa_build:fun at line 279, before, Ssa_build:fun at line 317, Ssa_build:fun at line 323, Ssa_build:fun at line 392, slot, Ssa_build:fun at line 431, Ssa_build:fun at line 445, Ssa_build:fun at line 477, Typing:fun at line 640, Typing:fun at line 645, Typing:fun at line 665, Typing:fun at line 722, Unbox:fun at line 207, Unbox:fun at line 215, Unbox:fun at line 218, operand, rule, Zero_alloc:fun at line 53
-languages_ml: Main.ml: the toplevel may let Parser_asm.Error escape
-languages_ml: Main.ml: the toplevel may let Pp.Error escape
-languages_ml: Main.ml: the toplevel may let Resolve.Error escape
-languages_pascal: Main.ml: the toplevel may let Pmachine.Runtime escape
-languages_prolog: Main.ml: the toplevel may let Not_found escape, raised in text
-languages_prolog: Main.ml: the toplevel may let Prolog_machine.Throw escape
-languages_prolog: Main.ml: the toplevel may let Prolog_read.Error escape
-languages_scheme: Main.ml: the toplevel may let Failure escape, raised in Scheme_eval.apply, Scheme_eval.prim, Scheme_prims.combine, Scheme_prims.one, Scheme_prims.cxr, Scheme_prims.nth
-languages_scheme: Main.ml: the toplevel may let Not_found escape, raised in Scheme_prims.apply
-languages_scheme: Main.ml: the toplevel may let Scheme_syntax.Error escape
-languages_scheme: Main.ml: the toplevel may let Sexpr_read.Error escape
-languages_smalltalk: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
-languages_tiger: Main.ml: the toplevel may let Failure escape, raised in Tiger_emit:fun at line 329, Tiger_emit.loop, Tiger_semant.exp, Writer.set_body, Writer.max_stack
-languages_tiger: Main.ml: the toplevel may let Il.Bad_il escape
-languages_tiger: Main.ml: the toplevel may let Not_found escape, raised in Tiger_emit.link, Tiger_emit.exn_ctor, at, Tiger_emit.record, Tiger_emit.field_tok, Tiger_emit.frame, Tiger_semant:fun at line 284
-linker: Main.ml: the toplevel may let Division_by_zero escape
-linker: Main.ml: the toplevel may let Failure escape, raised in args, CLI.main
-linker: Main.ml: the toplevel may let Not_found escape, raised in Link:fun at line 322
-machine: Main.ml: the toplevel may let Division_by_zero escape
-machine: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cpu.run32
-machine: Main.ml: the toplevel may let Memory.Fault escape
-machine: Main.ml: the toplevel may let Not_found escape, raised in Arm64.sysreg_name, Arm64.sysop
-machine: Main.ml: the toplevel may let Queue.Empty escape, raised in Cpu.run32
-machine: Main.ml: the toplevel may let Sys_error escape, raised in Cpu.run32
-machine: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Cpu.run32
-shell: Main.ml: the toplevel may let Failure escape, raised in CLI.run, Parser.next, go, Process.exec, num, Word.expand, Word.value
-shell: Main.ml: the toplevel may let Sys_error escape, raised in Process:fun at line 25
-typesetting_man: Main.ml: the toplevel may let Failure escape, raised in command_block, Latex.run_pushed, finish, Main.main, Noweb.chunk, go
-typesetting_man: Main.ml: the toplevel may let Not_found escape, raised in Latex.command
-typesetting_man: Main.ml: the toplevel may let Pic.Unknown escape
-typesetting_man: Main.ml: the toplevel may let Zlib.Corrupt escape
-utilities_calc_bc: Main.ml: the toplevel may let Division_by_zero escape
-utilities_calc_bc: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Dc.commands
-utilities_calc_bc: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Dc.commands
-utilities_calc_dc: Main.ml: the toplevel may let Division_by_zero escape
-utilities_calc_dc: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Dc.commands
-utilities_calc_dc: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Dc.commands
-utilities_calc_hoc: Main.ml: the toplevel may let Eval.Returned escape
-utilities_calc_hoc: Main.ml: the toplevel may let Failure escape, raised in CLI.main
-utilities_calc_hoc: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Eval.call
-utilities_text_awk: Cell.ml: the toplevel may let Division_by_zero escape
-utilities_text_awk: Main.ml: the toplevel may let Cell.Fatal escape
-utilities_text_awk: Main.ml: the toplevel may let Division_by_zero escape
-utilities_text_awk: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cell.is_float, search, Cformat.decimal, digits, Run.call
-utilities_text_awk: Main.ml: the toplevel may let Not_found escape, raised in Run.call
-utilities_text_awk: Main.ml: the toplevel may let Regex.Error escape
-utilities_text_awk: Main.ml: the toplevel may let Run.Break_loop escape
-utilities_text_awk: Main.ml: the toplevel may let Run.Continue_loop escape
-utilities_text_awk: Main.ml: the toplevel may let Run.Return_value escape
-utilities_text_awk: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Run.call
-version_control: Main.ml: the toplevel may let Delta.Corrupt escape
-version_control: Main.ml: the toplevel may let Failure escape, raised in Commands:fun at line 121, Commands.cleanmsg, Commands.commit, Commands:fun at line 201, Commands.proto_die, Fs.ctl, Log.show, treeify, Sha1:fun at line 79
-version_control: Main.ml: the toplevel may let Not_found escape, raised in Commands.proto_die
-version_control: Main.ml: the toplevel may let Proto.Error escape
-version_control: Main.ml: the toplevel may let Serve.Fatal escape
-version_control: Main.ml: the toplevel may let Sys_error escape, raised in Commands.commit, Commands:fun at line 36, Commands:fun at line 397, Commands:fun at line 402, Commands:fun at line 44, Commands.repack, Commands:fun at line 520, Commands.proto_die, Commands.clone, Fs.branch, Loose.all, Loose:fun at line 42, Proto.connect, Refs:fun at line 53
-version_control: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Commands.proto_die
-version_control: Main.ml: the toplevel may let Zlib.Corrupt escape
-windows_rio: Cursors.ml: the toplevel may let Failure escape, raised in Cursors:fun at line 9
-windows_rio: Rio.ml: the toplevel may let Failure escape, raised in num, loop, Wm.label_of
+#   2026-11-25, ix's build as mini-ld links it (ix_check.sh, its manifests): every program make ix builds, 140, not the 44 the mkfiles gave; programs named by their path (utilities/calc/dc/mini-dc, utilities_calc_dc before): 230 lines, the new ones not tried yet
+apps/files/files: Files.ml: the toplevel may let Failure escape, raised in Files.came_from, Playground_platform.run_app, Shape_render_software.rgb_of_color
+apps/files/open: Open.ml: the toplevel may let Failure escape, raised in Open.main
+apps/maps/mini-maps: Maps.ml: the toplevel may let Failure escape, raised in Cookie:fun at line 46, Http.body, Map_window.initial, Playground_platform.run_app, Shape_render_software.rgb_of_color, Tls12.handshake, Tls13.handle13, Url.parse_authority
+apps/media/play/mini-play: Play.ml: the toplevel may let Failure escape, raised in length, Pitch_effect.factor, Play.main, Playground_platform.run_app, Shape_render_software.rgb_of_color, Y4m:fun at line 26
+apps/media/play/mini-play: Play.ml: the toplevel may let Not_found escape, raised in Abc:fun at line 258, walk, Mpeg_system:fun at line 63
+apps/media/play/mini-play: Play.ml: the toplevel may let Vorbis.End_of_packet escape
+apps/media/play/mpg_bench: Mpg_bench.ml: the toplevel may let Failure escape, raised in Mpg_bench:fun at line 16, Shape_render_software.rgb_of_color
+apps/media/play/mpg_bench: Mpg_bench.ml: the toplevel may let Not_found escape, raised in walk, Mpeg_system:fun at line 63
+apps/misc/mini-colors: Colors.ml: the toplevel may let Failure escape, raised in Colors.main, num
+apps/music/rebirth/rebirth: ReBirth.ml: the toplevel may let Failure escape, raised in Pitch_effect.factor, Playground_platform.run_app, ReBirth.step_on, ReBirth.click_drum, ReBirth.update/2, ReBirth:fun at line 157, ReBirth:fun at line 261, ReBirth:fun at line 424, init, ReBirth.with_pattern, Sequencer.lock_value, Shape_render_software.rgb_of_color, Voice_tr808:fun at line 147
+apps/music/rebirth/rebirth: Studio_rebirth.ml: the toplevel may let Not_found escape, raised in Studio_rebirth.tb303, Studio_rebirth.tr808
+apps/music/rebirth/rebirth: Voice_tr808.ml: the toplevel may let Failure escape, raised in Pitch_effect.factor, Voice_tr808:fun at line 147
+apps/office/office: Office.ml: the toplevel may let Not_found escape, raised in Page.caret_at
+apps/office/office: Office.ml: the toplevel may let Stack.Empty escape
+apps/office/office: Office.ml: the toplevel may let Zlib.Corrupt escape
+apps/page/pageview: Pageview.ml: the toplevel may let Zlib.Corrupt escape
+assembler/mini-asm: Main.ml: the toplevel may let Division_by_zero escape
+assembler/mini-asm: Main.ml: the toplevel may let Failure escape, raised in go, Lexer_asm:fun at line 52, lines
+assembler/mini-asm: Main.ml: the toplevel may let Not_found escape, raised in Parser_asm.unary
+browsers/engine/tests/boxes: Boxes.ml: the toplevel may let Failure escape, raised in Box_layout.picture_src, init, escape, number, pick, Entities.reference, Html_tree.start_tag, Html_tree.top
+browsers/engine/tests/boxes: Computed.ml: the toplevel may let Failure escape, raised in escape, number
+browsers/javascript/mini-node: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Js_ast:fun at line 101, Js_ast:fun at line 107, Js_builtins:fun at line 110, Js_builtins:fun at line 263, Js_compile:fun at line 372, Js_eval:fun at line 1120, Js_eval:fun at line 704, Js_eval:fun at line 952, number, text
+browsers/javascript/mini-node: Main.ml: the toplevel may let Js_eval.Short_circuit escape
+browsers/javascript/mini-node: Main.ml: the toplevel may let Js_regexp.Bad escape
+browsers/javascript/mini-node: Main.ml: the toplevel may let Js_value.Throw escape
+browsers/javascript/mini-node: Main.ml: the toplevel may let Not_found escape, raised in Js_ast.number_to_string, Js_builtins:fun at line 710, Js_compile:fun at line 372, Js_eval:fun at line 704, Js_eval:fun at line 952
+browsers/javascript/mini-node: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Js_compile:fun at line 372, Js_eval:fun at line 704, Js_eval:fun at line 952
+browsers/lynx/mini-lynx: Lynx.ml: the toplevel may let Failure escape, raised in Cookie:fun at line 46, Entities.reference, Html_tree.start_tag, Html_tree.top, Http.body, Lynx.step, Lynx.main, loop, Tls12.handshake, Tls13.handle13, Url.parse_authority
+browsers/lynx/mini-lynx: Lynx.ml: the toplevel may let Sys_error escape, raised in Lynx.open_
+browsers/netscape/netscape: Computed.ml: the toplevel may let Failure escape, raised in escape, number
+browsers/netscape/netscape: Netscape.ml: the toplevel may let End_of_file escape, raised in Netscape.collected
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Failure escape, raised in Box_layout.picture_src, Browser_profile.of_string, Cookie:fun at line 46, escape, number, pick, Entities.reference, Html_tree.start_tag, Html_tree.top, Js_ast:fun at line 101, Js_ast:fun at line 107, Js_builtins:fun at line 110, Js_builtins:fun at line 263, Js_compile:fun at line 372, Js_eval:fun at line 1120, Js_eval:fun at line 704, Js_eval:fun at line 952, text, Script_host:fun at line 258, Url.parse_authority
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Js_eval.Short_circuit escape
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Js_regexp.Bad escape
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Js_value.Throw escape
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Not_found escape, raised in Js_ast.number_to_string, Js_builtins:fun at line 710, Js_compile:fun at line 372, Js_eval:fun at line 704, Js_eval:fun at line 952, Netscape.collected, Script_element.get, Script_host.set, Script_host.url_object, Script_window:fun at line 66
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Queue.Empty escape, raised in Js_compile:fun at line 372, Js_eval:fun at line 704, Js_eval:fun at line 952, Netscape.collected
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Sys_error escape, raised in Netscape.collected, Tab.fetch_any
+browsers/netscape/netscape: Netscape.ml: the toplevel may let Unix.Unix_error escape, raised in Js_compile:fun at line 372, Js_eval:fun at line 704, Js_eval:fun at line 952, Netscape.collected
+builder/mini-mk: Main.ml: the toplevel may let Failure escape, raised in CLI.run
+builder/mini-mk: Main.ml: the toplevel may let Not_found escape, raised in lookup, check, Outofdate.arc
+builder/mini-mk: Main.ml: the toplevel may let Sys_error escape, raised in CLI.path
+database/mini-chidb: Main.ml: the toplevel may let Btree.Bad_node escape
+database/mini-chidb: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Codegen.insert, Codegen.is_pk, Codegen.name_at, Sql.parse
+database/mini-chidb: Main.ml: the toplevel may let Not_found escape, raised in Codegen:fun at line 33, Shell.usage
+database/mini-chidb: Main.ml: the toplevel may let Pager.Bad_page escape
+database/mini-chidb: Main.ml: the toplevel may let Record.Invalid_type escape
+debuggers/acid/mini-acid: Main.ml: the toplevel may let Failure escape, raised in CLI.main, unwind, Eval:fun at line 390, Lexer.integer, Lexer.token, hex
+debuggers/where/mini-where: Where.ml: the toplevel may let Failure escape, raised in Where.main
+editors/drscheme/drscheme: DrScheme.ml: the toplevel may let Not_found escape, raised in Scheme_prims.apply
+editors/ed/mini-ed: Main.ml: the toplevel may let Failure escape, raised in CLI.main
+editors/ed/mini-ed: Main.ml: the toplevel may let Sys.Break escape
+editors/emacs/draw/emacs: Main.ml: the toplevel may let Failure escape, raised in num, Highlight_st:fun at line 290
+editors/emacs/draw/emacs: Main.ml: the toplevel may let Not_found escape, raised in Top_window.of_frame
+editors/emacs/tty/mini-emacs-tty: Main.ml: the toplevel may let Failure escape, raised in Highlight_st:fun at line 290, Main.nearest, num
+editors/emacs/tty/mini-emacs-tty: Main.ml: the toplevel may let Not_found escape, raised in Top_window.of_frame
+editors/turbopascal/hosts/draw/turbopascal: Main.ml: the toplevel may let Failure escape, raised in num, Pascal_compile.block, Pascal_compile.procedure, Pascal_compile:fun at line 928, Pdebug.watch, Turbo_menus.menu_key, Turbo_update.key_now, Turbo_view.dropdown
+editors/turbopascal/hosts/draw/turbopascal: Main.ml: the toplevel may let Pmachine.Runtime escape
+editors/turbopascal/tty/mini-turbopascal-tty: Main.ml: the toplevel may let Failure escape, raised in Pascal_compile.block, Pascal_compile.procedure, Pascal_compile:fun at line 928, Pdebug.watch, num, Turbo_menus.menu_key, Turbo_update.key_now, Turbo_view.dropdown
+editors/turbopascal/tty/mini-turbopascal-tty: Main.ml: the toplevel may let Pmachine.Runtime escape
+games/arcade/tinybreakout: TinyBreakout.ml: the toplevel may let Failure escape, raised in color, Pitch_effect.factor, Playground_platform.run_app, Shape_render_software.rgb_of_color
+games/arcade/tinycameltry: TinyCameltry.ml: the toplevel may let Failure escape, raised in deepest, Collide.nearest_on_outline, Playground_platform.run_app, Shape_render_software.rgb_of_color, init
+games/arcade/tinytronscroll: TinyTronscroll.ml: the toplevel may let Failure escape, raised in Playground.pick, Playground_platform.run_app, Shape_render_software.rgb_of_color, TinyTronscroll.map_size, TinyTronscroll:fun at line 175, TinyTronscroll.wall, place, frozen, TinyTronscroll:fun at line 320, TinyTronscroll.view_round, TinyTronscroll.hud
+games/arcade/tinytronscroll: TinyTronscroll.ml: the toplevel may let Not_found escape, raised in Inputs:fun at line 99
+games/fps/doom/doom: Doom.ml: the toplevel may let Not_found escape, raised in Textures:fun at line 83
+games/fps/quake/quake: Quake.ml: the toplevel may let Not_found escape, raised in Monster_ai.seq
+games/fps/quake/quake: Quake.ml: the toplevel may let Vorbis.End_of_packet escape
+games/fps/tinywolfenstein: TinyWolfenstein.ml: the toplevel may let Exit.ExitCode escape
+games/fps/tinywolfenstein: TinyWolfenstein.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+games/puzzle/tetris: Tetris.ml: the toplevel may let Failure escape, raised in length, Pitch_effect.factor, Playground.pick, Playground_platform.run_app, Shape_render_software.rgb_of_color
+games/puzzle/tetris: Tetris.ml: the toplevel may let Not_found escape, raised in Abc:fun at line 258
+games/racing/virtua/virtua: Sound.ml: the toplevel may let Failure escape, raised in length
+games/racing/virtua/virtua: Sound.ml: the toplevel may let Not_found escape, raised in Abc:fun at line 258
+games/shmup/tinymissilecommand: TinyMissileCommand.ml: the toplevel may let Failure escape, raised in Pitch_effect.factor, Playground_platform.run_app, Shape_render_software.rgb_of_color, TinyMissileCommand.launch, fork, TinyMissileCommand.fire, TinyMissileCommand:fun at line 159, TinyMissileCommand:fun at line 160
+generators/lex/mini-lex: Main.ml: the toplevel may let Failure escape, raised in Output:fun at line 68
+generators/yacc/mini-yacc: Main.ml: the toplevel may let Failure escape, raised in go, Output:fun at line 93
+generators/yacc/mini-yacc: Main.ml: the toplevel may let Not_found escape, raised in Lalr:fun at line 139, Lalr.make, Output:fun at line 18
+kernels/9pi/devices/storage/user/fdisk/mini-fdisk: Fdisk.ml: the toplevel may let Failure escape, raised in Fdisk.main
+kernels/9pi/filesystems/user/dossrv/mini-dossrv: Dossrv.ml: the toplevel may let Failure escape, raised in Dossrv.main
+kernels/9pi/tests/hello/hello: Hello.ml: the toplevel may let Failure escape, raised in init
+kernels/9pi/tests/hog/hog: Hog.ml: the toplevel may let Failure escape, raised in init
+kernels/oberon/kernel8.img: Edit.ml: the toplevel may let Failure escape, raised in MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, after
+kernels/oberon/kernel8.img: FileDir.ml: the toplevel may let Failure escape, raised in read
+kernels/oberon/kernel8.img: Main.ml: the toplevel may let Not_found escape, raised in runs, Viewers.track_of
+kernels/oberon/kernel8.img: Oberon.ml: the toplevel may let Not_found escape, raised in runs
+kernels/oberon/kernel8.img: System.ml: the toplevel may let Failure escape, raised in MenuViewers.menu, MenuViewers.main, TextFrames.extend, width, Texts.scan, Viewers.locate, Viewers.filler, after
+kernels/singularity/singml/mini-singml: Main.ml: the toplevel may let Failure escape, raised in target, Description:fun at line 139, Description:fun at line 156
+kernels/squeak/kernel8.img: Main.ml: the toplevel may let Failure escape, raised in go, St_compile:fun at line 148, number, St_lexer.small_of_bytes, St_primitives.float_string
+kernels/squeak/kernel8.img: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
+kernels/squeak/kernel8.img: Main.ml: the toplevel may let St_boot.Error escape
+kernels/squeak/kernel8.img: Main.ml: the toplevel may let St_chunk.Error escape
+kernels/tools/mini-mkbootdir: Mkbootdir.ml: the toplevel may let Failure escape, raised in Mkbootdir.main
+kernels/tools/mini-mkcard: Mkcard.ml: the toplevel may let Failure escape, raised in options, Mkcard.main
+kernels/tools/mini-mkfs: Mkfs.ml: the toplevel may let Failure escape, raised in options, Mkfs.main
+languages/c/mini-cc: Main.ml: the toplevel may let Division_by_zero escape
+languages/c/mini-cc: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cgen.doswit, Emit:fun at line 205, value, Emit.p, pop, moves, machine, Writer.set_body, Writer.max_stack
+languages/c/mini-cc: Main.ml: the toplevel may let Il.Bad_il escape
+languages/c/mini-cc: Main.ml: the toplevel may let Not_found escape, raised in Alloc.def, Alloc.is_float, loc, Alloc:fun at line 179, Alloc:fun at line 59, Check.evconst, at, Cil_types.ptr_class, Com64.com64, operand, Opti:fun at line 287, Opti:fun at line 289, ty, var_ty, Ssa_build:fun at line 154, find, Ssa_build:fun at line 204, Ssa_build:fun at line 178, Ssa_build:fun at line 369, Ssa_build:fun at line 378, before, Ssa_build:fun at line 427, Ssa_build:fun at line 434, Ssa_build:fun at line 499, reads, fold, Ssa_build:fun at line 570, Ssa_gen:fun at line 328, def, Tree_helpers.ty, Tree_helpers.tname, Tree_helpers.arith_tab, Tree_helpers.binop_name, Tree_helpers.unop_name
+languages/c/mini-cc: Main.ml: the toplevel may let Tree_helpers.Error escape
+languages/datalog/mini-datalog: Main.ml: the toplevel may let Il.Bad_il escape
+languages/datalog/mini-datalog: Main.ml: the toplevel may let Not_found escape, raised in at, Datalog:fun at line 182, safe, Datalog_eval.pool_run, text
+languages/dotnet/csc/mini-csc: Main.ml: the toplevel may let Failure escape, raised in Csc_emit.target, Csc_emit.stmt, Csc_emit:fun at line 729, Csc_emit.loop, Csc_lexer.token, Csc_parser.binary, typ, Csc_types.subst, Writer.set_body, Writer.max_stack
+languages/dotnet/csc/mini-csc: Main.ml: the toplevel may let Il.Bad_il escape
+languages/dotnet/csc/mini-csc: Main.ml: the toplevel may let Not_found escape, raised in Csc_emit.type_token, pos
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Division_by_zero escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Il.Bad_il escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Jit.Refused escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Link.Error escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Not_found escape, raised in go, Jit:fun at line 663, Jit:fun at line 1188, Jit:fun at line 1185, Jit.symbol_of, Jit.instance_code, Jit.method_text, Jit_run:fun at line 137, Jit_run:fun at line 24, cell, Jit_run:fun at line 242, Jit_run:fun at line 245, Jit_run:fun at line 37, Link:fun at line 336, Machine:fun at line 228, Machine.call_method, Machine:fun at line 649, Parser_asm.unary, Types.extra
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Parser_asm.Error escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Signature.Bad escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Types.Load_error escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Value.Thrown escape
+languages/dotnet/mini-dotnet: Main.ml: the toplevel may let Verifier.Bad escape
+languages/forth/mini-forth: Main.ml: the toplevel may let Forth.Error escape
+languages/ml/mini-ml: Main.ml: the toplevel may let Division_by_zero escape
+languages/ml/mini-ml: Main.ml: the toplevel may let Failure escape, raised in n, Bits:fun at line 94, CLI:fun at line 526, Emit:fun at line 978, vreg, freg, Il_exprs.expr, Il_exprs:fun at line 624, Il_functions.level, Il_functions:fun at line 211, Il_patterns.pattern, Il_prims:fun at line 72, Il_printf.compile, Il_types.field_tok, go, Lexer_asm:fun at line 52, Lower.app, Lower:fun at line 1089, Lower:fun at line 1101, Lower:fun at line 1109, Lower.float_block, Lower.boxed_int_block, part, lines, Pp.bits_clause, Pp.directive_at, Resolve.add_instance, Resolve:fun at line 305, Resolve.label, Resolve.inline_label, Resolve.expr, Resolve:fun at line 958, Writer.set_body, Writer.max_stack
+languages/ml/mini-ml: Main.ml: the toplevel may let Il.Bad_il escape
+languages/ml/mini-ml: Main.ml: the toplevel may let Not_found escape, raised in body_ok, Alloc:fun at line 156, Alloc:fun at line 188, Alloc.def, Alloc:fun at line 83, CLI:fun at line 560, def, Emit:fun at line 982, Emit:fun at line 1211, src, rsrc, Emit:fun at line 858, Emit:fun at line 877, fused, small, Gas:fun at line 152, Gen:fun at line 210, at, Il_exprs.expr, Il_exprs.tail_expr, Il_exprs:fun at line 745, Il_types.cts, Il_types.constant, Il_types.case, Il_types.exn, Il_types:fun at line 774, Il_types.instance_tok, Licm:fun at line 67, Lower:fun at line 1233, Lower:fun at line 213, Lower.prim, Lower.app, alias, var, Parser_asm.unary, expr, Resolve.label, Resolve.cons_in, Resolve:fun at line 565, Resolve.rename, Ssa_build:fun at line 275, Ssa_build:fun at line 279, before, Ssa_build:fun at line 317, Ssa_build:fun at line 323, Ssa_build:fun at line 392, slot, Ssa_build:fun at line 431, Ssa_build:fun at line 445, Ssa_build:fun at line 477, Typing:fun at line 640, Typing:fun at line 645, Typing:fun at line 665, Typing:fun at line 722, Unbox:fun at line 207, Unbox:fun at line 215, Unbox:fun at line 218, operand, rule, Zero_alloc:fun at line 53
+languages/ml/mini-ml: Main.ml: the toplevel may let Parser_asm.Error escape
+languages/ml/mini-ml: Main.ml: the toplevel may let Pp.Error escape
+languages/ml/mini-ml: Main.ml: the toplevel may let Resolve.Error escape
+languages/pascal/mini-pascal: Main.ml: the toplevel may let Pmachine.Runtime escape
+languages/prolog/mini-prolog: Main.ml: the toplevel may let Not_found escape, raised in text
+languages/prolog/mini-prolog: Main.ml: the toplevel may let Prolog_machine.Throw escape
+languages/prolog/mini-prolog: Main.ml: the toplevel may let Prolog_read.Error escape
+languages/scheme/mini-scheme: Main.ml: the toplevel may let Failure escape, raised in Scheme_eval.apply, Scheme_eval.prim, Scheme_prims.combine, Scheme_prims.one, Scheme_prims.cxr, Scheme_prims.nth
+languages/scheme/mini-scheme: Main.ml: the toplevel may let Not_found escape, raised in Scheme_prims.apply
+languages/scheme/mini-scheme: Main.ml: the toplevel may let Scheme_syntax.Error escape
+languages/scheme/mini-scheme: Main.ml: the toplevel may let Sexpr_read.Error escape
+languages/smalltalk/hosts/draw/squeak: Main.ml: the toplevel may let Failure escape, raised in num, go, St_compile:fun at line 148, number, St_lexer.small_of_bytes, St_primitives.float_string
+languages/smalltalk/hosts/draw/squeak: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
+languages/smalltalk/hosts/draw/squeak: Main.ml: the toplevel may let St_boot.Error escape
+languages/smalltalk/hosts/draw/squeak: Main.ml: the toplevel may let St_chunk.Error escape
+languages/smalltalk/mini-smalltalk: Main.ml: the toplevel may let Not_found escape, raised in last, temp_of
+languages/tiger/mini-tiger: Main.ml: the toplevel may let Failure escape, raised in Tiger_emit:fun at line 329, Tiger_emit.loop, Tiger_semant.exp, Writer.set_body, Writer.max_stack
+languages/tiger/mini-tiger: Main.ml: the toplevel may let Il.Bad_il escape
+languages/tiger/mini-tiger: Main.ml: the toplevel may let Not_found escape, raised in Tiger_emit.link, Tiger_emit.exn_ctor, at, Tiger_emit.record, Tiger_emit.field_tok, Tiger_emit.frame, Tiger_semant:fun at line 284
+lib_crypto/tests/speed: Ecdsa.ml: the toplevel may let Failure escape, raised in Bignum:fun at line 167
+lib_crypto/tests/speed: Speed.ml: the toplevel may let Failure escape, raised in Bignum:fun at line 167, init, Speed:fun at line 8
+lib_crypto/tests/vectors: Ecdsa.ml: the toplevel may let Failure escape, raised in Bignum:fun at line 167
+lib_crypto/tests/vectors: Vectors.ml: the toplevel may let Failure escape, raised in Bignum:fun at line 167, Vectors:fun at line 8
+lib_graphics/tests/hellodraw: Hellodraw.ml: the toplevel may let Failure escape, raised in num
+lib_graphics/tests/hellokbd: Hellokbd.ml: the toplevel may let Failure escape, raised in num
+lib_graphics/tests/hellomenu: Hellomenu.ml: the toplevel may let Failure escape, raised in num, loop
+lib_gui/examples/bigbangrocket: BigBangRocket.ml: the toplevel may let Failure escape, raised in Bigbang.outline, Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/bigbangworm: BigBangWorm.ml: the toplevel may let Failure escape, raised in BigBangWorm.tick, BigBangWorm.dead, Bigbang.outline, Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7cells: Gui7Cells.ml: the toplevel may let Failure escape, raised in Grid:fun at line 118, Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7cells: Gui7Cells.ml: the toplevel may let Not_found escape, raised in box, Gui7Cells.view
+lib_gui/examples/gui7circles: Gui7Circles.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7circles: Gui7Circles.ml: the toplevel may let Not_found escape, raised in box, Gui7Circles.view
+lib_gui/examples/gui7counter: Gui7Counter.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7counter: Gui7Counter.ml: the toplevel may let Not_found escape, raised in Gui7Counter.update
+lib_gui/examples/gui7crud: Gui7Crud.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7crud: Gui7Crud.ml: the toplevel may let Not_found escape, raised in box
+lib_gui/examples/gui7flight: Gui7Flight.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7flight: Gui7Flight.ml: the toplevel may let Not_found escape, raised in box
+lib_gui/examples/gui7temperature: Gui7Temperature.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7temperature: Gui7Temperature.ml: the toplevel may let Not_found escape, raised in Gui7Temperature.update
+lib_gui/examples/gui7timer: Gui7Timer.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/gui7timer: Gui7Timer.ml: the toplevel may let Not_found escape, raised in box
+lib_gui/examples/guifourways: GuiFourWays.ml: the toplevel may let Failure escape, raised in Gui4Circles.diameter, Gui4Circles.dialog_text, GuiFourWays.update, GuiFourWays.view, Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/guifourways: GuiFourWays.ml: the toplevel may let Not_found escape, raised in Gui4:fun at line 16
+lib_gui/examples/guiwidgets: GuiWidgets.ml: the toplevel may let Failure escape, raised in Playground_platform.run_app, Shape_render_software.rgb_of_color
+lib_gui/examples/guiwidgets: GuiWidgets.ml: the toplevel may let Not_found escape, raised in box, GuiWidgets.view
+linker/mini-ld: Main.ml: the toplevel may let Division_by_zero escape
+linker/mini-ld: Main.ml: the toplevel may let Failure escape, raised in args, CLI.main
+linker/mini-ld: Main.ml: the toplevel may let Not_found escape, raised in Link:fun at line 336
+linker/tools/mini-ar: Ar.ml: the toplevel may let Failure escape, raised in Ar.main
+linker/tools/mini-nm: Nm.ml: the toplevel may let Failure escape, raised in Nm.main
+linker/tools/mini-nm: Nm.ml: the toplevel may let Link.Error escape
+machine/mini-5i: Main.ml: the toplevel may let Division_by_zero escape
+machine/mini-5i: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cpu.run32
+machine/mini-5i: Main.ml: the toplevel may let Memory.Fault escape
+machine/mini-5i: Main.ml: the toplevel may let Not_found escape, raised in Arm64.sysreg_name, Arm64.sysop
+machine/mini-5i: Main.ml: the toplevel may let Queue.Empty escape, raised in Cpu.run32
+machine/mini-5i: Main.ml: the toplevel may let Sys_error escape, raised in Cpu.run32
+machine/mini-5i: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Cpu.run32
+networking/mini-curl: Curl.ml: the toplevel may let Failure escape, raised in Cookie:fun at line 46, Curl.main, Curl:fun at line 124, Http.body, Tls12.handshake, Tls13.handle13, Url.parse_authority
+networking/mini-httpd: Httpd.ml: the toplevel may let Failure escape, raised in Httpd.main
+networking/mini-httpd: Httpd.ml: the toplevel may let Sys_error escape, raised in Httpd.main
+networking/mini-timesync: Timesync.ml: the toplevel may let Failure escape, raised in Timesync.main
+profilers/misc/mini-prof: Prof.ml: the toplevel may let Elf.Bad escape
+profilers/misc/mini-prof: Prof.ml: the toplevel may let Failure escape, raised in options, Profiler.main
+profilers/misc/mini-prof: Prof.ml: the toplevel may let Not_found escape, raised in Arm64.sysreg_name, Arm64.sysop
+profilers/misc/mini-stats: Stats.ml: the toplevel may let Failure escape, raised in num
+shell/mini-rc: Main.ml: the toplevel may let Failure escape, raised in CLI.run, Parser.next, go, Process.exec, num, Word.expand, Word.value
+shell/mini-rc: Main.ml: the toplevel may let Sys_error escape, raised in Process:fun at line 25
+tiny/tiny-build: TinyBuildSystem.ml: the toplevel may let Not_found escape, raised in TinyBuildSystem:fun at line 490
+tiny/tiny-db: TinyDatabase.ml: the toplevel may let Common.Error escape
+tiny/tiny-db: TinyDatabase.ml: the toplevel may let Not_found escape, raised in loop, comparison, TinyDatabase.show_access, TinyDatabase.rows, TinyDatabase:fun at line 636
+tiny/tiny-ml: TinyML.ml: the toplevel may let Not_found escape, raised in Compile.prim, Machine.instruction, TinyML:fun at line 188, Types:fun at line 386
+tiny/tiny-shell: TinyShell.ml: the toplevel may let Not_found escape, raised in TinyShell.protect, TinyShell.run, TinyShell:fun at line 687
+tiny/tiny-shell: TinyShell.ml: the toplevel may let Unix.Unix_error escape, raised in TinyShell.protect, TinyShell.with_fds, TinyShell.run
+tiny/tiny-vcs: TinyVCS.ml: the toplevel may let Not_found escape, raised in TinyVCS.copy
+typesetting/man/mini-man: Main.ml: the toplevel may let Failure escape, raised in command_block, Latex.run_pushed, finish, Main.main, Noweb.chunk, go
+typesetting/man/mini-man: Main.ml: the toplevel may let Not_found escape, raised in Latex.command
+typesetting/man/mini-man: Main.ml: the toplevel may let Pic.Unknown escape
+typesetting/man/mini-man: Main.ml: the toplevel may let Zlib.Corrupt escape
+typesetting/troff/mini-troff: Main.ml: the toplevel may let Failure escape, raised in CLI.main, command_block, Latex.run_pushed, finish, Noweb.chunk, go
+typesetting/troff/mini-troff: Main.ml: the toplevel may let Not_found escape, raised in Latex.command
+typesetting/troff/mini-troff: Main.ml: the toplevel may let Pic.Unknown escape
+typesetting/troff/mini-troff: Main.ml: the toplevel may let Zlib.Corrupt escape
+utilities/archive/mini-gunzip: Gunzip.ml: the toplevel may let Failure escape, raised in Gunzip.main
+utilities/archive/mini-gzip: Gzip.ml: the toplevel may let Failure escape, raised in Gzip.main
+utilities/archive/mini-tar: Tar.ml: the toplevel may let Failure escape, raised in Tar.main
+utilities/byte/mini-xd: Xd.ml: the toplevel may let Failure escape, raised in Xd.main
+utilities/calc/bc/mini-bc: Main.ml: the toplevel may let Division_by_zero escape
+utilities/calc/bc/mini-bc: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Dc.commands
+utilities/calc/bc/mini-bc: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Dc.commands
+utilities/calc/dc/mini-dc: Main.ml: the toplevel may let Division_by_zero escape
+utilities/calc/dc/mini-dc: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Dc.commands
+utilities/calc/dc/mini-dc: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Dc.commands
+utilities/calc/hoc/mini-hoc: Main.ml: the toplevel may let Eval.Returned escape
+utilities/calc/hoc/mini-hoc: Main.ml: the toplevel may let Failure escape, raised in CLI.main
+utilities/calc/hoc/mini-hoc: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Eval.call
+utilities/compare/mini-cmp: Cmp.ml: the toplevel may let Failure escape, raised in Cmp.main
+utilities/files/mini-cat: Cat.ml: the toplevel may let Failure escape, raised in Cat.main
+utilities/files/mini-chmod: Chmod.ml: the toplevel may let Failure escape, raised in Chmod.main
+utilities/files/mini-cp: Cp.ml: the toplevel may let Failure escape, raised in Cp.main
+utilities/files/mini-ls: Ls.ml: the toplevel may let Failure escape, raised in Ls.main
+utilities/files/mini-mkdir: Mkdir.ml: the toplevel may let Failure escape, raised in Mkdir.main
+utilities/files/mini-mtime: Mtime.ml: the toplevel may let Failure escape, raised in Mtime.main
+utilities/files/mini-mv: Mv.ml: the toplevel may let Failure escape, raised in Mv.main
+utilities/files/mini-rm: Rm.ml: the toplevel may let Failure escape, raised in Rm.main
+utilities/files/mini-touch: Touch.ml: the toplevel may let Failure escape, raised in letters, Touch.main
+utilities/files/mini-walk: Walk.ml: the toplevel may let Failure escape, raised in Walk.main
+utilities/misc/mini-basename: Basename.ml: the toplevel may let Failure escape, raised in Basename.main
+utilities/misc/mini-cleanname: Cleanname.ml: the toplevel may let Failure escape, raised in Cleanname.main
+utilities/misc/mini-du: Du.ml: the toplevel may let Failure escape, raised in Du.main
+utilities/misc/mini-echo: Echo.ml: the toplevel may let Failure escape, raised in Echo.main
+utilities/misc/mini-seq: Seq_.ml: the toplevel may let Failure escape, raised in Seq_.main
+utilities/misc/mini-test: Test.ml: the toplevel may let Failure escape, raised in go
+utilities/misc/mini-wc: Wc.ml: the toplevel may let Failure escape, raised in Wc.main
+utilities/namespace/mini-bind: Bind.ml: the toplevel may let Failure escape, raised in Bind.main
+utilities/namespace/mini-mount: Mount.ml: the toplevel may let Failure escape, raised in Mount.main
+utilities/namespace/mini-unmount: Unmount.ml: the toplevel may let Failure escape, raised in Unmount.main
+utilities/pipe/mini-tail: Tail.ml: the toplevel may let Failure escape, raised in Tail.main
+utilities/pipe/mini-tee: Tee.ml: the toplevel may let Failure escape, raised in Tee.main
+utilities/pipe/mini-xargs: Xargs.ml: the toplevel may let Failure escape, raised in Xargs.main, run
+utilities/process/mini-ps: Ps.ml: the toplevel may let Failure escape, raised in Ps.main
+utilities/process/mini-sleep: Sleep.ml: the toplevel may let Failure escape, raised in Sleep.main
+utilities/process/mini-spin: Spin.ml: the toplevel may let Failure escape, raised in Spin.main
+utilities/process/mini-time: Time.ml: the toplevel may let Failure escape, raised in Time.main
+utilities/text/awk/mini-awk: Cell.ml: the toplevel may let Division_by_zero escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Cell.Fatal escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Division_by_zero escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Failure escape, raised in CLI.main, Cell.is_float, search, Cformat.decimal, digits, Run.call
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Not_found escape, raised in Run.call
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Regex.Error escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Run.Break_loop escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Run.Continue_loop escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Run.Return_value escape
+utilities/text/awk/mini-awk: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Run.call
+utilities/text/mini-grep: Grep.ml: the toplevel may let Failure escape, raised in Grep.main
+utilities/text/mini-sed: Sed.ml: the toplevel may let Failure escape, raised in address, Sed.main
+utilities/text/mini-sort: Sort.ml: the toplevel may let Failure escape, raised in position, Sort.main
+utilities/text/mini-tr: Tr.ml: the toplevel may let Failure escape, raised in Tr.main
+utilities/text/mini-uniq: Uniq.ml: the toplevel may let Failure escape, raised in Uniq.main
+utilities/time/mini-cal: Cal.ml: the toplevel may let Failure escape, raised in Cal.main, Cal.number
+utilities/time/mini-date: Date.ml: the toplevel may let Failure escape, raised in Date.main
+version_control/mini-diff: Diffmain.ml: the toplevel may let Failure escape, raised in Difftool.diff_main
+version_control/mini-git: Main.ml: the toplevel may let Delta.Corrupt escape
+version_control/mini-git: Main.ml: the toplevel may let Failure escape, raised in Commands:fun at line 121, Commands.cleanmsg, Commands.commit, Commands:fun at line 201, Commands.proto_die, Fs.ctl, Log.show, treeify, Sha1:fun at line 79
+version_control/mini-git: Main.ml: the toplevel may let Not_found escape, raised in Commands.proto_die
+version_control/mini-git: Main.ml: the toplevel may let Proto.Error escape
+version_control/mini-git: Main.ml: the toplevel may let Serve.Fatal escape
+version_control/mini-git: Main.ml: the toplevel may let Sys_error escape, raised in Commands.commit, Commands:fun at line 36, Commands:fun at line 397, Commands:fun at line 402, Commands:fun at line 44, Commands.repack, Commands:fun at line 520, Commands.proto_die, Commands.clone, Fs.branch, Loose.all, Loose:fun at line 42, Proto.connect, Refs:fun at line 53
+version_control/mini-git: Main.ml: the toplevel may let Unix.Unix_error escape, raised in Commands.proto_die
+version_control/mini-git: Main.ml: the toplevel may let Zlib.Corrupt escape
+version_control/mini-merge3: Merge3main.ml: the toplevel may let Failure escape, raised in Difftool.merge3_main
+windows/desktop/desk: Desk.ml: the toplevel may let Failure escape, raised in Apps.size_of_text, num, Icon:fun at line 13
+windows/desktop/desk: Desk.ml: the toplevel may let Not_found escape, raised in Icon:fun at line 23
+windows/desktop/expose: Expose.ml: the toplevel may let Failure escape, raised in num, loop
+windows/desktop/expose: Expose.ml: the toplevel may let Not_found escape, raised in Expose:fun at line 54
+windows/desktop/panel: Panel.ml: the toplevel may let Failure escape, raised in num
+windows/desktop/settings: Settings.ml: the toplevel may let Failure escape, raised in num, Settings.about
+windows/desktop/startmenu: Startmenu.ml: the toplevel may let Failure escape, raised in Apps.size_of_text, num, Icon:fun at line 13
+windows/desktop/startmenu: Startmenu.ml: the toplevel may let Not_found escape, raised in Icon:fun at line 23
+windows/rio/mini-rio: Cursors.ml: the toplevel may let Failure escape, raised in Cursors:fun at line 9
+windows/rio/mini-rio: Rio.ml: the toplevel may let Failure escape, raised in num, loop, Wm.label_of
+windows/rio/tests/hellorio: Hellorio.ml: the toplevel may let Failure escape, raised in num

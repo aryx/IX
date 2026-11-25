@@ -1,3 +1,4 @@
+# 2026-11-25: ix's build as mini-ld links it (ix_check.sh, its manifests): 140 programs, not 44: 155 more (games/fps, browsers/javascript, apps/office...), not read yet; 68 gone, called by a program the 44 did not have (the linker's tools, Asm's)
 _mk/7/editors/emacs/draw/Lexer_c.ml:134: dead field: pp stored in go, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tkind stored in Parser:fun at line 2730, nothing live reads it
 _mk/7/editors/emacs/draw/Parser.ml:2730: dead field: tloc stored in Parser:fun at line 2730, nothing live reads it
@@ -26,29 +27,163 @@ _mk/7/editors/emacs/tty/Parser.ml:34: dead field: sloc stored in Parser.mksig, n
 _mk/7/editors/emacs/tty/Parser.ml:3617: dead: Parser.interface, nothing names it
 _mk/7/editors/emacs/tty/Parser.ml:99: dead field: aend stored in Parser.attribute, nothing live reads it
 _mk/7/editors/emacs/tty/Parser.ml:99: dead field: aloc stored in Parser.attribute, nothing live reads it
-assembler/Asm.ml:179: dead: Asm.invert, nothing names it
-assembler/Asm.ml:184: dead: Asm.cond_bits, nothing names it
-assembler/Asm.ml:212: dead field: s_arch stored in Asm.stored, nothing live reads it
-assembler/Asm.ml:212: dead field: s_file stored in Asm.stored, nothing live reads it
-assembler/Asm.ml:212: dead field: s_items stored in Asm.stored, nothing live reads it
-assembler/Asm.ml:221: dead: Asm.with_history, in init but no call goes through the pointer
-assembler/Asm.ml:236: dead: Asm.marshalled, in init but no call goes through the pointer
-assembler/Asm.ml:248: dead: Asm.of_saved, in init but no call goes through the pointer
-assembler/Asm.ml:254: dead: Asm.load, nothing names it
+_mk/7/tiny/Parallel.ml:20: dead: Parallel.wait, in init but no call goes through the pointer
+_mk/7/tiny/Parallel.ml:22: dead: Parallel.broadcast, nothing names it
+apps/maps/Roads.ml:203: dead: Roads.of_json, nothing names it
+apps/maps/Roads.ml:225: dead: Roads.nearest, nothing names it
+apps/maps/Tile_cache.ml:161: dead: Tile_cache.size, nothing names it
+apps/media/play/Play.ml:81: dead field: space_overhead stored in Play.main, nothing live reads it
+apps/music/rebirth/Patch_text.ml:11: dead field: control stored in Patch_text.detune, nothing live reads it
+apps/music/rebirth/Patch_text.ml:11: dead field: get stored in Patch_text.detune, nothing live reads it
+apps/music/rebirth/Patch_text.ml:13: dead: Patch_text.switch, nothing names it
+apps/music/rebirth/Patch_text.ml:17: dead: Patch_text:fun at line 17, nothing names it
+apps/music/rebirth/Patch_text.ml:19: dead: Patch_text.to_string, in init but no call goes through the pointer
+apps/music/rebirth/Patch_text.ml:22: dead: Patch_text.of_string, in init but no call goes through the pointer
+apps/music/rebirth/Studio_rebirth.ml:116: dead: Studio_rebirth.patch, nothing names it
+apps/music/rebirth/Studio_rebirth.ml:134: dead: Studio_rebirth.bass, nothing names it
+apps/music/rebirth/Studio_rebirth.ml:135: dead: Studio_rebirth.drums, nothing names it
+apps/music/rebirth/Studio_rebirth.ml:16: dead: Studio_rebirth.index, nothing names it
+apps/music/rebirth/Studio_rebirth.ml:183: dead field: note_off stored in Studio_rebirth.instrument, nothing live reads it
+apps/music/rebirth/Studio_rebirth.ml:183: dead field: note_on stored in Studio_rebirth.instrument, nothing live reads it
+apps/music/rebirth/Studio_rebirth.ml:183: dead field: set stored in Studio_rebirth.instrument, nothing live reads it
+apps/music/rebirth/Studio_rebirth.ml:183: dead: Studio_rebirth:fun at line 183, nothing names it
+apps/music/rebirth/Voice_tb303.ml:102: dead: Voice_tb303:fun at line 102, nothing names it
+apps/music/rebirth/Voice_tb303.ml:103: dead: Voice_tb303:fun at line 103, nothing names it
+apps/music/rebirth/Voice_tb303.ml:104: dead: Voice_tb303:fun at line 104, nothing names it
+apps/music/rebirth/Voice_tb303.ml:105: dead: Voice_tb303:fun at line 105, nothing names it
+apps/music/rebirth/Voice_tb303.ml:106: dead: Voice_tb303:fun at line 106, nothing names it
+apps/music/rebirth/Voice_tb303.ml:107: dead: Voice_tb303:fun at line 107, nothing names it
+apps/music/rebirth/Voice_tb303.ml:108: dead: Voice_tb303:fun at line 108, nothing names it
+apps/music/rebirth/Voice_tb303.ml:109: dead: Voice_tb303:fun at line 109, nothing names it
+apps/music/rebirth/Voice_tb303.ml:110: dead: Voice_tb303:fun at line 110, nothing names it
+apps/music/rebirth/Voice_tb303.ml:111: dead: Voice_tb303:fun at line 111, nothing names it
+apps/music/rebirth/Voice_tb303.ml:112: dead: Voice_tb303:fun at line 112, nothing names it
+apps/music/rebirth/Voice_tb303.ml:118: dead: Voice_tb303.to_string, nothing names it
+apps/music/rebirth/Voice_tb303.ml:121: dead: Voice_tb303.of_string, nothing names it
+apps/music/rebirth/Voice_tb303.ml:192: dead field: cutoff_now stored in Voice_tb303.create, nothing live reads it
+apps/music/rebirth/Voice_tb303.ml:213: dead: Voice_tb303.patch, nothing names it
+apps/music/rebirth/Voice_tb303.ml:227: dead: Voice_tb303.running, nothing names it
+apps/music/rebirth/Voice_tb303.ml:229: dead: Voice_tb303.envelope, nothing names it
+apps/music/rebirth/Voice_tb303.ml:230: dead: Voice_tb303.sweep, nothing names it
+apps/music/rebirth/Voice_tb303.ml:231: dead: Voice_tb303.pitch, nothing names it
+apps/music/rebirth/Voice_tb303.ml:232: dead: Voice_tb303.cutoff_now, nothing names it
+apps/music/rebirth/Voice_tb303.ml:233: dead: Voice_tb303.recent, nothing names it
+apps/music/rebirth/Voice_tb303.ml:351: dead: key, in Voice_tb303.instrument but no call goes through the pointer
+apps/music/rebirth/Voice_tb303.ml:358: dead: set, in Voice_tb303.instrument but no call goes through the pointer
+apps/music/rebirth/Voice_tb303.ml:363: dead: Voice_tb303:fun at line 363, nothing names it
+apps/music/rebirth/Voice_tb303.ml:36: dead: Voice_tb303.locks_to_string, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tb303.ml:39: dead: Voice_tb303.step_to_string, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tb303.ml:45: dead: Voice_tb303.pattern_to_string, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tr808.ml:105: dead: Voice_tr808.of_string, nothing names it
+apps/music/rebirth/Voice_tr808.ml:177: dead: Voice_tr808.pattern_for_tests, nothing names it
+apps/music/rebirth/Voice_tr808.ml:180: dead: Voice_tr808.key, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tr808.ml:181: dead: Voice_tr808.of_key, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tr808.ml:421: dead: Voice_tr808.rom, nothing names it
+apps/music/rebirth/Voice_tr808.ml:564: dead: Voice_tr808.patch, nothing names it
+apps/music/rebirth/Voice_tr808.ml:574: dead: Voice_tr808.hit, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tr808.ml:575: dead: Voice_tr808.sounding, nothing names it
+apps/music/rebirth/Voice_tr808.ml:576: dead: Voice_tr808.recent, nothing names it
+apps/music/rebirth/Voice_tr808.ml:594: dead: Voice_tr808.is_metal, nothing names it
+apps/music/rebirth/Voice_tr808.ml:683: dead: Voice_tr808:fun at line 683, nothing names it
+apps/music/rebirth/Voice_tr808.ml:684: dead: Voice_tr808:fun at line 684, nothing names it
+apps/music/rebirth/Voice_tr808.ml:685: dead: Voice_tr808:fun at line 685, nothing names it
+apps/music/rebirth/Voice_tr808.ml:68: dead: Voice_tr808:fun at line 68, nothing names it
+apps/music/rebirth/Voice_tr808.ml:75: dead: Voice_tr808:fun at line 75, nothing names it
+apps/music/rebirth/Voice_tr808.ml:76: dead: Voice_tr808:fun at line 76, nothing names it
+apps/music/rebirth/Voice_tr808.ml:77: dead: Voice_tr808:fun at line 77, nothing names it
+apps/music/rebirth/Voice_tr808.ml:78: dead: Voice_tr808:fun at line 78, nothing names it
+apps/music/rebirth/Voice_tr808.ml:79: dead: Voice_tr808:fun at line 79, nothing names it
+apps/music/rebirth/Voice_tr808.ml:83: dead: Voice_tr808:fun at line 83, nothing names it
+apps/music/rebirth/Voice_tr808.ml:84: dead: Voice_tr808:fun at line 84, nothing names it
+apps/music/rebirth/Voice_tr808.ml:85: dead: Voice_tr808:fun at line 85, nothing names it
+apps/music/rebirth/Voice_tr808.ml:86: dead: Voice_tr808:fun at line 86, nothing names it
+apps/music/rebirth/Voice_tr808.ml:89: dead: Voice_tr808:fun at line 89, nothing names it
+apps/music/rebirth/Voice_tr808.ml:91: dead: Voice_tr808:fun at line 91, nothing names it
+apps/music/rebirth/Voice_tr808.ml:95: dead: Voice_tr808.steps_to_string, in init but no call goes through the pointer
+apps/music/rebirth/Voice_tr808.ml:98: dead: Voice_tr808.to_string, nothing names it
+apps/office/document/Undo.ml:49: dead: Undo.redo_name, nothing names it
+apps/office/draw/Drawing.ml:19: dead: Drawing.within, nothing names it
+apps/office/draw/Drawing.ml:38: dead: Drawing.group, nothing names it
+apps/office/draw/Drawing.ml:49: dead: Drawing.ungroup, nothing names it
+apps/office/draw/Drawing.ml:57: dead: Drawing.duplicate, nothing names it
+apps/office/draw/Drawing.ml:66: dead: Drawing.bounds, in init but no call goes through the pointer
+apps/office/draw/Drawing.ml:73: dead: Drawing.align, nothing names it
+apps/office/file_menu/File_menu.ml:77: dead: File_menu.menu_in, nothing names it
+apps/office/file_menu/File_menu.ml:81: dead: File_menu.autosave, nothing names it
+apps/office/formula/Formula.ml:204: dead: Formula.to_string, nothing names it
+apps/office/formula/Formula.ml:219: dead: Formula.shift, nothing names it
+apps/office/paint/Bitmap.ml:35: dead: Bitmap.sub, nothing names it
+apps/office/paint/Bitmap.ml:44: dead: Bitmap.blit, nothing names it
+apps/office/paint/Bitmap.ml:51: dead: Bitmap.count, nothing names it
+apps/office/paint/Paint.ml:39: dead: Paint.fill_rect, nothing names it
+apps/office/paint/Paint.ml:47: dead: Paint.frame_rect, nothing names it
+apps/office/parts/Component.ml:46: dead: Component.fitted_height, nothing names it
+apps/office/richtext/Rich.ml:125: dead: Rich.delete_forward, nothing names it
+apps/office/richtext/Rich.ml:34: dead: Rich.edit, nothing names it
+apps/office/richtext/Style.ml:14: dead: Style.toggle_strike, nothing names it
+apps/office/sheet/Sheet.ml:253: dead: Sheet.recalculate, nothing names it
+apps/office/sheet/Sheet_view.ml:53: dead: Sheet_view.name_of, nothing names it
 assembler/CLI.ml:34: dead field: static stored in CLI:fun at line 34, nothing live reads it
 assembler/CLI.ml:34: dead field: sym stored in CLI:fun at line 34, nothing live reads it
-assembler/Parser_asm.ml:165: dead field: by stored in Parser_asm.index, nothing live reads it
-assembler/Parser_asm.ml:165: dead field: kind stored in Parser_asm.index, nothing live reads it
-assembler/Parser_asm.ml:165: dead field: reg stored in Parser_asm.index, nothing live reads it
-assembler/Parser_asm.ml:179: dead field: index stored in Parser_asm.named, nothing live reads it
-assembler/Parser_asm.ml:294: dead field: op stored in lines, nothing live reads it
-assembler/Parser_asm.ml:294: dead field: suffixes stored in lines, nothing live reads it
-assembler/Show_asm.ml:13: dead: Show_asm.show_mem, in init but no call goes through the pointer
-assembler/Show_asm.ml:23: dead: Show_asm.pp_mem, nothing names it
-assembler/Show_asm.ml:25: dead: Show_asm.show_operand, in init but no call goes through the pointer
-assembler/Show_asm.ml:40: dead: Show_asm.show_item, nothing names it
-assembler/Show_asm.ml:7: dead: Show_asm.show_name, in init but no call goes through the pointer
-assembler/Show_asm.ml:9: dead: Show_asm.show_shift, in init but no call goes through the pointer
+browsers/css/Cascade.ml:275: dead: Cascade.explain, in init but no call goes through the pointer
+browsers/css/Cascade.ml:275: dead: Cascade.explain, nothing names it
+browsers/css/Css.ml: dead global: Css.specificity, nothing live names it
+browsers/css/Css_syntax.ml:158: dead: Css_syntax.tokenize, nothing names it
+browsers/css/Selectors.ml:146: dead: Selectors.parse_string, nothing names it
+browsers/css/Selectors.ml:286: dead: Selectors.to_string, in init but no call goes through the pointer
+browsers/css/Selectors.ml:286: dead: Selectors.to_string, nothing names it
+browsers/css/Selectors.ml:294: dead: Selectors.simple_to_string, nothing names it
+browsers/engine/display/Browser_draw.ml:212: dead: Browser_draw.outlines_made, in init but no call goes through the pointer
+browsers/engine/display/Browser_draw.ml:218: dead: Browser_draw.outlines, nothing names it
+browsers/engine/display/Style.ml: dead global: Style.plain, nothing live names it
+browsers/engine/display/Style.ml:12: dead: Style.toggle_bold, nothing names it
+browsers/engine/display/Style.ml:13: dead: Style.toggle_italic, nothing names it
+browsers/engine/display/Style.ml:14: dead: Style.toggle_underline, nothing names it
+browsers/engine/display/Style.ml:15: dead: Style.toggle_strike, nothing names it
+browsers/engine/layout/Box_layout.ml:15: dead: Box_layout.fragments, nothing names it
+browsers/engine/layout/Box_layout.ml:95: dead field: link_color stored in Box_layout.look_of, nothing live reads it
+browsers/engine/layout/Box_layout.ml:95: dead field: pre stored in Box_layout.look_of, nothing live reads it
+browsers/engine/page/Browser_forms.ml:70: dead: Browser_forms.typed, nothing names it
+browsers/engine/page/Browser_page.ml:258: dead field: charset stored in Browser_page.read, nothing live reads it
+browsers/engine/page/Browser_page.ml:258: dead field: line_mode stored in Browser_page.read, nothing live reads it
+browsers/engine/page/Browser_page.ml:290: dead: Browser_page.explain, nothing names it
+browsers/engine/page/Browser_page.ml:43: dead: Browser_page.echo_html, nothing names it
+browsers/html/Dom.ml:57: dead: Dom.is_blank, in init but no call goes through the pointer
+browsers/html/Dom.ml:59: dead: Dom.without_blank_text, nothing names it
+browsers/html/Dom.ml:69: dead: Dom.to_lines, nothing names it
+browsers/html/Entities.ml: dead global: Entities.count, nothing live names it
+browsers/html/Html_lexer.ml:251: dead: Html_lexer.attribute, nothing names it
+browsers/html/Html_lexer.ml:255: dead: Html_lexer.quote, in init but no call goes through the pointer
+browsers/html/Html_lexer.ml:270: dead: Html_lexer.to_string, nothing names it
+browsers/javascript/eval/Js_eval.ml:1099: dead: Js_eval.create, nothing names it
+browsers/javascript/eval/Js_frame.ml:92: dead: Js_frame.layout, nothing names it
+browsers/javascript/library/Js_builtins.ml:67: dead: Js_builtins.this_array, nothing names it
+browsers/javascript/library/Js_regexp.ml:259: dead field: unicode stored in Js_regexp:fun at line 259, nothing live reads it
+browsers/javascript/library/Js_regexp.ml:270: dead: Js_regexp.groups, nothing names it
+browsers/javascript/parsing/Js_lexer.ml:354: dead: Js_lexer.to_string, nothing names it
+browsers/javascript/parsing/Js_parse.ml:859: dead: Js_parse.parse_expression, nothing names it
+browsers/javascript/values/Js_string.ml:41: dead: Js_string.ascii, nothing names it
+browsers/javascript/values/Mini_opti.ml: dead global: Mini_opti.letters, nothing live names it
+browsers/javascript/values/Per_domain.ml: dead global: Per_domain.parallel, nothing live names it
+browsers/javascript/values/Per_domain.ml:16: dead: Per_domain.main, nothing names it
+browsers/netscape/Tab.ml:110: dead: Tab.width, nothing names it
+browsers/webapi/run/Browser_script.ml:246: dead: Browser_script.create, nothing names it
+browsers/webapi/run/Browser_script.ml:248: dead: Browser_script.eval, nothing names it
+browsers/webapi/run/Browser_script.ml:340: dead: Browser_script.run_scripts, nothing names it
+browsers/webapi/run/Browser_script.ml:391: dead: Browser_script.set_measure, nothing names it
+browsers/webapi/run/Browser_script.ml:395: dead: Browser_script.scrolled, nothing names it
+browsers/webapi/run/Browser_script.ml:414: dead: Browser_script.submit, nothing names it
+browsers/webapi/run/Browser_script.ml:417: dead: Browser_script.value_now, nothing names it
+browsers/webapi/run/Browser_script.ml:419: dead: Browser_script.key, nothing names it
+browsers/webapi/run/Browser_script.ml:424: dead: Browser_script.listens, nothing names it
+browsers/webapi/run/Browser_script.ml:428: dead: Browser_script.web_key, in init but no call goes through the pointer
+browsers/webapi/run/Browser_script.ml:441: dead: Browser_script.window_event_at, in init but no call goes through the pointer
+browsers/webapi/run/Browser_script.ml:448: dead: Browser_script.window_event, nothing names it
+browsers/webapi/run/Browser_script.ml:450: dead: Browser_script.picture, nothing names it
+browsers/webapi/run/Browser_script.ml:470: dead: Browser_script.popstate, nothing names it
+browsers/webapi/run/Browser_script.ml:484: dead: Browser_script.set_attribute, nothing names it
+browsers/webapi/run/Browser_script.ml:529: dead: Browser_script.print, nothing names it
+browsers/webapi/run/Browser_script.ml:530: dead: Browser_script.engine, nothing names it
 builder/Build.ml:308: dead: Build.errors, nothing names it
 database/dbm/Dbm.ml:228: dead: Dbm.n_registers, nothing names it
 database/dbm/Dbm.ml:229: dead: Dbm.register, nothing names it
@@ -75,6 +210,53 @@ editors/turbopascal/editor/Tui_turbo.ml:28: dead: Tui_turbo.cursor, nothing name
 editors/turbopascal/editor/Tui_turbo.ml:29: dead: Tui_turbo.error, nothing names it
 editors/turbopascal/editor/Tui_turbo.ml:31: dead: Tui_turbo.screen, nothing names it
 editors/turbopascal/editor/Tui_turbo.ml:41: dead: Tui_turbo.file, nothing names it
+games/fps/doom/actors/Info.ml: dead global: Info.sounds, nothing live names it
+games/fps/doom/actors/Info.ml: dead global: Info.sprites, nothing live names it
+games/fps/doom/actors/Things.ml:69: dead: Things.sprite_names, nothing names it
+games/fps/doom/play/Play.ml:22: dead field: attackdown stored in Play.create, nothing live reads it
+games/fps/doom/render/Render.ml:13: dead: Render.segs_drawn, nothing names it
+games/fps/doom/render/Render.ml:14: dead: Render.planes_drawn, nothing names it
+games/fps/doom/wad/Level.ml:104: dead field: seg_side stored in Level:fun at line 104, nothing live reads it
+games/fps/doom/wad/Level.ml:76: dead field: vertexes stored in Level.load, nothing live reads it
+games/fps/doom/wad/Textures.ml:104: dead field: flat_names stored in Textures.load, nothing live reads it
+games/fps/doom/wad/Wad.ml:60: dead: Wad.add_short, in init but no call goes through the pointer
+games/fps/doom/wad/Wad.ml:64: dead: Wad.add_int32, in init but no call goes through the pointer
+games/fps/doom/wad/Wad.ml:68: dead: Wad.add_name8, in init but no call goes through the pointer
+games/fps/doom/wad/Wad.ml:71: dead: Wad.write, nothing names it
+games/fps/quake/game/Monsters.ml: dead field: melee stored in init, nothing live reads it
+games/fps/quake/game/Monsters.ml: dead field: missile stored in init, nothing live reads it
+games/fps/quake/game/Monsters.ml: dead field: walk stored in init, nothing live reads it
+games/fps/quake/model/Bspfile.ml:48: dead field: version stored in Bspfile.parse, nothing live reads it
+games/fps/quake/model/Bspfile.ml:61: dead: Bspfile.add_short, in init but no call goes through the pointer
+games/fps/quake/model/Bspfile.ml:65: dead: Bspfile.add_int32, in init but no call goes through the pointer
+games/fps/quake/model/Bspfile.ml:69: dead: Bspfile.add_name, nothing names it
+games/fps/quake/model/Bspfile.ml:74: dead: Bspfile.write, nothing names it
+games/fps/quake/model/Model.ml:378: dead field: clip_maxs stored in Model.load, nothing live reads it
+games/fps/quake/model/Model.ml:378: dead field: clip_mins stored in Model.load, nothing live reads it
+games/fps/quake/model/Model.ml:378: dead field: planes stored in Model.load, nothing live reads it
+games/fps/quake/model/Model.ml:400: dead field: special stored in Model:fun at line 400, nothing live reads it
+games/fps/quake/model/Model.ml:617: dead: Model.vertex, nothing names it
+games/fps/quake/render/Surfcache.ml:40: dead: Surfcache.made, nothing names it
+games/fps/quake/server/Edict.ml:155: dead field: lefty stored in Edict.spawn, nothing live reads it
+games/fps/quake/server/Edict.ml:155: dead field: pausetime stored in Edict.spawn, nothing live reads it
+games/fps/quake/server/Edict.ml:155: dead field: search_time stored in Edict.spawn, nothing live reads it
+games/puzzle/Tetris.ml:168: dead: Tetris.size, nothing names it
+games/puzzle/Tetris.ml:320: dead field: state stored in Tetris.initial_model, nothing live reads it
+games/racing/virtua/Virtua.ml:109: dead field: ortho stored in Virtua.lens, nothing live reads it
+games/racing/virtua/race/Rivals.ml:19: dead field: livery stored in Rivals:fun at line 19, nothing live reads it
+games/racing/virtua/render/Mesh.ml:42: dead: Mesh.is_empty, nothing names it
+games/shmup/kit/Shots.ml:12: dead: Shots.straight, nothing names it
+games/shmup/kit/Shots.ml:21: dead: Shots.on_screen, nothing names it
+games/shmup/kit/Shots.ml:24: dead: Shots.near, nothing names it
+games/shmup/kit/Shots.ml:26: dead: Shots.angle, nothing names it
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml: dead global: Xv6fs.mtime_at, nothing live names it
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:134: dead: Xv6fs.mtime, nothing names it
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:135: dead: Xv6fs.set_mtime, nothing names it
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:186: dead: Xv6fs.truncate, in init but no call goes through the pointer
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:220: dead: Xv6fs.slots, in init but no call goes through the pointer
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:229: dead: Xv6fs.entries, in init but no call goes through the pointer
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:291: dead: Xv6fs.remove, nothing names it
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:313: dead: Xv6fs.rename, nothing names it
 kernels/oberon/display/Display.ml: dead global: Display.cross, nothing live names it
 kernels/oberon/display/Display.ml: dead global: Display.grey, nothing live names it
 kernels/oberon/machine/Machine.ml:147: dead: Machine.le16, in init but no call goes through the pointer
@@ -121,14 +303,8 @@ languages/pascal/Pmachine.ml:250: dead: Pmachine.run, in init but no call goes t
 languages/pascal/Pmachine.ml:271: dead: Pmachine.execute, nothing names it
 languages/scheme/CLI.ml:109: dead field: stop stored in CLI:fun at line 109, nothing live reads it
 languages/scheme/Scheme.ml:130: dead: Scheme.kind, nothing names it
-languages/scheme/Scheme_eval.ml:139: dead field: handlers stored in Scheme_eval.step, nothing live reads it
-languages/scheme/Scheme_eval.ml:139: dead field: init stored in Scheme_eval.step, nothing live reads it
-languages/scheme/Scheme_eval.ml:198: dead: Scheme_eval.resume, nothing names it
-languages/scheme/Scheme_eval.ml:200: dead: Scheme_eval.call, nothing names it
 languages/scheme/Scheme_eval.ml:233: dead field: builtins stored in Scheme_eval.create, nothing live reads it
 languages/scheme/Scheme_eval.ml:240: dead: Scheme_eval.defined, nothing names it
-languages/scheme/Scheme_step.ml:194: dead field: contractum stored in run, nothing live reads it
-languages/scheme/Scheme_step.ml:194: dead field: redex stored in run, nothing live reads it
 languages/smalltalk/Squeak.ml:157: dead: Squeak.picture, nothing names it
 languages/smalltalk/compiler/St_ast.ml:45: dead: St_ast.show_literal, in init but no call goes through the pointer
 languages/smalltalk/compiler/St_ast.ml:63: dead: St_ast.show_message, in init but no call goes through the pointer
@@ -177,7 +353,6 @@ languages/smalltalk/vm/St_interp.ml:112: dead: St_interp.cache_stats, nothing na
 languages/smalltalk/vm/St_interp.ml:120: dead: St_interp.is_closure_context, in init but no call goes through the pointer
 languages/smalltalk/vm/St_interp.ml:131: dead: St_interp.context_method, in init but no call goes through the pointer
 languages/smalltalk/vm/St_interp.ml:154: dead: St_interp.home_context, nothing names it
-languages/smalltalk/vm/St_interp.ml:604: dead field: id stored in St_interp.new_process, nothing live reads it
 languages/smalltalk/vm/St_interp.ml:684: dead: St_interp.run_until, in init but no call goes through the pointer
 languages/smalltalk/vm/St_interp.ml:686: dead: St_interp.resume, in init but no call goes through the pointer
 languages/smalltalk/vm/St_memory.ml:147: dead: St_memory.set_body, nothing names it
@@ -186,28 +361,174 @@ languages/smalltalk/vm/St_memory.ml:172: dead: St_memory.symbols, nothing names 
 languages/tiger/Tiger_semant.ml:266: dead field: aid stored in Tiger_semant:fun at line 266, nothing live reads it
 languages/tiger/Tiger_semant.ml:318: dead field: fid stored in Tiger_semant.program, nothing live reads it
 languages/tiger/Tiger_semant.ml:318: dead field: records stored in Tiger_semant.program, nothing live reads it
-lib_graphics/Display.ml:100: dead field: format stored in Display.init, nothing live reads it
-lib_graphics/Display.ml:112: dead: Display.format, nothing names it
+lib_audio/Control.ml:11: dead: Control.on, in init but no call goes through the pointer
+lib_audio/Control.ml:12: dead: Control.of_bool, nothing names it
+lib_audio/Control.ml:13: dead: Control.index, in init but no call goes through the pointer
+lib_audio/Control.ml:15: dead: Control.to_string, nothing names it
+lib_audio/Control.ml:21: dead: Control.of_string, nothing names it
+lib_audio/Instrument.ml: dead global: Instrument.gate_samples, nothing live names it
+lib_audio/Instrument.ml:32: dead: Instrument.sine, nothing names it
+lib_audio/Mixer.ml: dead global: Mixer.max_playing, nothing live names it
+lib_audio/Mixer.ml:103: dead: Mixer.play, in init but no call goes through the pointer
+lib_audio/Mixer.ml:109: dead: Mixer.play_at, in init but no call goes through the pointer
+lib_audio/Mixer.ml:135: dead: Mixer.keep, in init but no call goes through the pointer
+lib_audio/Mixer.ml:338: dead: Mixer.playing, nothing names it
+lib_audio/Mixer.ml:339: dead: Mixer.played, in init but no call goes through the pointer
+lib_audio/Mixer.ml:66: dead: Mixer.loop_prepared, in init but no call goes through the pointer
+lib_audio/Mixer.ml:71: dead: Mixer.change_prepared, in init but no call goes through the pointer
+lib_audio/Mixer.ml:81: dead: Mixer.nothing, in init but no call goes through the pointer
+lib_audio/Mixer.ml:82: dead: Mixer.loop, in init but no call goes through the pointer
+lib_audio/Mixer.ml:83: dead: Mixer.change, nothing names it
+lib_audio/Mixer.ml:85: dead: Mixer.stop, in init but no call goes through the pointer
+lib_audio/Mixer.ml:89: dead: Mixer.looping, in init but no call goes through the pointer
+lib_audio/Mixer.ml:99: dead: Mixer.add_shot, in init but no call goes through the pointer
+lib_audio/Music.ml:13: dead: Music.midi_number, in init but no call goes through the pointer
+lib_audio/Music.ml:28: dead: Music.frequency, in init but no call goes through the pointer
+lib_audio/Music.ml:89: dead: Music.render_score, in init but no call goes through the pointer
+lib_audio/Sfx.ml:147: dead: Sfx.vary, in init but no call goes through the pointer
+lib_audio/Sfx.ml:173: dead: Sfx.random, in init but no call goes through the pointer
+lib_audio/Sfx.ml:96: dead: Sfx.duration, nothing names it
+lib_audio/Space.ml:15: dead: Space.pan_linear, nothing names it
+lib_audio/Space.ml:27: dead: Space.vec, nothing names it
+lib_audio/Space.ml:28: dead: Space.sub, in init but no call goes through the pointer
+lib_audio/Space.ml:29: dead: Space.dot, in init but no call goes through the pointer
+lib_audio/Space.ml:30: dead: Space.distance, in init but no call goes through the pointer
+lib_audio/Space.ml:32: dead: Space.direction, nothing names it
+lib_audio/Space.ml:36: dead: Space.attenuation, in init but no call goes through the pointer
+lib_audio/Space.ml:37: dead: Space.air_loss, nothing names it
+lib_audio/Space.ml:40: dead: Space.air_cutoff, nothing names it
+lib_audio/Space.ml:43: dead: Space.doppler, nothing names it
+lib_audio/Synth.ml:161: dead: Synth.duration, in init but no call goes through the pointer
+lib_audio/Synth.ml:175: dead: Synth.length, in init but no call goes through the pointer
+lib_audio/Synth.ml:185: dead: Synth.pieces, in init but no call goes through the pointer
+lib_audio/Synth.ml:70: dead: Synth.with_effect, in init but no call goes through the pointer
+lib_audio/Synth.ml:72: dead: Synth.faster, in init but no call goes through the pointer
+lib_audio/Synth.ml:91: dead: Synth.pitched, in init but no call goes through the pointer
+lib_audio/effects/Drive.ml: dead field: control stored in init, nothing live reads it
+lib_audio/effects/Drive.ml: dead field: initial stored in init, nothing live reads it
+lib_audio/effects/Drive.ml: dead field: name stored in init, nothing live reads it
+lib_audio/effects/Drive.ml: dead global: Drive.bias, nothing live names it
+lib_audio/effects/Drive.ml: dead global: Drive.dc_coefficient, nothing live names it
+lib_audio/effects/Drive.ml:104: dead: Drive.fx, nothing names it
+lib_audio/effects/Drive.ml:15: dead: Drive.curve, in init but no call goes through the pointer
+lib_audio/effects/Drive.ml:40: dead: Drive.create, in init but no call goes through the pointer
+lib_audio/effects/Drive.ml:54: dead: Drive.chain, in init but no call goes through the pointer
+lib_audio/effects/Drive.ml:59: dead: Drive.process, in init but no call goes through the pointer
+lib_audio/effects/Dynamics.ml: dead field: detector stored in init, nothing live reads it
+lib_audio/effects/Dynamics.ml: dead field: knee stored in init, nothing live reads it
+lib_audio/effects/Dynamics.ml: dead field: lookahead stored in init, nothing live reads it
+lib_audio/effects/Dynamics.ml: dead field: makeup stored in init, nothing live reads it
+lib_audio/effects/Dynamics.ml: dead field: threshold stored in init, nothing live reads it
+lib_audio/effects/Dynamics.ml: dead global: Dynamics.rms_pole, nothing live names it
+lib_audio/effects/Dynamics.ml:143: dead: Dynamics.fx, nothing names it
+lib_audio/effects/Dynamics.ml:48: dead: Dynamics.curve, in init but no call goes through the pointer
+lib_audio/effects/Dynamics.ml:73: dead: Dynamics.create, in init but no call goes through the pointer
+lib_audio/effects/Dynamics.ml:77: dead: Dynamics.reduction, nothing names it
+lib_audio/effects/Dynamics.ml:80: dead: Dynamics.delayed, in init but no call goes through the pointer
+lib_audio/effects/Dynamics.ml:93: dead: Dynamics.process, in init but no call goes through the pointer
+lib_audio/effects/Effect.ml:18: dead: Effect.ramp, in init but no call goes through the pointer
+lib_audio/formats/abc/Abc.ml:262: dead: Abc.duration, nothing names it
+lib_audio/formats/midi/Midi.ml:136: dead: Midi.be32, in init but no call goes through the pointer
+lib_audio/formats/midi/Midi.ml:137: dead: Midi.be16, in init but no call goes through the pointer
+lib_audio/formats/midi/Midi.ml:138: dead: Midi.chunk, in init but no call goes through the pointer
+lib_audio/formats/midi/Midi.ml:139: dead: Midi.bytes, in init but no call goes through the pointer
+lib_audio/formats/midi/Midi.ml:142: dead: Midi.of_tune, nothing names it
+lib_audio/formats/midi/Midi.ml:19: dead: Midi.vlq, in init but no call goes through the pointer
+lib_audio/formats/mod/Mod.ml:101: dead: Mod.data_of_floats, nothing names it
+lib_audio/formats/mod/Mod.ml:171: dead: Mod.to_string, nothing names it
+lib_audio/formats/mod/Mod.ml:39: dead: Mod.header_size, nothing names it
+lib_audio/formats/mod/Mod.ml:54: dead: Mod.cell_to_bytes, in init but no call goes through the pointer
+lib_audio/formats/mod/Mod.ml:76: dead: Mod.note_name, nothing names it
+lib_audio/formats/mod/Mod.ml:83: dead: Mod.period_of_name, nothing names it
+lib_audio/formats/mod/Mod.ml:91: dead: Mod.rate, nothing names it
+lib_audio/formats/mod/Mod_player.ml:102: dead: Mod_player.set_song, nothing names it
+lib_audio/formats/mod/Mod_player.ml:108: dead: Mod_player.channel_period, nothing names it
+lib_audio/formats/mod/Mod_player.ml:109: dead: Mod_player.channel_volume, nothing names it
+lib_audio/formats/mod/Mod_player.ml:110: dead: Mod_player.speed, nothing names it
+lib_audio/formats/mod/Mod_player.ml:111: dead: Mod_player.tempo, nothing names it
+lib_audio/formats/mod/Mod_player.ml:89: dead: Mod_player.set_reading, nothing names it
+lib_audio/formats/mod/Mod_player.ml:90: dead: Mod_player.set_separation, nothing names it
+lib_audio/formats/mod/Mod_player.ml:91: dead: Mod_player.position, nothing names it
+lib_audio/formats/mod/Mod_player.ml:92: dead: Mod_player.song, nothing names it
+lib_audio/formats/mod/Mod_player.ml:94: dead: Mod_player.seek, nothing names it
+lib_audio/formats/mod/Paula.ml: dead global: Paula.readings, nothing live names it
+lib_audio/formats/mod/Paula.ml:12: dead: Paula.reading_name, nothing names it
+lib_audio/formats/mod/Paula.ml:36: dead: Paula.playing, nothing names it
+lib_audio/formats/mpeg_audio/Imdct.ml:58: dead: Imdct.mdct, nothing names it
+lib_audio/formats/mpeg_audio/Mpeg_audio_header.ml:100: dead: Mpeg_audio_header.at_start, nothing names it
+lib_audio/formats/mpeg_audio/Mpeg_audio_header.ml:28: dead: Mpeg_audio_header.version_name, nothing names it
+lib_audio/formats/mpeg_audio/Mpeg_audio_header.ml:40: dead field: padding stored in Mpeg_audio_header.parse, nothing live reads it
+lib_audio/formats/vorbis/Vorbis.ml:315: dead: Vorbis.channels, in init but no call goes through the pointer
+lib_audio/formats/vorbis/Vorbis.ml:651: dead: Vorbis.of_packets, in init but no call goes through the pointer
+lib_audio/formats/vorbis/Vorbis.ml:659: dead: Vorbis.of_ogg, nothing names it
+lib_audio/formats/vorbis/Vorbis_player.ml:47: dead: Vorbis_player.rate, nothing names it
+lib_audio/formats/vorbis/Vorbis_player.ml:48: dead: Vorbis_player.channels, nothing names it
+lib_audio/formats/wav/Wav.ml:16: dead: Wav.to_string_channels, in init but no call goes through the pointer
+lib_audio/formats/wav/Wav.ml:38: dead: Wav.to_string, nothing names it
+lib_audio/formats/wav/Wav.ml:77: dead: Wav.of_string, in init but no call goes through the pointer
+lib_audio/formats/wav/Wav.ml:80: dead: Wav.stereo_to_string, nothing names it
+lib_audio/signal/Mix.ml:17: dead: Mix.delay, nothing names it
+lib_audio/signal/Mix.ml:18: dead: Mix.then_, nothing names it
+lib_audio/signal/Mix.ml:19: dead: Mix.decibels, nothing names it
+lib_audio/signal/Mix.ml:20: dead: Mix.of_decibels, in init but no call goes through the pointer
+lib_audio/signal/Resample.ml: dead global: Resample.kinds, nothing live names it
+lib_audio/signal/Resample.ml:12: dead: Resample.name, nothing names it
+lib_audio/signal/Signal.ml: dead global: Signal.nyquist, nothing live names it
+lib_audio/signal/Signal.ml:20: dead: Signal.period_in_samples, nothing names it
+lib_audio/signal/Signal.ml:22: dead: Signal.alias, nothing names it
+lib_audio/signal/Signal.ml:28: dead: Signal.of_function, nothing names it
+lib_audio/signal/Signal.ml:37: dead: Signal.to_int16, in init but no call goes through the pointer
+lib_audio/signal/Signal.ml:46: dead: Signal.at_most, nothing names it
+lib_audio/signal/Signal.ml:47: dead: Signal.at_least, nothing names it
+lib_audio/synthesis/Envelope.ml: dead global: Envelope.silent, nothing live names it
+lib_audio/synthesis/Envelope.ml:27: dead: Envelope.duration, nothing names it
+lib_audio/synthesis/Envelope.ml:29: dead: Envelope.apply, nothing names it
+lib_audio/synthesis/Envelope.ml:39: dead: Envelope.start, nothing names it
+lib_audio/synthesis/Envelope.ml:40: dead: Envelope.gate_on, nothing names it
+lib_audio/synthesis/Envelope.ml:42: dead: Envelope.gate_off, nothing names it
+lib_audio/synthesis/Envelope.ml:47: dead: Envelope.stage, nothing names it
+lib_audio/synthesis/Envelope.ml:48: dead: Envelope.current, nothing names it
+lib_audio/synthesis/Envelope.ml:51: dead: Envelope.samples, in init but no call goes through the pointer
+lib_audio/synthesis/Envelope.ml:54: dead: Envelope.coefficient, in init but no call goes through the pointer
+lib_audio/synthesis/Envelope.ml:58: dead: Envelope.fill, nothing names it
+lib_audio/synthesis/Filter.ml:116: dead: Filter.chain, in init but no call goes through the pointer
+lib_audio/synthesis/Filter.ml:136: dead: Filter.process, nothing names it
+lib_audio/synthesis/Filter.ml:19: dead: Filter.low_pass, in init but no call goes through the pointer
+lib_audio/synthesis/Filter.ml:27: dead: Filter.high_pass, nothing names it
+lib_audio/synthesis/Filter.ml:55: dead: Filter.peaking, nothing names it
+lib_audio/synthesis/Filter.ml:64: dead: Filter.shelf, in init but no call goes through the pointer
+lib_audio/synthesis/Filter.ml:77: dead: Filter.low_shelf, nothing names it
+lib_audio/synthesis/Filter.ml:78: dead: Filter.high_shelf, nothing names it
+lib_audio/synthesis/Filter.ml:83: dead: Filter.response_at, in init but no call goes through the pointer
+lib_audio/synthesis/Filter.ml:91: dead: Filter.response, nothing names it
+lib_audio/synthesis/Fm.ml:12: dead: Fm.render, nothing names it
+lib_audio/synthesis/Noise.ml:17: dead: Noise.period, nothing names it
+lib_audio/synthesis/Noise.ml:22: dead: Noise.render, nothing names it
+lib_audio/synthesis/Noise.ml:38: dead: Noise.lcg, nothing names it
+lib_audio/synthesis/Noise.ml:40: dead: Noise.uniform, nothing names it
+lib_audio/synthesis/Oscillator.ml: dead global: Oscillator.waveforms, nothing live names it
+lib_audio/synthesis/Oscillator.ml:13: dead: Oscillator.name, nothing names it
+lib_audio/synthesis/Oscillator.ml:61: dead: Oscillator.pulse, in init but no call goes through the pointer
+lib_audio/synthesis/Oscillator.ml:64: dead: Oscillator.pulse_band_limited, nothing names it
+lib_audio/synthesis/Oscillator.ml:69: dead: Oscillator.make, in init but no call goes through the pointer
+lib_audio/synthesis/Oscillator.ml:72: dead: Oscillator.next, in init but no call goes through the pointer
+lib_audio/synthesis/Oscillator.ml:78: dead: Oscillator.render, nothing names it
+lib_crypto/Aes.ml:58: dead: Aes.encrypt_block_simple, nothing names it
+lib_crypto/Bignum.ml: dead global: Bignum.mont_mul_simple, nothing live names it
+lib_crypto/Bignum.ml: dead global: Bignum.mont_mul_wide, nothing live names it
+lib_crypto/Bignum.ml:191: dead: Bignum.redc_mul_simple, in init but no call goes through the pointer
+lib_crypto/Bignum.ml:368: dead: Bignum.mont_equal, nothing names it
+lib_crypto/Ecdsa.ml:117: dead: Ecdsa.encode, in init but no call goes through the pointer
+lib_crypto/Ecdsa.ml:11: dead field: name stored in Ecdsa.make, nothing live reads it
+lib_crypto/Ecdsa.ml:120: dead: Ecdsa.generator, nothing names it
+lib_crypto/Ecdsa.ml:122: dead: Ecdsa.multiply, nothing names it
+lib_crypto/Ecdsa.ml:29: dead: Ecdsa.size, nothing names it
 lib_graphics/Display.ml:113: dead: Display.hold, nothing names it
 lib_graphics/Display.ml:121: dead field: repl stored in Display.alloc_on, nothing live reads it
-lib_graphics/Display.ml:147: dead: Display.free, nothing names it
 lib_graphics/Display.ml:150: dead: Display.clip, nothing names it
-lib_graphics/Display.ml:160: dead: Display.desktop, nothing names it
-lib_graphics/Display.ml:166: dead: Display.window, nothing names it
-lib_graphics/Display.ml:169: dead: Display.top, nothing names it
-lib_graphics/Display.ml:170: dead: Display.bottom, nothing names it
-lib_graphics/Display.ml:175: dead: Display.origin, nothing names it
-lib_graphics/Display.ml:181: dead: Display.name, nothing names it
-lib_graphics/Display.ml:243: dead: Display.file, nothing names it
-lib_graphics/Display.ml:88: dead: Display.accepted, in init but no call goes through the pointer
 lib_graphics/Draw.ml:20: dead: Draw.scale_message, in init but no call goes through the pointer
 lib_graphics/Draw.ml:23: dead: Draw.scale, nothing names it
-lib_graphics/Draw.ml:26: dead: Draw.shrink_message, in init but no call goes through the pointer
-lib_graphics/Draw.ml:29: dead: Draw.shrink, nothing names it
-lib_graphics/Draw.ml:31: dead: Draw.can_shrink, nothing names it
 lib_graphics/Draw.ml:36: dead: Draw.can_scale, nothing names it
-lib_graphics/Draw.ml:43: dead: Draw.border, nothing names it
-lib_graphics/Draw.ml:51: dead: Draw.line, nothing names it
 lib_graphics/Draw.ml:59: dead: Draw.coord, in init but no call goes through the pointer
 lib_graphics/Draw.ml:68: dead: Draw.polygon, in init but no call goes through the pointer
 lib_graphics/Draw.ml:78: dead: Draw.poly, nothing names it
@@ -216,21 +537,27 @@ lib_graphics/Draw.ml:83: dead: Draw.ellipse_, in init but no call goes through t
 lib_graphics/Draw.ml:88: dead: Draw.ellipse, nothing names it
 lib_graphics/Draw.ml:89: dead: Draw.fillellipse, nothing names it
 lib_graphics/Font.ml:14: dead: Font.ascent, nothing names it
-lib_graphics/Font.ml:21: dead field: ascent stored in Font.default, nothing live reads it
-lib_graphics/Keyboard.ml: dead global: Keyboard.down, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.end_, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.home, nothing live names it
-lib_graphics/Keyboard.ml: dead global: Keyboard.left, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.page_down, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.page_up, nothing live names it
-lib_graphics/Keyboard.ml: dead global: Keyboard.right, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.shift, nothing live names it
-lib_graphics/Keyboard.ml: dead global: Keyboard.up, nothing live names it
-lib_graphics/Mouse.ml:16: dead field: msec stored in Mouse.state_of, nothing live reads it
-lib_graphics/Rectangle.ml:47: dead: Rectangle.contains, nothing names it
-lib_networking/9p/P9_server.ml:128: never built: Later.0, matched in P9_server:fun at line 128
-lib_networking/9p/P9_server.ml:136: dead: response, in P9_server:fun at line 130 but no call goes through the pointer
-lib_networking/9p/P9_server.ml:137: dead: P9_server:fun at line 137, nothing names it
+lib_graphics/images/Dct.ml:17: dead: Dct.c, in init but no call goes through the pointer
+lib_graphics/images/Dct.ml:23: dead: Dct.fdct, nothing names it
+lib_graphics/images/Dct.ml:35: dead: Dct.idct, nothing names it
+lib_graphics/images/Image_file.ml: dead global: Image_file.extensions, nothing live names it
+lib_graphics/images/Image_file.ml:14: dead: Image_file.known, nothing names it
+lib_graphics/images/Png.ml:223: dead: Png.scanlines, nothing names it
+lib_graphics/images/Png.ml:239: dead: Png.string_of_u32, in init but no call goes through the pointer
+lib_graphics/images/Png.ml:240: dead: Png.string_of_crc, in init but no call goes through the pointer
+lib_graphics/images/Png.ml:242: dead: Png.chunk, in init but no call goes through the pointer
+lib_graphics/images/Png.ml:250: dead: Png.cost, in init but no call goes through the pointer
+lib_graphics/images/Png.ml:258: dead: Png.encode, nothing names it
+lib_graphics/images/Png.ml:81: dead: Png.filter_row, in init but no call goes through the pointer
+lib_gui/examples/gui4/Gui4Circles.ml:117: dead: Gui4Circles.summary, in init but no call goes through the pointer
+lib_gui/examples/gui4/Gui4Flight.ml:47: dead: Gui4Flight.summary, in init but no call goes through the pointer
+lib_gui/examples/gui4/Gui4Temperature.ml:32: dead: Gui4Temperature.summary, in init but no call goes through the pointer
+lib_gui/examples/gui4/Gui4Timer.ml:36: dead: Gui4Timer.summary, in init but no call goes through the pointer
 lib_networking/9p/P9_server.ml:25: dead: P9_server.no_write, nothing names it
 lib_networking/9p/P9_server.ml:26: dead: P9_server.no_create, nothing names it
 lib_networking/9p/P9_server.ml:27: dead: P9_server.no_remove, nothing names it
@@ -285,13 +612,18 @@ lib_terminal/Vt.ml:350: dead: Vt.cursor_visible, nothing names it
 lib_terminal/Vt.ml:351: dead: Vt.bells, nothing names it
 lib_terminal/Vt.ml:353: dead: Vt.rtrim, in init but no call goes through the pointer
 lib_terminal/Vt.ml:360: dead: Vt.text, nothing names it
-linker/Link.ml:179: dead: Link.defined_names, in init but no call goes through the pointer
-linker/Link.ml:205: dead: Link.member_of, nothing names it
-linker/Link.ml:207: dead: Link.member_file, nothing names it
-linker/Link.ml:223: dead: Link.write_library, nothing names it
-machine/arm32/Arm32.ml:196: dead field: exclusive_value stored in Arm32.create, nothing live reads it
-machine/arm32/Arm32.ml:196: dead field: loaded stored in Arm32.create, nothing live reads it
-machine/arm32/Arm32.ml:196: dead field: vectors stored in Arm32.create, nothing live reads it
+linker/CLI.ml:114: dead field: l_object stored in unit_, nothing live reads it
+linker/CLI.ml:114: dead field: l_source stored in unit_, nothing live reads it
+linker/CLI.ml:114: dead field: l_taken stored in unit_, nothing live reads it
+linker/CLI.ml:92: dead field: m_program stored in CLI.write_manifest, nothing live reads it
+linker/CLI.ml:92: dead field: m_units stored in CLI.write_manifest, nothing live reads it
+linker/Manifest.ml:17: dead: Manifest.of_string, nothing names it
+linker/tools/Nm.ml:55: never built: Data.0, matched in Nm:fun at line 55
+linker/tools/Nm.ml:55: never built: Text.0, matched in Nm:fun at line 55
+linker/tools/Nm.ml:59: never built: Globl.0, matched in Nm:fun at line 59
+linker/tools/Nm.ml:59: never built: Ins.0, matched in Nm:fun at line 59
+linker/tools/Nm.ml:61: never built: Addr.0, matched in Nm:fun at line 61
+linker/tools/Nm.ml:61: never built: Mem.0, matched in Nm:fun at line 61
 machine/arm32/Arm32.ml:254: dead: Arm32.take, nothing names it
 machine/arm32/Arm32_fast.ml: dead global: Arm32_fast.on, nothing live names it
 machine/arm32/Arm32_fast.ml:11: dead: Arm32_fast.set, in init but no call goes through the pointer
@@ -325,7 +657,6 @@ machine/arm64/Arm64.ml: dead global: Arm64.ec_smc, nothing live names it
 machine/arm64/Arm64.ml: dead global: Arm64.ec_svc, nothing live names it
 machine/arm64/Arm64.ml: dead global: Arm64.ec_unknown, nothing live names it
 machine/arm64/Arm64.ml:109: dead: Arm64.sysreg, nothing names it
-machine/arm64/Arm64.ml:413: dead field: aarch32 stored in Arm64.create, nothing live reads it
 machine/arm64/Arm64.ml:590: dead: Arm64.take, nothing names it
 machine/arm64/Arm64.ml:606: dead: Arm64.syndrome, nothing names it
 machine/arm64/Mmu64.ml: dead global: Mmu64.permission, nothing live names it
@@ -340,21 +671,38 @@ machine/arm64/Mmu64.ml:66: dead: Mmu64.translate, nothing names it
 machine/core/Memory.ml:133: dead: Memory.direct, nothing names it
 machine/core/Memory.ml:29: dead: Memory.map_bytes, nothing names it
 machine/core/Memory.ml:35: dead: Memory.map_device, nothing names it
-machine/process/Elf.ml:24: dead field: exec stored in Elf:fun at line 24, nothing live reads it
 machine/process/Elf.ml:24: dead field: paddr stored in Elf:fun at line 24, nothing live reads it
 machine/process/Elf.ml:35: dead: Elf.symbols, nothing names it
 shell/Env.ml:41: dead: Env.vars, nothing names it
 shell/Process.ml:80: dead: Process.wait_any, nothing names it
-utilities/calc/dc/Dc.ml:116: dead: Dc.of_string, in init but no call goes through the pointer
-utilities/calc/dc/Dc.ml:627: dead: Dc.feed, nothing names it
+tiny/TinyBrowser/Http.ml:10: dead: Http.request, nothing names it
+tiny/TinyBrowser/Http.ml:43: dead: Http.head_end, nothing names it
+tiny/TinyBrowser/Http.ml:50: dead: Http.status, nothing names it
+tiny/TinyBrowser/Http.ml:58: dead: Http.header, in init but no call goes through the pointer
+tiny/TinyBrowser/Http.ml:73: dead: Http.media_type, nothing names it
+tiny/TinyBrowser/Strings.ml:13: dead: Strings.is_space, nothing names it
+tiny/TinyBrowser/Strings.ml:15: dead: Strings.number, in init but no call goes through the pointer
+tiny/TinyBrowser/Strings.ml:6: dead: Strings.find, in init but no call goes through the pointer
+tiny/TinyBrowser/Url.ml:54: dead: Url.site, in init but no call goes through the pointer
+tiny/TinyBrowser/Url.ml:63: dead: Url.resolve, nothing names it
+tiny/TinyKernel/KNetwork.ml:293: dead: KNetwork.il_readable, nothing names it
+tiny/TinyLibExecutable.ml:169: dead: TinyLibExecutable.address, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_draw, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_mouse, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stderr, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stdin, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml: dead global: TinyLibSystem.fd_stdout, nothing live names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:183: dead: TinyLibSystem.seed, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:195: dead: TinyLibSystem.ready, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:204: dead: TinyLibSystem.box, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:285: dead: TinyLibSystem.dial, nothing names it
+tiny/TinyLibSystem/unix/TinyLibSystem.ml:78: dead: TinyLibSystem.raw_console, nothing names it
+tiny/TinyMachine/TinyMachine.ml:681: dead: TinyMachine:fun at line 681, nothing names it
+tiny/TinyMachine/TinyMachineDevices.ml:252: dead: TinyMachineDevices.nearest, nothing names it
+tiny/TinyMachine/TinyMachineDevices.ml:519: dead: TinyMachineDevices.idle_until_ipi, in init but no call goes through the pointer
+typesetting/troff/roff/Roff.ml:55: dead: Roff.line_number, nothing names it
+typesetting/troff/roff/Roff.ml:59: dead: Roff.set_register, nothing names it
 utilities/calc/dc/Num.ml:64: dead: Num.sub, nothing names it
 utilities/text/awk/Cell.ml: dead global: Cell._ofmt, nothing live names it
 utilities/text/awk/Cell.ml: dead global: Cell._symtab, nothing live names it
-version_control/diff/Diff.ml:265: dead: Diff.differ, in init but no call goes through the pointer
-version_control/diff/Difftool.ml:109: dead: Difftool.merge3_main, nothing names it
-version_control/diff/Difftool.ml:10: dead: Difftool.fatal, in init but no call goes through the pointer
-version_control/diff/Difftool.ml:14: dead: Difftool.stat, in init but no call goes through the pointer
-version_control/diff/Difftool.ml:22: dead: Difftool.contents, in init but no call goes through the pointer
-version_control/diff/Difftool.ml:45: dead: Difftool.diff_main, nothing names it
 version_control/repo/Refs.ml:43: dead: Refs.head_ref, nothing names it
-windows/rio/Window.ml: dead field: resized stored in init, nothing live reads it

@@ -109,18 +109,19 @@ let wrapped (words : string list) : string list =
 (* The runs, merged *)
 (*****************************************************************************)
 
-(* a run: its program's name, its main, its process *)
-type run = { name : string; main : string; pid : int }
+(* a run: its program's name, its main, its command line's words, and
+ * whether it ended well *)
+type run = { name : string; main : string; args : string list; mutable ok : bool }
 
 (* (a run's files, by its name without a /: w/name.out, w/name.dl) *)
 let file_of (w : string) (name : string) (ext : string) : string =
   Filename.concat w (String.map (fun c -> if c = '/' then '_' else c) name ^ ext)
 
-(* each main run, at once, by mini-analyze itself: the flags given but
- * -project (each run's its own), then its extra flags and -summary; its
- * name given, or its main's, made unique *)
-let start (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
-    (w : string) (mains : (string * string * string list) list) : run list =
+(* each main's run, by mini-analyze itself: the flags given but -project
+ * (each run's its own), then its extra flags and -summary; its name
+ * given, or its main's, made unique *)
+let runs_of (f : Analyze_flags.t) (w : string)
+    (mains : (string * string * string list) list) : run list =
   let rec without_project (l : string list) : string list =
     match l with
     | "-project" :: _ :: rest -> without_project rest
@@ -136,14 +137,36 @@ let start (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
       let n = (match Hashtbl.find_opt names base with Some n -> n | None -> 0) + 1 in
       Hashtbl.replace names base n;
       let name = if n = 1 then base else Printf.sprintf "%s%d" base n in
-      let out = FS.open_out_fd caps (file_of w name ".out") 0o644 in
       let args =
         flags @ extra @ [ "-summary"; file_of w name ".dl"; "-program"; name; main ] in
-      let pid =
-        Procs.create_process caps Sys.executable_name args ~stdin:Unix.stdin ~stdout:out in
-      Unix.close out;
-      { name; main; pid })
+      { name; main; args; ok = false })
     mains
+
+(* the runs, f.jobs at most at once (-j): a program's run is a process of
+ * up to 6 GB (-exn on mini-ml), and the 186 programs dune builds in ix,
+ * all at once, would not fit; its report in w/name.out *)
+let run_all (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t) (w : string)
+    (runs : run list) : unit =
+  let running = Hashtbl.create 16 in
+  let start (r : run) : unit =
+    let out = FS.open_out_fd caps (file_of w r.name ".out") 0o644 in
+    let pid =
+      Procs.create_process caps Sys.executable_name r.args ~stdin:Unix.stdin ~stdout:out in
+    Unix.close out;
+    Hashtbl.replace running pid r in
+  let rec go (todo : run list) : unit =
+    match todo with
+    | r :: rest when Hashtbl.length running < max 1 f.jobs -> start r; go rest
+    | _ when Hashtbl.length running = 0 -> ()
+    | _ -> (
+        match Procs.wait_any caps with
+        | None -> ()
+        | Some (pid, st) ->
+            (match Hashtbl.find_opt running pid with
+             | Some r -> r.ok <- st = Unix.WEXITED 0; Hashtbl.remove running pid
+             | None -> ());
+            go todo) in
+  go runs
 
 (* the runs' summaries merged by the analysis's rules: the lines (of file
  * alone when given), and the units not read *)
@@ -186,9 +209,9 @@ let merged_runs (caps : < Analyze_flags.caps; .. >) (f : Analyze_flags.t)
     Filename.concat (Filename.get_temp_dir_name ())
       (Printf.sprintf "mini-analyze-%d" (Unix.getpid ())) in
   FS.mkdir caps w 0o755;
-  let runs = start caps f w mains in
-  let failed =
-    List.filter (fun (r : run) -> Procs.waitpid caps r.pid <> Unix.WEXITED 0) runs in
+  let runs = runs_of f w mains in
+  run_all caps f w runs;
+  let failed = List.filter (fun (r : run) -> not r.ok) runs in
   List.iter (fun (r : run) ->
       Console.eprint caps
         (Printf.sprintf "mini-analyze: %s failed (its report: %s)\n" r.main

@@ -153,11 +153,26 @@ let string_end (text : string) (i : int) : int =
     if j >= n then n else if text.[j] = '\\' then go (j + 2) else if text.[j] = '"' then j + 1 else go (j + 1) in
   go (i + 1)
 
+(* where a quoted string {id|...|id} that starts at [i] ends; None when
+ * no such string starts there (a record's {) *)
+let quoted_end (text : string) (i : int) : int option =
+  let n = String.length text in
+  let j = ref (i + 1) in
+  while !j < n && (text.[!j] = '_' || (text.[!j] >= 'a' && text.[!j] <= 'z')) do incr j done;
+  if !j >= n || text.[!j] <> '|' then None
+  else
+    let close = "|" ^ String.sub text (i + 1) (!j - i - 1) ^ "}" in
+    let k = String.length close in
+    let rec go (p : int) : int =
+      if p + k > n then n else if String.sub text p k = close then p + k else go (p + 1) in
+    Some (go (!j + 1))
+
 (* The unit names a text's code uses, each once: a capitalized name
  * before a dot (TinyLibGUI.run), or after open, include, or the = of a
  * module alias (module G = TinyLibGUI). Not a comment's or a string's: a
  * comment's TinyMachine.ml in a unit TinyMachine.ml names would make a
- * cycle, which code cannot, and no main would be found. *)
+ * cycle, which code cannot, and no main would be found; nor a quoted
+ * string's, a help's {|... -start Unit...|} *)
 let names (text : string) : (string, unit) Hashtbl.t =
   let h = Hashtbl.create 64 in
   let n = String.length text in
@@ -166,6 +181,8 @@ let names (text : string) : (string, unit) Hashtbl.t =
     let c = text.[!i] in
     if c = '(' && !i + 1 < n && text.[!i + 1] = '*' then i := comment_end text !i
     else if c = '"' then i := string_end text !i
+    else if c = '{' && quoted_end text !i <> None then
+      i := (match quoted_end text !i with Some e -> e | None -> !i + 1)
     (* ('"', '\"': a character, not a string) *)
     else if c = '\'' && !i + 2 < n && text.[!i + 2] = '\'' then i := !i + 3
     else if c = '\'' && !i + 3 < n && text.[!i + 1] = '\\' && text.[!i + 3] = '\'' then i := !i + 4

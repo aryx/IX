@@ -261,7 +261,10 @@ let ask (caps : < Cap.open_in; Cap.open_out; Cap.readdir; Cap.exec; Cap.wait; ..
   FS.remove_any caps tmp;
   FS.remove_any caps err;
   if not ok then begin
-    if contains (why ^ text) "locked the build directory" then raise Locked;
+    (* (another dune holds it, or is making its lock file: empty, read
+     * as no pid) *)
+    if contains (why ^ text) "locked the build directory"
+       || contains (why ^ text) "build directory global lock file" then raise Locked;
     failwith ("dune " ^ String.concat " " args ^ ": failed\n" ^ why)
   end;
   text

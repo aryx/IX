@@ -1,10 +1,159 @@
-_mk/7/editors/emacs/draw/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
-_mk/7/editors/emacs/draw/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
-_mk/7/editors/emacs/tty/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
-_mk/7/editors/emacs/tty/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
-_mk/7/languages/c/Parser.ml:1102: evalorder: operands at 115:42 and 115:66, both with an effect: their order the compiler's
-_mk/7/languages/ml/Parser.ml:53: stack: Parser.mklist calls itself, not a tail call, over a list
-_mk/7/languages/ml/Parser.ml:57: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+# 2026-11-25: ix's build as mini-ld links it (ix_check.sh, its manifests): 140 programs, not 44: 113 more (browsers/javascript, troff, games/fps...), not read yet; -bugs's init without -start (the link's order is not the start's), the library's units before the program's
+_mk/7/editors/emacs/draw/Parser.ml:59: stack: Parser.mklist calls itself, not a tail call, over a list
+_mk/7/editors/emacs/draw/Parser.ml:63: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+_mk/7/editors/emacs/tty/Parser.ml:59: stack: Parser.mklist calls itself, not a tail call, over a list
+_mk/7/editors/emacs/tty/Parser.ml:63: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+_mk/7/languages/c/Parser.ml:1102: evalorder: operands at 120:42 and 120:66, both with an effect: their order the compiler's
+_mk/7/languages/ml/Parser.ml:59: stack: Parser.mklist calls itself, not a tail call, over a list
+_mk/7/languages/ml/Parser.ml:63: stack: Parser.mkpatlist calls itself, not a tail call, over a list
+apps/files/Folder.ml:109: swallowed: in Folder.copy_tree, Unix.Unix_error silenced, a constant answered
+apps/files/Folder.ml:125: swallowed: in Folder.copy, Unix.Unix_error silenced, a constant answered
+apps/maps/Map_services.ml:50: swallowed: in Map_services.save_places, Sys_error or Unix.Unix_error silenced, a constant answered
+apps/maps/Map_worker.ml:27: swallowed: in Map_worker.worker, Sys_error or Unix.Unix_error silenced, a constant answered
+apps/maps/Roads.ml:74: evalorder: operands at 74:50 and 74:61, both with an effect: their order the compiler's
+apps/maps/Routing.ml:124: swallowed: in Routing.asked_beside, Unix.Unix_error silenced, a constant answered
+apps/maps/Routing.ml:133: swallowed: in Routing.asked_beside, Sys_error or Unix.Unix_error silenced, a constant answered
+apps/maps/Routing.ml:150: swallowed: in Routing.asked_beside, Sys_error silenced, a constant answered
+apps/maps/Routing.ml:211: swallowed: in keep, Sys_error or Unix.Unix_error silenced, a constant answered
+apps/maps/Tile_cache.ml:118: swallowed: in Tile_cache:fun at line 116, Sys_error silenced, a constant answered
+apps/maps/Tile_cache.ml:63: swallowed: in Tile_cache.save_index, Sys_error or Unix.Unix_error silenced, a constant answered
+apps/maps/Weather.ml:33: stack: days calls itself, not a tail call, over a list
+apps/music/rebirth/ReBirth.ml:442: evalorder: operands at 442:11 and 442:50, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:442: evalorder: operands at 442:50 and 442:87, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:442: evalorder: operands at 442:9 and 445:11, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:445: evalorder: operands at 445:11 and 446:11, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:446: evalorder: operands at 446:11 and 446:57, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:446: evalorder: operands at 446:57 and 447:11, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:447: evalorder: operands at 447:11 and 449:11, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:447: evalorder: operands at 447:13 and 447:60, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:469: evalorder: operands at 469:4 and 469:49, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:469: evalorder: operands at 469:49 and 469:92, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:469: evalorder: operands at 469:92 and 470:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:470: evalorder: operands at 470:4 and 470:56, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:470: evalorder: operands at 470:56 and 471:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:471: evalorder: operands at 471:4 and 471:64, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:488: evalorder: operands at 488:4 and 488:50, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:488: evalorder: operands at 488:50 and 488:94, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:488: evalorder: operands at 488:94 and 489:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:489: evalorder: operands at 489:4 and 489:54, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:501: evalorder: operands at 501:4 and 502:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:501: evalorder: operands at 501:48 and 501:88, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:501: evalorder: operands at 501:6 and 501:48, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:502: evalorder: operands at 502:4 and 503:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:503: evalorder: operands at 503:4 and 505:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:503: evalorder: operands at 503:6 and 503:54, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:505: evalorder: operands at 505:4 and 506:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:506: evalorder: operands at 506:4 and 508:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:508: evalorder: operands at 508:26 and 509:4, both with an effect: their order the compiler's
+apps/music/rebirth/ReBirth.ml:508: evalorder: operands at 508:4 and 508:26, both with an effect: their order the compiler's
+apps/music/rebirth/Skin.ml:79: int31: in Skin.noise, 0x4bf19f61: not on the Pi 1's 31 bits
+apps/office/document/Saved.ml:6: sharing: in Saved.to_string, Marshal without No_sharing: its bytes the compiler's
+apps/office/document/Undo.ml:26: stack: Undo.keep calls itself, not a tail call, over a list
+apps/page/Pageview.ml:644: swallowed: in mkdir, Unix.Unix_error silenced, a constant answered
+browsers/css/Cascade.ml:133: stack: go calls itself, not a tail call, over a list
+browsers/css/Css_values.ml:131: stack: product calls itself, not a tail call, over a list
+browsers/css/Css_values.ml:150: stack: Css_values.calc calls itself, not a tail call, over a list
+browsers/engine/layout/Box_layout.ml:299: stack: Box_layout.starting_line calls itself, not a tail call, over a list
+browsers/engine/layout/Box_layout.ml:922: evalorder: operands at 922:35 and 923:22, both with an effect: their order the compiler's
+browsers/engine/tests/Boxes.ml:31: leak: in read, taken here, given back at browsers/engine/tests/Boxes.ml:31, not when browsers/engine/tests/Boxes.ml:31 raises End_of_file
+browsers/javascript/eval/Js_coroutine.ml:39: swallowed: in run, Sys_error or Unix.Unix_error silenced, a constant answered
+browsers/javascript/eval/Js_coroutine.ml:39: swallowed: in run, Unix.Unix_error silenced, a constant answered
+browsers/javascript/eval/Js_eval.ml:1066: evalorder: operands at 1066:82 and 1066:100, both with an effect: their order the compiler's
+browsers/javascript/eval/Js_eval.ml:1133: evalorder: operands at 1133:15 and 1133:33, both with an effect: their order the compiler's
+browsers/javascript/eval/Js_eval.ml:180: evalorder: operands at 180:37 and 180:45, both with an effect: their order the compiler's
+browsers/javascript/eval/Js_eval.ml:217: stack: Js_eval.eval_expr calls itself in a try's body: no tail call by mini-ml
+browsers/javascript/eval/Js_eval.ml:279: stack: weave calls itself, not a tail call, over a list
+browsers/javascript/eval/Js_eval.ml:438: evalorder: operands at 438:43 and 438:55, both with an effect: their order the compiler's
+browsers/javascript/eval/Js_eval.ml:449: stack: Js_eval.eval_list calls itself, not a tail call, over a list
+browsers/javascript/eval/Js_eval.ml:450: stack: Js_eval.eval_list calls itself, not a tail call, over a list
+browsers/javascript/eval/Js_eval.ml:570: evalorder: operands at 570:113 and 570:125, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:193: evalorder: operands at 193:73 and 193:98, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:196: evalorder: operands at 196:49 and 196:74, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:432: evalorder: operands at 432:42 and 432:56, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:581: evalorder: operands at 581:65 and 581:78, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:586: evalorder: operands at 586:71 and 586:84, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:621: evalorder: operands at 621:17 and 621:40, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:621: evalorder: operands at 621:17 and 621:58, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:621: evalorder: operands at 621:40 and 621:58, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:663: evalorder: operands at 663:77 and 663:105, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:698: evalorder: operands at 698:43 and 698:57, both with an effect: their order the compiler's
+browsers/javascript/library/Js_builtins.ml:730: evalorder: operands at 730:74 and 730:99, both with an effect: their order the compiler's
+browsers/javascript/library/Js_globals.ml:124: evalorder: operands at 124:83 and 124:110, both with an effect: their order the compiler's
+browsers/javascript/library/Js_globals.ml:289: evalorder: operands at 289:52 and 289:67, both with an effect: their order the compiler's
+browsers/javascript/library/Js_globals.ml:375: physeq: in up, == of a Object made there: always false
+browsers/javascript/library/Js_globals.ml:65: evalorder: operands at 65:15 and 65:32, both with an effect: their order the compiler's
+browsers/javascript/library/Js_globals.ml:69: evalorder: operands at 69:33 and 69:52, both with an effect: their order the compiler's
+browsers/javascript/library/Js_globals.ml:83: evalorder: operands at 83:106 and 83:131, both with an effect: their order the compiler's
+browsers/javascript/library/Js_regexp.ml:255: stack: Js_regexp.resolved calls itself, not a tail call, over a list
+browsers/javascript/opti/Js_compile.ml:78: stack: Js_compile.values calls itself, not a tail call, over a list
+browsers/javascript/opti/Js_quicken.ml:100: evalorder: operands at 100:27 and 100:35, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:101: evalorder: operands at 101:40 and 101:108, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:101: evalorder: operands at 101:40 and 101:62, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:101: evalorder: operands at 101:40 and 101:84, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:101: evalorder: operands at 101:62 and 101:108, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:101: evalorder: operands at 101:62 and 101:84, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:101: evalorder: operands at 101:84 and 101:108, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:102: evalorder: operands at 102:109 and 102:117, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:102: evalorder: operands at 102:37 and 102:109, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:102: evalorder: operands at 102:37 and 102:117, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:104: evalorder: operands at 104:25 and 104:33, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:105: evalorder: operands at 105:33 and 105:41, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:110: evalorder: operands at 110:45 and 110:56, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:110: evalorder: operands at 110:45 and 110:65, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:110: evalorder: operands at 110:56 and 110:65, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:111: evalorder: operands at 111:51 and 111:62, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:111: evalorder: operands at 111:51 and 111:71, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:111: evalorder: operands at 111:62 and 111:71, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:24: evalorder: operands at 24:37 and 24:45, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:25: evalorder: operands at 25:39 and 25:47, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:26: evalorder: operands at 26:37 and 26:45, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:27: evalorder: operands at 27:42 and 27:50, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:27: evalorder: operands at 27:42 and 27:58, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:27: evalorder: operands at 27:50 and 27:58, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:28: evalorder: operands at 28:27 and 28:35, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:30: evalorder: operands at 30:27 and 30:35, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:51: evalorder: operands at 51:54 and 51:66, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:60: evalorder: operands at 60:25 and 60:32, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:61: evalorder: operands at 61:29 and 61:36, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:62: evalorder: operands at 62:29 and 62:36, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:83: evalorder: operands at 83:81 and 83:100, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:83: evalorder: operands at 83:81 and 83:88, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:83: evalorder: operands at 83:88 and 83:100, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:84: evalorder: operands at 84:50 and 84:128, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:84: evalorder: operands at 84:88 and 84:100, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:95: evalorder: operands at 95:65 and 95:77, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:99: evalorder: operands at 99:24 and 99:32, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:99: evalorder: operands at 99:24 and 99:40, both with an effect: their order the compiler's
+browsers/javascript/opti/Js_quicken.ml:99: evalorder: operands at 99:32 and 99:40, both with an effect: their order the compiler's
+browsers/javascript/parsing/Js_parse.ml:525: stack: Js_parse.func calls itself in a try's body: no tail call by mini-ml
+browsers/javascript/values/Js_operators.ml:15: evalorder: operands at 15:41 and 15:50, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:38: evalorder: operands at 38:13 and 38:29, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:43: evalorder: operands at 43:24 and 43:39, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:44: evalorder: operands at 44:19 and 44:34, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:45: evalorder: operands at 45:19 and 45:34, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:46: evalorder: operands at 46:19 and 46:34, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:47: evalorder: operands at 47:29 and 47:43, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:48: evalorder: operands at 48:30 and 48:44, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:52: evalorder: operands at 52:34 and 52:47, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:53: evalorder: operands at 53:33 and 53:46, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:54: evalorder: operands at 54:34 and 54:47, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:55: evalorder: operands at 55:39 and 55:52, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:56: evalorder: operands at 56:40 and 56:53, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:58: evalorder: operands at 58:86 and 58:99, both with an effect: their order the compiler's
+browsers/javascript/values/Js_operators.ml:61: evalorder: operands at 61:15 and 61:38, both with an effect: their order the compiler's
+browsers/javascript/values/Js_props.ml:136: stack: chain calls itself, not a tail call, over a list
+browsers/javascript/values/Js_value.ml:102: evalorder: operands at 102:27 and 102:71, both with an effect: their order the compiler's
+browsers/javascript/values/Js_value.ml:313: evalorder: operands at 313:17 and 313:35, both with an effect: their order the compiler's
+browsers/javascript/values/Js_value.ml:344: evalorder: operands at 344:42 and 344:51, both with an effect: their order the compiler's
+browsers/javascript/values/Js_value.ml:389: evalorder: operands at 389:70 and 389:88, both with an effect: their order the compiler's
+browsers/netscape/Tab.ml:328: evalorder: operands at 328:13 and 328:47, both with an effect: their order the compiler's
+browsers/webapi/dom/Script_element.ml:180: evalorder: operands at 180:55 and 180:74, both with an effect: their order the compiler's
+browsers/webapi/dom/Script_host.ml:65: evalorder: operands at 65:70 and 65:89, both with an effect: their order the compiler's
+browsers/webapi/net/XMLHttpRequest.ml:43: evalorder: operands at 43:18 and 43:36, both with an effect: their order the compiler's
+browsers/webapi/run/Browser_script.ml:109: evalorder: operands at 109:66 and 109:78, both with an effect: their order the compiler's
+browsers/webapi/window/LocalStorage.ml:24: evalorder: operands at 24:47 and 24:66, both with an effect: their order the compiler's
+browsers/webapi/window/Script_url.ml:22: evalorder: operands at 22:32 and 22:57, both with an effect: their order the compiler's
+browsers/webapi/window/Script_url.ml:31: evalorder: operands at 31:51 and 31:62, both with an effect: their order the compiler's
 database/dbm/Dbm.ml:140: int31: in Dbm.key_of, 0xffffffff: not on the Pi 1's 31 bits
 database/dbm/Dbm.ml:167: int31: in Dbm:fun at line 165, 0xffffffff: not on the Pi 1's 31 bits
 database/sql/Schema.ml:14: int31: in Schema:fun at line 10, 0xffffffff: not on the Pi 1's 31 bits
@@ -38,23 +187,55 @@ debuggers/acid/Value.ml:15: stack: go calls itself, not a tail call, over a list
 editors/ed/Command.ml:130: leak: in Command.read_file, its argument given back at editors/ed/Command.ml:131, not when this raises Failure
 editors/ed/Command.ml:130: leak: in Command.read_file, its argument given back at editors/ed/Command.ml:131, not when this raises Sys.Break
 editors/ed/Command.ml:130: leak: in Command.read_file, its argument given back at editors/ed/Command.ml:131, not when this raises Unix.Unix_error
-editors/ed/Command.ml:143: leak: in Command.read, taken here, given back at editors/ed/Command.ml:149, not when editors/ed/Command.ml:147 raises Input.Error
-editors/ed/Command.ml:155: leak: in Command.write, taken here, given back at editors/ed/Command.ml:165, not when editors/ed/Command.ml:160 raises Failure (and 1 more calls)
-editors/ed/Command.ml:493: swallowed: in Command.rescue, Unix.Unix_error silenced, a constant answered
+editors/ed/Command.ml:144: leak: in Command.read, taken here, given back at editors/ed/Command.ml:150, not when editors/ed/Command.ml:148 raises Input.Error
+editors/ed/Command.ml:157: leak: in Command.write, taken here, given back at editors/ed/Command.ml:167, not when editors/ed/Command.ml:162 raises Failure (and 1 more calls)
+editors/ed/Command.ml:495: swallowed: in Command.rescue, Unix.Unix_error silenced, a constant answered
 editors/ed/Input.ml:94: swallowed: in Input.recover, Unix.Unix_error silenced, a constant answered
 editors/emacs/core/Ebuffer.ml:12: evalorder: operands at 14:14 and 14:49, both with an effect: their order the compiler's
-editors/emacs/core/Frame.ml:8: evalorder: operands at 10:14 and 11:14, both with an effect: their order the compiler's
+editors/emacs/core/Frame.ml:9: evalorder: operands at 11:14 and 12:14, both with an effect: their order the compiler's
 editors/turbopascal/editor/Turbo_view.ml:69: stack: go calls itself, not a tail call, over a list
+games/fps/doom/play/World.ml:127: int31: in World.random, 0x7fffffff: not on the Pi 1's 31 bits
+games/fps/doom/render/Bsp.ml:129: evalorder: operands at 129:19 and 131:8, both with an effect: their order the compiler's
+games/fps/quake/game/Combat.ml:165: evalorder: operands at 165:19 and 165:51, both with an effect: their order the compiler's
+games/fps/quake/game/Combat.ml:16: evalorder: operands at 17:10 and 18:10, both with an effect: their order the compiler's
+games/fps/quake/game/Combat.ml:16: evalorder: operands at 17:10 and 19:10, both with an effect: their order the compiler's
+games/fps/quake/game/Combat.ml:16: evalorder: operands at 18:10 and 19:10, both with an effect: their order the compiler's
+games/fps/quake/game/Combat.ml:41: evalorder: operands at 41:24 and 41:47, both with an effect: their order the compiler's
+games/fps/quake/game/Items.ml:103: evalorder: operands at 104:12 and 105:12, both with an effect: their order the compiler's
+games/fps/quake/game/Monsters.ml:244: evalorder: operands at 244:8 and 244:20, both with an effect: their order the compiler's
+games/fps/quake/game/Monsters.ml:244: evalorder: operands at 244:8 and 244:32, both with an effect: their order the compiler's
+games/fps/quake/game/Weapons.ml:180: evalorder: operands at 181:16 and 182:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:25: int31: in Particles.rand, 0x7fffffff: not on the Pi 1's 31 bits
+games/fps/quake/render/Particles.ml:42: evalorder: operands at 44:10 and 50:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:42: evalorder: operands at 44:10 and 52:14, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:42: evalorder: operands at 50:16 and 52:14, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:44: evalorder: operands at 45:16 and 46:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:44: evalorder: operands at 45:16 and 47:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:44: evalorder: operands at 46:16 and 47:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:67: evalorder: operands at 69:10 and 74:14, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:69: evalorder: operands at 70:16 and 71:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:69: evalorder: operands at 70:16 and 72:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:69: evalorder: operands at 71:16 and 72:16, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:74: evalorder: operands at 74:20 and 74:38, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:74: evalorder: operands at 74:20 and 74:56, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:74: evalorder: operands at 74:38 and 74:56, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:95: evalorder: operands at 96:18 and 97:18, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:95: evalorder: operands at 96:18 and 98:18, both with an effect: their order the compiler's
+games/fps/quake/render/Particles.ml:95: evalorder: operands at 97:18 and 98:18, both with an effect: their order the compiler's
+games/fps/quake/server/Edict.ml:147: int31: in Edict.random, 0x7fffffff: not on the Pi 1's 31 bits
+games/puzzle/Tetris.ml:226: stack: Tetris.clear_lines calls itself, not a tail call, over a list
+games/racing/virtua/course/Course.ml:851: evalorder: operands at 851:10 and 852:12, both with an effect: their order the compiler's
+games/shmup/TinyMissileCommand.ml:95: int31: in TinyMissileCommand.roll, 0x41c64e6d; 0x7fffffff: not on the Pi 1's 31 bits
 generators/lex/Output.ml:46: stack: Output.value calls itself, not a tail call, over a list
 generators/lex/Output.ml:47: stack: Output.value calls itself, not a tail call, over a list
 generators/lex/Output.ml:48: stack: Output.value calls itself, not a tail call, over a list
 generators/lex/Output.ml:51: stack: Output.value calls itself, not a tail call, over a list
-kernels/9pi/buses/user/usbd/Usbd.ml:39: swallowed: in loop, Unix.Unix_error silenced, a constant answered
+kernels/9pi/buses/user/usbd/Usbd.ml:42: swallowed: in loop, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/keyboard/Latin1.ml:133: stack: Latin1.take calls itself, not a tail call, over a list
 kernels/9pi/devices/screen/Devdraw.ml:204: stack: drop calls itself, not a tail call, over a list
 kernels/9pi/devices/screen/Devdraw.ml:316: unused: in Devdraw.drawmesg, bg is never read (_bg if meant)
-kernels/9pi/devices/storage/Devsd.ml:139: unused: in Devsd:fun at line 139, nc is never read (_nc if meant)
-kernels/9pi/devices/storage/user/fdisk/Fdisk.ml:74: swallowed: in Fdisk:fun at line 70, Unix.Unix_error silenced, a constant answered
+kernels/9pi/devices/storage/Devsd.ml:160: unused: in Devsd:fun at line 160, nc is never read (_nc if meant)
+kernels/9pi/devices/storage/user/fdisk/Fdisk.ml:75: swallowed: in Fdisk:fun at line 71, Unix.Unix_error silenced, a constant answered
 kernels/9pi/devices/sys/Devarch.ml:77: stack: go calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devenv.ml:45: stack: replace calls itself, not a tail call, over a list
 kernels/9pi/devices/sys/Devenv.ml:56: unused: in Devenv:fun at line 56, nc is never read (_nc if meant)
@@ -62,11 +243,13 @@ kernels/9pi/devices/sys/Devproc.ml:98: stack: go calls itself, not a tail call, 
 kernels/9pi/devices/sys/Devsrv.ml:33: unused: in Devsrv:fun at line 33, nc is never read (_nc if meant)
 kernels/9pi/devices/sys/Devsys.ml:21: stack: go calls itself, not a tail call, over a list
 kernels/9pi/files/Kchan.ml:88: stack: try_ calls itself in a try's handler: no tail call by mini-ml
-kernels/9pi/filesystems/Kfs.ml:169: evalorder: operands at 169:29 and 169:43, both with an effect: their order the compiler's
-kernels/9pi/filesystems/Kfs.ml:169: evalorder: operands at 169:29 and 169:88, both with an effect: their order the compiler's
-kernels/9pi/filesystems/Kfs.ml:169: evalorder: operands at 169:43 and 169:88, both with an effect: their order the compiler's
-kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:55: evalorder: operands at 55:24 and 55:32, both with an effect: their order the compiler's
-kernels/9pi/init/Main.ml:149: evalorder: operands at 149:41 and 149:73, both with an effect: their order the compiler's
+kernels/9pi/filesystems/Kfs.ml:285: evalorder: operands at 285:29 and 285:45, both with an effect: their order the compiler's
+kernels/9pi/filesystems/Kfs.ml:285: evalorder: operands at 285:29 and 285:90, both with an effect: their order the compiler's
+kernels/9pi/filesystems/Kfs.ml:285: evalorder: operands at 285:45 and 285:90, both with an effect: their order the compiler's
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:82: evalorder: operands at 82:17 and 82:31, both with an effect: their order the compiler's
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:83: evalorder: operands at 83:17 and 83:32, both with an effect: their order the compiler's
+kernels/9pi/filesystems/lib_xv6fs/Xv6fs.ml:92: evalorder: operands at 92:24 and 92:32, both with an effect: their order the compiler's
+kernels/9pi/init/Main.ml:167: evalorder: operands at 167:41 and 167:73, both with an effect: their order the compiler's
 kernels/9pi/init/Main.ml:67: crash: in Main.guard, Errors.Error caught by all, the handler raising Failure
 kernels/9pi/lib_graphics/lib_memdraw/Memchan.ml:21: stack: place calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memdraw/Memdraw.ml:196: layout: in the column of the if's branch above, not in it: run whatever the test
@@ -74,12 +257,12 @@ kernels/9pi/lib_graphics/lib_memdraw/Memgeneral.ml:25: unused: in Memgeneral.gen
 kernels/9pi/lib_graphics/lib_memlayer/Memlayer.ml:50: stack: front calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:38: stack: pairs calls itself, not a tail call, over a list
 kernels/9pi/lib_graphics/lib_memlayer/Memshape.ml:79: unused: in pairs, inside is never read (_inside if meant)
-kernels/9pi/memory/Fault.ml:141: order: in Fault.unkeep_all, a table's order reaches the output at memory/Fault.ml:141
+kernels/9pi/memory/Fault.ml:181: order: in Fault.unkeep_all, a table's order reaches the output at memory/Fault.ml:181
 kernels/9pi/network/Etherusb.ml:108: evalorder: operands at 108:8 and 108:17, both with an effect: their order the compiler's
 kernels/9pi/network/Etherusb.ml:49: int31: in Etherusb.rr, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/9pi/processes/Exec.ml:27: int31: in Exec.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
-kernels/9pi/syscalls/Systab.ml:57: evalorder: operands at 57:30 and 57:38, both with an effect: their order the compiler's
-kernels/9pi/syscalls/Systab.ml:59: evalorder: operands at 59:38 and 59:52, both with an effect: their order the compiler's
+kernels/9pi/syscalls/Systab.ml:60: evalorder: operands at 60:30 and 60:38, both with an effect: their order the compiler's
+kernels/9pi/syscalls/Systab.ml:62: evalorder: operands at 62:38 and 62:52, both with an effect: their order the compiler's
 kernels/9pi/syscalls/Usermem.ml:29: stack: go calls itself in a try's handler: no tail call by mini-ml
 kernels/9pi/syscalls/arm/Syscall.ml:80: int31: in Syscall.trace/1, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
 kernels/oberon/Main.ml:126: evalorder: operands at 126:27 and 127:12, both with an effect: their order the compiler's
@@ -91,6 +274,7 @@ kernels/oberon/texts/Edit.ml:67: evalorder: operands at 67:8 and 67:33, both wit
 kernels/oberon/texts/Texts.ml:113: stack: Texts.split calls itself, not a tail call, over a list
 kernels/singularity/singml/Description.ml:124: evalorder: operands at 124:55 and 124:71, both with an effect: their order the compiler's
 kernels/singularity/singml/Safe.ml:118: stack: module_expr calls itself, not a tail call, over a list
+kernels/tools/Mkpixdata.ml:69: stack: Mkpixdata.take calls itself, not a tail call, over a list
 languages/c/Check.ml:414: evalorder: operands at 414:25 and 414:52, both with an effect: their order the compiler's
 languages/c/Check.ml:454: stack: go calls itself, not a tail call, over a list
 languages/c/Check.ml:456: stack: go calls itself, not a tail call, over a list
@@ -187,12 +371,12 @@ languages/dotnet/runtime/Types.ml:456: stack: subst calls itself, not a tail cal
 languages/dotnet/runtime/Value.ml:188: stack: Value.typ_key calls itself, not a tail call, over a list
 languages/dotnet/runtime/Value.ml:189: stack: Value.typ_key calls itself, not a tail call, over a list
 languages/dotnet/runtime/Value.ml:190: stack: Value.typ_key calls itself, not a tail call, over a list
-languages/ml/Ast.ml:209: stack: Ast.pp_module_expr calls itself, not a tail call, over a list
-languages/ml/CLI.ml:219: evalorder: operands at 219:10 and 219:78, both with an effect: their order the compiler's
-languages/ml/CLI.ml:240: evalorder: operands at 243:17 and 243:49, both with an effect: their order the compiler's
-languages/ml/CLI.ml:240: evalorder: operands at 243:17 and 243:77, both with an effect: their order the compiler's
-languages/ml/CLI.ml:240: evalorder: operands at 243:49 and 243:77, both with an effect: their order the compiler's
-languages/ml/CLI.ml:497: stack: order calls itself, not a tail call, over a list
+languages/ml/Ast.ml:212: stack: Ast.pp_module_expr calls itself, not a tail call, over a list
+languages/ml/CLI.ml:268: evalorder: operands at 268:10 and 268:78, both with an effect: their order the compiler's
+languages/ml/CLI.ml:290: evalorder: operands at 293:17 and 293:49, both with an effect: their order the compiler's
+languages/ml/CLI.ml:290: evalorder: operands at 293:17 and 293:77, both with an effect: their order the compiler's
+languages/ml/CLI.ml:290: evalorder: operands at 293:49 and 293:77, both with an effect: their order the compiler's
+languages/ml/CLI.ml:563: stack: order calls itself, not a tail call, over a list
 languages/ml/Resolve.ml:318: evalorder: operands at 318:29 and 318:48, both with an effect: their order the compiler's
 languages/ml/Resolve.ml:431: stack: Resolve.subst calls itself, not a tail call, over a list
 languages/ml/Resolve.ml:583: stack: Resolve.rename calls itself, not a tail call, over a list
@@ -235,7 +419,7 @@ languages/ml/dotnet/Il_types.ml:661: evalorder: operands at 661:20 and 661:52, b
 languages/ml/dotnet/Il_types.ml:741: evalorder: operands at 741:3 and 741:22, both with an effect: their order the compiler's
 languages/ml/dotnet/Il_types.ml:752: evalorder: operands at 752:5 and 752:36, both with an effect: their order the compiler's
 languages/ml/dotnet/Il_types.ml:767: evalorder: operands at 767:111 and 768:10, both with an effect: their order the compiler's
-languages/ml/dotnet/Il_types.ml:791: evalorder: operands at 791:41 and 791:65, both with an effect: their order the compiler's
+languages/ml/dotnet/Il_types.ml:791: evalorder: operands at 791:37 and 791:61, both with an effect: their order the compiler's
 languages/ml/opti/Opti.ml:52: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:54: stack: go calls itself, not a tail call, over a list
 languages/ml/opti/Opti.ml:55: stack: go calls itself, not a tail call, over a list
@@ -244,8 +428,8 @@ languages/ml/pp/Derive.ml:62: stack: last calls itself, not a tail call, over a 
 languages/ml/pp/Pp.ml:235: stack: go calls itself, not a tail call, over a list
 languages/ml/pp/Pp.ml:236: stack: go calls itself, not a tail call, over a list
 languages/ml/pp/Pp.ml:402: stack: module_expr calls itself, not a tail call, over a list
-languages/ml/simple/Lower.ml:832: stack: Lower.match_cases calls itself, not a tail call, over a list
-languages/ml/simple/Lower.ml:992: stack: Lower.to_slot calls itself, not a tail call, over a list
+languages/ml/simple/Lower.ml:1013: stack: Lower.to_slot calls itself, not a tail call, over a list
+languages/ml/simple/Lower.ml:852: stack: Lower.match_cases calls itself, not a tail call, over a list
 languages/ml/ssa/Ssa_build.ml:246: evalorder: operands at 246:44 and 246:49, both with an effect: their order the compiler's
 languages/ml/ssa/Ssa_build.ml:247: evalorder: operands at 247:27 and 247:32, both with an effect: their order the compiler's
 languages/ml/ssa/Ssa_build.ml:248: evalorder: operands at 248:41 and 248:46, both with an effect: their order the compiler's
@@ -276,6 +460,7 @@ languages/smalltalk/compiler/St_lexer.ml:55: stack: go calls itself, not a tail 
 languages/smalltalk/highlight/Highlight_st.ml:180: unused: in Highlight_st:fun at line 180, name is never read (_name if meant)
 languages/smalltalk/highlight/Highlight_st.ml:248: unused: in method_, selector is never read (_selector if meant)
 languages/smalltalk/highlight/Highlight_st.ml:285: stack: go calls itself, not a tail call, over a list
+languages/smalltalk/hosts/draw/Window.ml:83: evalorder: operands at 84:6 and 85:6, both with an effect: their order the compiler's
 languages/smalltalk/vm/St_class.ml:169: evalorder: operands at 169:26 and 169:47, both with an effect: their order the compiler's
 languages/smalltalk/vm/St_class.ml:199: evalorder: operands at 199:62 and 199:82, both with an effect: their order the compiler's
 languages/tiger/Tiger_semant.ml:216: stack: Tiger_semant.lvalue calls itself, not a tail call, over a list
@@ -289,20 +474,55 @@ languages/tiger/dotnet/Tiger_emit.ml:354: stack: Tiger_emit.load calls itself, n
 languages/tiger/dotnet/Tiger_emit.ml:355: stack: Tiger_emit.load calls itself, not a tail call, over a list
 languages/tiger/dotnet/Tiger_emit.ml:57: evalorder: operands at 57:74 and 57:91, both with an effect: their order the compiler's
 languages/tiger/dotnet/Tiger_emit.ml:92: evalorder: operands at 92:54 and 92:71, both with an effect: their order the compiler's
+lib_audio/Synth.ml:305: evalorder: operands at 305:63 and 305:82, both with an effect: their order the compiler's
+lib_audio/Synth.ml:313: stack: Synth.render_stereo calls itself, not a tail call, over a list
+lib_audio/Synth.ml:314: stack: Synth.render_stereo calls itself, not a tail call, over a list
+lib_audio/Synth.ml:315: stack: Synth.render_stereo calls itself, not a tail call, over a list
+lib_audio/Synth.ml:318: stack: Synth.render_stereo calls itself, not a tail call, over a list
+lib_audio/Synth.ml:328: stack: Synth.render_stereo calls itself, not a tail call, over a list
+lib_audio/Synth.ml:47: stack: Synth.map_voices calls itself, not a tail call, over a list
+lib_audio/Synth.ml:48: stack: Synth.map_voices calls itself, not a tail call, over a list
+lib_audio/Synth.ml:49: stack: Synth.map_voices calls itself, not a tail call, over a list
+lib_audio/Synth.ml:50: stack: Synth.map_voices calls itself, not a tail call, over a list
+lib_audio/Synth.ml:51: stack: Synth.map_voices calls itself, not a tail call, over a list
+lib_audio/Synth.ml:64: stack: Synth.louder calls itself, not a tail call, over a list
+lib_audio/Synth.ml:65: stack: Synth.louder calls itself, not a tail call, over a list
+lib_audio/Synth.ml:66: stack: Synth.louder calls itself, not a tail call, over a list
+lib_audio/Synth.ml:67: stack: Synth.louder calls itself, not a tail call, over a list
+lib_audio/Synth.ml:68: stack: Synth.louder calls itself, not a tail call, over a list
+lib_audio/formats/midi/Midi.ml:39: int31: in Midi.u32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+lib_audio/formats/vorbis/Vorbis.ml:296: evalorder: operands at 296:10 and 296:21, both with an effect: their order the compiler's
+lib_audio/formats/vorbis/Vorbis.ml:296: evalorder: operands at 296:10 and 296:32, both with an effect: their order the compiler's
+lib_audio/formats/vorbis/Vorbis.ml:296: evalorder: operands at 296:21 and 296:32, both with an effect: their order the compiler's
+lib_audio/formats/vorbis/Vorbis.ml:310: evalorder: operands at 310:16 and 310:27, both with an effect: their order the compiler's
+lib_crypto/Bignum.ml:424: evalorder: operands at 424:72 and 424:86, both with an effect: their order the compiler's
+lib_crypto/Chacha20.ml:74: int31: in Chacha20's toplevel, 0xffffffff: not on the Pi 1's 31 bits
+lib_crypto/Chacha20.ml:76: int31: in Chacha20.le32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+lib_crypto/Ecdsa.ml:104: evalorder: operands at 104:21 and 104:46, both with an effect: their order the compiler's
+lib_crypto/Ecdsa.ml:160: evalorder: operands at 160:29 and 160:53, both with an effect: their order the compiler's
+lib_crypto/Ecdsa.ml:34: evalorder: operands at 34:82 and 34:107, both with an effect: their order the compiler's
+lib_crypto/Ecdsa.ml:35: evalorder: operands at 35:69 and 35:119, both with an effect: their order the compiler's
+lib_crypto/Ecdsa.ml:35: evalorder: operands at 35:69 and 35:94, both with an effect: their order the compiler's
+lib_crypto/Ecdsa.ml:35: evalorder: operands at 35:94 and 35:119, both with an effect: their order the compiler's
+lib_crypto/Gcm.ml:112: int31: in Gcm.counter, a char's code lsl 24, 32 bits; 0xffffffff: not on the Pi 1's 31 bits
+lib_crypto/tests/Vectors.ml:24: evalorder: operands at 24:32 and 24:120, both with an effect: their order the compiler's
 lib_executable/Symbols.ml:12: int31: in Symbols.be32, a char's code lsl 24, 32 bits: not on the Pi 1's 31 bits
+lib_graphics/Cursor.ml:44: leak: in Cursor.set, taken here, given back at lib_graphics/Cursor.ml:53, not when lib_graphics/Cursor.ml:52 raises Unix.Unix_error
+lib_gui/examples/BigBangWorm.ml:24: int31: in BigBangWorm.next_seed, 0x41c64e6d; 0x7fffffff: not on the Pi 1's 31 bits
 lib_terminal/hosts/draw/Window_draw.ml:129: evalorder: operands at 130:6 and 131:6, both with an effect: their order the compiler's
 lib_terminal/hosts/draw/Window_draw.ml:131: evalorder: operands at 131:6 and 132:6, both with an effect: their order the compiler's
-linker/Arm.ml:789: stack: bcases calls itself, not a tail call, over a list
-linker/CLI.ml:84: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 bits
+linker/Arm.ml:795: stack: bcases calls itself, not a tail call, over a list
+linker/CLI.ml:135: int31: in CLI.link, 0x1 lsl 32, 33 bits: not on the Pi 1's 31 bits
 linker/Exe.ml:210: int31: in Exe.macho, 0x80000022; 0x80000028; x lsr 32 and 1 more: not on the Pi 1's 31 bits
-machine/CLI.ml:101: stack: run calls itself in a try's handler: no tail call by mini-ml
-machine/CLI.ml:125: stack: run calls itself in a try's handler: no tail call by mini-ml
-machine/CLI.ml:143: stack: run calls itself in a try's handler: no tail call by mini-ml
-machine/CLI.ml:52: order: in CLI:fun at line 51, a table's order reaches the output at machine/CLI.ml:52
-machine/CLI.ml:98: stack: go calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:124: stack: go calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:127: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:151: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:169: stack: run calls itself in a try's handler: no tail call by mini-ml
+machine/CLI.ml:76: order: in CLI:fun at line 75, a table's order reaches the output at machine/CLI.ml:76
+machine/CLI.ml:77: order: in CLI:fun at line 75, a table's order reaches the output at machine/CLI.ml:77
 machine/core/Memory.ml:130: evalorder: operands at 130:16 and 130:36, both with an effect: their order the compiler's
-machine/process/Host.ml:60: leak: in Host:fun at line 53, taken here, given back at machine/process/Host.ml:62, not when machine/process/Host.ml:62 raises Plan9.Error
-machine/process/Linux.ml:143: race: Linux.raise_signal, run by a signal's handler (machine/process/Host.ml:119), writes the ref of machine/process/Linux.ml:141, as Linux.deliver, Linux.deliver64 and 2 more does
+machine/process/Host.ml:71: leak: in Host:fun at line 64, taken here, given back at machine/process/Host.ml:74, not when machine/process/Host.ml:73 raises Plan9.Error
+machine/process/Linux.ml:143: race: Linux.raise_signal, run by a signal's handler (machine/process/Host.ml:136), writes the ref of machine/process/Linux.ml:141, as Linux.deliver, Linux.deliver64 and 2 more does
 machine/process/Linux.ml:240: evalorder: operands at 240:25 and 240:36, both with an effect: their order the compiler's
 machine/process/Linux.ml:240: evalorder: operands at 240:25 and 240:57, both with an effect: their order the compiler's
 machine/process/Linux.ml:240: evalorder: operands at 240:36 and 240:57, both with an effect: their order the compiler's
@@ -317,48 +537,146 @@ machine/process/Linux.ml:378: evalorder: operands at 378:33 and 378:50, both wit
 machine/process/Linux.ml:394: evalorder: operands at 394:33 and 394:51, both with an effect: their order the compiler's
 machine/process/Linux.ml:435: evalorder: operands at 435:33 and 435:41, both with an effect: their order the compiler's
 machine/process/Linux.ml:447: evalorder: operands at 447:16 and 447:67, both with an effect: their order the compiler's
-machine/process/Plan9.ml:716: evalorder: operands at 716:42 and 716:65, both with an effect: their order the compiler's
-machine/process/Plan9.ml:729: evalorder: operands at 729:29 and 729:36, both with an effect: their order the compiler's
-machine/process/Plan9.ml:741: evalorder: operands at 741:24 and 741:32, both with an effect: their order the compiler's
-machine/process/Plan9.ml:743: evalorder: operands at 743:68 and 743:77, both with an effect: their order the compiler's
-machine/process/Plan9.ml:748: evalorder: operands at 748:26 and 748:35, both with an effect: their order the compiler's
-machine/process/Plan9.ml:748: evalorder: operands at 748:26 and 748:43, both with an effect: their order the compiler's
-machine/process/Plan9.ml:748: evalorder: operands at 748:26 and 748:52, both with an effect: their order the compiler's
-machine/process/Plan9.ml:748: evalorder: operands at 748:35 and 748:43, both with an effect: their order the compiler's
-machine/process/Plan9.ml:748: evalorder: operands at 748:35 and 748:52, both with an effect: their order the compiler's
-machine/process/Plan9.ml:748: evalorder: operands at 748:43 and 748:52, both with an effect: their order the compiler's
-machine/process/Plan9.ml:749: evalorder: operands at 749:27 and 749:36, both with an effect: their order the compiler's
-machine/process/Plan9.ml:749: evalorder: operands at 749:27 and 749:76, both with an effect: their order the compiler's
-machine/process/Plan9.ml:749: evalorder: operands at 749:36 and 749:76, both with an effect: their order the compiler's
-machine/process/Plan9.ml:749: evalorder: operands at 749:58 and 749:66, both with an effect: their order the compiler's
-machine/process/Plan9.ml:751: evalorder: operands at 751:29 and 751:38, both with an effect: their order the compiler's
-machine/process/Plan9.ml:751: evalorder: operands at 751:29 and 751:48, both with an effect: their order the compiler's
-machine/process/Plan9.ml:751: evalorder: operands at 751:38 and 751:48, both with an effect: their order the compiler's
-machine/process/Plan9.ml:753: evalorder: operands at 753:27 and 753:35, both with an effect: their order the compiler's
-machine/process/Plan9.ml:753: evalorder: operands at 753:27 and 753:43, both with an effect: their order the compiler's
-machine/process/Plan9.ml:753: evalorder: operands at 753:35 and 753:43, both with an effect: their order the compiler's
-machine/process/Plan9.ml:761: evalorder: operands at 761:23 and 761:31, both with an effect: their order the compiler's
-machine/process/Plan9.ml:768: evalorder: operands at 768:23 and 768:31, both with an effect: their order the compiler's
-machine/process/Plan9.ml:769: evalorder: operands at 769:28 and 769:58, both with an effect: their order the compiler's
-machine/process/Plan9.ml:769: evalorder: operands at 769:80 and 769:88, both with an effect: their order the compiler's
-machine/process/Plan9.ml:773: evalorder: operands at 773:60 and 773:68, both with an effect: their order the compiler's
-machine/process/Plan9.ml:785: evalorder: operands at 785:30 and 785:38, both with an effect: their order the compiler's
-machine/process/Plan9.ml:785: evalorder: operands at 785:30 and 785:46, both with an effect: their order the compiler's
-machine/process/Plan9.ml:785: evalorder: operands at 785:30 and 785:54, both with an effect: their order the compiler's
-machine/process/Plan9.ml:785: evalorder: operands at 785:38 and 785:46, both with an effect: their order the compiler's
-machine/process/Plan9.ml:785: evalorder: operands at 785:38 and 785:54, both with an effect: their order the compiler's
-machine/process/Plan9.ml:785: evalorder: operands at 785:46 and 785:54, both with an effect: their order the compiler's
-machine/process/Plan9.ml:787: evalorder: operands at 787:28 and 787:36, both with an effect: their order the compiler's
-machine/process/Plan9.ml:800: evalorder: operands at 801:21 and 801:45, both with an effect: their order the compiler's
-machine/process/Plan9.ml:800: evalorder: operands at 801:21 and 801:69, both with an effect: their order the compiler's
-machine/process/Plan9.ml:800: evalorder: operands at 801:45 and 801:69, both with an effect: their order the compiler's
+machine/process/Plan9.ml:730: evalorder: operands at 730:42 and 730:65, both with an effect: their order the compiler's
+machine/process/Plan9.ml:743: evalorder: operands at 743:29 and 743:36, both with an effect: their order the compiler's
+machine/process/Plan9.ml:755: evalorder: operands at 755:24 and 755:32, both with an effect: their order the compiler's
+machine/process/Plan9.ml:757: evalorder: operands at 757:68 and 757:77, both with an effect: their order the compiler's
+machine/process/Plan9.ml:762: evalorder: operands at 762:26 and 762:35, both with an effect: their order the compiler's
+machine/process/Plan9.ml:762: evalorder: operands at 762:26 and 762:43, both with an effect: their order the compiler's
+machine/process/Plan9.ml:762: evalorder: operands at 762:26 and 762:52, both with an effect: their order the compiler's
+machine/process/Plan9.ml:762: evalorder: operands at 762:35 and 762:43, both with an effect: their order the compiler's
+machine/process/Plan9.ml:762: evalorder: operands at 762:35 and 762:52, both with an effect: their order the compiler's
+machine/process/Plan9.ml:762: evalorder: operands at 762:43 and 762:52, both with an effect: their order the compiler's
+machine/process/Plan9.ml:763: evalorder: operands at 763:27 and 763:36, both with an effect: their order the compiler's
+machine/process/Plan9.ml:763: evalorder: operands at 763:27 and 763:76, both with an effect: their order the compiler's
+machine/process/Plan9.ml:763: evalorder: operands at 763:36 and 763:76, both with an effect: their order the compiler's
+machine/process/Plan9.ml:763: evalorder: operands at 763:58 and 763:66, both with an effect: their order the compiler's
+machine/process/Plan9.ml:765: evalorder: operands at 765:29 and 765:38, both with an effect: their order the compiler's
+machine/process/Plan9.ml:765: evalorder: operands at 765:29 and 765:48, both with an effect: their order the compiler's
+machine/process/Plan9.ml:765: evalorder: operands at 765:38 and 765:48, both with an effect: their order the compiler's
+machine/process/Plan9.ml:767: evalorder: operands at 767:27 and 767:35, both with an effect: their order the compiler's
+machine/process/Plan9.ml:767: evalorder: operands at 767:27 and 767:43, both with an effect: their order the compiler's
+machine/process/Plan9.ml:767: evalorder: operands at 767:35 and 767:43, both with an effect: their order the compiler's
+machine/process/Plan9.ml:775: evalorder: operands at 775:23 and 775:31, both with an effect: their order the compiler's
+machine/process/Plan9.ml:782: evalorder: operands at 782:23 and 782:31, both with an effect: their order the compiler's
+machine/process/Plan9.ml:783: evalorder: operands at 783:28 and 783:58, both with an effect: their order the compiler's
+machine/process/Plan9.ml:783: evalorder: operands at 783:80 and 783:88, both with an effect: their order the compiler's
+machine/process/Plan9.ml:787: evalorder: operands at 787:60 and 787:68, both with an effect: their order the compiler's
+machine/process/Plan9.ml:799: evalorder: operands at 799:30 and 799:38, both with an effect: their order the compiler's
+machine/process/Plan9.ml:799: evalorder: operands at 799:30 and 799:46, both with an effect: their order the compiler's
+machine/process/Plan9.ml:799: evalorder: operands at 799:30 and 799:54, both with an effect: their order the compiler's
+machine/process/Plan9.ml:799: evalorder: operands at 799:38 and 799:46, both with an effect: their order the compiler's
+machine/process/Plan9.ml:799: evalorder: operands at 799:38 and 799:54, both with an effect: their order the compiler's
+machine/process/Plan9.ml:799: evalorder: operands at 799:46 and 799:54, both with an effect: their order the compiler's
+machine/process/Plan9.ml:801: evalorder: operands at 801:28 and 801:36, both with an effect: their order the compiler's
+machine/process/Plan9.ml:814: evalorder: operands at 815:21 and 815:45, both with an effect: their order the compiler's
+machine/process/Plan9.ml:814: evalorder: operands at 815:21 and 815:69, both with an effect: their order the compiler's
+machine/process/Plan9.ml:814: evalorder: operands at 815:45 and 815:69, both with an effect: their order the compiler's
+networking/Curl.ml:91: stack: go calls itself, not a tail call, over a list
+networking/Httpd.ml:207: swallowed: in Httpd.serve, Sys_error or Unix.Unix_error silenced, a constant answered
 shell/CLI.ml:156: swallowed: in finish, Sys_error or Unix.Unix_error silenced, a constant answered
 shell/Eval.ml:188: evalorder: operands at 188:41 and 188:57, both with an effect: their order the compiler's
 shell/Eval.ml:189: evalorder: operands at 189:45 and 189:61, both with an effect: their order the compiler's
 shell/Glob.ml:83: stack: literal calls itself, not a tail call, over a list
 shell/Parser.ml:148: evalorder: operands at 148:8 and 148:14, both with an effect: their order the compiler's
-typesetting/man/Main.ml:82: stack: para calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:169: evalorder: operands at 169:13 and 170:13, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:173: stack: TinyDatabase.ins calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:186: evalorder: operands at 186:17 and 188:17, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:206: stack: TinyDatabase.delete calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:505: stack: TinyDatabase.compile calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:507: stack: TinyDatabase.compile calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:511: stack: TinyDatabase.compile calls itself, not a tail call, over a list
+tiny/TinyDatabase.ml:584: evalorder: operands at 584:6 and 586:9, both with an effect: their order the compiler's
+tiny/TinyDatabase.ml:740: evalorder: operands at 742:6 and 742:27, both with an effect: their order the compiler's
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:30: int31: in TinyMkfat's toplevel, 0x7f5f0006: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:48: int31: in chain, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:69: int31: in TinyMkfat.make, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyKernel/steps/t6/TinyMkfat.ml:80: int31: in get32, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyML/Compile.ml:430: stack: Compile.match_cases calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:468: stack: Compile.app calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:471: stack: Compile.app calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:472: stack: Compile.app calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:514: stack: Compile.closure calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:534: stack: Compile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:535: stack: Compile.alloc_closure calls itself, not a tail call, over a list
+tiny/TinyML/Compile.ml:89: stack: cases calls itself, not a tail call, over a list
+tiny/TinyML/Formats.ml:109: stack: adds calls itself, not a tail call, over a list
+tiny/TinyML/Formats.ml:115: stack: adds calls itself, not a tail call, over a list
+tiny/TinyML/Formats.ml:85: stack: build calls itself, not a tail call, over a list
+tiny/TinyML/Formats.ml:87: stack: build calls itself, not a tail call, over a list
+tiny/TinyML/Types.ml:49: evalorder: operands at 49:12 and 49:21, both with an effect: their order the compiler's
+tiny/TinyMachine/TinyMachine.ml:376: int31: in TinyMachine's toplevel, 0xa1b2c3d4: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:13: int31: in TinyMachineCPU.m32, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:14: int31: in TinyMachineCPU.signed, 0x80000000; 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:191: int31: in TinyMachineCPU:fun at line 190, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:217: int31: in TinyMachineCPU:fun at line 215, 0xffffffff; x lsl 32: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:227: int31: in TinyMachineCPU:fun at line 226, x lsr 32; 0xffffffff; x lsr 33: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:45: int31: in TinyMachineCPU.load, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineCPU.ml:56: int31: in TinyMachineCPU.alu, -2147483648: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:132: int31: in TinyMachineDevices.console_read, 0xfffffffe; 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:349: int31: in TinyMachineDevices.speaker_play, 0x40000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:443: int31: in TinyMachineDevices's toplevel, 0x40000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:464: int31: in TinyMachineDevices.tables, x lsl 12, 34 bits: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:496: int31: in TinyMachineDevices.translate, 0x80000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:695: int31: in TinyMachineDevices.create, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:718: int31: in TinyMachineDevices.core, 0xffffffff: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:734: int31: in TinyMachineDevices.from_now, 0x40000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:741: stack: place calls itself, not a tail call, over a list
+tiny/TinyMachine/TinyMachineDevices.ml:821: int31: in until, 0x40000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:826: int31: in TinyMachineDevices.calm, 0x40000000: not on the Pi 1's 31 bits
+tiny/TinyMachine/TinyMachineDevices.ml:852: int31: in TinyMachineDevices.window, 0x80000000: not on the Pi 1's 31 bits
+tiny/TinyShell.ml:282: evalorder: operands at 282:8 and 282:19, both with an effect: their order the compiler's
+tiny/TinyShell.ml:343: stack: TinyShell.rest calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:490: stack: groups calls itself, not a tail call, over a list
+tiny/TinyVCS.ml:572: order: in TinyVCS.lca, a table's order reaches the output at tiny/TinyVCS.ml:732, tiny/TinyVCS.ml:794
+tiny/TinyVCS.ml:743: evalorder: operands at 743:12 and 743:38, both with an effect: their order the compiler's
+typesetting/man/Main.ml:89: stack: para calls itself, not a tail call, over a list
+typesetting/troff/doc/Layout.ml:143: evalorder: operands at 143:3 and 143:38, both with an effect: their order the compiler's
+typesetting/troff/doc/Layout.ml:238: evalorder: operands at 238:13 and 238:109, both with an effect: their order the compiler's
+typesetting/troff/ixdoc/Ixdoc.ml:327: stack: ended calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:412: stack: command_block calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:415: stack: command_block calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:416: stack: command_block calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:417: stack: command_block calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:418: stack: command_block calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:426: stack: legend calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:428: stack: command_block calls itself, not a tail call, over a list
+typesetting/troff/ixdoc/Ixdoc.ml:431: stack: Ixdoc.blocks calls itself, not a tail call, over a list
+typesetting/troff/latex/Latex.ml:292: evalorder: operands at 292:19 and 292:46, both with an effect: their order the compiler's
+typesetting/troff/latex/Latex.ml:292: evalorder: operands at 292:46 and 292:73, both with an effect: their order the compiler's
+typesetting/troff/latex/Latex.ml:292: evalorder: operands at 292:81 and 292:106, both with an effect: their order the compiler's
+typesetting/troff/roff/Fill.ml:222: stack: stops calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:276: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:279: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:281: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:283: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:288: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:289: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:294: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:295: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:296: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:298: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Fill.ml:299: stack: Fill.blocks calls itself, not a tail call, over a list
+typesetting/troff/roff/Man.ml:104: stack: Man.request calls itself, not a tail call, over a list
+typesetting/troff/roff/Man.ml:146: evalorder: operands at 146:18 and 146:44, both with an effect: their order the compiler's
+typesetting/troff/roff/Man.ml:149: evalorder: operands at 149:18 and 149:67, both with an effect: their order the compiler's
+typesetting/troff/roff/Man.ml:149: evalorder: operands at 149:67 and 149:85, both with an effect: their order the compiler's
+typesetting/troff/roff/Man.ml:95: stack: Man.request calls itself, not a tail call, over a list
+typesetting/troff/roff/Ms.ml:101: stack: bump calls itself, not a tail call, over a list
+typesetting/troff/roff/Ms.ml:102: stack: bump calls itself, not a tail call, over a list
+typesetting/troff/roff/Ms.ml:69: evalorder: operands at 69:15 and 69:45, both with an effect: their order the compiler's
+typesetting/troff/roff/Ms.ml:69: evalorder: operands at 69:45 and 69:80, both with an effect: their order the compiler's
+typesetting/troff/roff/Ms.ml:77: evalorder: operands at 77:12 and 77:42, both with an effect: their order the compiler's
+typesetting/troff/roff/Roff.ml:494: stack: pairs calls itself, not a tail call, over a list
+utilities/archive/Tar.ml:306: swallowed: in Tar:fun at line 304, Unix.Unix_error silenced, a constant answered
 utilities/calc/hoc/Input.ml:103: swallowed: in Input.recover, Unix.Unix_error silenced, a constant answered
+utilities/files/Mv.ml:94: swallowed: in Mv:fun at line 90, Unix.Unix_error silenced, a constant answered
+utilities/files/Touch.ml:46: swallowed: in Touch:fun at line 45, Unix.Unix_error silenced, a constant answered
+utilities/pipe/Tee.ml:49: swallowed: in Tee:fun at line 49, Unix.Unix_error silenced, a constant answered
+utilities/pipe/Xargs.ml:54: swallowed: in wait, Unix.Unix_error silenced, a constant answered
+utilities/process/Free.ml:26: swallowed: in Free:fun at line 22, Unix.Unix_error silenced, a constant answered
+utilities/process/Ps.ml:46: swallowed: in Ps:fun at line 42, Unix.Unix_error silenced, a constant answered
+utilities/process/Spin.ml:43: int31: in Spin.ints, 0x41c64e6d: not on the Pi 1's 31 bits
 utilities/text/awk/Run.ml:290: stack: Run.builtin calls itself, not a tail call, over a list
 utilities/text/awk/Run.ml:305: stack: Run.builtin calls itself, not a tail call, over a list
 utilities/text/awk/Run.ml:307: evalorder: operands at 307:27 and 307:44, both with an effect: their order the compiler's
@@ -385,7 +703,20 @@ version_control/repo/Query.ml:20: int31: in Query.probe, 0xffffffff: not on the 
 version_control/repo/Query.ml:234: evalorder: operands at 234:76 and 234:90, both with an effect: their order the compiler's
 version_control/repo/Query.ml:246: evalorder: operands at 246:10 and 246:19, both with an effect: their order the compiler's
 version_control/wire/Proto.ml:210: stack: dial calls itself in a try's handler: no tail call by mini-ml
+windows/desktop/Desk.ml:33: swallowed: in Desk.ask, Unix.Unix_error silenced, a constant answered
+windows/desktop/Settings.ml:34: swallowed: in Settings.tell, Unix.Unix_error silenced, a constant answered
+windows/desktop/Settings.ml:44: swallowed: in Settings.save, Unix.Unix_error silenced, a constant answered
+windows/desktop/Settings.ml:45: swallowed: in Settings.save, Unix.Unix_error silenced, a constant answered
+windows/desktop/Settings.ml:46: swallowed: in Settings.save, Sys_error or Unix.Unix_error silenced, a constant answered
+windows/desktop/Startmenu.ml:45: swallowed: in Startmenu.ask, Unix.Unix_error silenced, a constant answered
+windows/desktop/lib/Wsys.ml:23: swallowed: in Wsys.ask, Unix.Unix_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:13: swallowed: in Processes_winshell.mount_files, Sys_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:26: swallowed: in Processes_winshell.start, Unix.Unix_error silenced, a constant answered
 windows/rio/Processes_winshell.ml:46: swallowed: in Processes_winshell.note, Sys_error silenced, a constant answered
+windows/rio/Terminal.ml:37: evalorder: operands at 39:10 and 39:49, both with an effect: their order the compiler's
+windows/rio/Terminal.ml:37: evalorder: operands at 39:10 and 39:86, both with an effect: their order the compiler's
+windows/rio/Terminal.ml:37: evalorder: operands at 39:10 and 41:11, both with an effect: their order the compiler's
+windows/rio/Terminal.ml:37: evalorder: operands at 39:49 and 39:86, both with an effect: their order the compiler's
+windows/rio/Terminal.ml:37: evalorder: operands at 39:49 and 41:11, both with an effect: their order the compiler's
+windows/rio/Terminal.ml:37: evalorder: operands at 39:86 and 41:11, both with an effect: their order the compiler's
 windows/rio/Terminal.ml:43: stack: Terminal.take calls itself, not a tail call, over a list

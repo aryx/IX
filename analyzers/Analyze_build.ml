@@ -61,14 +61,21 @@ let read (caps : < F.caps; .. >) (f : F.t) : bool =
 
 (* the manifests under a directory, not in a . or _ directory (.git, a
  * build's _build or _make, which only a directory given is) *)
-let rec under (caps : < Cap.readdir; .. >) (d : string) : string list =
+(* (a linker's, by its first bytes: not Singularity's application
+ * manifests, kernels/singularity's Main.manifest) *)
+let ours (caps : < Cap.open_in; .. >) (p : string) : bool =
+  match FS.read_opt caps (Fpath.v p) with
+  | Some s -> String.length s > 14 && String.sub s 0 14 = "tiny-manifest "
+  | None -> false
+
+let rec under (caps : < Cap.open_in; Cap.readdir; .. >) (d : string) : string list =
   Array.to_list (CapSys.readdir caps d)
   |> List.sort compare
   |> List.concat_map (fun (n : string) ->
          let p = Filename.concat d n in
          if n <> "" && (n.[0] = '.' || n.[0] = '_') then []
          else if CapSys.is_directory caps p then under caps p
-         else if Filename.check_suffix n ".manifest" then [ p ]
+         else if Filename.check_suffix n ".manifest" && ours caps p then [ p ]
          else [])
 
 let expand_dirs (caps : < F.caps; .. >) (f : F.t) : bool =

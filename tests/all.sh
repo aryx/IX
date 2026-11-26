@@ -65,8 +65,10 @@ while IFS='@' read -r name minutes needs what cmd <&3; do
     if true | bash -c "$cmd" > $LOGS/$name.log 2>&1; then status=ok; else status=FAIL; failed=$((failed + 1)); fi
     took=$(( $(date +%s) - start ))
     line=$(printf "%-7s %-15s %3d min %02d s   %s" $status "$name" $((took / 60)) $((took % 60)) "$LOGS/$name.log")
+    # (its failing lines: a check's "0 differ" passed, and left in, the
+    # random tests' three crowded the FAIL out of the five shown)
     [ $status = FAIL ] && line="$line
-$(grep -a '^FAIL\|[a-z0-9]-FAIL\|Error \|!=\| differ\|[1-9][0-9]* failure' $LOGS/$name.log | grep -v 'expected to\|XFAIL\|on purpose' | tail -5 | cut -c1-160 | sed 's/^/          /')"
+$(grep -a '^FAIL\|[a-z0-9]-FAIL\|Error \|!=\| differ\|[1-9][0-9]* failure' $LOGS/$name.log | grep -v 'expected to\|XFAIL\|on purpose\| 0 differ' | tail -5 | cut -c1-160 | sed 's/^/          /')"
   fi
   echo "$line"; echo "$line" >> $summary
 done 3< <(suites)

@@ -360,6 +360,14 @@ languages/datalog/dotnet/Compile_il.ml:399: evalorder: operands at 399:4 and 400
 languages/datalog/dotnet/Compile_il.ml:400: evalorder: operands at 400:6 and 401:6, both with an effect: their order the compiler's
 languages/datalog/dotnet/Compile_il.ml:45: evalorder: operands at 45:25 and 46:10, both with an effect: their order the compiler's
 languages/datalog/dotnet/Compile_il.ml:59: evalorder: operands at 59:25 and 60:10, both with an effect: their order the compiler's
+languages/dotnet/assembly/Image.ml:153: int31: in Image.read, 0x424a5342: not on the Pi 1's 31 bits
+languages/dotnet/assembly/Listing.ml:197: evalorder: operands at 199:27 and 200:27, both with an effect: their order the compiler's
+languages/dotnet/assembly/Signature.ml:209: stack: Signature.show calls itself, not a tail call, over a list
+languages/dotnet/assembly/Signature.ml:210: stack: Signature.show calls itself, not a tail call, over a list
+languages/dotnet/assembly/Signature.ml:211: stack: Signature.show calls itself, not a tail call, over a list
+languages/dotnet/assembly/Signature.ml:212: stack: Signature.show calls itself, not a tail call, over a list
+languages/dotnet/assembly/Signature.ml:214: stack: Signature.show calls itself, not a tail call, over a list
+languages/dotnet/assembly/Signature.ml:215: stack: Signature.show calls itself, not a tail call, over a list
 languages/dotnet/assembly/Writer.ml:373: evalorder: operands at 373:46 and 373:58, both with an effect: their order the compiler's
 languages/dotnet/assembly/Writer.ml:386: evalorder: operands at 386:33 and 386:45, both with an effect: their order the compiler's
 languages/dotnet/assembly/Writer.ml:390: evalorder: operands at 390:42 and 390:57, both with an effect: their order the compiler's
@@ -390,6 +398,7 @@ languages/dotnet/runtime/Library.ml:541: evalorder: operands at 541:56 and 541:7
 languages/dotnet/runtime/Library.ml:542: evalorder: operands at 542:62 and 542:77, both with an effect: their order the compiler's
 languages/dotnet/runtime/Library.ml:543: evalorder: operands at 543:69 and 543:84, both with an effect: their order the compiler's
 languages/dotnet/runtime/Types.ml:279: stack: Types.array_class calls itself, not a tail call, over a list
+languages/dotnet/runtime/Types.ml:356: evalorder: operands at 358:53 and 359:39, both with an effect: their order the compiler's
 languages/dotnet/runtime/Types.ml:455: stack: subst calls itself, not a tail call, over a list
 languages/dotnet/runtime/Types.ml:456: stack: subst calls itself, not a tail call, over a list
 languages/dotnet/runtime/Value.ml:188: stack: Value.typ_key calls itself, not a tail call, over a list

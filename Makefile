@@ -124,7 +124,10 @@ test-long: host
 # the kernels make ix does not build, mini-9pi's, oberon's, squeak's,
 # Singularity's; squeak's after languages/smalltalk's objects, which it
 # links and make ix builds for Plan 9 alone): a minute for each
-# analysis, -exn two.
+# analysis, -exn two. mini-9pi's image holds a boot directory of
+# principia's programs: without ~/principia (GitHub's machine) it is
+# built with an empty one (FS=/dev/null), not bootable, its link and
+# manifest the same, the analyses' needs.
 check: check-tix check-mix
 # (tiny/'s -dead, -bugs and -exn are recorded on OCaml 5's build: on
 # 4.14's, Parallel's spawn calls nothing; tests/lite.sh says more)
@@ -134,7 +137,10 @@ check-tix:
 	st=0; for f in $$fs; do \
 	  ./analyzers/datalog/tests/check.sh tiny $$f -check || st=1; done; exit $$st
 check-mix: ix
-	@for d in kernels/9pi kernels/oberon languages/smalltalk kernels/squeak \
+	@fs=; [ -d $(HOME)/principia ] || { fs=FS=/dev/null; \
+	  echo "check-mix: mini-9pi's kernel with an empty boot directory (no ~/principia)"; }; \
+	(cd kernels/9pi && $(IXPATH) mini-mk $$fs > /dev/null) || exit 1; \
+	for d in kernels/oberon languages/smalltalk kernels/squeak \
 	  kernels/singularity; do \
 	  (cd $$d && $(IXPATH) mini-mk > /dev/null) || exit 1; done
 	@st=0; for f in -caps -dead -bugs -exn; do \

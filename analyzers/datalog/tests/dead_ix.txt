@@ -139,8 +139,23 @@ apps/office/richtext/Rich.ml:34: dead: Rich.edit, nothing names it
 apps/office/richtext/Style.ml:14: dead: Style.toggle_strike, nothing names it
 apps/office/sheet/Sheet.ml:253: dead: Sheet.recalculate, nothing names it
 apps/office/sheet/Sheet_view.ml:53: dead: Sheet_view.name_of, nothing names it
+assembler/Asm.ml:183: dead: Asm.invert, nothing names it
+assembler/Asm.ml:188: dead: Asm.cond_bits, nothing names it
+assembler/Asm.ml:216: dead field: s_arch stored in Asm.stored, nothing live reads it
+assembler/Asm.ml:216: dead field: s_file stored in Asm.stored, nothing live reads it
+assembler/Asm.ml:216: dead field: s_items stored in Asm.stored, nothing live reads it
+assembler/Asm.ml:229: dead: Asm.with_history, in init but no call goes through the pointer
+assembler/Asm.ml:264: dead: Asm.marshalled, in init but no call goes through the pointer
+assembler/Asm.ml:276: dead: Asm.of_saved, in init but no call goes through the pointer
+assembler/Asm.ml:282: dead: Asm.load, nothing names it
 assembler/CLI.ml:34: dead field: static stored in CLI:fun at line 34, nothing live reads it
 assembler/CLI.ml:34: dead field: sym stored in CLI:fun at line 34, nothing live reads it
+assembler/Parser_asm.ml:165: dead field: by stored in Parser_asm.index, nothing live reads it
+assembler/Parser_asm.ml:165: dead field: kind stored in Parser_asm.index, nothing live reads it
+assembler/Parser_asm.ml:165: dead field: reg stored in Parser_asm.index, nothing live reads it
+assembler/Parser_asm.ml:179: dead field: index stored in Parser_asm.named, nothing live reads it
+assembler/Parser_asm.ml:294: dead field: op stored in lines, nothing live reads it
+assembler/Parser_asm.ml:294: dead field: suffixes stored in lines, nothing live reads it
 browsers/css/Cascade.ml:275: dead: Cascade.explain, in init but no call goes through the pointer
 browsers/css/Cascade.ml:275: dead: Cascade.explain, nothing names it
 browsers/css/Css.ml: dead global: Css.specificity, nothing live names it
@@ -171,12 +186,24 @@ browsers/html/Entities.ml: dead global: Entities.count, nothing live names it
 browsers/html/Html_lexer.ml:251: dead: Html_lexer.attribute, nothing names it
 browsers/html/Html_lexer.ml:255: dead: Html_lexer.quote, in init but no call goes through the pointer
 browsers/html/Html_lexer.ml:270: dead: Html_lexer.to_string, nothing names it
+browsers/javascript/eval/Js_eval.ml: dead global: Js_eval.items, nothing live names it
 browsers/javascript/eval/Js_eval.ml:1099: dead: Js_eval.create, nothing names it
+browsers/javascript/eval/Js_eval.ml:1168: dead: Js_eval.page_program, in init but no call goes through the pointer
+browsers/javascript/eval/Js_eval.ml:1171: dead: Js_eval.eval_page, nothing names it
+browsers/javascript/eval/Js_eval.ml:1176: dead: Js_eval.eval_page_in_run, nothing names it
+browsers/javascript/eval/Js_eval.ml:1181: dead: Js_eval.call, nothing names it
+browsers/javascript/eval/Js_eval.ml:1184: dead: Js_eval.promise, nothing names it
+browsers/javascript/eval/Js_eval.ml:1187: dead: Js_eval.global, nothing names it
+browsers/javascript/eval/Js_eval.ml:1188: dead: Js_eval.define, nothing names it
+browsers/javascript/eval/Js_eval.ml:1189: dead: Js_eval.set_budget, nothing names it
+browsers/javascript/eval/Js_eval.ml:1190: dead: Js_eval.set_seconds, nothing names it
+browsers/javascript/eval/Js_eval.ml:1191: dead: Js_eval.running_for, nothing names it
 browsers/javascript/eval/Js_frame.ml:92: dead: Js_frame.layout, nothing names it
 browsers/javascript/library/Js_builtins.ml:67: dead: Js_builtins.this_array, nothing names it
 browsers/javascript/library/Js_regexp.ml:259: dead field: unicode stored in Js_regexp:fun at line 259, nothing live reads it
 browsers/javascript/library/Js_regexp.ml:270: dead: Js_regexp.groups, nothing names it
 browsers/javascript/parsing/Js_lexer.ml:354: dead: Js_lexer.to_string, nothing names it
+browsers/javascript/parsing/Js_parse.ml:834: dead: Js_parse.parse_page, in init but no call goes through the pointer
 browsers/javascript/parsing/Js_parse.ml:859: dead: Js_parse.parse_expression, nothing names it
 browsers/javascript/values/Js_string.ml:41: dead: Js_string.ascii, nothing names it
 browsers/javascript/values/Mini_opti.ml: dead global: Mini_opti.letters, nothing live names it
@@ -388,13 +415,28 @@ languages/ml/highlight/Highlight_ml.ml:231: dead: Highlight_ml.categorize, nothi
 languages/ml/highlight/Token_ml.ml:26: dead: Token_ml.show_kind, nothing names it
 languages/ml/ssa/Ssa_build.ml:88: dead field: sites stored in Ssa_build.build, nothing live reads it
 languages/ml/ssa/Ssa_build.ml:88: dead field: tail_sites stored in Ssa_build.build, nothing live reads it
+languages/pascal/Pascal_compile.ml:729: dead field: first stored in Pascal_compile.block, nothing live reads it
+languages/pascal/Pascal_compile.ml:729: dead field: parent stored in Pascal_compile.block, nothing live reads it
+languages/pascal/Pascal_compile.ml:729: dead field: variables stored in Pascal_compile.block, nothing live reads it
+languages/pascal/Pascal_compile.ml:794: dead field: param stored in Pascal_compile:fun at line 794, nothing live reads it
+languages/pascal/Pascal_compile.ml:794: dead field: vname stored in Pascal_compile:fun at line 794, nothing live reads it
+languages/pascal/Pascal_compile.ml:794: dead field: vtype stored in Pascal_compile:fun at line 794, nothing live reads it
+languages/pascal/Pascal_compile.ml:888: dead field: statements stored in Pascal_compile.program, nothing live reads it
 languages/pascal/Pmachine.ml:241: dead: Pmachine.sp, nothing names it
+languages/pascal/Pmachine.ml:242: dead: Pmachine.mp, nothing names it
+languages/pascal/Pmachine.ml:243: dead: Pmachine.word, nothing names it
 languages/pascal/Pmachine.ml:250: dead: Pmachine.run, in init but no call goes through the pointer
 languages/pascal/Pmachine.ml:271: dead: Pmachine.execute, nothing names it
 languages/scheme/CLI.ml:109: dead field: stop stored in CLI:fun at line 109, nothing live reads it
 languages/scheme/Scheme.ml:130: dead: Scheme.kind, nothing names it
+languages/scheme/Scheme_eval.ml:139: dead field: handlers stored in Scheme_eval.step, nothing live reads it
+languages/scheme/Scheme_eval.ml:139: dead field: init stored in Scheme_eval.step, nothing live reads it
+languages/scheme/Scheme_eval.ml:198: dead: Scheme_eval.resume, nothing names it
+languages/scheme/Scheme_eval.ml:200: dead: Scheme_eval.call, nothing names it
 languages/scheme/Scheme_eval.ml:233: dead field: builtins stored in Scheme_eval.create, nothing live reads it
 languages/scheme/Scheme_eval.ml:240: dead: Scheme_eval.defined, nothing names it
+languages/scheme/Scheme_step.ml:194: dead field: contractum stored in run, nothing live reads it
+languages/scheme/Scheme_step.ml:194: dead field: redex stored in run, nothing live reads it
 languages/smalltalk/Squeak.ml:157: dead: Squeak.picture, nothing names it
 languages/smalltalk/compiler/St_ast.ml:45: dead: St_ast.show_literal, in init but no call goes through the pointer
 languages/smalltalk/compiler/St_ast.ml:63: dead: St_ast.show_message, in init but no call goes through the pointer
@@ -443,6 +485,7 @@ languages/smalltalk/vm/St_interp.ml:112: dead: St_interp.cache_stats, nothing na
 languages/smalltalk/vm/St_interp.ml:120: dead: St_interp.is_closure_context, in init but no call goes through the pointer
 languages/smalltalk/vm/St_interp.ml:131: dead: St_interp.context_method, in init but no call goes through the pointer
 languages/smalltalk/vm/St_interp.ml:154: dead: St_interp.home_context, nothing names it
+languages/smalltalk/vm/St_interp.ml:604: dead field: id stored in St_interp.new_process, nothing live reads it
 languages/smalltalk/vm/St_interp.ml:684: dead: St_interp.run_until, in init but no call goes through the pointer
 languages/smalltalk/vm/St_interp.ml:686: dead: St_interp.resume, in init but no call goes through the pointer
 languages/smalltalk/vm/St_memory.ml:147: dead: St_memory.set_body, nothing names it
@@ -662,10 +705,15 @@ lib_graphics/Draw.ml:83: dead: Draw.ellipse_, in init but no call goes through t
 lib_graphics/Draw.ml:88: dead: Draw.ellipse, nothing names it
 lib_graphics/Draw.ml:89: dead: Draw.fillellipse, nothing names it
 lib_graphics/Font.ml:14: dead: Font.ascent, nothing names it
+lib_graphics/Font.ml:21: dead field: ascent stored in Font.default, nothing live reads it
+lib_graphics/Keyboard.ml: dead global: Keyboard.alt, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.ctrl, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.end_, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.home, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.left, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.page_down, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.page_up, nothing live names it
+lib_graphics/Keyboard.ml: dead global: Keyboard.right, nothing live names it
 lib_graphics/Keyboard.ml: dead global: Keyboard.shift, nothing live names it
 lib_graphics/images/Dct.ml:17: dead: Dct.c, in init but no call goes through the pointer
 lib_graphics/images/Dct.ml:23: dead: Dct.fdct, nothing names it
@@ -737,12 +785,23 @@ lib_terminal/Vt.ml:350: dead: Vt.cursor_visible, nothing names it
 lib_terminal/Vt.ml:351: dead: Vt.bells, nothing names it
 lib_terminal/Vt.ml:353: dead: Vt.rtrim, in init but no call goes through the pointer
 lib_terminal/Vt.ml:360: dead: Vt.text, nothing names it
+linker/Arm.ml:214: never built: Addr.0, matched in Arm.aclass
+linker/Arm.ml:214: never built: Regs.0, matched in Arm.aclass
+linker/Arm.ml:214: never built: Special.0, matched in Arm.aclass
+linker/Arm.ml:450: never built: FReg.0, matched in Arm.fregof
+linker/Arm.ml:462: never built: By_imm.0, matched in Arm.shift_bits
+linker/Arm.ml:462: never built: By_reg.0, matched in Arm.shift_bits
+linker/Arm.ml:467: never built: Shifted.0, matched in Arm.shift_of
+linker/Arm.ml:686: never built: Pair.0, matched in Arm:fun at line 686
+linker/Arm.ml:686: never built: Pair.1, matched in Arm:fun at line 686
+linker/Arm64.ml:233: never built: Spr.0, matched in Arm64.aclass
 linker/CLI.ml:100: dead field: l_flags stored in unit_, nothing live reads it
 linker/CLI.ml:100: dead field: l_object stored in unit_, nothing live reads it
 linker/CLI.ml:100: dead field: l_source stored in unit_, nothing live reads it
 linker/CLI.ml:100: dead field: l_taken stored in unit_, nothing live reads it
 linker/CLI.ml:88: dead field: m_program stored in CLI.write_manifest, nothing live reads it
 linker/CLI.ml:88: dead field: m_units stored in CLI.write_manifest, nothing live reads it
+linker/Link.ml:298: dead: Link.load_objects, nothing names it
 linker/tools/Nm.ml:55: never built: Data.0, matched in Nm:fun at line 55
 linker/tools/Nm.ml:55: never built: Text.0, matched in Nm:fun at line 55
 linker/tools/Nm.ml:59: never built: Globl.0, matched in Nm:fun at line 59

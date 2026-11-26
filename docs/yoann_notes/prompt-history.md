@@ -79002,3 +79002,311 @@ Claude found that mini-ld grew 3.2% (1,166,166 to 1,202,934 bytes) from the arch
 Relinking mini-ld by hand with the objects named individually gave 1,166,150 bytes, so the cost comes from the link.
 Claude fixed run.sh in languages/ml/dotnet/tests, which had compiled Asm and Show_asm twice, and the dotnet check passes again.
 Nothing is committed yet; Claude asked whether to commit the change.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 11:57
+
+**Yoann:**
+
+> yes go ahead. Waht are those plan 9 only programs? I thought we were still compiling them and linking them here, so they would have a manifest too
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:01
+
+**Yoann:**
+
+> another session is moving stuff from linked command to separate libraries, to factorize work and avoid compiling the same files again and again, but I'm not sure why it influences the dead code analysis
+
+**Claude (summary):**
+
+Claude explained that the dead-code change comes from how files reach the linker, not from the libraries themselves.
+Claude said turbopascal's `Pdebug.7` moved from a command-line file into pascal's archive, so turbopascal stopped voting on it.
+Claude noted the analyzer only counts votes from programs that own a file, so libraries used by Plan 9-only programs lost their users.
+Claude recommended giving every linking program a vote and merging the Linux and Plan 9 builds, so how a file is linked stops mattering.
+Claude was also rerunning `make test` then `check-mix` in CI order to see why the kernel-build step fails.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:30
+
+**Yoann:**
+
+> ok all other sessions are stopped now. this repo is clean. What should we do to fix CI?
+
+**Claude (summary):**
+
+Claude proposed a four-step plan to fix CI now that the tree is quiet.
+Claude would build CI's image locally, run `make test` and `make test-long`, and keep the logs, including `long.log`.
+Claude suspected the `check-mix` kernel step, the one CI names, as the likely failure, to be confirmed by those runs.
+Claude recommended dropping `-dead` from `make check` (as `make test` already does) until the Linux and Plan 9 merge finishes, since re-recording is unreliable.
+Claude also planned to make tests/all.sh print the tail of a failing suite's log so CI shows the error.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:33
+
+**Yoann:**
+
+> ok go ahead with the plan
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:34
+
+**Yoann:**
+
+> but for 3, things should not depend on what is built first; make check (and make test) should build the appropriate things and then run the different analysis
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:34
+
+**Yoann:**
+
+> I'll be be back in 30min. Do not commit; fix everything and I'll review
+
+**Claude (summary):**
+
+Claude reported that the container's `make test` was still running, with `make test-long` queued after it.
+Claude said it would resume once `make test` finished and that nothing had been committed.
+So far the only edit was a one-line fix in `tests/all.sh`.
+That fix stops "0 differ" lines from hiding the real `FAIL` line in CI's summary.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:46
+
+**Yoann:**
+
+> this whole vote-ownership thing is confusing; how other tools do to detect dead code? I mean not ix tools, other tools in the wild?
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:56
+
+**Yoann:**
+
+> mini-9pi does not need ~/principia to build I think; you say so in this diff but I don't think it's true
+
+------------------------------------------------------------------------
+
+## 2026-11-26 12:56
+
+**Yoann:**
+
+> not sure why you say so
+
+**Claude (summary):**
+
+Claude traced the CI failure to kernels/9pi's boot directory, which needs principia's boot.rc and arm binaries.
+Claude proposed building mini-9pi's boot directory from ix's own mini-rc and other programs instead of principia's.
+Claude had not started that change, calling it bigger than skipping the build in CI.
+Claude endorsed the union of per-program live sets as the dead-code rule, starting from linked programs' manifests.
+Claude left the Makefile, tests/all.sh, dead_ix.txt, and bugs_ix.txt changes uncommitted, and reran make test-long.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:05
+
+**Yoann:**
+
+> For mini-9pi, we should definitely not depend on ~/principia! I know mini-pi offers the possibility to boot 9pi kernel but by default we should not depend on principia and build a kernel with our own m-ix programs on the card; I thought it was already the case. For the dead, yes we should do the union which would be equivalent to 1 mostly, except we start from the linked programs which have the convenient manifests
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:06
+
+**Yoann:**
+
+> but for mini-9pi maybe we can address that later
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:06
+
+**Yoann:**
+
+> let's fix for now the CI
+
+**Claude (summary):**
+
+Claude compared the clean scratch clone's mini-9pi build against the new recordings to isolate the difference.
+Claude found three manifest entries in lib_networking/9p that the clean build lacks, traced to _mk/7 usage.
+Claude noted all three sit in the top mkfile's BOTH list, so make ix should build them.
+Claude verified that with an empty-boot mini-9pi kernel, -dead output matches the principia recording.
+Claude planned the real check: running make test-long in CI's container with these changes applied.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:14
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude ran `make test`, which passed with 197 jobs and zero failures.
+Claude committed four files by pathspec, leaving out Yoann's `docs/yoann_notes/prompt-history.md`.
+The commit 9b4e7d2a was pushed, and Claude then started two runs: CI's `test-long` locally in the container and GitHub's run of that commit.
+Claude said it would report the local `test-long` result when it finishes, then watch the GitHub run, which takes about half an hour.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:20
+
+**Yoann:**
+
+> What's next?
+
+**Claude (summary):**
+
+Claude reported that the local CI container now passes check-mix's -caps, -dead and -bugs checks.
+Claude treated that local pass as CI's signal, while GitHub's 9b4e7d2a run stayed pending.
+Claude recommended confirming CI is green next, since the summary would now show any real FAIL line.
+Claude then laid out the -dead union rewrite, mini-9pi's default boot directory, and two small cleanups.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:22
+
+**Yoann:**
+
+> github runner are usually amd64 actually.
+
+**Claude (summary):**
+
+Claude agreed most runners are amd64 but singled out the failing arm64 job.
+Claude found that `test-all` in docker.yml (line 33) runs on `ubuntu-24.04-arm`, so arm64.
+Claude cited the workflow header saying ix's tools make arm64 programs that the tests run.
+Claude concluded the failing arm64 job meant the local run matched its architecture.
+Claude noted the amd64 build and self.yml jobs were passing and unaffected by this commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:23
+
+**Yoann:**
+
+> ok back to the -dead analysis. do we really need a plan document? What is the current state, for m-ix -dead and t-ix dead, current problem, and what you propose to fix it?
+
+**Claude (summary):**
+
+Claude said no plan document was needed and diagnosed the false reports as non-voting linked users.
+Claude proposed that every program linking a file votes on it, so dead means unused by linked programs.
+Claude's first step changed Tiny_manifest.own_member to own any linked project file, removing 73 of 92 false reports.
+Claude's second step let m-ix's card programs vote, covering the roughly 500 new reports from step one.
+Claude also restricted t-IX to report only on tiny/'s files, noting dune copies would be reported as source.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:35
+
+**Yoann:**
+
+> ok sounds like a good plan, but before that I noticed 'make check' takes significantly longer than before. I also noticed under tiny/ make test spends a huge amount of time on the dune build part which I think was less the case before. Finally, make check in tiny/ also takes far more time than before I think; it feels far slower.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:35
+
+**Yoann:**
+
+> make check from the top is also super slow now
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:35
+
+**Yoann:**
+
+> It felt far faster before, a few days ago when we didn't have all those manifest and other build and Makefile and mkfile changes
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:36
+
+**Yoann:**
+
+> not sure if related
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:44
+
+**Yoann:**
+
+> note that we can maybe assume that make check depends on all (the build), at least for tiny/
+
+------------------------------------------------------------------------
+
+## 2026-11-26 11:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as `f45adb99` by pathspec, leaving the staged `prompt-history.md` out of it.
+Claude said step 4 of `plan_simpler_builds.md` is done, except runtime.c, which waits for the rethink.
+Claude listed what's left: the caps_ix failures, the `-dead` check, `make self-quick-mix`, and the objects-beside-sources rethink.
+Claude recommended running `make self-quick-mix` first, since the toolchain just changed, then handling the `-dead` reports.
+Claude asked whether to proceed in that order.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:46
+
+**Yoann:**
+
+> ok CI is green again. What's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:46
+
+**Yoann:**
+
+> can we summarize what we've done from the plan?
+
+**Claude (summary):**
+
+Claude summarized the plan's finished steps 1 through 4, plus t-IX's printing fix, with runtime.c still left out.
+Claude's what's-next list had five items, starting with the -dead analysis reports from make check-mix to review and re-record.
+That list also included make self-quick-mix, which compares the card's objects with the host's byte for byte, taking about six minutes.
+Claude proposed the objects-beside-sources rethink, with open questions about where mini-yacc and mini-lex generated files should go.
+Claude then asked whether to run the first two items now and write the rethink's design into the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:53
+
+**Yoann:**
+
+> the dead and self-quick is the responsability of another session. So let's update the what's next list?
+
+**Claude (summary):**
+
+Claude listed what comes next: the rethink of objects beside their sources, runtime.c, interfaces from one place, and step 6.
+Claude's rethink plan covered generated sources in a `_gen/` directory, other builds needing a tree copy, `make test`, about 160 script lines, and ordering.
+Claude described step 6 as the largest change: mini-ml writing the program's start itself, as ocamlopt does, across both toolchains.
+Yoann questioned step 6, noting that mini-ml may already generate the `.start.o` files, so that step's premise is in doubt.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:55
+
+**Yoann:**
+
+> regarding step 6, I though mini-ml were already generating those .start.o thing
+
+**Claude (summary):**
+
+Claude confirmed that mini-ml already writes the `.start.o` files, and that step 6 concerns where the unit list comes from.
+Claude proposed having mini-ml read the units from the archives, as ocamlopt does, instead of the mkfile and `units.rc` passing them in.
+That change would retire `units.rc`, the `lib.a.units` files, the mkconfig STD and COMMONS lists, most start rules, and the twice-written t-IX CORE list.
+It touches the toolchain on both systems, which is why the plan calls it the largest step.
+Claude offered to reword the plan's "mini-ml writes the start" to "the start's units read from the archives."

@@ -63,11 +63,12 @@ programs:V: assembler.dir ${DIRS:%=%.dir} examples
 
 # What a directory waits for: the assembler for the libraries, since
 # every tool reads its objects; a program for the libraries and the
-# assembler; and six for another directory's objects (mini-dotnet: the
-# linker's, its JIT's encoders).
+# assembler; and eight for another directory's objects (mini-dotnet: the
+# linker's, its JIT's encoders; mini-emacs: mini-ml's parser).
 assembler.dir:V: libs
 ${DIRS:%=%.dir}:V: libs assembler.dir
 linker/tools.dir languages/dotnet.dir:V: linker.dir
+editors/emacs/tty.dir editors/emacs/draw.dir:V: languages/ml.dir
 utilities/calc/bc.dir:V: utilities/calc/dc.dir
 editors/drscheme.dir lib_gui/examples.dir apps/office.dir:V: games.dir
 languages/smalltalk/hosts/draw.dir:V: languages/smalltalk.dir

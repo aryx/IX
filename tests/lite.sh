@@ -485,7 +485,7 @@ ix() {
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0
-  for d in languages/c languages/ml languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
+  for d in languages/c languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk lib_gui/examples && mk apps/office && mk apps/music/rebirth) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
@@ -504,10 +504,11 @@ ix() {
   mk apps/files & pids+=($!)
   mk apps/maps & pids+=($!)
   # (mini-emacs: its mkfiles list mini-ml's parser's units by their own
-  # SRC, which dune's build does not read: Annotations missing from them
-  # broke the link unseen, ad93e2ae)
-  mk editors/emacs/tty & pids+=($!)
-  mk editors/emacs/draw & pids+=($!)
+  # LIBUNITS, which dune's build does not read: Annotations missing from
+  # them broke the link unseen, ad93e2ae. It links mini-ml's objects of
+  # them, so after languages/ml, its two side by side)
+  (mk languages/ml || exit 1; mk editors/emacs/tty & e=$!
+   mk editors/emacs/draw || exit 1; wait $e) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ] || return 1
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"

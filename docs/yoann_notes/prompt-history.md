@@ -79511,3 +79511,19 @@ Claude is now weighing whether a `stage0` build would pay off for m-IX, the stag
 Stage 1 covers ten tools: mini-ml, mini-cc, mini-asm, mini-ar, mini-ld, mini-lex, mini-yacc, mini-walk, mini-rc, and mini-mk.
 Claude timed a fresh build in private build directories and planned a no-change run to compare.
 Claude's answer on whether `stage0` helps was still in progress when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:58
+
+**Yoann:**
+
+> yes let's do it
+
+**Claude (summary):**
+
+Claude raised the process limit it had set too low, since it counted other sessions' processes.
+Claude verified that a clean `make` works with only the 10 tools in bin/, taking 26 seconds.
+Claude edited the Makefile so `MK_GOALS` and the other goals reach `all` without needing `host`.
+Claude noted that `test-ix` and `test-ix-arm` still need `host`, since they compare against dune builds.
+Claude reported one failure in `make test`, in t-IX's image build under tiny/TinyKernel, and began checking its log.

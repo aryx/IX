@@ -19,7 +19,7 @@ languages/dotnet/runtime; languages/prolog; mini-ml's parser for
 mini-emacs; lib_terminal/hosts; the assembler and the linker as
 libraries. Left of step 4: runtime.c, which the kernel steps compile.
 Next: the rethink (objects beside their sources), decided before step
-5.**
+5. Proposed too (2026-11-26): t-IX's tests and checks, T1 to T6.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -363,6 +363,110 @@ taught, which m-IX will meet:
   manifests in tiny/, check.sh tiny's `tiny` gave those instead of
   dune's programs (their reports "gone"). dune's are now named by
   their build directory, `_build/default/tiny`.
+
+## t-IX's tests and checks, cheapest first
+
+The author (2026-11-26): "Is there other opportunities for such
+simplications, especially in tiny/, so we don't improve so much the
+OCaml code itself of the programs, but more the build/test/check infra
+around it; a clean build with a small set of commands run, with not so
+many flags, is usually a good smell for a project, compared to very
+very long commands and complexity." The build itself, tiny/Buildfile,
+is in good shape after the work above. The test and check harness
+around it is where the long commands and the repeated lists are now.
+Proposed (2026-11-26), not started. T1 to T3 need no tool change; T4
+and T5 each need a change to a tiny tool, to decide first.
+
+T1. **TinyKernel/Makefile's check: one file per session.** The 28
+   sessions of `make check` are rules `$(O)/check/01.out` to `28.out`,
+   each a `printf '...' | $(TIMEOUT) 300 $(MACHINE) $(D) boot.img`
+   with the whole session in the printf, and their outputs are joined
+   into one check.expected (the file whose CRLF lines the Edit tool
+   rewrites). A failure is a diff in that one file, and recording
+   records all 28. Instead, each session would be a file with its own
+   expected output, `tests/TinyKernel_tests/rc.keys` and `rc.expected`,
+   as db.keys, vcs.keys and build.keys already are, and one pattern
+   rule would run them all. Only the sessions with flags of their own
+   (-net, -events, a second disk, several runs: about six) keep an
+   explicit rule. NCHECK and SCREENS then become wildcards over
+   `$(T)/*.keys` and `$(T)/*.events`, so that a test is added by adding
+   its files. The sessions get names instead of numbers, a failure
+   names its session, and each one is recorded alone. tests/lite.sh's
+   tiny_kernel and tiny_self, which run parts of check and self-quick
+   again from their own heredocs and grep loops, could then run a few
+   of the same .keys files through a target of TinyKernel/Makefile.
+   Cost: small, mostly moving text into files.
+
+T2. **The tests link their images from the Buildfile's build.** Ten
+   scripts of tiny/tests/ source link.sh, whose ml_lib compiles
+   TinyLibCore again in each test, and then call tiny-ml and link_tm
+   with their own lists of units (TinyOffice_test.sh's line 51 is the
+   Buildfile's OFFICE_UNITS again, with the test stub of
+   TinyLibSystem). This is a second build of tiny-machine programs,
+   written in shell. The test images could be targets of a Buildfile
+   (tests/Buildfile, or a section of tiny/Buildfile), linked from the
+   stdlib.a and the objects that make has built, so that the scripts
+   only run the images and compare, as a script should only read a
+   build (memory: scripts assume a build). It also removes two of the
+   copies of CORE (link.sh and TinyLibCore_test.sh, a part of it in
+   TinyAssembler_test.sh) and KGraphics_test.sh's copy of the od and
+   awk pipeline that turns the font into assembly, which is
+   TinyKernel/Makefile's kfont.s rule again. Cost: medium, one test at
+   a time.
+
+T3. **One way to compare with a recording.** Seventeen scripts of
+   tiny/tests/ repeat the same lines: RECORD=1 to record, KEEP and W
+   for the work directory, a failures counter, fail(), the ok and FAIL
+   lines, and a diff cut at ten lines. Many of them only run a
+   Host.exe and compare its output with a .expected file. For those,
+   dune's own way is a rule in the test directory's dune file,
+   `(rule (alias runtest) (action (diff calc.expected calc.out)))`,
+   with `dune promote` in place of RECORD=1, as OCaml's expect tests
+   do. The others, which run tiny-machine or another program, would
+   share one helper, as they share link.sh. Cost: small for each
+   script; lite.sh's jobs then name dune's aliases.
+
+T4. **The Buildfile's programs, one line each (a tiny-build change).**
+   The 26 ML programs each have the same three lines (X_UNITS, then
+   `X.start.o: $STDLIB $X_UNITS`, then `X: $CRT $MLRT X.start.o $STDLIB
+   $X_UNITS $MLEND` with `$LD -map -s -n -o $target $prereq`), apart
+   from the name, the units, and ld's -a for nine of them. A variable
+   for ld's common flags needs no tool change. A rule for all of them
+   would need tiny-build to read a variable named after the stem
+   (`${stem}_UNITS`), and a variable for each program's -a. The
+   X_UNITS lines would stay, so the file would still show which
+   program stands on which library; about 75 lines would become about
+   30. To decide: whether the Buildfile, meant to be read, reads
+   better that way.
+
+T5. **.depend made by the build (a tiny-build or tiny-ml change).**
+   `build depend` is run by hand after a unit names another one or a
+   unit is added; when it is forgotten, make check passes, by the
+   order of the units, and make test fails (memory). The build could
+   make .depend itself, before it reads it: tiny-build would need to
+   include a file it has just made, or make would run `build depend`
+   first, if tiny-ml -depend is fast enough over all of tiny/. To
+   measure, then decide.
+
+T6. **Smaller ones.**
+   - The top Makefile's check-tix loops over -caps, -dead, -bugs and
+     -exn in shell, with a case on OCaml's version. check.sh tiny
+     -check could run the four and know the OCaml 4 rule itself, so
+     that the target is one line (the logic in the analyzer, as the
+     manifests did).
+   - The Buildfile's CORE exists for build install, which copies the
+     library's interfaces to /lib/ml. An rc glob in the recipe,
+     `TinyLibCore/*.tmi`, as /examples is copied, would remove that
+     copy of CORE; TinyLibCore/Buildfile's stays (step 6 above).
+   - TinyKernel/Makefile chooses its machine among three dune build
+     directories (_build, _build_release, and _build5 through opam
+     when OCaml 5.5.1 is there, for the domains). Whether one release
+     build would do now is to be checked.
+   - TinyKernel/steps/Makefile could be a Buildfile, so that every
+     part of t-IX is built the same way.
+   - Not planned: tiny/.gitignore lists the 33 programs again
+     (PROGS), since they go at the top of tiny/ under their names; no
+     simple pattern replaces the list.
 
 ## Checks for each step
 

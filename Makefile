@@ -2,16 +2,17 @@
 # Prelude
 ###############################################################################
 
-# The usual entry points: make, which builds ix by ix (make host first,
-# dune's build of the tools), and make test, which you run before each
+# The usual entry points: make, which builds ix by ix (make stage0
+# first, dune's build of the tools), and make test, which you run before each
 # commit and which takes two minutes (docs/testing.md). Below them are
 # the targets that check ix built by ix (make test-ix...) and the one
 # that tests everything (make test-all).
 #
 # ix builds itself in three stages, as a compiler does:
 #
-#   stage 0  make host  ix's tools (mini-ml, mini-ld...), by OCaml and
-#                       dune, in bin/
+#   stage 0  make stage0  the tools stage 1 runs (mini-ml, mini-ld...),
+#                       by OCaml and dune, in bin/ (make host: all of
+#                       dune's build, the tests' programs among them)
 #   stage 1  make       ix, by stage 0's tools, in _mk/7
 #   stage 2  make self  ix, by stage 1's tools in its own systems, t-IX
 #                       in tiny-kernel and m-IX in mini-9pi: each file
@@ -30,7 +31,7 @@ export MINI = mini-
 # changed: 3.5 s, against 14 s for one at a time; a whole build: 30 s,
 # against almost 5 minutes. NPROC=n make another count.
 export NPROC ?= 8
-# make builds ix by ix, as on m-IX itself: make host, then mini-mk over
+# make builds ix by ix, as on m-IX itself: make stage0, then mini-mk over
 # the mkfiles (the top mkfile's all), into _mk/7. Any other target is
 # the top mkfile's, make libs, make lib_core.dir, make install, make
 # depend, as mk libs... in /src on mini-9pi's card (make ix: make's old
@@ -39,9 +40,16 @@ export NPROC ?= 8
 # OCaml compilers and OCaml 5's domains for some programs, ix built by
 # ix being the way to build it.
 # stage 1
-all: host
+all: stage0
 	$(IXPATH) mini-mk
-# stage 0
+# stage 0: the tools of mkfiles/mkconfig, those the top mkfile's
+# targets run (a build from nothing with them alone in bin/, 2026-11-26).
+# Fresh: 10 s, against 34 for make host; nothing changed: 0.5 s,
+# against 4. (The kernels' mkfiles run more: mini-singml, mini-qemu;
+# their targets depend on host.)
+STAGE0 = ml cc asm ar ld lex yacc walk rc mk
+stage0:
+	dune build $(STAGE0:%=_build/install/default/bin/mini-%)
 host:
 	dune build
 # tix builds t-IX alone (tiny/) and mix builds m-IX (the rest), as
@@ -147,7 +155,7 @@ check-tix:
 	@case $$(ocamlc -version) in 5.*) fs="-caps -dead -bugs -exn";; \
 	  *) fs=-caps; echo "check-tix: -dead, -bugs, -exn skipped (OCaml 4)";; esac; \
 	$(call checks,tiny,$$fs)
-check-mix: ix
+check-mix: ix host
 	@fs=; [ -d $(HOME)/principia ] || { fs=FS=/dev/null; \
 	  echo "check-mix: mini-9pi's kernel with an empty boot directory (no ~/principia)"; }; \
 	(cd kernels/9pi && $(IXPATH) mini-mk $$fs > /dev/null) || exit 1; \
@@ -322,12 +330,12 @@ test-vs-github: host
 # mini-lex, mini-yacc, mini-cc, mini-asm, mini-ar and mini-ld.
 IXPATH = PATH=$(CURDIR)/bin:$$PATH
 ix: all
-ix-arm: host
+ix-arm: stage0
 	$(IXPATH) mini-mk O=5
 # the kernels built by ix's tools, for the Pi 4
 # (docs/plans/done/plan_kernel_mini_ml.md; they take xv6's disk image and
 # principia's programs, as their Makefiles do)
-kernels-ix: ix ix-arm
+kernels-ix: ix ix-arm host
 	cd kernels/xv6 && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
 	cd kernels/9pi && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
 
@@ -349,12 +357,12 @@ kernels-ix: ix ix-arm
 #   expects each file to be the host's (tiny/TinyKernel's make self,
 #   kernels/9pi's). It takes hours. self-quick builds a part of each,
 #   in a few minutes.
-test-ix: all
+test-ix: all host
 	true | ./mkfiles/check.sh
 # stage 2 on the host
 test-ix-fixpoint: host
 	./mkfiles/fixpoint.sh
-test-ix-arm: all ix-arm
+test-ix-arm: all ix-arm host
 	true | ./mkfiles/check_arm.sh
 test-ix-fixpoint-arm: host
 	./mkfiles/fixpoint.sh 5
@@ -476,7 +484,7 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-PHONY = all host tix mix host-install website website-mini website-mini-js test \
+PHONY = all host stage0 tix mix host-install website website-mini website-mini-js test \
   check check-tix check-mix test-vs-mk test-vs-goken test-vs-ocaml-light \
   test-vs-chidb test-vs-qemu clean loc loc-v loc-readme build-docker \
   build-docker-ocaml5 build-docker-test-all test-vs-ocaml ix ix-arm \
@@ -489,7 +497,7 @@ PHONY = all host tix mix host-install website website-mini website-mini-js test 
 # .DEFAULT, which a target named as a file, examples/, would not reach
 MK_GOALS = $(filter-out $(PHONY),$(MAKECMDGOALS))
 ifneq ($(MK_GOALS),)
-$(MK_GOALS): host
+$(MK_GOALS): stage0
 	$(IXPATH) mini-mk $@
 endif
 .PHONY: $(PHONY) $(MK_GOALS)

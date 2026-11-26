@@ -129,6 +129,16 @@ test-long: host
 # built with an empty one (FS=/dev/null), not bootable, its link and
 # manifest the same, the analyses' needs.
 check: check-tix check-mix
+# (a system's analyses side by side, as make test's jobs, each one's
+# output printed whole, in order, once all are done: check-mix's four
+# 135 s, its -exn's, against 250 s one after the other; 10.5 GB at
+# most together, -exn's 6.3, GitHub's arm machine 16):
+# $(call checks,system,flags)
+checks = d=$$(mktemp -d); for f in $(2); do \
+	  { ./analyzers/datalog/tests/check.sh $(1) $$f -check > $$d/$$f 2>&1 || \
+	    touch $$d/$$f.failed; } & done; wait; \
+	st=0; for f in $(2); do cat $$d/$$f; [ -e $$d/$$f.failed ] && st=1; done; \
+	rm -rf $$d; exit $$st
 # (tiny/'s -dead, -bugs and -exn are recorded on OCaml 5's build: on
 # 4.14's, Parallel's spawn calls nothing; tests/lite.sh says more). It
 # reads t-IX's build, tiny/'s make, as check-mix reads ix's.
@@ -136,8 +146,7 @@ check-tix:
 	$(MAKE) -C tiny
 	@case $$(ocamlc -version) in 5.*) fs="-caps -dead -bugs -exn";; \
 	  *) fs=-caps; echo "check-tix: -dead, -bugs, -exn skipped (OCaml 4)";; esac; \
-	st=0; for f in $$fs; do \
-	  ./analyzers/datalog/tests/check.sh tiny $$f -check || st=1; done; exit $$st
+	$(call checks,tiny,$$fs)
 check-mix: ix
 	@fs=; [ -d $(HOME)/principia ] || { fs=FS=/dev/null; \
 	  echo "check-mix: mini-9pi's kernel with an empty boot directory (no ~/principia)"; }; \
@@ -145,8 +154,7 @@ check-mix: ix
 	for d in kernels/oberon languages/smalltalk kernels/squeak \
 	  kernels/singularity; do \
 	  (cd $$d && $(IXPATH) mini-mk > /dev/null) || exit 1; done
-	@st=0; for f in -caps -dead -bugs -exn; do \
-	  ./analyzers/datalog/tests/check.sh ix $$f -check || st=1; done; exit $$st
+	@$(call checks,ix,-caps -dead -bugs -exn)
 
 # The website's machine (docs/t-ix.html; plan_web.md). make website
 # compiles tiny-machine with js_of_ocaml and puts it, with the kernels'

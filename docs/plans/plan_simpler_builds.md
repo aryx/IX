@@ -15,8 +15,10 @@ things for m-ix (and t-ix) when possible, cheapest first".
 beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
 languages/dotnet/assembly, lib_playground/random, lib_terminal,
 languages/pascal, languages/scheme; the linker's units for mini-dotnet;
-languages/dotnet/runtime; languages/prolog. Next: mini-ml's Ast and
-Annotations (mini-emacs-tty, mini-singml).**
+languages/dotnet/runtime; languages/prolog; mini-ml's parser for
+mini-emacs; lib_terminal/hosts. Left of step 4: the assembler's and the
+linker's units as libraries. Next: the rethink (objects beside their
+sources), decided before step 5.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -206,18 +208,37 @@ first requirement.
    Arm64), not a library: the linker and the assembler are programs
    whose objects others link (linker/tools, mini-cc, mini-ml), and
    mini-dotnet now links the linker's that way, the top mkfile building
-   the linker first. Making the assembler's and the linker's shared
-   units libraries would link each program's whole archive (mini-ml
-   does not link Show_asm, linker/tools not Arm and Arm64): left.
+   the linker first. The assembler's and the linker's shared units
+   could be libraries too, at no cost in the programs (mini-ld takes of
+   a library only the members a program names, below): left, a group of
+   its own.
+   old: "would link each program's whole archive": wrong, the reason
+   given at the time (7f4056a9's message too).
    Done: languages/dotnet/runtime (Value Library Types), a library of
    its own mkfile, over the assembly's; mini-dotnet and mini-csc link
-   it, mini-csc's two rules gone (it links Types too, the loader, 560
-   lines it does not use: a library is linked whole).
+   it, mini-csc's two rules gone. (mini-csc does not link Types, which
+   it does not name: of a library mini-ld takes the members that define
+   a name left undefined, linker/CLI.ml's help; 4e81e830's message says
+   otherwise, wrongly.)
    Done: languages/prolog (Prolog Prolog_read, the terms and their
    reader), a library and mini-prolog in one mkfile, as pascal's;
    mini-datalog links it, its two rules gone. languages/ml/dotnet/
    tests/run.sh's pipeline (-ms only) takes mini-datalog's libraries'
    units, as its front_end does mini-cc's.
+   Done: mini-emacs's copy of mini-ml's parser (Ast Annotations Parser
+   Lexer), compiled and made by mini-yacc and mini-lex again in emacs's
+   two mkfiles: they link mini-ml's objects, as mini-singml does, the
+   top mkfile building languages/ml first (and tests/lite.sh's ix).
+   Done: lib_terminal/hosts (Cells Picture Window_draw), a
+   library of its own mkfile over lib_terminal and lib_graphics: both
+   emacs and both turbopascals link it, and with it lib_graphics, whose
+   units the draw programs compiled (Point Rectangle Display Draw
+   Font_default Font Mouse Keyboard, and emacs draw lib_terminal's own).
+   The programs' sizes did not change (mini-emacs-tty 2,054,190 bytes
+   to 2,054,766; emacs on the card 2,086,792 to 2,076,568): only the
+   members they name are linked.
+   Step 4 is done but for the assembler's and the linker's units, as
+   libraries (above), and runtime.c, which the kernel steps compile.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

@@ -1,21 +1,21 @@
 # mini-turbopascal for mini-9pi (mini-mk O=5 OS=plan9): turbopascal, the
 # IDE (../../editor), in a window of mini-rio's that the draw device
 # paints (lib_terminal/hosts: Window_draw, over Cells and lib_graphics),
-# over the libraries languages/pascal (mini-pascal's) and lib_terminal.
-# The other directories' units are taken from them, each by its name.
+# over the libraries languages/pascal (mini-pascal's), lib_terminal
+# and lib_terminal/hosts. The IDE's units are taken from their
+# directories, each by its name.
 TOP=../../../..
 DIR=editors/turbopascal/hosts/draw
 PROG=turbopascal
-T=$TOP/lib_terminal
 KIT=../../editor
-G=$TOP/lib_graphics
-SRC=Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Point Rectangle Display Draw Font_default Font Mouse Keyboard Cells Window_draw Main
-LOCAL=`{ls *.ml ../../*.ml ../../*.mli ../../editor/*.ml ../../editor/*.mli ../../../../lib_terminal/hosts/*.ml ../../../../lib_terminal/hosts/*.mli ../../../../lib_terminal/hosts/draw/*.ml ../../../../lib_terminal/hosts/draw/*.mli ../../../../lib_graphics/*.ml ../../../../lib_graphics/*.mli}
+SRC=Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Main
+LOCAL=`{ls *.ml ../../*.ml ../../*.mli ../../editor/*.ml ../../editor/*.mli}
 GEN=
-LIBI=-I ../.. -I ../../editor -I ../../../../lib_terminal/hosts -I ../../../../lib_terminal/hosts/draw -I ../../../../lib_graphics
+LIBI=-I ../.. -I ../../editor
 LIBUNITS=
-# (lib_terminal; Lehmer, the numbers its Talk draws)
-LIBDIRS=lib_playground/random lib_terminal languages/pascal
+# (lib_terminal; Lehmer, the numbers its Talk draws; lib_terminal/hosts,
+# over lib_graphics, its client of the draw device)
+LIBDIRS=lib_playground/random lib_terminal languages/pascal lib_compression lib_graphics lib_terminal/hosts
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
@@ -35,23 +35,3 @@ $D/Tui_turbo.$O: $KIT/Tui_turbo.ml $LOCAL
 	$ML $INCLUDES -o $target $KIT/Tui_turbo.ml
 $D/Keys.$O: ../../Keys.ml $LOCAL
 	$ML $INCLUDES -o $target ../../Keys.ml
-$D/Point.$O: $G/Point.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Point.ml
-$D/Rectangle.$O: $G/Rectangle.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Rectangle.ml
-$D/Display.$O: $G/Display.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Display.ml
-$D/Draw.$O: $G/Draw.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Draw.ml
-$D/Font_default.$O: $G/Font_default.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Font_default.ml
-$D/Font.$O: $G/Font.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Font.ml
-$D/Mouse.$O: $G/Mouse.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Mouse.ml
-$D/Keyboard.$O: $G/Keyboard.ml $LOCAL
-	$ML $INCLUDES -o $target $G/Keyboard.ml
-$D/Cells.$O: $T/hosts/Cells.ml $LOCAL
-	$ML $INCLUDES -o $target $T/hosts/Cells.ml
-$D/Window_draw.$O: $T/hosts/draw/Window_draw.ml $LOCAL
-	$ML $INCLUDES -o $target $T/hosts/draw/Window_draw.ml

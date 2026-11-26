@@ -5,7 +5,7 @@
 # that talks stands on: Line_discipline, Vt, Talk, Curses, Tui, and on
 # Linux unix/'s Tty_unix, the host that is a terminal (Plan 9 has none:
 # turbopascal draws in a window there). hosts/ (Cells, Picture, over
-# lib_graphics's font) is not in it yet: its programs compile it. Before,
+# lib_graphics's font) is a library of its own mkfile. Before,
 # mini-pascal, both turbopascals and mini-emacs-tty each compiled these
 # units (plan_simpler_builds.md, step 4).
 TOP=..

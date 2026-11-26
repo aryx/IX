@@ -2,20 +2,21 @@
 # (../editor), a session with no screen (../Keys), and its screen as a
 # picture (lib_terminal/hosts: Cells, Picture, with lib_graphics's
 # font), whose units are taken from their directories, each by its
-# name; over the libraries languages/pascal (mini-pascal's) and
-# lib_terminal, with its Tty_unix.
+# name; over the libraries languages/pascal (mini-pascal's),
+# lib_terminal, with its Tty_unix, and lib_terminal/hosts (Cells,
+# Picture, with lib_graphics's font).
 TOP=../../..
 DIR=editors/turbopascal/tty
 PROG=mini-turbopascal-tty
-T=$TOP/lib_terminal
 KIT=../editor
-SRC=Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Font_default Cells Picture Main
-LOCAL=`{ls *.ml ../*.ml ../*.mli ../../../lib_terminal/hosts/*.ml ../../../lib_terminal/hosts/*.mli ../../../lib_graphics/Font_default.ml ../editor/*.ml ../editor/*.mli}
+SRC=Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Main
+LOCAL=`{ls *.ml ../*.ml ../*.mli ../editor/*.ml ../editor/*.mli}
 GEN=
-LIBI=-I .. -I ../editor -I ../../../lib_terminal/hosts -I ../../../lib_graphics
+LIBI=-I .. -I ../editor
 LIBUNITS=
-# (lib_terminal, with Tty_unix; Lehmer, the numbers its Talk draws)
-LIBDIRS=lib_playground/random lib_terminal languages/pascal
+# (lib_terminal, with Tty_unix; Lehmer, the numbers its Talk draws;
+# lib_terminal/hosts, over lib_graphics, its font)
+LIBDIRS=lib_playground/random lib_terminal languages/pascal lib_compression lib_graphics lib_terminal/hosts
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
@@ -35,9 +36,3 @@ $D/Tui_turbo.$O: $KIT/Tui_turbo.ml $LOCAL
 	$ML $INCLUDES -o $target $KIT/Tui_turbo.ml
 $D/Keys.$O: ../Keys.ml $LOCAL
 	$ML $INCLUDES -o $target ../Keys.ml
-$D/Font_default.$O: $TOP/lib_graphics/Font_default.ml $LOCAL
-	$ML $INCLUDES -o $target $TOP/lib_graphics/Font_default.ml
-$D/Cells.$O: $T/hosts/Cells.ml $LOCAL
-	$ML $INCLUDES -o $target $T/hosts/Cells.ml
-$D/Picture.$O: $T/hosts/Picture.ml $LOCAL
-	$ML $INCLUDES -o $target $T/hosts/Picture.ml

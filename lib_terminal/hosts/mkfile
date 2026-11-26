@@ -1,0 +1,17 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# lib_terminal/hosts, a library of ix's tools (mkfiles/mklib): a Tui
+# program in a window, what its hosts share, Cells (what changed between
+# two screens, painted on a surface) and Picture (a surface in memory,
+# with lib_graphics's font's bits); and draw/'s Window_draw, a window
+# of mini-rio's (a program takes of a library the units it names). mini-emacs and turbopascal, in a terminal and on
+# mini-9pi, each compiled these units before, and the lib_graphics ones
+# they name (plan_simpler_builds.md, step 4). sdl/ is dune's alone.
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_terminal/hosts
+DIRS=. draw
+NEEDS=lib_terminal lib_graphics
+UNITS=Cells Picture Window_draw
+<$TOP/mkfiles/mklib

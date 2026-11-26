@@ -5,27 +5,30 @@
 # and self-tix targets do from the top. t-IX builds itself in three
 # stages, as a compiler does:
 #
-#   stage 0  make host  the tiny tools (tiny-ml, tiny-ld...), by OCaml
-#                       and dune, in ../bin
+#   stage 0  make stage0  the tools stage 1 runs (tiny-ml, tiny-ld...),
+#                       by OCaml and dune, in ../bin
 #   stage 1  make       t-IX, by stage 0's tools, here
 #   stage 2  make self  t-IX, by stage 1's tools on tiny-kernel, from
 #                       /src: the same image as stage 1's, byte for byte
 #
 #   make         builds t-IX with its own tools, here, beside the sources:
-#                make host, then tiny-build TINY=tiny- over the Buildfile,
+#                make stage0, then tiny-build TINY=tiny- over the Buildfile,
 #                as build in /src does under t-IX (the programs, the
 #                kernel, and the manifests mini-analyze reads; 2 s, 1 s
 #                when nothing changed)
 #   make rc      any other target is the Buildfile's: tiny-build TINY=tiny-
 #                rc, as build rc under t-IX (make boot.img, make depend)
-#   make host    builds the tiny tools for the host with dune (from here,
-#                dune builds tiny/ alone: a no-op takes 0.6 s, against 4 s
-#                for the whole tree); a convenience, ix built by ix being
-#                the way to build it
+#   make host    builds all the tiny programs for the host with dune, in
+#                ../bin (stage 0's and tiny-tetris, tiny-emacs, tiny-www...;
+#                from here, dune builds tiny/ alone: a no-op takes 0.6 s,
+#                against 4 s for the whole tree); a convenience, ix built
+#                by ix being the way to build it
+#   make stage0  builds only the tools the targets here run (the
+#                others depend on it)
 #   make test    runs the shared jobs of make test-lite and t-IX's own
 #                (a minute)
 #   make run     runs tiny-kernel on tiny-machine, with sh on the console
-#                (make host first, for the tools; then TinyKernel/'s make
+#                (make stage0 first, for the tools; then TinyKernel/'s make
 #                run, which builds the boot image)
 #   make run-window  does the same in a window (tiny-machine -window)
 #   make self-quick  has t-IX build a few of its own targets on
@@ -67,7 +70,7 @@ BUILD = $(abspath ../bin)/tiny-build TINY=tiny- -j 32
 KERNEL_TARGETS = run run-window self self-quick
 
 # stage 1
-all: host TinyKernel/kfont.s
+all: stage0 TinyKernel/kfont.s
 	$(BUILD)
 # The font's pixels, which the Buildfile takes as they are (in /src
 # under t-IX): TinyKernel/Makefile's rule
@@ -80,14 +83,21 @@ TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
 # build at the top makes and one here does not
 TOOLS = tiny-build tiny-shell tiny-ml tiny-cc tiny-as tiny-ld tiny-ar \
   tiny-mkfs tiny-machine
+# the other public names of tiny/'s dune files, for make host's links
+PROGRAMS = tiny-calc tiny-cpu tiny-db tiny-editor tiny-emacs \
+  tiny-machine-fetch tiny-machine-socket tiny-machine-window tiny-mkfat \
+  tiny-office tiny-orrery tiny-play tiny-prof tiny-tetris tiny-troff \
+  tiny-utils tiny-vcs tiny-www
 INSTALLED = ../_build/install/default/bin
-host:
+stage0:
 	dune build @default $(TOOLS:%=$(INSTALLED)/%)
+host:
+	dune build @default $(TOOLS:%=$(INSTALLED)/%) $(PROGRAMS:%=$(INSTALLED)/%)
 test:
 	../tests/lite.sh tix
-$(KERNEL_TARGETS): host
+$(KERNEL_TARGETS): stage0
 	$(MAKE) -C TinyKernel $@
-check: host
+check: stage0
 	dune build ../analyzers/Main.exe
 	$(MAKE) -C .. check-tix
 loc:
@@ -101,13 +111,13 @@ clean:
 	$(MAKE) -C TinyKernel/steps clean
 	find . -name .tiny-build -type f -exec rm -f {} +
 
-PHONY = all host test $(KERNEL_TARGETS) check loc clean
+PHONY = all host stage0 test $(KERNEL_TARGETS) check loc clean
 # Any other target given is the Buildfile's (make rc, make boot.img), a
 # rule for each, not .DEFAULT, which a target that is a file, rc once
 # built, would not reach
 BUILD_GOALS = $(filter-out $(PHONY) TinyKernel/kfont.s,$(MAKECMDGOALS))
 ifneq ($(BUILD_GOALS),)
-$(BUILD_GOALS): host TinyKernel/kfont.s
+$(BUILD_GOALS): stage0 TinyKernel/kfont.s
 	$(BUILD) $@
 endif
 .PHONY: $(PHONY) $(BUILD_GOALS)

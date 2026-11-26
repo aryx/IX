@@ -57,7 +57,10 @@
 # The tools by their names on the host, tiny-ml... (../bin is dune's),
 # tiny-shell running the recipes
 export PATH := $(abspath ../bin):$(PATH)
-BUILD = tiny-build TINY=tiny- -j 32
+# tiny-build by its path: make 3.81 (macOS's) runs a command without a
+# shell from the PATH it started with, not the one exported above (the
+# recipes' tools, run by tiny-build, find the exported one)
+BUILD = $(abspath ../bin)/tiny-build TINY=tiny- -j 32
 
 # TinyKernel/'s targets, run after dune has built the tools they use
 # (self: stage 2)

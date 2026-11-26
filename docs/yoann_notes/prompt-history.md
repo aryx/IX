@@ -79310,3 +79310,204 @@ Claude proposed having mini-ml read the units from the archives, as ocamlopt doe
 That change would retire `units.rc`, the `lib.a.units` files, the mkconfig STD and COMMONS lists, most start rules, and the twice-written t-IX CORE list.
 It touches the toolchain on both systems, which is why the plan calls it the largest step.
 Claude offered to reword the plan's "mini-ml writes the start" to "the start's units read from the archives."
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:58
+
+**Yoann:**
+
+> sounds like a good idea. Why we didn't do that start.o generation that way from the beginning?
+
+**Claude (summary):**
+
+Claude updated step 6 of the plan to "the start's units read from the archives," with the reasoning for each program's link list.
+Claude noted that the step 6 edit is uncommitted and proposed committing it before writing up the objects-beside-sources rethink.
+Claude asked whether to commit the step 6 edit and start the objects-beside-sources write-up for Yoann to decide on.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 14:00
+
+**Yoann:**
+
+> can we do this mini-ml thing before the objects beside their source thing? are they independent of each other?
+
+------------------------------------------------------------------------
+
+## 2026-11-26 14:00
+
+**Yoann:**
+
+> just asknig for now
+
+**Claude (summary):**
+
+Claude acknowledged Yoann's request to stop for now and make no further changes.
+Claude noted that the step 6 rewording in docs/plans/plan_simpler_builds.md is still uncommitted.
+Claude offered to commit it when Yoann asks, or alongside the next change to the plan.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 13:44
+
+**Yoann:**
+
+> so check.sh does not have to build from scratch? or it does it for a reason?
+
+**Claude (summary):**
+
+Claude found that `make check` now builds first and runs its eight analyses one after another, about 6 minutes.
+Claude recommended running those eight analyses in parallel, cutting `make check` wall time from about 6 minutes to 2.5.
+Claude suggested making tiny/'s `make check` depend on `all`, so `check.sh tiny` reuses tiny's own build and saves 5.6 seconds per analysis.
+Claude proposed having tiny/'s `make test` build only what t-IX's jobs need with dune, not the whole tree.
+Claude asked whether to implement these three fixes, measured before and after, and leave them uncommitted for review.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 20:31
+
+**Yoann:**
+
+> ok I've fixed a few things and speedup a few things related to make check and make test, can you reassess?
+
+**Claude (summary):**
+
+Claude recommended running each system's four analyses in parallel inside `check-tix` and `check-mix`, collecting and printing outputs in order.
+Claude estimated `check-mix` would drop from 266 s to about 145 s, and `check-tix` from 64 s to about 27 s.
+Claude projected `make check` falling from 5.5 minutes to roughly 2.5–3 minutes, with peak memory around 5–6 GB.
+Claude noted one m-ix analysis peaks at 1.3 GB (`-dead`), and `-exn` needs checking before the GitHub arm runner's 16 GB limit.
+Claude offered to make the Makefile change uncommitted for Yoann's review.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 20:47
+
+**Yoann:**
+
+> ok let's run the analysis in parallel; Actually I think that's what make test is doing for its check part
+
+**Claude (summary):**
+
+Claude said `make test` already runs its analysis jobs in parallel, and it checked lite.sh and the check targets.
+Claude timed the parallel run and confirmed that a missing analyzer still fails the target.
+Claude estimated `-exn` peaks at 6.3 GB, so four parallel jobs could reach about 10.5 GB.
+Claude said that fits GitHub's 16 GB arm runner, though with little margin, and corrected the comment's numbers.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 20:57
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude said it would run `make test` first, as it does before every commit.
+Claude's answer stopped there, so it did not yet commit or push anything.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:35
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:36
+
+**Yoann:**
+
+> what was the original goal of this session?
+
+**Claude (summary):**
+
+Claude said the session's original goal was to fix failing `make build-docker` and CI, and both are now passing.
+Claude fixed build-docker in eba263af by listing t-IX sources without `.git`, compiling `ping.o` from `/src`, and skipping analyses on OCaml 4.14.
+CI has been green since 9b4e7d2a, after mini-9pi's kernel needed `~/principia` in `check-mix`, and 13c70440 is also green.
+Claude listed the `-dead` union (one union over all programs, not started) and the parallel analyses that cut `make check` from 5.5 to 2.8 minutes as follow-up work outside the original goal.
+Claude noted the `-dead` work is optional and the session can close without starting it.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:37
+
+**Yoann:**
+
+> ok let's close the session then, if this session has no really useful for context for the -dead union
+
+**Claude (summary):**
+
+Claude said the useful context is a handful of findings, not the whole conversation.
+Claude proposed saving those findings as a single memory note for the next session.
+Claude's reason: the repo does not already record these findings, so a memory note is the right place.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:49
+
+**Yoann:**
+
+> in tiny/, make host is supposed to mean building all the tiny tools but for the host, so all the tiny-xxx but currently it only builds the tiny toolchain (that is used then for building t-ix using t-ix). I think it's nice to have a target to build the tiny toolchain, which is then used for other targers in tiny/Makefile, but make host should maybe build all the tiny-xxx tools? What do you think?
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:49
+
+**Yoann:**
+
+> stage0 might be a better internal target for just-the-tiny-toolchain and progs needed for stage1
+
+**Claude (summary):**
+
+Claude's answer was only "Now the edits.", which gives no real content to summarize. Nothing about the tool naming or toolchain structure was actually explained in that reply, so there is no recommendation, finding, or file change to report.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:51
+
+**Yoann:**
+
+> or maybe your make tools or toolchain was a better name?
+
+**Claude (summary):**
+
+Claude recommended keeping the name `stage0` over `toolchain` or `tools` for the target.
+Claude argued `stage0` signals the target's role, since its list feeds stage 1 and the kernel targets.
+Claude said `toolchain` would be misleading, because the list includes build and run tools like tiny-shell and tiny-machine.
+Claude judged `tools` too vague, since tiny-vcs, tiny-db and tiny-utils belong to `host`'s list instead.
+Claude noted the top-level Makefile's "stage 0 make host" means something broader, and suggested clarifying it or leaving it.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:52
+
+**Yoann:**
+
+> ok so in the end my make stage0 name was pretty good?
+
+**Claude (summary):**
+
+Claude said the make stage0 name beats the toolchain name it first suggested.
+Claude argued the name fits the stage 0/1/2 bootstrap roles already described in the header.
+Claude noted it stays accurate though the list includes tiny-shell, tiny-build and tiny-machine, which aren't compilers.
+Claude recommended leaving the stage0 name as it is, with no edits.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 21:52
+
+**Yoann:**
+
+> let's commit. Should we have something similar for m-ix ?
+
+**Claude (summary):**
+
+Claude committed the change as 773943d7 after confirming the commit was ready.
+Claude is now weighing whether a `stage0` build would pay off for m-IX, the stage 1 tool set.
+Stage 1 covers ten tools: mini-ml, mini-cc, mini-asm, mini-ar, mini-ld, mini-lex, mini-yacc, mini-walk, mini-rc, and mini-mk.
+Claude timed a fresh build in private build directories and planned a no-change run to compare.
+Claude's answer on whether `stage0` helps was still in progress when the answer ended.

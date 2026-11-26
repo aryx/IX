@@ -11,6 +11,8 @@
 #   stage 2  make self  t-IX, by stage 1's tools on tiny-kernel, from
 #                       /src: the same image as stage 1's, byte for byte
 #
+# Here are the targets:
+#
 #   make         builds t-IX with its own tools, here, beside the sources:
 #                make stage0, then tiny-build TINY=tiny- over the Buildfile,
 #                as build in /src does under t-IX (the programs, the
@@ -65,17 +67,15 @@ export PATH := $(abspath ../bin):$(PATH)
 # recipes' tools, run by tiny-build, find the exported one)
 BUILD = $(abspath ../bin)/tiny-build TINY=tiny- -j 32
 
-# TinyKernel/'s targets, run after dune has built the tools they use
-# (self: stage 2)
-KERNEL_TARGETS = run run-window self self-quick
-
 # stage 1
 all: stage0 TinyKernel/kfont.s
 	$(BUILD)
+
 # The font's pixels, which the Buildfile takes as they are (in /src
 # under t-IX): TinyKernel/Makefile's rule
 TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
 	$(MAKE) -C TinyKernel kfont.s
+
 # stage 0: tiny/'s programs, and the tools the targets here run: stage
 # 1's (tiny-build, tiny-shell for its recipes, and those of the
 # recipes), and the kernel's (tiny-mkfs, tiny-machine). Each is named:
@@ -83,25 +83,36 @@ TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
 # build at the top makes and one here does not
 TOOLS = tiny-build tiny-shell tiny-ml tiny-cc tiny-as tiny-ld tiny-ar \
   tiny-mkfs tiny-machine
+
 # the other public names of tiny/'s dune files, for make host's links
 PROGRAMS = tiny-calc tiny-cpu tiny-db tiny-editor tiny-emacs \
   tiny-machine-fetch tiny-machine-socket tiny-machine-window tiny-mkfat \
   tiny-office tiny-orrery tiny-play tiny-prof tiny-tetris tiny-troff \
   tiny-utils tiny-vcs tiny-www
+
 INSTALLED = ../_build/install/default/bin
+
 stage0:
 	dune build @default $(TOOLS:%=$(INSTALLED)/%)
 host:
 	dune build @default $(TOOLS:%=$(INSTALLED)/%) $(PROGRAMS:%=$(INSTALLED)/%)
+
 test:
 	../tests/lite.sh tix
+
+# TinyKernel/'s targets, run after dune has built the tools they use
+# (self: stage 2)
+KERNEL_TARGETS = run run-window self self-quick
 $(KERNEL_TARGETS): stage0
 	$(MAKE) -C TinyKernel $@
+
 check: stage0
 	dune build ../analyzers/Main.exe
 	$(MAKE) -C .. check-tix
+
 loc:
 	cd .. && scripts/stats/loc.py -t
+
 # (tiny-build and tiny-shell first: TinyKernel's clean runs the
 # Buildfile's, which knows what it made, and a dune clean or a fresh
 # clone has no ../bin)
@@ -112,6 +123,7 @@ clean:
 	find . -name .tiny-build -type f -exec rm -f {} +
 
 PHONY = all host stage0 test $(KERNEL_TARGETS) check loc clean
+
 # Any other target given is the Buildfile's (make rc, make boot.img), a
 # rule for each, not .DEFAULT, which a target that is a file, rc once
 # built, would not reach

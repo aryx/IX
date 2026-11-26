@@ -70,9 +70,16 @@ all: host TinyKernel/kfont.s
 # under t-IX): TinyKernel/Makefile's rule
 TinyKernel/kfont.s: TinyKernel/fonts/plan9.font
 	$(MAKE) -C TinyKernel kfont.s
-# stage 0
+# stage 0: tiny/'s programs, and the tools the targets here run: stage
+# 1's (tiny-build, tiny-shell for its recipes, and those of the
+# recipes), and the kernel's (tiny-mkfs, tiny-machine). Each is named:
+# ../bin holds the whole tree's links (_build/install), which a dune
+# build at the top makes and one here does not
+TOOLS = tiny-build tiny-shell tiny-ml tiny-cc tiny-as tiny-ld tiny-ar \
+  tiny-mkfs tiny-machine
+INSTALLED = ../_build/install/default/bin
 host:
-	dune build
+	dune build @default $(TOOLS:%=$(INSTALLED)/%)
 test:
 	../tests/lite.sh tix
 $(KERNEL_TARGETS): host

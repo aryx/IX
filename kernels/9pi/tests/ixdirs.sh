@@ -3,9 +3,10 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # The top mkfile's order: a directory whose mkfile takes another's
-# objects ($B/dir/Unit.$O) is built after it. The libraries and the
-# assembler are built before every program; for another directory the
-# top mkfile must say so (linker/tools.dir:V: linker.dir). A tree built
+# objects ($B/dir/Unit.$O) is built after it. The libraries (the
+# assembler and the linker among them) are built before every program;
+# for another directory the top mkfile must say so
+# (editors/emacs/tty.dir:V: languages/ml.dir). A tree built
 # before hides a missing line, its _mk has the objects: make self-mix
 # in GitHub's fresh tree stopped on languages/dotnet, built before
 # the assembler (2026-11-03). Static, a second.
@@ -14,7 +15,7 @@ cd "$(dirname "$0")/../../.."
 # (a list of the mkfile: its lines up to one that does not end with \)
 list() { sed -n "/^$1=/,/[^\\\\]\$/p" mkfile | sed "s/^$1=//; s/\\\\\$//; s/\\\${[^}]*}//g"; }
 # (LIBS is lib_core and LIBS1, the others)
-first=" lib_core $(list LIBS1 | tr '\n' ' ') assembler "
+first=" lib_core $(list LIBS1 | tr '\n' ' ') "
 dirs=$(list BOTH; list LINUX; list PLAN9)
 [ -n "$dirs" ] || { echo "FAIL no BOTH, LINUX or PLAN9 read in the top mkfile"; exit 1; }
 bad=0

@@ -1,28 +1,31 @@
-# mini-ld, built by ix's tools; then tools/ has mini-ar and mini-nm,
-# which the top mkfile builds after it
+# linker as a library (mkfiles/mklib), dune's ix_ld: Program, a program
+# as linked, Link, the link, Arm and Arm64, the instructions' encoders,
+# Exe, the executable written, and debug/'s Debug_link and Symtab, what
+# a debugger needs (plan_debugger.md), over the assembler's library and
+# lib_executable (Manifest, -map's out.manifest). tools/'s mini-ar and
+# mini-nm link it, and mini-dotnet, whose JIT encodes with Arm and
+# Arm64, which took this directory's objects one by one before
+# (plan_simpler_builds.md, step 4). And mini-ld, compat/'s Follow, CLI
+# and Main linked with that library.
 TOP=..
-DIR=linker
-PROG=mini-ld
-SRC=Program Debug_link Link Arm Arm64 Exe Symtab Follow CLI Main
-LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli debug/*.ml debug/*.mli}
-GEN=
-# (lib_executable: Manifest, -map's out.manifest)
-LIBDIRS=lib_executable
-# the assembler's objects are what it links: Asm, and Show_asm for its messages
-LIBI=-I ../assembler -I compat -I debug
-LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
-<$TOP/mkfiles/mkprog
+LIB=linker
+# (compat/: Follow alone, mini-ld's, not the library's; a directory of
+# DIRS for libs.rc's rule and the units' order)
+DIRS=. debug compat
+NEEDS=assembler lib_executable
+UNITS=Program Debug_link Link Arm Arm64 Exe Symtab
+# (mini-ld's own units, after the library's units they name)
+DEPMORE=Follow CLI Main
+<$TOP/mkfiles/mklib
 
-# compat/'s unit, named in full (mk refuses a second rule with % for
-# every unit)
-$D/Follow.$O: compat/Follow.ml $LOCAL
-	$ML $INCLUDES -o $target compat/Follow.ml
+LIBDIRS=assembler lib_executable
+<$TOP/mkfiles/mklibs
+all:V: $D/mini-ld
 
-# debug/'s units (what a debugger needs: plan_debugger.md), named in
-# full too
-$D/Debug_link.$O: debug/Debug_link.ml $LOCAL
-	$ML $INCLUDES -o $target debug/Debug_link.ml
-$D/Symtab.$O: debug/Symtab.ml $LOCAL
-	$ML $INCLUDES -o $target debug/Symtab.ml
+# (its units: libs.rc's rules, as the library's)
+PROGOBJS=${DEPMORE:%=$D/%.$O}
+$PROGOBJS: $LOCAL $MLEXE
+$D/mini-ld: $PROGOBJS $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA $D/lib.a} $DEPMORE Std_exit -o $D/mini-ld.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-ld.start.$O $STDOBJS $LIBA $D/lib.a $PROGOBJS $STDEND

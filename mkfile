@@ -25,12 +25,12 @@ TOP=.
 # Linux's ppm, and on Plan 9 its draw device and a software one.)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
 #`
-LIBS1=lib_mime lib_code languages/dotnet/assembly languages/dotnet/runtime lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground/random lib_terminal lib_terminal/hosts languages/pascal languages/scheme languages/prolog lib_playground \
+LIBS1=lib_mime lib_code assembler languages/dotnet/assembly languages/dotnet/runtime lib_crypto lib_compression lib_executable linker lib_networking lib_graphics lib_playground/random lib_terminal lib_terminal/hosts languages/pascal languages/scheme languages/prolog lib_playground \
  lib_playground/physics lib_playground/juice lib_gui lib_audio lib_playground/netcode lib_playground/ai \
  lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
 LIBS=lib_core $LIBS1
-BOTH=linker linker/tools languages/c builder shell editors/ed generators/lex generators/yacc languages/ml \
+BOTH=linker/tools languages/c builder shell editors/ed generators/lex generators/yacc languages/ml \
  languages/dotnet languages/tiger typesetting/man \
  utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare \
  utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc \
@@ -55,19 +55,18 @@ all:V: libs programs
 
 libs:V: ${LIBS:%=%.dir}
 
-programs:V: assembler.dir ${DIRS:%=%.dir} examples
+programs:V: ${DIRS:%=%.dir} examples
 
 # A directory is built by its own mk.
 %.dir:V:
 	cd $stem && $MK $ARGS
 
-# What a directory waits for: the assembler for the libraries, since
-# every tool reads its objects; a program for the libraries and the
-# assembler; and eight for another directory's objects (mini-dotnet: the
-# linker's, its JIT's encoders; mini-emacs: mini-ml's parser).
-assembler.dir:V: libs
-${DIRS:%=%.dir}:V: libs assembler.dir
-linker/tools.dir languages/dotnet.dir:V: linker.dir
+# What a directory waits for: a program for the libraries (the
+# assembler's and the linker's among them, each with its program); and
+# seven for another directory's objects (mini-emacs: mini-ml's parser).
+# old: the assembler after the libraries, every program after it, and
+# mini-ar and mini-dotnet after the linker, for its objects
+${DIRS:%=%.dir}:V: libs
 editors/emacs/tty.dir editors/emacs/draw.dir:V: languages/ml.dir
 utilities/calc/bc.dir:V: utilities/calc/dc.dir
 editors/drscheme.dir lib_gui/examples.dir apps/office.dir:V: games.dir

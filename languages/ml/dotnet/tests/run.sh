@@ -153,10 +153,11 @@ front_end() {
   local ml=$1 run=$2 what=$3 C=languages/c P=$(abs $MK/languages/c) u f files=
   [ -f $P/Parser.ml ] && [ -f $P/Lexer.ml ] || { echo "skipped: mini-cc to .NET ($P's Parser.ml not built)"; return; }
   # (the units of the libraries it links, LIBDIRS's, before its own, as
-  # its link and start have them: lib_code, languages/dotnet/assembly)
+  # its link and start have them: assembler, lib_code,
+  # languages/dotnet/assembly; old: Asm Show_asm named here first)
   local libs=$(sed -n 's/^LIBDIRS=//p' $C/mkfile) l lu=
   for l in $libs; do lu="$lu $(sed -n 's/^UNITS=//p' $l/mkfile)"; done
-  for u in Asm Show_asm $lu $(sed -n '/^SRC=/,/[^\\]$/p' $C/mkfile | sed 's/^SRC=//; s/\\$//'); do
+  for u in $lu $(sed -n '/^SRC=/,/[^\\]$/p' $C/mkfile | sed 's/^SRC=//; s/\\$//'); do
     # (the first there, in this order: ls would sort them)
     for f in $C/$u.ml $C/*/$u.ml lib_code/$u.ml assembler/$u.ml languages/dotnet/assembly/$u.ml $P/$u.ml; do [ -f $f ] && break; done
     files="$files $(realpath $f)"

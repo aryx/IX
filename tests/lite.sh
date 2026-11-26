@@ -481,13 +481,14 @@ ix() {
   # the libraries first, one after the other in their order (the top
   # mkfile's libs: a program's mkfile takes their archives as they are)
   (mini-mk B=$B libs) > "$W/mk.libs.log" 2>&1 || { echo "mini-mk failed in libs:"; tail -3 "$W/mk.libs.log" | cut -c1-200; return 1; }
-  mk assembler || return 1
-  # side by side; the two that take another's objects after it (mini-ar
-  # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
+  # (the assembler's and the linker's with them, each with its program;
+  # old: mk assembler after them, mini-ar after mk linker)
+  # side by side; the ones that take another's objects after it (tiny-vcs
+  # mini-git's SHA-1 and zlib, and below mini-emacs mini-ml's parser)
   local pids=() d bad=0
   for d in languages/c languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk lib_gui/examples && mk apps/office && mk apps/music/rebirth) & pids+=($!)
-  (mk linker && mk linker/tools) & pids+=($!)
+  mk linker/tools & pids+=($!)
   (mk version_control && mk tiny) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
   # (by the top mkfile: the libraries installed, then examples/ on them)

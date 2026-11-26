@@ -16,9 +16,10 @@ beside its sources: f0601cfb, e10520b9; its printing). Done in step 4: lib_code,
 languages/dotnet/assembly, lib_playground/random, lib_terminal,
 languages/pascal, languages/scheme; the linker's units for mini-dotnet;
 languages/dotnet/runtime; languages/prolog; mini-ml's parser for
-mini-emacs; lib_terminal/hosts. Left of step 4: the assembler's and the
-linker's units as libraries. Next: the rethink (objects beside their
-sources), decided before step 5.**
+mini-emacs; lib_terminal/hosts; the assembler and the linker as
+libraries. Left of step 4: runtime.c, which the kernel steps compile.
+Next: the rethink (objects beside their sources), decided before step
+5.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
 now, though a relinked mini-ml with the same bytes remakes all of ix:
 "I think it's fine to depend on mini-ml date for now".
@@ -210,8 +211,8 @@ first requirement.
    mini-dotnet now links the linker's that way, the top mkfile building
    the linker first. The assembler's and the linker's shared units
    could be libraries too, at no cost in the programs (mini-ld takes of
-   a library only the members a program names, below): left, a group of
-   its own.
+   a library only the members a program names, below): done since, a
+   group of its own (below).
    old: "would link each program's whole archive": wrong, the reason
    given at the time (7f4056a9's message too).
    Done: languages/dotnet/runtime (Value Library Types), a library of
@@ -237,8 +238,24 @@ first requirement.
    The programs' sizes did not change (mini-emacs-tty 2,054,190 bytes
    to 2,054,766; emacs on the card 2,086,792 to 2,076,568): only the
    members they name are linked.
-   Step 4 is done but for the assembler's and the linker's units, as
-   libraries (above), and runtime.c, which the kernel steps compile.
+   Done: assembler (Asm Show_asm Lexer_asm Parser_asm) and linker
+   (Program Debug_link Link Arm Arm64 Exe Symtab, dune's ix_ld, over
+   the assembler's and lib_executable), each a library and its program
+   (mini-asm; mini-ld, with compat/'s Follow) in one mkfile, as
+   prolog's, both in the top mkfile's libraries: mini-cc, mini-ml,
+   mini-ar, mini-nm and mini-dotnet link them instead of the objects
+   named one by one, and the top mkfile's lines for the assembler's
+   and the linker's order are gone (assembler.dir, linker/tools.dir and
+   languages/dotnet.dir after linker.dir). The objects are the same
+   bytes; the programs within 0.3% but mini-ld, 1,166,166 bytes to
+   1,202,934 (3.2%), its text 35 KB more: with the library's objects
+   named instead of lib.a, the same link is 1,166,150. The members are
+   laid out in the order taken, not the command line's, and arm64's
+   literal pool, flushed when its 1 MB reach runs out, writes again
+   the constants used after a flush: mini-ld's 1.1 MB of code pays for
+   where the flushes fall (most of the growth right after a few
+   functions, 19 KB after libc's pow). Not changed here.
+   Step 4 is done but for runtime.c, which the kernel steps compile.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

@@ -14,7 +14,7 @@
 # - the tiny programs: each one's own test;
 # - the kernels' steps on the Pi 4: each booted, its lines the expected;
 #   and mini-xv6, its Makefile's check with the image ix's tools made.
-# usage: mkfiles/check.sh     (after dune build; goken's .s files too for the inputs, where it is)
+# usage: mkfiles/check.sh     (after make, ix's build in _mk/7: make test-ix; goken's .s files too for the inputs, where it is)
 # (and mkfiles/fixpoint.sh: ix built again by what mini-mk built here)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
@@ -25,9 +25,8 @@ export PATH=$ROOT/bin:$PATH
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 cd $ROOT
-W0=$W
-mini-mk > $W/mk.log 2>&1 || { echo "FAIL mini-mk: $(tail -3 $W/mk.log)"; exit 1; }
-echo "ok mini-mk: $(ls _mk/7/*/*.7 | wc -l) objects under _mk/7"
+[ -x _mk/7/languages/ml/mini-ml ] || { echo "FAIL no ix build in _mk/7 (make)"; exit 1; }
+echo "ok ix's build: $(ls _mk/7/*/*.7 | wc -l) objects under _mk/7"
 
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
@@ -66,14 +65,13 @@ $M/linker/tools/mini-ar u $W/mk.a $objs && mini-ar u $W/dune.a $objs
 if cmp -s $W/mk.a $W/dune.a && [ "$($M/linker/tools/mini-ar tv $W/mk.a)" = "$(mini-ar tv $W/dune.a)" ]; then ok "mini-ar: $(echo $objs | wc -w) objects, the same library and listing as dune's mini-ar"; else fail "mini-ar: the library differs"; fi
 
 # mini-ld: a small program (an ELF, a Plan 9 a.out), and a large one,
-# mini-asm itself, of the objects mini-mk just linked: 800 KB
+# mini-asm itself, of the objects make linked (its link by mini-mk -n): 800 KB
 mini-asm -m 7 -o $W/hello.7 linker/tests/golden/hello_linux_arm64.s
 bad=0
 for flags in "-H7 -E _start" "-H2 -E _start"; do
   $M/linker/mini-ld -m 7 $flags -o $W/mk.exe $W/hello.7 && mini-ld -m 7 $flags -o $W/dune.exe $W/hello.7 && cmp -s $W/mk.exe $W/dune.exe || bad=$((bad + 1))
 done
-link=$(grep -h 'mini-ld .*assembler/mini-asm ' $W0/mk.log | tail -1 | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
-[ -n "$link" ] || link=$(cd assembler && mini-mk -a -n 2>/dev/null | grep '^mini-ld ' | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
+link=$(cd assembler && mini-mk -a -n 2>/dev/null | grep '^mini-ld ' | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
 $M/linker/mini-ld $link -o $W/mk.exe && cmp -s $W/mk.exe $M/assembler/mini-asm || bad=$((bad + 1))
 if [ $bad = 0 ]; then ok "mini-ld: hello (ELF, a.out) and mini-asm itself ($(wc -c < $W/mk.exe) bytes), the same executables as dune's mini-ld"; else fail "mini-ld: $bad links differ"; fi
 }

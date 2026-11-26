@@ -15,7 +15,7 @@
 # - mini-ld linking mini-asm for arm from the same objects: the same
 #   executable as the 64-bit linker's;
 # - the kernels' steps on the Pi 1: each booted, its lines the expected.
-# usage: mkfiles/check_arm.sh     (after dune build, and mini-mk for _mk/7)
+# usage: mkfiles/check_arm.sh     (after make and make ix-arm, ix's builds in _mk/7 and _mk/5: make test-ix-arm)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
 export MINI=mini-
@@ -26,10 +26,11 @@ failures=0
 ok() { echo "ok $*"; }
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 cd $ROOT
-[ -x _mk/7/languages/ml/mini-ml ] || mini-mk > $W/mk7.log 2>&1 || { echo "FAIL mini-mk: $(tail -3 $W/mk7.log)"; exit 1; }
-mini-mk O=5 > $W/mk.log 2>&1 || { echo "FAIL mini-mk O=5: $(tail -3 $W/mk.log | cut -c1-300)"; exit 1; }
+for o in 7 5; do
+  [ -x _mk/$o/languages/ml/mini-ml ] || { echo "FAIL no ix build in _mk/$o (make, make ix-arm)"; exit 1; }
+done
 M=_mk/5
-ok "mini-mk O=5: $(ls $M/*/mini-* $M/*/*/mini-* $M/tiny/tiny-* | wc -l) programs for arm"
+ok "ix's build for arm: $(ls $M/*/mini-* $M/*/*/mini-* $M/tiny/tiny-* | wc -l) programs for arm"
 $M/shell/mini-rc -c 'echo arm' > $W/rc.txt 2>&1 && [ "$(cat $W/rc.txt)" = arm ] || { echo "FAIL an arm program does not run here (qemu-arm, binfmt_misc): $(head -1 $W/rc.txt)"; exit 1; }
 
 # the programs: each one's differential test, dune's build the reference

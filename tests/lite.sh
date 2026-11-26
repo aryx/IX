@@ -108,8 +108,9 @@ renice -n 10 $$ > /dev/null 2>&1
 cores=$(nproc)
 mkfifo $W/slots; exec 3<> $W/slots
 for i in $(seq ${JOBS:-$(( cores > 8 ? cores / 2 : cores ))}); do echo >&3; done
-# -after-ix: a check of what ix built by ix, its clock started once the
-# build is done (its own job); a skip when the build failed. Its family:
+# -after-ix (-after-tix): a check of what ix built by ix (t-IX by its
+# tools), its clock started once the build is done (its own job); a
+# skip when the build failed. Its family:
 # the last `family`'s, a line of the report with the others' (below; a
 # job of none, a line of its own), and its kind, the color of its name:
 # build (compiles), system (boots one, in an emulator), reference
@@ -122,13 +123,13 @@ KD=
 family() { F=$1; KD=$2; }
 job() {
   wanted || return 0
-  local after=; [ "$1" = -after-ix ] && { after=1; shift; }
+  local after=; case $1 in -after-ix|-after-tix) after=${1#-after-}; shift;; esac
   local name=$1; shift
   names+=("$name"); groups+=($G); families+=("$F"); kinds+=("$KD")
   local k=$W/job${#names[@]}
   ( if [ -n "$after" ]; then
-      until [ -f $W/ix.done ]; do sleep 0.5; done
-      [ "$(cat $W/ix.done)" = ok ] ||
+      until [ -f $W/$after.done ]; do sleep 0.5; done
+      [ "$(cat $W/$after.done)" = ok ] ||
         { echo "skip 0" > $k.st && mv $k.st $k.status; exit; }
     fi
     read -r -u 3
@@ -208,28 +209,31 @@ job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
 job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
 family "tiny-kernel on tiny-machine" system
-# (on an image of its own: TinyKernel's _make is the sessions', rebuilt
-# under a run)
-tiny_network() {
-  local o=$W/tiny-network
-  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img &&
-    IMAGE=$o/boot.img DISK=$o/disk.img tiny/tests/KNetwork_test.sh
+# t-IX built by its own tools once, its images (boot, disk, src) and
+# programs used by the -after-tix jobs below, which copy a disk before
+# writing it: in this run's directory, as ix's (TinyKernel's _make is
+# the sessions', rebuilt under a run). old: each job built its own,
+# seven builds a run with check.sh tiny's
+X=$W/tix
+tix_build() {
+  if make -s -C tiny/TinyKernel O=$X $X/boot.img $X/disk.img $X/src.img
+  then echo ok > $W/tix.done; else echo FAIL > $W/tix.done; return 1; fi
 }
-job "tiny-kernel: its network" tiny_network
+job "t-IX built by its own tools: its images" tix_build
+job -after-tix "tiny-kernel: its network" env IMAGE=$X/boot.img DISK=$X/disk.img tiny/tests/KNetwork_test.sh
 job "tiny-kernel: its sound" tiny/tests/KAudio_test.sh
 job "tiny-kernel: its file system" tiny/tests/KFS_test.sh
-# tiny-kernel booted (an image of its own: TinyKernel's _make is the
-# sessions'), its tests in ML and a shell's files and pipe; its whole
-# check (81 s, 12 minutes of cores) is make test-long's
+# tiny-kernel booted, its tests in ML and a shell's files and pipe; its
+# whole check (81 s, 12 minutes of cores) is make test-long's
 tiny_kernel() {
   local o=$W/tiny-kernel m="tiny-machine -date 820540800 -seed 1"
-  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img || return 1
-  cp $o/disk.img $o/run.img; truncate -s 64M $o/run.img
-  echo mltests | timeout 60 $m -d $o/run.img $o/boot.img > $o/mltests.out
+  mkdir -p $o
+  cp $X/disk.img $o/run.img; truncate -s 64M $o/run.img
+  echo mltests | timeout 60 $m -d $o/run.img $X/boot.img > $o/mltests.out
   grep -q 'mltests: ALL OK' $o/mltests.out ||
     { tail -5 $o/mltests.out; return 1; }
   printf 'echo hi | cat > f; cat f; wc < f; rm f; cat f\n' |
-    timeout 60 $m -d $o/run.img $o/boot.img > $o/sh.out
+    timeout 60 $m -d $o/run.img $X/boot.img > $o/sh.out
   # (its lines, not its banner, which says the memory's size)
   local l
   for l in '$ hi' '      1       1       3' 'cat: f: cannot open'; do
@@ -237,7 +241,7 @@ tiny_kernel() {
       { echo "tiny-kernel: no \"$l\" in:"; cat $o/sh.out; return 1; }
   done
 }
-job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
+job -after-tix "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
 family "t-ix builds part of itself" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
@@ -249,10 +253,10 @@ family "t-ix builds part of itself" system
 tiny_self() {
   local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
   local cat=_build/default/tiny/tests/KFS_tests/Cat.exe
-  make -s -C tiny/TinyKernel O=$o $o/boot.img $o/disk.img $o/src.img || return 1
-  cp $o/disk.img $o/self.img; truncate -s 64M $o/self.img
-  cp $o/src.img $o/selfsrc.img; truncate -s 64M $o/selfsrc.img
-  timeout 120 $m -d $o/self.img -d $o/selfsrc.img $o/boot.img > $o/self.out <<'END'
+  mkdir -p $o
+  cp $X/disk.img $o/self.img; truncate -s 64M $o/self.img
+  cp $X/src.img $o/selfsrc.img; truncate -s 64M $o/selfsrc.img
+  timeout 120 $m -d $o/self.img -d $o/selfsrc.img $X/boot.img > $o/self.out <<'END'
 rc
 mkdir q; cd /src
 cc -I runtime/c -o /usr/glenda/q/ping.o user/ping.c
@@ -275,10 +279,10 @@ END
   # a big block's header with GC bits (NOT_MARKABLE) that 4.14's, and
   # tiny's runtime, leave 0, so the host's ping.o differs in those bytes.
   case $(ocamlc -version) in 5.*) return 0;; esac
-  $cat $o/self.img usr/glenda/q/ping.o | cmp - $o/src/user/ping.o ||
+  $cat $o/self.img usr/glenda/q/ping.o | cmp - $X/src/user/ping.o ||
     { echo "tiny-kernel: ping.o not the host's"; return 1; }
 }
-job "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self
+job -after-tix "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self
 
 group m-ix
 family "each program's unit tests"
@@ -637,7 +641,7 @@ job -after-ix "each unit compiled after those it inlines (else builds differ)" e
 # here, two under make test's load); not -exn: mini-ml's alone a minute, 6 GB
 group t-ix
 family "ix's code by its analyses: no new report" check
-job "mini-analyze -caps on tiny/'s programs dune links: no report but the recorded ones (caps_tiny.txt)" analyzers/datalog/tests/check.sh tiny -caps -check
+job -after-tix "mini-analyze -caps on tiny/'s programs dune links: no report but the recorded ones (caps_tiny.txt)" env TIX=$X/src analyzers/datalog/tests/check.sh tiny -caps -check
 # -dead, -bugs and -exn are recorded on OCaml 5's build: on 4.14's, dune
 # links Parallel's single.ml.in, whose spawn calls nothing, and
 # mini-analyze, reading it, finds tiny-machine's cores' loop dead (on
@@ -646,9 +650,9 @@ t_dead="mini-analyze -dead on tiny/'s programs as t-IX and dune link them: no de
 t_bugs="mini-analyze -bugs on tiny/'s programs as t-IX and dune link them: no bug report but the recorded (bugs_tiny.txt)"
 t_exn="mini-analyze -exn on tiny/'s programs as t-IX and dune link them: no exception escaping a toplevel but the recorded (exn_tiny.txt)"
 case $(ocamlc -version) in
-  5.*) job "$t_dead" analyzers/datalog/tests/check.sh tiny -dead -check
-       job "$t_bugs" analyzers/datalog/tests/check.sh tiny -bugs -check
-       job "$t_exn" analyzers/datalog/tests/check.sh tiny -exn -check;;
+  5.*) job -after-tix "$t_dead" env TIX=$X/src analyzers/datalog/tests/check.sh tiny -dead -check
+       job -after-tix "$t_bugs" env TIX=$X/src analyzers/datalog/tests/check.sh tiny -bugs -check
+       job -after-tix "$t_exn" env TIX=$X/src analyzers/datalog/tests/check.sh tiny -exn -check;;
   *) for t in "$t_dead" "$t_bugs" "$t_exn"; do
        skip "$t" "recorded on OCaml 5's build"; done;;
 esac

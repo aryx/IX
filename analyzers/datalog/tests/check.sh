@@ -9,10 +9,10 @@
 # program, lib_core's exceptions every program may raise left out
 # (compare.sh's exn_lines). The reports are known ones, read
 # (analyzers/datalog/README.md): a new one fails, the day it comes.
-# - tiny: t-IX's build, made here as tiny/TinyKernel's Makefile makes it
-#   (a build of its own, O=), its kernel among them, and the executables
-#   dune builds under tiny/ (_build/default/tiny: Dune_manifest); paths
-#   from tiny/ (-project tiny);
+# - tiny: t-IX's build, TIX (tiny/: make in tiny/ first; make test's
+#   own, O=dir's dir/src), tiny-ld's manifests, its kernel among them,
+#   and the executables dune builds under tiny/ (_build/default/tiny:
+#   Dune_manifest); paths from tiny/ (-project tiny);
 # - ix: ix's build, MK (_mk/7: make ix first; make test's own), mini-ld's
 #   manifests, mini-9pi's kernel when built; a generated file by its
 #   place in _mk/7, wherever MK is. A build of a part (make test's): a
@@ -23,10 +23,12 @@
 # (old: tiny_check.sh and ix_check.sh, one each; before the manifests, a
 # table of tiny's programs and the mkfiles read by mk_units.sh, sweep.sh)
 # usage: analyzers/datalog/tests/check.sh tiny|ix [-v] -caps|-dead|-bugs|-exn [out-file|-check]
-#   (dune build first) ANALYZE: the analyzer, if not dune's; MK: ix's build.
+#   (dune build first) ANALYZE: the analyzer, if not dune's; TIX: t-IX's
+#   build; MK: ix's build. Neither is built here: each says what makes it.
 cd "$(dirname "$0")/../../.."
 export LC_ALL=C
 ANALYZE=${ANALYZE:-_build/default/analyzers/Main.exe}
+TIX=${TIX:-tiny}
 MK=${MK:-_mk/7}
 usage="usage: check.sh tiny|ix [-v] -caps|-dead|-bugs|-exn [out-file|-check]"
 system=$1; shift
@@ -38,7 +40,7 @@ expected=analyzers/datalog/tests/${flag#-}_$system.txt
 # (no analyzer, being rebuilt say: every program would say nothing)
 [ -x "${ANALYZE%% *}" ] || { echo "no analyzer: $ANALYZE"; exit 2; }
 W=$(mktemp -d); trap 'rm -rf $W; [ -n "$verbose" ] && echo "check.sh: removed $W" >&2' EXIT
-[ -n "$verbose" ] && echo "check.sh: made $W: the answer (and t-IX's build, tix/)" >&2
+[ -n "$verbose" ] && echo "check.sh: made $W: the answer" >&2
 if [ "$out" = -check ]; then check=1; out=$W/out; fi
 if [ -z "$out" ]; then show=1; out=$W/out; fi
 . analyzers/datalog/tests/compare.sh
@@ -46,9 +48,9 @@ notes=$(notes_of $expected)
 case $system in
   tiny)
     what="tiny/'s programs"
-    make -s -C tiny/TinyKernel O=$W/tix $W/tix/disk.img > $W/tix.log 2>&1 ||
-      { tail -5 $W/tix.log; echo "check.sh: t-IX's build failed"; exit 2; }
-    programs="-project tiny $W/tix/src _build/default/tiny";;
+    [ -n "$(find $TIX -name '*.manifest' 2> /dev/null | head -1)" ] ||
+      { echo "check.sh: no t-IX build in $TIX (make in tiny/)"; exit 2; }
+    programs="-project tiny $TIX _build/default/tiny";;
   ix)
     what="m-ix's programs"
     [ -n "$(find $MK -name '*.manifest' 2> /dev/null | head -1)" ] ||

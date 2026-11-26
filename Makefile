@@ -130,8 +130,10 @@ test-long: host
 # manifest the same, the analyses' needs.
 check: check-tix check-mix
 # (tiny/'s -dead, -bugs and -exn are recorded on OCaml 5's build: on
-# 4.14's, Parallel's spawn calls nothing; tests/lite.sh says more)
+# 4.14's, Parallel's spawn calls nothing; tests/lite.sh says more). It
+# reads t-IX's build, tiny/'s make, as check-mix reads ix's.
 check-tix:
+	$(MAKE) -C tiny
 	@case $$(ocamlc -version) in 5.*) fs="-caps -dead -bugs -exn";; \
 	  *) fs=-caps; echo "check-tix: -dead, -bugs, -exn skipped (OCaml 4)";; esac; \
 	st=0; for f in $$fs; do \
@@ -339,12 +341,12 @@ kernels-ix: ix ix-arm
 #   expects each file to be the host's (tiny/TinyKernel's make self,
 #   kernels/9pi's). It takes hours. self-quick builds a part of each,
 #   in a few minutes.
-test-ix: host
+test-ix: all
 	true | ./mkfiles/check.sh
 # stage 2 on the host
 test-ix-fixpoint: host
 	./mkfiles/fixpoint.sh
-test-ix-arm: host
+test-ix-arm: all ix-arm
 	true | ./mkfiles/check_arm.sh
 test-ix-fixpoint-arm: host
 	./mkfiles/fixpoint.sh 5

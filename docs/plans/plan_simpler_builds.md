@@ -273,9 +273,19 @@ first requirement.
    Decide the rethink before it: beside the sources, where an installed
    library goes changes.
 
-6. **mini-ml writes the start (OCaml's order, as ocamlopt does).**
-   ocamlopt reads a .cmxa's units in order and writes the program's
-   startup itself. If mini-ml (or mini-ld) read the archives' order,
+6. **The start's units read from the archives (OCaml's order, as
+   ocamlopt does).** mini-ml -start writes the start already, but of
+   the units its command line names, each program's link listing them:
+   lib_core's (mkconfig's STD and COMMONS), each library's (units.rc,
+   lib.a.units), its own. ocamlopt reads a .cmxa's units in order and
+   writes the program's startup itself. Why the list: -start came with
+   the first programs (c0ed57c1, 2026-09-26), when a program named
+   lib_core's objects one by one; lib_core.a (3e641175) changed the
+   link, the start's names made weak, not the list; ix's libraries
+   added units.rc, then lib.a.units for the card's speed (2026-11-19),
+   each the smallest change of its day, though an archive holds its
+   units in the order they start in (mklib's UNITS). If mini-ml (or
+   mini-ld) read the archives' order,
    each program's `$PROG.start.$O` rule, units.rc, the lib.a.units
    files and mkconfig's STD and COMMONS lists would go, and t-IX's
    twice-written CORE with tiny-ml doing the same. Cost: the largest, a

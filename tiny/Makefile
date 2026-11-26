@@ -92,7 +92,11 @@ check: host
 	$(MAKE) -C .. check-tix
 loc:
 	cd .. && scripts/stats/loc.py -t
+# (tiny-build and tiny-shell first: TinyKernel's clean runs the
+# Buildfile's, which knows what it made, and a dune clean or a fresh
+# clone has no ../bin)
 clean:
+	dune build $(INSTALLED)/tiny-build $(INSTALLED)/tiny-shell
 	$(MAKE) -C TinyKernel clean
 	$(MAKE) -C TinyKernel/steps clean
 	find . -name .tiny-build -type f -exec rm -f {} +

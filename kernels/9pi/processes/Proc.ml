@@ -122,6 +122,19 @@ let part_add i d =
   let t = part_us.(i) + d in
   part_ms.(i) <- part_ms.(i) + (t / 1000); part_us.(i) <- t mod 1000; part_n.(i) <- part_n.(i) + 1
 
+(* The time out of the lock by account (/dev/lockstat's "out" lines):
+ * an account's time is its processes' kernel time, waits with the lock
+ * given back included (the card's transfers, Emmc's dma_move), so what
+ * it held is its time less this. In the whole make self (2026-11-27)
+ * kproc kfs counted 337 s, 311 of them the card's writes out of the
+ * lock; Pwrite x 430 s, 304 out; Pread x 617, 134 out. *)
+let out_ms = Array.make naccounts 0
+let out_us = Array.make naccounts 0
+let add_out (p : proc) d =
+  let a = accounts.(p.slot) in
+  let t = out_us.(a) + d in
+  out_ms.(a) <- out_ms.(a) + (t / 1000); out_us.(a) <- t mod 1000
+
 (* the schedulers' time, each core's since sched_start, or since its
  * last sched_charge *)
 let sched_since = Array.make 4 0

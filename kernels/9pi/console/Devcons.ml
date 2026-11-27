@@ -245,7 +245,8 @@ let read (c : chan) n off =
   (* what held the kernel's lock, since the boot (Proc's accounts):
    * each account entered, its name, how many times and its ms; first
    * the parts of their time timed apart, "in" and the same (the
-   * kernel's collections, gc; the card's transfers) *)
+   * kernel's collections, gc; the card's transfers); last, "out", an
+   * account's name and its ms out of the lock, not held (Proc.add_out) *)
   | "lockstat" ->
       let b = Buffer.create 1024 in
       Buffer.add_string b (Printf.sprintf "in gc %d %d\n" (Machine.gc_count ()) (Machine.gc_held ()));
@@ -255,6 +256,11 @@ let read (c : chan) n off =
       for a = 0 to Proc.naccounts - 1 do
         if Proc.held_n.(a) > 0 || Proc.held_ms.(a) > 0 then
           Buffer.add_string b (Printf.sprintf "%s %d %d\n" Proc.account_names.(a) Proc.held_n.(a) Proc.held_ms.(a))
+      done;
+      for a = 0 to Proc.naccounts - 1 do
+        if Proc.out_ms.(a) > 0 then
+          Buffer.add_string b
+            (Printf.sprintf "out %s %d\n" Proc.account_names.(a) Proc.out_ms.(a))
       done;
       readstr off n (Buffer.contents b)
   | "cputime" ->

@@ -794,6 +794,71 @@ they wait for the lock. Most of fault-zero is the fault itself (22 µs,
 of it 6 the page): what is left is a cheaper fault, or fewer of them
 (several neighbouring pages mapped at a fault, Linux's fault-around).
 
+### 2026-11-27: the accounts without the card's waits, and who faults
+
+On the Linux box (an Ampere Altra, about 3.5 times slower a core than
+the Mac under QEMU), quiet, at fcea9212: mk 3,317 s on the card, the
+lock held 2,094 s (63%), each core waiting 1,384 s; most held by Pread
+x 590 s, fault-zero 515, Pwrite x 405, kproc kfs 296. Three things
+found, each by a kernel of the day's with counters of its own:
+
+1. **The guest's profile favours a device's access.** qemupcs.py's
+   samples, every core's, put 35% of the kernel's time (not spinning,
+   not idle) in timer_now, the board's clock read at each entry, by
+   Fault's make and by charge_entry. The Pi 2's timer_now made a read
+   of the core's own generic timer (CNTVCT, a coprocessor's register,
+   no device): self-quick 74 s of mk where it was 72, the lock 52 s
+   where it was 51. Nothing: QEMU stops a core where it is between
+   two translated blocks, and a device's access ends one, so the
+   samples land there. Not kept; the profile's devices (the step 0
+   table's io_read_fifo, io_write_fifo) are suspect the same way.
+2. **The accounts counted the card's waits.** An account's time is its
+   processes' kernel time, the card's transfers included, which give
+   the lock back (dma_move); self.sh took "in unlocked card" from the
+   total only. Proc.add_out now counts each account's time out of the
+   lock (/dev/lockstat's "out" lines), and self.sh takes it from the
+   account. The whole build with it (61 minutes, all 98 directories,
+   the 4,611 files Linux's; a counter of the day's in each fault, not
+   kept, cost fault-zero 2 minutes):
+
+   | account | held | with the card's waits | per call |
+   |---|---|---|---|
+   | fault-zero | 658 s (524 without the counter) | 658 | 56 µs |
+   | Pread x | 483 | 617 | 545 µs |
+   | Open | 220 | 222 | 486 µs |
+   | Create | 152 | 154 | 218 µs |
+   | Rfork | 133 | 133 | 13 ms |
+   | Pwrite x | 126 | 430 | 1.1 ms |
+   | the kernel's collections | 101 | | |
+   | kproc kfs | 26 | 337 | |
+
+   Kfs's writer is the card, nothing more; Pread x is the lock's,
+   with 99% of its pieces found in the cache: 80 µs a piece of 4 KB.
+3. **Half of the zero-filled pages are mini-ld's.** The pages zeroed
+   at a fault counted by program (the exec's name) and segment, and
+   each program's execs:
+
+   | program | pages | share | execs | pages an exec |
+   |---|---|---|---|---|
+   | ld | 4.88 million | 52% | 121 | 40,348 (157 MB) |
+   | ml | 2.40 million | 26% | 1,463 | 1,640 |
+   | rc | 1.15 million | 12% | 2,473 | 466 |
+   | ar | 0.56 million | 6% | 171 | 3,292 |
+
+   All in bss, the heap. A link's halves are 16 MB and more, and
+   gc.c gives the half just emptied back at each collection (GIVEBACK,
+   2026-11-18: four links at once fit in 847 MB): the next collection
+   faults it in again, a page at a time.
+
+Also: two of the day's four whole builds failed, rc or ld refused a
+page after its minute (languages/smalltalk, apps/music/rebirth, games),
+each after 469 s waiting for pages (bugs/ix.md).
+
+Next: fault-around for a zero-filled page, of a heap and a stack
+(37 µs of a fault's 56 are the fault, and mini-ml's halves are filled
+in order): about 300 s of the lock, every program, no more memory;
+then what Pread x does with the lock for 545 µs.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

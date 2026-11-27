@@ -323,7 +323,11 @@ let dma_move write n =
    * old: Machine.io_set32 dma_cs 0 1; ignore (poll (fun () -> cs () <> 1)) *)
   let t0 = Machine.timer_now () in
   ignore (Machine.io_run dma_cs 0 1 0x103 1);
-  Proc.part_add unlocked_part ((Machine.timer_now () - t0) land 0x3fffffff);
+  let d = (Machine.timer_now () - t0) land 0x3fffffff in
+  Proc.part_add unlocked_part d;
+  (match Proc.procs.(Machine.current ()) with
+   | Some p -> Proc.add_out p d
+   | None -> ());
   let cs () = Machine.io_get16 dma_cs false land 0x103 in
   if cs () = 2 then begin Machine.io_set32 dma_cs 0 6; true end
   else begin

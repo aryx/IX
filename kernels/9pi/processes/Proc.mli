@@ -167,6 +167,11 @@ val named_account : string -> int
  * time; nparts_used of them, their names, ms and times *)
 val part : string -> int
 val part_add : int -> int -> unit
+(* [add_out p us]: a time p's kernel spent out of the lock (a transfer
+ * of the card's), counted in its account and not held; out_ms by
+ * account *)
+val out_ms : int array
+val add_out : Types.proc -> int -> unit
 val nparts_used : int ref
 val part_names : string array
 val part_ms : int array

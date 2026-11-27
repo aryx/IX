@@ -704,3 +704,24 @@ sessions under mini-qemu. Singularity's kernel (kernels/singularity's mkfile) ha
 same missing stamp, found when its application manifest was renamed
 Main.app (2026-11-25): fixed the same way, its kernel and 13 programs'
 images built by ix.
+
+## mini-9pi: make self loses directories for want of a page (2026-11-27)
+
+make self-mix, then tests/self.sh again on the same card, at fcea9212,
+on the Linux box (an Ampere Altra, quiet), four whole builds: two
+passed, two lost three and four directories (languages/smalltalk,
+apps/music/rebirth, games, apps/media/play):
+
+    ld 7752: suicide: sys: trap: fault: virtual memory allocation failed va=0x803b000 pc=0x154cc
+    rc 7862: suicide: sys: trap: fault: virtual memory allocation failed va=0x1c97b000 pc=0x8ae08
+
+/dev/waits said page 469,121 ms in one and 469,446 in the other, 0 in
+the first pass. Fault.page waits for a page while anyone gives pages
+back and refuses it after a minute with none given back; a link is
+157 MB of pages zeroed (plan_9pi_self_speed.md, 2026-11-27), and
+several at once fill the 846 MB the processes have. Thought, not
+checked: on a host 3.5 times slower a minute of the guest's clock is
+less of the build, so the processes that would give pages back do not
+within it. Not fixed; not reproduced on the Mac. A fix could be a wait
+that counts the others' progress rather than the clock, or fewer
+links at once on the card.

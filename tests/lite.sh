@@ -508,6 +508,7 @@ ix() {
   mk browsers/netscape & pids+=($!)
   mk apps/files & pids+=($!)
   mk apps/maps & pids+=($!)
+  mk apps/pim & pids+=($!)
   # (mini-emacs: it links mini-ml's objects of its parser, listed by its
   # mkfiles, which dune's build does not read: Annotations missing from
   # them broke the link unseen, ad93e2ae; so after languages/ml, its two
@@ -535,6 +536,7 @@ by_ix_net() {
   nofail browsers/lynx/tests/session.sh $K
 }
 by_ix_files() { nofail apps/files/tests/frames.sh $K/apps && nofail apps/files/tests/changes.sh $K/apps; }
+by_ix_pim() { HTTPD=$K/networking/mini-httpd nofail apps/pim/tests/session.sh $K/apps/pim; }
 by_ix_maps() { nofail apps/maps/tests/frames.sh $K/apps/maps && nofail apps/maps/tests/cache.sh $K/apps/maps && nofail apps/maps/tests/weather.sh $K/apps/maps && nofail apps/maps/tests/route.sh $K/apps/maps; }
 by_ix_browsers() {
   nofail browsers/javascript/tests/scripts.sh $K/browsers/javascript &&
@@ -626,6 +628,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-play's window built by ix: its frames, the sound's clock" nofail apps/media/tests/film.sh $K/apps
   job $a "mini-files built by ix: its window's frames, its changes to a scratch tree" by_ix_files
   job $a "mini-maps built by ix: its window's frames, its cache" by_ix_maps
+  job $a "mini-pim built by ix: mail sent by SMTP, read by IMAP, archived, offline (mini-maild's)" by_ix_pim
   job $a "mini-node, browsers/engine, mini-netscape built by ix" by_ix_browsers
   job $a "mini-troff built by ix: a page" nofail typesetting/tests/sample.sh $K
   job $a "tiny programs built by ix: their tests" tiny_tests

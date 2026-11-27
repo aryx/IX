@@ -36,7 +36,7 @@ BOTH=linker/tools languages/c builder shell editors/ed generators/lex generators
  utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc \
  utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv \
  kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows/rio windows/rio/tests windows/desktop \
- apps/misc apps/files apps/maps profilers/misc games editors/drscheme apps/office
+ apps/misc apps/files apps/maps apps/pim profilers/misc games editors/drscheme apps/office
 LINUX=database languages/datalog languages/forth languages/dotnet/csc editors/turbopascal/tty \
  editors/emacs/tty machine version_control kernels/tools debuggers/where debuggers/acid lib_gui/examples tiny \
  kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3

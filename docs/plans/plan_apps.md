@@ -11,8 +11,8 @@ that a developer use. but apps/ is different".
 
 **Status: a survey, still a list to choose from** (as plan_gaps.md:
 each application, when taken, gets a plan of its own). Brought up to
-date 2026-11-27: the file manager, video and maps done (below); left,
-0 and 4 to 7 of the order: mini-pim on m-ix, photos, spelling, music's
+date 2026-11-27: the file manager, video, maps and mini-pim on m-ix
+done (below); left, 4 to 7 of the order: photos, spelling, music's
 library, chat. Done: mail,
 the calendar and the address book, as mini-pim, with tasks, notes and
 money ([`plan_pim.md`](done/plan_pim.md) and
@@ -57,8 +57,8 @@ not the measure.
 | Read a document | mini-page (`apps/page/`): PDF and pictures | yes: `page` | |
 | Listen | mini-play (`apps/media/play/`), mini-rebirth | yes: `play`, `rebirth` | a player with a library and playlists |
 | Watch | mini-play's films (`apps/media/play/Film`: Y4M, FLI, AVI, GIF, MPEG-1); mini-netscape hands YouTube's to `mpv` on Linux | yes: `play` | today's formats (H.264), on purpose |
-| Write to people | mini-pim's Mail (`apps/pim/`), Gmail's; mini-netscape's `mailto:` | **no** | chat |
-| Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | **no** | `date` still GMT only |
+| Write to people | mini-pim's Mail (`apps/pim/`), Gmail's; mini-netscape's `mailto:` | yes: `pim` | chat |
+| Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | yes: `pim` | `date` still GMT only |
 | Look at and fix photos | mini-page shows one; mini-office's paint, 1 bit | yes, those two | a viewer of many and an editor |
 | Find a place, the weather | mini-maps (`apps/maps/`), routes by A* | yes: `maps` | |
 | Look after files | mini-files (`apps/files/`, `lib_mime/`); the shell, `ls`, `cp`, `mv` | yes: `files`, `open` | |
@@ -72,10 +72,9 @@ what is marked *checked* below was read in the code. Brought up to
 date 2026-10-30, from `kernels/9pi/Makefile`'s `CARD_*` lists and each
 directory's `mkfile`.
 
-mini-pim is the one row built for Linux only: `apps/pim/` has dune's
-build and no `mkfile`, so mini-mk does not make it and it is not on
-the card. mini-ml compiles its files (`compile_ix.sh`), but the
-program has not been run on mini-9pi (plan_pim.md's Status). t-IX has
+mini-pim was the one row built for Linux only until 2026-11-27, when
+`apps/pim/` got its `mkfile` (mini-maild, the tests' server, is
+Linux's alone: Unix's sockets) and went on the card as `pim`. t-IX has
 office, play, a browser and a calculator, and no mail or calendar.
 
 ## The applications, by what a person does
@@ -246,12 +245,12 @@ on purpose.
 
 Done: mail, the calendar and the address book (mini-pim), and slides
 (mini-office); 1 to 3 below (done 2026-10-31). What is left, in order
-(2026-10-30, the author's choice for 1 to 3): 0, then 4 to 7.
+(2026-10-30, the author's choice for 1 to 3): 4 to 7.
 
 0. **mini-pim on m-ix**, before any new application: a `mkfile`, on
    the card, run on mini-9pi. Not a new program, but until then the
    largest row of the table is Linux only, against the rule that every
-   m-ix program runs under mini-9pi.
+   m-ix program runs under mini-9pi. Done (2026-11-27).
 1. **The file manager**: [`plan_files.md`](done/plan_files.md), a file's
    kind leading to its program. Done.
 2. **Video**: [`plan_video.md`](done/plan_video.md), the historical formats,
@@ -322,3 +321,15 @@ as the survey found them: `apps/pim/` has no `mkfile` (mini-pim not on
 the card, item 0); `Jpeg.mli` decodes only and skips Exif (photos);
 no spelling in mini-office; no music library (ID3, playlists); no
 chat; `date` and `cal` GMT only. Left: 0, then 4 to 7.
+
+2026-11-27: mini-pim on m-ix (item 0; the author: "let's do 4 (I
+thought another session added many mkfile for apps)": the other apps
+had theirs, not pim). `apps/pim/mkfile`, its units in their folders as
+dune's; lib_networking's mkfile builds all of `mail/`, not only
+Mailto; the top mkfile's BOTH and the card (`pim`). Checked: mini-pim
+and mini-maild built by ix for Linux, `tests/session.sh` with them
+(sent by SMTP, read by IMAP, archived, offline), a make test job
+since; mini-pim built for Plan 9, on the card, run on mini-9pi under
+QEMU (an event, today: what Linux's says). Not run: its window under
+mini-rio, and mail on mini-9pi (a server outside, or mini-maild,
+which is Linux's). Left: 4 to 7.

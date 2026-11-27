@@ -1,0 +1,62 @@
+# mini-pim, built by ix's tools (docs/plans/done/plan_pim.md): its
+# units, in their folders as dune's comment says, then the program,
+# linked with the libraries (mkfiles/mklibs): the cryptography, the
+# compression, the network and its mail (lib_networking/mail), HTML,
+# the pictures, the playground, the widgets (lib_gui) and one platform
+# of the playground. The platform is ppm's on Linux, where there is no
+# window and a frame is written to a file for the tests. With OS=plan9
+# (mini-9pi) it is the draw device's, a window of mini-rio, as for the
+# games (games/mkgames). mini-maild, the server its tests talk to, is
+# Linux's alone: it takes its sockets from Unix.
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/apps/pim
+MADE=`{mkdir -p $D}
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
+# (each library comes after the ones it names)
+# (the playground's apis, Gui, come with what they stand on, as in the
+# games' mkgames)
+LIBDIRS=lib_crypto lib_compression lib_graphics lib_playground/random \
+ lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio \
+ lib_networking browsers/html lib_playground/netcode lib_playground/ai \
+ lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
+<$TOP/mkfiles/mklibs
+# (the folders of the modules; dune's comment says which module is in
+# which)
+DIRS=. mail window store time money
+# (the libraries come before lib_core, so that Cmd is lib_playground's,
+# Elm's, and not commons/'s)
+INCLUDES=${DIRS:%=-I ./%} $LIBI $STDI
+# (each unit comes before the ones that name it)
+LIB=Money Ledger Zone Recur Ics Item Mail_text Mail_item Mail_compose \
+ Conversations Items Links People Screen Search Vcard When Reconcile Qif \
+ Events Capture Calendars Books Pim_look Mail_sync Mail_model Detect \
+ Envelopes Remind Today Pim_store Mail_view Mail_window Money_window \
+ Notes_window People_window Search_window Tasks_window Found_window \
+ Calendar_window Pim_window
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+MAILD=`{~ $OS plan9 || echo $D/mini-maild}
+
+all:V: $D/mini-pim $MAILD
+
+# a unit: its directory's rule (mkfiles/libs.rc's rules), the sources
+# its prerequisites
+<|. $TOP/mkfiles/libs.rc rules
+$LIBOBJS $D/Pim.$O $D/Maild.$O: $LOCAL
+
+$D/mini-pim: $D/Pim.$O $LIBS
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $D/Pim.$O $STDEND
+# (mini-maild: lib_networking's mail alone, none of the suite's units)
+$D/mini-maild: $D/Maild.$O $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Maild.$O $STDEND
+
+clean:V:
+	rm -rf $D
+
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=$DIRS
+DEPUNITS=$LIB Pim Maild
+<$TOP/mkfiles/mkdepend

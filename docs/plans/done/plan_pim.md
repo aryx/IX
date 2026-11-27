@@ -30,8 +30,10 @@ calendars by their secret addresses, the contacts by a vCard export).
 Left, for a plan of their own if they are wanted:
 - two-way with Google (CalDAV, CardDAV: OAuth, postponed by the
   author), or with another ix by mini-git (stage 8);
-- mini-9pi: the suite never run there (a window on mini-rio, its
-  remind, /env/timezone read by Zone but not tried);
+- mini-9pi: built by ix's tools and on the card as `pim` since
+  2026-11-27 (`apps/pim/mkfile`; plan_apps.md's Status), its terminal
+  commands run there (an event, today); not tried: the window on
+  mini-rio, its remind, the mail, /env/timezone read by Zone;
 - the calendar: events moved or deleted in the window, an event's own
   zone (TZID);
 - money: CSV and OFX bank files, a split line in the window, a

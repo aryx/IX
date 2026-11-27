@@ -21,13 +21,14 @@
 #
 # usage: session.sh [dir]
 #   dir: where mini-pim and mini-maild are (default: dune's,
-#        _build/default/apps/pim)
+#        _build/default/apps/pim); mini-httpd there too, or HTTPD
+#        names it (ix's build: $B/networking/mini-httpd)
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 # (the same day and Date: on any machine: Zone)
 export TZ=UTC
 B=${1:-$ROOT/_build/default/apps/pim}
-if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild; HTTPD=$B/mini-httpd
+if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild; HTTPD=${HTTPD:-$B/mini-httpd}
 else PIM=$B/Pim.exe; MAILD=$B/Maild.exe
   HTTPD=$ROOT/_build/default/networking/Httpd.exe; fi
 W=$(mktemp -d); trap 'kill $pid $fr $web 2> /dev/null; rm -rf $W' EXIT

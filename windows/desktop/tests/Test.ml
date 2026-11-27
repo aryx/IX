@@ -134,6 +134,7 @@ let left_out = [
   "open"; "play";                                        (* they want a file: from files *)
   "scheme"; "pascal"; "prolog"; "dotnet"; "tiger";       (* languages, from a terminal *)
   "lynx"; "curl"; "timesync";                            (* the same *)
+  "pim";                       (* from a terminal: its window not tried under rio *)
   "hello"; "hellokbd"; "tone" ]
 
 let test_table_and_card () =

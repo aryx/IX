@@ -1,4 +1,5 @@
 # 2026-11-25: ix's build as mini-ld links it (check.sh ix, its manifests): every program make ix builds, 140, not the 44 the mkfiles gave, and the library code in a program's part (version_control's) its own: 151 more, not read yet
+# 2026-11-27: mini-pim and mini-maild (apps/pim), built by ix since: their 128 read, 104 a function given more than it uses (the suite's commands, the program's whole set), 24 a capability it does not hold (needs, names, none: mini-maild's sockets, Sys.set_signal), not fixed
 _mk/7/apps/maps/Worker_spawn.ml:9: Worker_spawn.spawn: no capability, needs Cap.exit (Thread.create_large), Cap.stderr (Thread.create_large), Cap.stdout (Thread.create_large)
 _mk/7/browsers/netscape/Worker_spawn.ml:9: Worker_spawn.spawn: no capability, needs Cap.exit (Thread.create_large), Cap.stderr (Thread.create_large), Cap.stdout (Thread.create_large)
 _mk/7/database/Lexer.ml:238: Lexer.comment: no capability, needs Cap.stderr (Printf.eprintf)
@@ -45,6 +46,134 @@ apps/office/file_menu/File_menu.ml:66: File_menu.export: has < Cap.env; Cap.exit
 apps/office/file_menu/File_menu.ml:71: File_menu.choose: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.open_in, Cap.open_out
 apps/office/file_menu/File_menu.ml:94: File_menu.dialog: has < Cap.env; Cap.exit; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.readdir
 apps/page/Pageview.ml:781: open_url: names Unix.stdin, Unix.stdout itself
+apps/pim/Maild.ml:103: Maild.smtp: has < Cap.clock; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.network, Cap.stderr
+apps/pim/Maild.ml:119: Maild.listen: has < Cap.network >, names Unix.bind, Unix.listen, Unix.socket itself
+apps/pim/Maild.ml:130: Maild:fun at line 130: no capability, needs Cap.network (Unix.accept)
+apps/pim/Maild.ml:158: Maild.main: has < Cap.clock; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, names sys_file_exists, sys_is_directory itself
+apps/pim/Maild.ml:169: Maild:fun at line 169: has < Cap.clock; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, needs Cap.signal (Sys.set_signal)
+apps/pim/Maild.ml:38: Maild.numbers: has < Cap.readdir >, names sys_file_exists, sys_read_directory itself
+apps/pim/Maild.ml:45: Maild.keep: has < Cap.clock; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.network, Cap.stderr
+apps/pim/Maild.ml:48: Maild:fun at line 48: has < Cap.clock; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, names sys_file_exists itself
+apps/pim/Maild.ml:62: Maild.store: has < Cap.clock; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.network, Cap.open_out, Cap.stderr, Cap.stdout
+apps/pim/Maild.ml:92: go: no capability, needs Cap.clock (Lines.line)
+apps/pim/Pim.ml:193: Pim.send: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.wait
+apps/pim/Pim.ml:236: Pim.reading: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.stdout, Cap.wait
+apps/pim/Pim.ml:281: Pim.list: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.wait
+apps/pim/Pim.ml:314: Pim.fetch/1: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.stdout, Cap.wait
+apps/pim/Pim.ml:336: Pim.read: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.wait
+apps/pim/Pim.ml:340: Pim.draft: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.wait
+apps/pim/Pim.ml:367: Pim.archive: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.stdout, Cap.wait
+apps/pim/Pim.ml:375: Pim.fetch: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.wait
+apps/pim/Pim.ml:391: Pim.star: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.stdout, Cap.wait
+apps/pim/Pim.ml:400: Pim.contact: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.exec, Cap.fork, Cap.network, Cap.stdin, Cap.wait
+apps/pim/Pim.ml:421: Pim.snooze: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.exec, Cap.fork, Cap.wait
+apps/pim/Pim.ml:455: Pim.notify: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.network, Cap.open_out; names Unix.stdin, Unix.stdout itself
+apps/pim/Pim.ml:459: Pim:fun at line 459: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, names sys_file_exists itself
+apps/pim/Pim.ml:469: Pim.say_due: has < Cap.clock; Cap.env; Cap.exec; Cap.fork; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdin; Cap.stdout; Cap.wait >, may not need Cap.clock, Cap.network, Cap.open_out
+apps/pim/Pim_store.ml:126: Pim_store.event: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.stderr
+apps/pim/Pim_store.ml:187: Pim_store.today: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.stderr
+apps/pim/Pim_store.ml:215: Pim_store.register: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.stderr
+apps/pim/Pim_store.ml:229: Pim_store.balance: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.stderr
+apps/pim/Pim_store.ml:238: Pim_store.budget: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.stderr
+apps/pim/Pim_store.ml:252: Pim_store.assign: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.stdout
+apps/pim/Pim_store.ml:27: Pim_store.search: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.stderr
+apps/pim/Pim_store.ml:32: Pim_store.show: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out
+apps/pim/Pim_store.ml:54: Pim_store.people: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.open_out, Cap.stderr
+apps/pim/Pim_store.ml:83: Pim_store.add: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock, Cap.stdout
+apps/pim/Pim_store.ml:98: Pim_store.set: has < Cap.clock; Cap.env; Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.clock
+apps/pim/mail/Mail_sync.ml:101: Mail_sync.list: has < Cap.open_in; Cap.open_out; Cap.readdir >, needs Cap.clock (Imap.search, Imap.summaries)
+apps/pim/mail/Mail_sync.ml:130: Mail_sync.message: has < Cap.open_in; Cap.open_out >, needs Cap.clock (Imap.message, Imap.store, Imap.summaries)
+apps/pim/mail/Mail_sync.ml:173: go: has < Cap.open_in; Cap.open_out; Cap.readdir >, needs Cap.clock (Imap.messages)
+apps/pim/mail/Mail_sync.ml:201: Mail_sync.archive: has < Cap.open_in; Cap.open_out; Cap.readdir >, needs Cap.clock (Imap.store)
+apps/pim/mail/Mail_sync.ml:220: Mail_sync.star: has < Cap.open_in; Cap.open_out; Cap.readdir >, needs Cap.clock (Imap.store)
+apps/pim/mail/Mail_sync.ml:288: one: has < Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, needs Cap.clock (Imap.search, Imap.store)
+apps/pim/mail/Mail_sync.ml:319: Mail_sync.send: has < Cap.network; Cap.open_in >, needs Cap.clock (Lines.talk)
+apps/pim/mail/Mail_sync.ml:32: Mail_sync.named: no capability, needs Cap.clock (Imap.mailboxes)
+apps/pim/mail/Mail_sync.ml:50: Mail_sync.session: has < Cap.network; Cap.open_in >, needs Cap.clock (Imap.connect)
+apps/pim/mail/Mail_sync.ml:58: Mail_sync:fun at line 58: has < Cap.network; Cap.open_in >, needs Cap.clock (Imap.login)
+apps/pim/mail/Mail_sync.ml:61: Mail_sync:fun at line 61: has < Cap.network; Cap.open_in >, needs Cap.clock (Imap.select)
+apps/pim/mail/Mail_sync.ml:62: Mail_sync:fun at line 62: has < Cap.network; Cap.open_in >, needs Cap.clock (Imap.logout)
+apps/pim/store/Items.ml:24: Items.mkdir_p: has < Cap.open_out >, needs Cap.open_in|Cap.readdir (sys_file_exists)
+apps/pim/store/Items.ml:46: Items.all: has < Cap.open_in; Cap.readdir >, names sys_file_exists, sys_read_directory itself
+apps/pim/store/Items.ml:68: Items.remove: has < Cap.open_out >, needs Cap.open_in|Cap.readdir (sys_file_exists)
+apps/pim/store/Items.ml:72: Items.secret: has < Cap.env; Cap.open_in >, names Unix.stat itself
+apps/pim/window/Calendar_window.ml:117: Calendar_window.create: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Calendar_window.ml:134: Calendar_window.step: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Calendar_window.ml:34: Calendar_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Calendar_window.ml:52: Calendar_window.load: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Calendar_window.ml:60: Calendar_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Calendar_window.ml:71: Calendar_window.refresh: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Calendar_window.ml:78: Calendar_window.show: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Found_window.ml:149: Found_window.command: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Found_window.ml:168: Found_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Found_window.ml:33: Found_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Found_window.ml:35: Found_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out, Cap.readdir
+apps/pim/window/Found_window.ml:94: Found_window.make: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Mail_model.ml:126: Mail_model.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Mail_model.ml:207: Mail_model.refresh: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Mail_model.ml:58: Mail_model.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Mail_model.ml:83: Mail_model.load: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Mail_window.ml:149: Mail_window.next: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:228: Mail_window.switch: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Mail_window.ml:238: Mail_window.show: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:24: Mail_window.online: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.env, Cap.exit, Cap.open_out
+apps/pim/window/Mail_window.ml:290: Mail_window.write: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.env, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Mail_window.ml:294: Mail_window.write_mailto: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.env, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Mail_window.ml:309: Mail_window.answer: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:30: Mail_window.open_: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:328: Mail_window.task: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Mail_window.ml:346: Mail_window.invitation: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:383: Mail_window.leave: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Mail_window.ml:386: Mail_window.command: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:483: Mail_window.writing: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:516: Mail_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Mail_window.ml:70: Mail_window.run: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Money_window.ml:103: Money_window.show: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Money_window.ml:156: Money_window.record: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Money_window.ml:180: Money_window.clear: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Money_window.ml:190: Money_window.finish: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Money_window.ml:202: Money_window.command: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Money_window.ml:253: Money_window.writing: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Money_window.ml:292: Money_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Money_window.ml:52: Money_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Money_window.ml:60: Money_window.load: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Money_window.ml:81: Money_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Money_window.ml:98: Money_window.refresh: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Notes_window.ml:117: Notes_window.day_note: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Notes_window.ml:151: Notes_window.command: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Notes_window.ml:201: Notes_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Notes_window.ml:34: Notes_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Notes_window.ml:40: Notes_window.load: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Notes_window.ml:67: Notes_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Notes_window.ml:79: Notes_window.refresh: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Notes_window.ml:83: Notes_window.edit: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Notes_window.ml:88: Notes_window.show: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Notes_window.ml:95: Notes_window.slug: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out, Cap.readdir
+apps/pim/window/People_window.ml:120: People_window.add: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/People_window.ml:137: People_window.command: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/People_window.ml:168: People_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/People_window.ml:32: People_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/People_window.ml:68: People_window.load: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/People_window.ml:75: People_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/People_window.ml:80: People_window.refresh: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/People_window.ml:84: People_window.show: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Pim_window.ml:143: Pim_window.switch: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Pim_window.ml:155: Pim_window.go: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit
+apps/pim/window/Pim_window.ml:53: Pim_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Pim_window.ml:55: Pim_window.home: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Pim_window.ml:99: Pim_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Search_window.ml:167: Search_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.env, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Search_window.ml:84: Search_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out, Cap.readdir
+apps/pim/window/Search_window.ml:95: Search_window.start: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Tasks_window.ml:137: Tasks_window.capture: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Tasks_window.ml:153: Tasks_window.set: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Tasks_window.ml:164: Tasks_window.command: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network
+apps/pim/window/Tasks_window.ml:209: Tasks_window.update: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network
+apps/pim/window/Tasks_window.ml:31: Tasks_window.store: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_in, Cap.open_out, Cap.readdir
+apps/pim/window/Tasks_window.ml:39: Tasks_window.load: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Tasks_window.ml:69: Tasks_window.initial: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Tasks_window.ml:80: Tasks_window.refresh: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
+apps/pim/window/Tasks_window.ml:84: Tasks_window.show: has < Cap.clock; Cap.env; Cap.exit; Cap.network; Cap.open_in; Cap.open_out; Cap.readdir >, may not need Cap.clock, Cap.exit, Cap.network, Cap.open_out
 assembler/Asm.ml:245: Asm.in_project: has < Cap.readdir >, may not need Cap.readdir
 assembler/CLI.ml:33: CLI.data_items: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.open_out, Cap.readdir, Cap.stderr, Cap.stdout
 assembler/CLI.ml:42: CLI.main: has < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stderr; Cap.stdout >, may not need Cap.readdir

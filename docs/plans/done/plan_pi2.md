@@ -49,9 +49,19 @@ Left:
   without it), PIXEL=c, the C 9pi's records. And the card of a
   checkout of principia-softwarica holds its kernel book when there is
   one (CARD_BOOK), a PDF, no code.
-- The Pi 2's own recorded screens for `make check-menu` and the other
-  screens' checks (the recorded ones have the Pi 1's banner); the
-  window (`-g`); the page (MiniQemuWeb's `pi2 = false`).
+- The Pi 2's own recorded screens: done (2026-11-27). kernels/9pi's
+  screens' checks take `tests/pi2/` for BOARD=pi2 (SCREENS), the 17
+  sessions of check-windows and check-drscheme recorded under QEMU
+  (`make BOARD=pi2 expected-windows`), four emulators at once (GJOBS's
+  default for the Pi 2: with 16 its boot's screen was taken at two
+  moments). Checked: the 17 under QEMU, their recorded screens; under
+  mini-qemu 12 of them: Tetris's three (tetris-bare, tetris-win,
+  draw-tetris) are elsewhere in the game when a screen is taken, the
+  Pi 2's four cores taking turns there and running much slower than
+  QEMU's, and drscheme's two did not get past a step in 55 minutes.
+  Those five would want mini-qemu's own recordings, or a pace for the
+  game, under mini-qemu.
+- Left: the window (`-g`); the page (MiniQemuWeb's `pi2 = false`).
 - The details in Status, at the end.
 
 ## The survey (2026-10-08, read; nothing run)

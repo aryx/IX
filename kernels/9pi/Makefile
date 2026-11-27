@@ -786,20 +786,23 @@ MENU_USB = -serial mon:stdio -display none $(USB) $(CARD_SD)
 MINI_USB = $(MINIQEMU) $(subst -nographic,,$(if $(KUSB),$(BOOT_IX),$(BOOT_IXU))) $(MENU_USB)
 QEMU_USB = $(QEMU) $(subst -nographic,,$(if $(KUSB),$(QEMU_BOOT_IX),$(QEMU_BOOT_IXU))) $(MENU_USB)
 DRAW = $(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/$(1)-draw.txt --screendump $(B)/$(1)-draw.ppm hellodraw --
+# (each board's screens: the Pi 2's banner is its own, its revision,
+# its processor and its memory, so its screens are recorded apart)
+SCREENS = tests$(if $(filter pi2,$(BOARD)),/pi2)
 GSESSIONS = menu win-new win-ops win-border win-scroll win-select win-utf8 colors-bare colors-win tetris-bare tetris-win kbd-bare kbd-win draw-tetris draw-wolf
 
 # A session (with no build: the images are there already), and the
 # comparison of what it wrote with what is recorded.
 run-draw-mini: ; $(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 run-draw-qemu: ; $(call DRAW,qemu) $(QEMU) $(QEMU_BOOT_IX)
-run-%-mini: ; rm -rf $(B)/g-$*-mini; $(GRAPHICS) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-mini -- $(MINI_USB)
-run-%-qemu: ; rm -rf $(B)/g-$*-qemu; $(GRAPHICS) --steps tests/$*.steps --expect tests/$*.md5 $(B)/g-$*-qemu -- $(QEMU_USB)
+run-%-mini: ; rm -rf $(B)/g-$*-mini; $(GRAPHICS) --steps tests/$*.steps --expect $(SCREENS)/$*.md5 $(B)/g-$*-mini -- $(MINI_USB)
+run-%-qemu: ; rm -rf $(B)/g-$*-qemu; $(GRAPHICS) --steps tests/$*.steps --expect $(SCREENS)/$*.md5 $(B)/g-$*-qemu -- $(QEMU_USB)
 cmp-draw:
 	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/mini-draw.ppm && echo "ok 9pi: draw: hellodraw's screen under mini-qemu"
 	gzip -dc tests/hellodraw.ppm.gz | cmp - $(B)/qemu-draw.ppm && echo "ok 9pi: draw: the same screen under QEMU"
 cmp-%:
-	cd $(B)/g-$*-mini && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under mini-qemu"
-	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: the same screens under QEMU"
+	cd $(B)/g-$*-mini && md5sum --quiet -c $(CURDIR)/$(SCREENS)/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/$(SCREENS)/$*.md5) screens under mini-qemu"
+	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/$(SCREENS)/$*.md5 && echo "ok 9pi: $*: the same screens under QEMU"
 # (Recording runs a session without --expect, and a screen is recorded
 # when it stays still for three steps. It runs under QEMU, whose
 # screens are mini-qemu's, since the checks hold them to that. A boot
@@ -814,7 +817,7 @@ cmp-%:
 expected-%: ix-usb card
 	rm -rf $(B)/g-$*-qemu
 	$(subst --step 3,--step 4,$(GRAPHICS)) --steps tests/$*.steps $(B)/g-$*-qemu -- $(QEMU_USB)
-	cd $(B)/g-$*-qemu && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/tests/$*.md5
+	cd $(B)/g-$*-qemu && md5sum boot.ppm $$(ls step*.ppm | sort -V) > $(CURDIR)/$(SCREENS)/$*.md5
 expected-draw: ix
 	$(call DRAW,mini) $(MINIQEMU) $(BOOT_IX)
 	gzip -n -9 < $(B)/mini-draw.ppm > tests/hellodraw.ppm.gz
@@ -872,8 +875,10 @@ check-all:
 
 # Some of the graphical checks, side by side: their sessions, then the
 # comparisons (with -k, so that every result is said).
-# (GJOBS is how many emulators run at once.)
-GJOBS ?= 16
+# (GJOBS is how many emulators run at once. The Pi 2's four: its four
+# cores each, under QEMU, and with 16 at once its boot's screen was
+# taken at two moments, its recordings two kinds, 2026-11-27)
+GJOBS ?= $(if $(filter pi2,$(BOARD)),4,16)
 gcheck = $(MAKE) --no-print-directory -j$(GJOBS) $(foreach s,$(1),run-$(s)-mini run-$(s)-qemu); $(MAKE) --no-print-directory -k $(foreach s,$(1),cmp-$(s))
 check-draw: ix ; $(call gcheck,draw)
 check-menu: ix-usb card ; $(call gcheck,menu)
@@ -905,7 +910,7 @@ GQUICK = menu win-new kbd-bare draw-wolf drscheme-bare
 check-quick: ix-usb card
 	$(MAKE) --no-print-directory -j$(GJOBS) $(GQUICK:%=run-%-qemu); $(MAKE) --no-print-directory -k $(GQUICK:%=cmpq-%)
 cmpq-%:
-	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/tests/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/tests/$*.md5) screens under QEMU"
+	cd $(B)/g-$*-qemu && md5sum --quiet -c $(CURDIR)/$(SCREENS)/$*.md5 && echo "ok 9pi: $*: its $$(wc -l < $(CURDIR)/$(SCREENS)/$*.md5) screens under QEMU"
 check-windows: ix-usb card ; $(call gcheck,draw $(GSESSIONS))
 # The same sessions and the same screens with no usbd, using the
 # kernel's own USB (Kusb).

@@ -5,14 +5,22 @@
 # It has the
 # same OCaml, the same C, and the pixels in OCaml (the Makefile's
 # PIXEL=ocaml, its default); ../lib_machine/mkkernel says what else it
-# has. Like the Makefile's kernel, it takes principia's programs (the
-# boot's, in the kernel's bootdir) and principia's SD card image.
+# has. Its boot directory is ix's own programs, as the Makefile's make
+# ix (BOOTDIR_IX: mini-rc, mini-ls, mini-dossrv..., built for Plan 9 by
+# mini-mk O=5 OS=plan9 at the top), and nothing of ~/principia. Given
+# PRINCIPIA, principia's directory, it takes principia's programs
+# instead, for the checks that compare with principia's 9pi (check,
+# tests/seg.sh, acid.sh, panic.sh), in bootdir-principia, which those
+# three scripts write themselves with a boot of their own.
 #   mini-mk          builds _mk/7/kernels/9pi/kernel8.img
-#   mini-mk run      runs it under mini-qemu (Ctrl-A x quits)
-#   mini-mk check    runs the Makefile's check with this image
+#   mini-mk run      runs it under mini-qemu (Ctrl-A x quits), with the
+#                    Makefile's card when there is one
+#   mini-mk check    runs the Makefile's check (principia's programs and
+#                    card: PRINCIPIA, by default $HOME/principia) with an
+#                    image of its own, kernels/9pi-principia
 TOP=../..
 DIR=kernels/9pi
-PRINCIPIA=/home/pad/principia
+PRINCIPIA=
 <$TOP/mkfiles/mkconfig
 D=$B/$DIR
 GFX=lib_graphics
@@ -45,31 +53,64 @@ KI=-I syscalls -I $UREG -I core -I files -I processes -I devices -I devices/sys 
 # programs are arm programs. The Pi 4 needs this flag; on the Pi 1 it
 # is board.h's own value, so it is just said twice.
 KFLAGS='-DTF_USER_PSR=0x10'
-FS=$D/bootdir
+FS=$D/bootdir-`{if(~ $"PRINCIPIA '') echo ix; if not echo principia}
 <$TOP/kernels/lib_machine/mkkernel
 
 # The boot's directory, made by the Makefile's generator. (The pixels'
 # tables, principia's, are in the repository: lib_graphics/Memdata.ml.)
+# ix's: the Makefile's BOOTDIR_IX and KERNDATE_IX, the programs those
+# of the top mkfile for the card's machine and system (mini-mk O=5
+# OS=plan9 at the top, which kernels/9pi's make ix runs).
+IX9=$TOP/_mk/5-plan9
+$D/bootdir-ix: conf/boot.rc $IX9/shell/mini-rc
+	mini-mkbootdir $target 1790380800 'boot=conf/boot.rc' \
+	  'rc='$IX9/shell/mini-rc 'ed='$IX9/editors/ed/mini-ed \
+	  'hello='$IX9/kernels/9pi/tests/hello/hello \
+	  'hog='$IX9/kernels/9pi/tests/hog/hog \
+	  'threads='$IX9/kernels/9pi/tests/threads/threads \
+	  'sources='$IX9/lib_core/commons/tests/sources \
+	  'echo='$IX9/utilities/misc/mini-echo 'ls='$IX9/utilities/files/mini-ls \
+	  'cat='$IX9/utilities/files/mini-cat \
+	  'bind='$IX9/utilities/namespace/mini-bind \
+	  'mount='$IX9/utilities/namespace/mini-mount \
+	  'dossrv='$IX9/kernels/9pi/filesystems/user/dossrv/mini-dossrv \
+	  'fdisk='$IX9/kernels/9pi/devices/storage/user/fdisk/mini-fdisk \
+	  'hellodraw='$IX9/lib_graphics/tests/hellodraw \
+	  'hellomenu='$IX9/lib_graphics/tests/hellomenu 'words=tests/words.txt'
+
+# principia's, given PRINCIPIA
 BOOTRC=$PRINCIPIA/kernel/init/user/boot/arm/boot.rc
 BIN=$PRINCIPIA/ROOT/arch/arm/bin
-$D/bootdir: $BOOTRC
+$D/bootdir-principia: $BOOTRC
 	mini-mkbootdir $target $PRINCIPIA 'boot='$BOOTRC 'rcmain='$PRINCIPIA/ROOT/rc/lib/rcmain \
 	  'rc='$BIN/rc 'echo='$BIN/echo 'bind='$BIN/bind 'fdisk='$BIN/fdisk 'dossrv='$BIN/dossrv 'mount='$BIN/mount 'ls='$BIN/ls
 
-SD=-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw,snapshot=on
+# (the Makefile's card, make card in this directory, or principia's)
+CARD=$TOP/_make/9pi/card.img
 run:V: $IMAGE
-	mini-qemu $BOOT -nographic $SD
+	sd=()
+	o=',if=sd,format=raw,snapshot=on'
+	if(~ $"PRINCIPIA '') { if(test -f $CARD) sd=(-drive 'file='$CARD^$o) }
+	if not sd=(-drive 'file='$PRINCIPIA/qemu-sd.img^$o)
+	mini-qemu $BOOT -nographic $sd
 
-# The Makefile's check, with this image (and a second one, with the
-# boot script of stage B, in a directory of its own). The Makefile runs
-# for its check only: it is told not to make the images (-o) and where
-# its outputs go. So the commands, the sessions and the expected
-# screens are the Makefile's, and nothing here repeats them.
+# The Makefile's check, which compares with principia's 9pi: with an
+# image of principia's programs (kernels/9pi-principia), and a second
+# one with the boot script of stage B (kernels/9pi-b), each in a
+# directory of its own. The Makefile runs for its check only: it is
+# told not to make the images (-o) and where its outputs go. So the
+# commands, the sessions and the expected screens are the Makefile's,
+# and nothing here repeats them.
 #   mini-mk check    (long: it runs every session under mini-qemu and
-#                    QEMU)
-IMAGE_B=$B/kernels/9pi-b/`{basename $IMAGE}
-stageb:V:
-	$MK 'O='$O 'DIR='kernels/9pi-b 'BOOTRC='tests/boot-b.rc
-check:V: $IMAGE stageb
+#                    QEMU; PRINCIPIA=dir, by default $HOME/principia)
+check:V:
+	p=$PRINCIPIA; if(~ $"p '') p=$HOME/principia
+	$MK 'O='$O 'B='$B 'DIR='kernels/9pi-principia 'PRINCIPIA='$p
+	$MK 'O='$O 'B='$B 'DIR='kernels/9pi-b 'PRINCIPIA='$p 'BOOTRC='tests/boot-b.rc
+	i=`{basename $IMAGE}
+	pi=$B/kernels/9pi-principia/$i
+	pb=$B/kernels/9pi-b/$i
 	mkdir -p $D/check
-	make 'BOARD='$BOARD check 'IMAGE='$IMAGE 'IMAGE_B='$IMAGE_B 'B='$D/check -o $IMAGE -o $IMAGE_B >[2=1] | grep '^ok \|^[<>] \|differ\|rror' | sed 's/^ok 9pi:/ok 9pi on the '^$BOARD^', by ix:/'
+	make 'BOARD='$BOARD 'PRINCIPIA='$p check 'IMAGE='$pi 'IMAGE_B='$pb \
+	  'B='$D/check -o $pi -o $pb >[2=1] | grep '^ok \|^[<>] \|differ\|rror' \
+	  | sed 's/^ok 9pi:/ok 9pi on the '^$BOARD^', by ix:/'

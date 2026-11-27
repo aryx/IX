@@ -25,7 +25,7 @@ printf '#!/boot/rc -m /boot/rcmain\n/boot/echo exception > %s\n' "'#k/reboot'" >
 # mini-mk took the bootdir below, of the same second, as out of date,
 # made again without this boot's files: /boot/seg did not exist)
 touch -t 200001010000 $W/boot.rc
-mini-mkbootdir $b/$K/bootdir $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/rcmain rc=$BIN/rc echo=$BIN/echo &&
+mini-mkbootdir $b/$K/bootdir-principia $P boot=$W/boot.rc rcmain=$P/ROOT/rc/lib/rcmain rc=$BIN/rc echo=$BIN/echo &&
   (cd $ROOT/kernels/9pi && MINI=mini- NPROC=${NPROC:-32} mini-mk O=5 B=$b DIR=$K PRINCIPIA=$P BOOTRC=$W/boot.rc) > $W/mk.log 2>&1 ||
   { echo "the kernel not relinked:"; tail -3 $W/mk.log | cut -c1-200; exit 1; }
 out=$W/out.txt

@@ -132,10 +132,10 @@ test-long: host
 # the kernels make ix does not build, mini-9pi's, oberon's, squeak's,
 # Singularity's; squeak's after languages/smalltalk's objects, which it
 # links and make ix builds for Plan 9 alone): a minute for each
-# analysis, -exn two. mini-9pi's image holds a boot directory of
-# principia's programs: without ~/principia (GitHub's machine) it is
-# built with an empty one (FS=/dev/null), not bootable, its link and
-# manifest the same, the analyses' needs.
+# analysis, -exn two. mini-9pi's image is built with an empty boot
+# directory (FS=/dev/null), not bootable: its link and manifest are the
+# same as with ix's programs in it (make ix's, which mini-mk O=5
+# OS=plan9 builds), the analyses' needs.
 check: check-tix check-mix
 # (a system's analyses side by side, as make test's jobs, each one's
 # output printed whole, in order, once all are done: check-mix's four
@@ -156,9 +156,7 @@ check-tix:
 	  *) fs=-caps; echo "check-tix: -dead, -bugs, -exn skipped (OCaml 4)";; esac; \
 	$(call checks,tiny,$$fs)
 check-mix: ix host
-	@fs=; [ -d $(HOME)/principia ] || { fs=FS=/dev/null; \
-	  echo "check-mix: mini-9pi's kernel with an empty boot directory (no ~/principia)"; }; \
-	(cd kernels/9pi && $(IXPATH) mini-mk $$fs > /dev/null) || exit 1; \
+	@(cd kernels/9pi && $(IXPATH) mini-mk FS=/dev/null > /dev/null) || exit 1; \
 	for d in kernels/oberon languages/smalltalk kernels/squeak \
 	  kernels/singularity; do \
 	  (cd $$d && $(IXPATH) mini-mk > /dev/null) || exit 1; done
@@ -333,10 +331,12 @@ ix: all
 ix-arm: stage0
 	$(IXPATH) mini-mk O=5
 # the kernels built by ix's tools, for the Pi 4
-# (docs/plans/done/plan_kernel_mini_ml.md; they take xv6's disk image and
-# principia's programs, as their Makefiles do)
+# (docs/plans/done/plan_kernel_mini_ml.md; they take xv6's disk image,
+# as its Makefile does, and mini-9pi ix's programs for Plan 9, as make
+# ix in kernels/9pi)
 kernels-ix: ix ix-arm host
 	cd kernels/xv6 && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
+	$(IXPATH) mini-mk O=5 OS=plan9 > /dev/null
 	cd kernels/9pi && $(IXPATH) mini-mk && $(IXPATH) mini-mk O=5
 
 # What ix built by ix is checked by:

@@ -4,8 +4,11 @@
 # mini-9pi (plan_9pi.md) is principia's Plan 9 kernel for the Pi1,
 # written in OCaml. Its modules (ML below) run over kernels/lib_machine's
 # machine, and lib_machine/kernel.mk builds the image. The image embeds
-# 9pi's bootdir, which mini-mkbootdir (in ../tools) makes from the
-# programs of ~/principia that 9pi links into its own image.
+# a bootdir, which mini-mkbootdir (in ../tools) makes from ix's own
+# programs (make ix, the default), or for the checks that compare with
+# principia's 9pi from the programs of ~/principia that 9pi links into
+# its own image (make principia). Nothing of ~/principia is needed for
+# make, make card, make self, make run.
 #
 # The directories are those of principia's kernel/: core/ (the types),
 # files/ (dev, chan, 9P), processes/, memory/, security/, syscalls/
@@ -18,12 +21,18 @@
 # bootdir's /boot/boot) and config.txt (the card's), and tests/ has the
 # sessions and screens that make check compares.
 #
-#   make            builds kernel-pi1.img (with mini-ml: see COMPILER)
-# The SD card is principia's qemu-sd.img. Its FAT, served by dossrv, is
-# the root, and its writes are kept in memory (snapshot=on).
+#   make            make ix: kernel-pi1-ix.img (with mini-ml: see
+#                   COMPILER), ix's programs in its bootdir (BOOTDIR_IX)
+#   make run        runs it under mini-qemu (Ctrl-A x quits) with make
+#                   card's card (below), mounted on /root
+#   make qemu       the same under QEMU
 #
-#   make run        runs it under mini-qemu (Ctrl-A x quits)
-#   make qemu       runs it under QEMU
+# The images with principia's programs (BOOTDIR; ~/principia, or
+# PRINCIPIA=dir), whose consoles are compared with principia's 9pi's:
+#   make principia  builds kernel-pi1.img. Its SD card is principia's
+#                   qemu-sd.img: its FAT, served by dossrv, is the root,
+#                   and its writes are kept in memory (snapshot=on).
+#   make run-principia, make qemu-principia   run it
 #   make check      runs stage C's session (raspberry/tests/9pi.py's,
 #                   typed at the boot's rc: tests/session-c.cmds) under
 #                   mini-qemu and QEMU, and compares the console with
@@ -165,6 +174,9 @@ DRAWOBJS = $(MEMDRAW:%=$(B)/gfx/md_%.o) $(MEMLAYER:%=$(B)/gfx/ml_%.o) $(LIBDRAW:
 EXTRA_OBJS = $(if $(filter ocaml,$(PIXEL)),,$(DRAWOBJS) $(B)/drawglue.o)
 
 include ../lib_machine/kernel.mk
+# (make alone is make ix: kernel.mk's all is the image of BOOTDIR, which
+# is principia's programs: make principia)
+.DEFAULT_GOAL := ix
 
 $(IMAGE): $(BUILD)/pixel-$(BOARD)
 $(BUILD)/pixel-$(BOARD): FORCE
@@ -207,11 +219,27 @@ MKBOOTDIR = ../../_build/default/kernels/tools/Mkbootdir.exe
 $(FS): $(MKBOOTDIR) $(foreach x,$(BOOTDIR),$(lastword $(subst =, ,$(x)))) | $(B)
 	$(MKBOOTDIR) $@ $(KERNDATE) $(BOOTDIR)
 
-run: $(IMAGE)
-	$(MINIQEMU) $(BOOT) $(SD)
+run: card
+	$(MINIQEMU) $(BOOT_IX) $(CARD_SD)
+qemu: card
+	$(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
 
-qemu: $(IMAGE)
+# principia's programs and card, for the checks that compare with
+# principia's 9pi: each target that needs them says so at once when
+# ~/principia (PRINCIPIA) is not there.
+HAVE_PRINCIPIA = $(wildcard $(PRINCIPIA)/ROOT/arch/arm/bin/rc)
+need-principia:
+	@[ -n "$(HAVE_PRINCIPIA)" ] || { \
+	  echo "kernels/9pi: no principia's programs in $(PRINCIPIA) (PRINCIPIA=dir):"; \
+	  echo "  this target compares with principia's 9pi; make, make card, make run need none"; \
+	  exit 1; }
+principia: need-principia
+	$(MAKE) --no-print-directory $(IMAGE)
+run-principia: principia
+	$(MINIQEMU) $(BOOT) $(SD)
+qemu-principia: principia
 	$(QEMU) $(QEMU_BOOT) $(SD)
+.PHONY: need-principia principia run-principia qemu-principia
 
 # A console made the same as the Pi1's C 9pi's. QEMU's framebuffer
 # warns, for the C 9pi as for mini-9pi (its mailbox's channel 1 writes
@@ -321,7 +349,7 @@ SESSIONS = run-mini-c run-qemu-c run-mini-d run-qemu-d run-mini-usb run-qemu-usb
 sessions: $(SESSIONS)
 .PHONY: sessions $(SESSIONS)
 
-check: $(IMAGE) $(IMAGE_B)
+check: need-principia $(IMAGE) $(IMAGE_B)
 	rm -rf $(B)/rio-mini $(B)/rio-qemu
 	$(www); $(MAKE) --no-print-directory -j$(words $(SESSIONS)) sessions; r=$$?; $(wwwstop); exit $$r
 	$(call unwarned,$(B)/mini-c.txt) | diff - tests/session-c && echo "ok 9pi: stage C's session under mini-qemu"
@@ -829,8 +857,8 @@ check-plug: ix-usb card
 #   check-plug            devices unplugged and plugged (under QEMU)
 #   mini-mk check         the kernel built by ix's tools (the Pi4's)
 check-all:
-	$(MAKE) --no-print-directory PIXEL=c
-	$(MAKE) --no-print-directory
+	$(MAKE) --no-print-directory PIXEL=c principia
+	$(MAKE) --no-print-directory principia
 	$(MAKE) --no-print-directory check
 	$(MAKE) --no-print-directory check-ix
 	$(MAKE) --no-print-directory check-audio
@@ -894,8 +922,8 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 # dd if=$(BUILD)/card.img of=/dev/sdX bs=1M.
 #   make check-card  reads the card with the host's tools (its
 #                    partitions, the FAT checked, the kernel read back),
-#                    then with principia's (fdisk, dossrv:
-#                    tests/boot-card.rc as /boot/boot,
+#                    then, when ~/principia is there, with principia's
+#                    (fdisk, dossrv: tests/boot-card.rc as /boot/boot,
 #                    tests/session-card.cmds) under mini-qemu and QEMU,
 #                    with the console as in tests/session-card. Then it
 #                    reads it with ix's own: mini-dossrv
@@ -1250,21 +1278,21 @@ QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
 #   - the ones that typeset (man, troff: a page for the terminal, the
 #     page written again in the new format, and as a PDF file)
 CARDS_IX = card-ix card-files card-fat card-text card-misc card-search card-filter card-proc card-script card-calc card-typeset
-check-card: card $(IMAGE_CARD)
+check-card: card $(if $(HAVE_PRINCIPIA),$(IMAGE_CARD))
 	/usr/sbin/sfdisk -l $(CARD) | grep -c 'FAT16\|Non-FS data' | grep -qx 2 && echo "ok card: its two partitions"
 	dd if=$(CARD) of=$(B)/card-fat.img bs=512 skip=2048 count=65536 2> /dev/null
 	/usr/sbin/fsck.vfat -n $(B)/card-fat.img > $(B)/card-fsck.txt 2>&1 && echo "ok card: its FAT, by fsck.vfat ($$(tail -1 $(B)/card-fsck.txt | sed 's/.*: //'))"
 	mcopy -n -i $(B)/card-fat.img ::MINI9PI1.IMG $(B)/card-kernel.img && cmp $(B)/card-kernel.img kernel-pi1-ix.img && echo "ok card: the kernel read back by mcopy"
 	$(MAKE) --no-print-directory ix-kernel > /dev/null
-	$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card.txt --lines tests/session-card.cmds -- $(MINIQEMU) $(BOOT_CARD) $(CARD_SD) & \
-	$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card.txt --lines tests/session-card.cmds -- $(QEMU) $(QEMU_BOOT_CARD) $(CARD_SD) & \
+	$(if $(HAVE_PRINCIPIA),$(SESSION_PY) --prompt "% " --timeout 180 --out $(B)/mini-card.txt --lines tests/session-card.cmds -- $(MINIQEMU) $(BOOT_CARD) $(CARD_SD) &) \
+	$(if $(HAVE_PRINCIPIA),$(SESSION_PY) --prompt "% " --timeout 60 --out $(B)/qemu-card.txt --lines tests/session-card.cmds -- $(QEMU) $(QEMU_BOOT_CARD) $(CARD_SD) &) \
 	$(foreach s,$(CARDS_IX),$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/mini-$(s).txt --lines tests/session-$(s).cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) & \
 	  $(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 240 --out $(B)/qemu-$(s).txt --lines tests/session-$(s).cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD) &) \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 180 --out $(B)/mini-card-ixk.txt --lines tests/session-card-ixk.cmds -- $(MINIQEMU) $(BOOT_IXK) $(CARD_SD) & \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 60 --out $(B)/qemu-card-ixk.txt --lines tests/session-card-ixk.cmds -- $(QEMU) $(QEMU_BOOT_IXK) $(CARD_SD) & \
 	wait
-	$(call unwarned,$(B)/mini-card.txt) | $(cardsize) > $(B)/mini-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/mini-card.txt.masked - && echo "ok card: read and written by principia's fdisk and dossrv, on mini-9pi under mini-qemu"
-	$(call unwarned,$(B)/qemu-card.txt) | $(cardsize) > $(B)/qemu-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/qemu-card.txt.masked - && echo "ok card: the same under QEMU"
+	$(if $(HAVE_PRINCIPIA),$(call unwarned,$(B)/mini-card.txt) | $(cardsize) > $(B)/mini-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/mini-card.txt.masked - && echo "ok card: read and written by principia's fdisk and dossrv on mini-9pi under mini-qemu",@echo "check-card: no ~/principia (PRINCIPIA): the card not read by principia's fdisk and dossrv")
+	$(if $(HAVE_PRINCIPIA),$(call unwarned,$(B)/qemu-card.txt) | $(cardsize) > $(B)/qemu-card.txt.masked; $(cardsize) tests/session-card | diff $(B)/qemu-card.txt.masked - && echo "ok card: the same under QEMU")
 	@for s in $(CARDS_IX); do for e in mini qemu; do \
 	  $(call unwarned,$(B)/$$e-$$s.txt) | $(cardsize) > $(B)/$$e-$$s.txt.masked; \
 	  $(cardsize) tests/session-$$s | diff $(B)/$$e-$$s.txt.masked - && echo "ok card: with ix's own programs, tests/session-$$s under $$e" || exit 1; \

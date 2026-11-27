@@ -74,7 +74,8 @@
 # Where the kernels are: $XV6 (default ~/xv6: xv6-multiarch, its ports
 # built), $PRINCIPIA (default ~/principia: 9pi built, qemu-sd.img),
 # mini-xv6 in ix's kernels/xv6/ (with $XV6's arm-pi1 and arm64-pi4 fs.img),
-# mini-9pi in ix's kernels/9pi/ (with $PRINCIPIA's bootdir and qemu-sd.img).
+# $PRINCIPIA's bootdir and qemu-sd.img for the -principia ones alone, and
+# mini-9pi in ix's kernels/9pi/ (ix's programs and card, no ~/principia).
 
 set -e
 # claude: ix's checkout, also when run as bin/mini-pi (a link into
@@ -236,7 +237,7 @@ case $1 in
     board=pi1; arch=arm; [ $1 = mini-9pi4-principia ] && { board=pi4; arch=arm64; }
     [ -f $PRINCIPIA/qemu-sd.img ] || { echo "mini-pi: no $PRINCIPIA/qemu-sd.img (principia: mk disk)"; exit 1; }
     if [ $build = 1 ]; then
-      step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA || { echo "mini-pi: $1 not built"; exit 1; }
+      step "ocaml-light for $arch" $ROOT/kernels/ocaml-light.sh $arch && step "$1" make -C $dir BOARD=$board ${PIXEL:+PIXEL=$PIXEL} PRINCIPIA=$PRINCIPIA principia || { echo "mini-pi: $1 not built"; exit 1; }
     fi
     snapshot=",snapshot=on"; [ $write = 1 ] && snapshot=""
     # its console the PL011 (kernels/lib_machine's), in this terminal; -g: also

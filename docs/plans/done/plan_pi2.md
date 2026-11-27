@@ -27,21 +27,28 @@ second where the Pi 1 gives 16); one card boots both boards; mini-xv6
 builds; since 2026-11-19 both boards' kernels are by ix's tools, the
 Pi 2's with its four cores ([`plan_multicore.md`](../plan_multicore.md)).
 Left:
-- **No ~/principia for a card** (the author: "We should be able to
-  make a mini-9pi card that boot on pi1 and pi2 without any code from
-  ~/principia"). By reading the Makefiles (2026-11-27), not by a
-  build without ~/principia: `make card` takes `make ix`'s images,
-  whose boot directory is ix's own programs (BOOTDIR_IX) and whose
-  date is KERNDATE_IX; the firmware is in `kernels/firmware/`, the
-  pixels' tables in `lib_graphics/Memdata.ml`. What still reads
-  ~/principia: the Makefile's default image and its `run`, `check`
-  (principia's boot.rc, rc, ls, dossrv... and its `qemu-sd.img`);
-  `check-card`, which reads the card with principia's fdisk and dossrv
-  first; the kernels' mkfile (`kernels/9pi/mkfile`, PRINCIPIA
-  written as `/home/pad/principia`), whose bootdir is principia's
-  unless FS is given (the top Makefile's check-mix gives an empty one
-  without ~/principia, kernels-ix does not); `tests/seg.sh`, `acid.sh`,
-  `panic.sh`; and, as options, PIXEL=c and the C 9pi's comparisons.
+- **No ~/principia for a card: done** (2026-11-27; the author: "We
+  should be able to make a mini-9pi card that boot on pi1 and pi2
+  without any code from ~/principia", then "by default it should be an
+  ix kernel and ix only card, especially for the make, make card, make
+  self, etc."). `make card` and `make card-self` already read nothing
+  of ~/principia (a clone of HEAD built with PRINCIPIA=/nonexistent,
+  under strace); the card booted under QEMU as a Pi 1 and as a Pi 2,
+  tests/session-card-ix's commands run to the end, the two consoles the
+  same. The defaults changed: kernels/9pi's `make` is `make ix`, `make
+  run` and `make qemu` boot it with the card; principia's image is
+  `make principia` (`run-principia`, `qemu-principia`), and `check`,
+  which compares with principia's 9pi, says at once when ~/principia is
+  not there; `check-card` reads the card with principia's programs only
+  when it is. `kernels/9pi/mkfile` takes ix's programs (bootdir-ix),
+  principia's only given PRINCIPIA (bootdir-principia: its `check`,
+  tests/seg.sh, acid.sh, panic.sh); the top Makefile's check-mix builds
+  the kernel with an empty boot directory always. What still reads
+  ~/principia is what compares with it: `make check`, `mini-mk check`
+  (test-ix-kernels), make test's "mini-9pi built by ix" job (skipped
+  without it), PIXEL=c, the C 9pi's records. And the card of a
+  checkout of principia-softwarica holds its kernel book when there is
+  one (CARD_BOOK), a PDF, no code.
 - The Pi 2's own recorded screens for `make check-menu` and the other
   screens' checks (the recorded ones have the Pi 1's banner); the
   window (`-g`); the page (MiniQemuWeb's `pi2 = false`).

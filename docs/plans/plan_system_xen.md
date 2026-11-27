@@ -344,7 +344,7 @@ boards, and ix's own files. Nothing was run on a board.
 | | the chip | the processor | a hypervisor there |
 |---|---|---|---|
 | a Pi 2B V1.1 (QEMU's `raspi2b`, mini-qemu's Pi 2) | BCM2836 | four Cortex-A7, ARMv7, 32 bits | in HYP, ARMv7's mode for it: a 32-bit program |
-| **a Pi 2B V1.2, the author's** ([`plan_pi2.md`](plan_pi2.md): "Raspberry Pi 2 Model B V1.2" read on the board) | BCM2837, the Pi 3's | four Cortex-A53, ARMv8, 64 bits, run as 32-bit ones by mini-9pi2 | at EL2 in 64 bits, as on the Pi 4 |
+| **a Pi 2B V1.2, the author's** ([`plan_pi2.md`](done/plan_pi2.md): "Raspberry Pi 2 Model B V1.2" read on the board) | BCM2837, the Pi 3's | four Cortex-A53, ARMv8, 64 bits, run as 32-bit ones by mini-9pi2 | at EL2 in 64 bits, as on the Pi 4 |
 
 Both have the second level, stage 2, `hvc`, a guest's waits trapped
 and a virtual timer. What the script saw:

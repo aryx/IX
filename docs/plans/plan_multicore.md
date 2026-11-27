@@ -9,7 +9,7 @@ multiple domains; I think in mini-chrome we managed to find
 abstraction (like work pool or something) so that we were using
 threads on ocaml 4 and domains on ocaml5".
 
-This is what [`plan_pi2.md`](plan_pi2.md) leaves out by its decision 2
+This is what [`plan_pi2.md`](done/plan_pi2.md) leaves out by its decision 2
 ("One core. ... Several cores is a kernel's change (locks, a scheduler
 for each), not a board's: not in this plan"). That plan comes first:
 there is no Pi 2 kernel yet, and no Pi 2 in mini-qemu.
@@ -234,7 +234,7 @@ OCaml 5's runtime is from memory and is marked so.
 
 ## The stages (each checked before the next)
 
-0. **[`plan_pi2.md`](plan_pi2.md)'s stages 1 and 2**: the Pi 2's
+0. **[`plan_pi2.md`](done/plan_pi2.md)'s stages 1 and 2**: the Pi 2's
    kernel with one core, under QEMU.
 1. **mini-qemu's Pi 2 with several cores, in turns** (decision 9).
    Check: a few lines of assembly that start the three other cores by
@@ -321,7 +321,7 @@ collector tried in 2008 to 2010, domains in 5.0 (from memory).
 - **A game is one process**: its update and its drawing are on one
   core whatever the board. The three others take what was beside it
   (rio, the file server, the network, a compile in another window).
-  [`plan_pi2.md`](plan_pi2.md)'s reason for the board ("four cores
+  [`plan_pi2.md`](done/plan_pi2.md)'s reason for the board ("four cores
   each faster than the Pi1's one") is, for one game, the "each
   faster", not the four.
 - **Two system calls at once**: the lock. A process that mostly

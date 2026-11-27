@@ -916,7 +916,7 @@ card: ix
 	$(MAKE) BOARD=pi2 ix
 	$(MAKE) $(CARD)
 	@$(if $(filter card,$(MAKECMDGOALS)),$(cardhelp))
-# The card to build ix on (docs/plans/plan_self_hosting.md). It has the
+# The card to build ix on (docs/plans/done/plan_self_hosting.md). It has the
 # same programs, ix's sources in /src (the repository except docs/:
 # 4,900 files, 18 MB), the whole toolchain in /progs/toolchain, and room
 # for what a build makes (346 MB for mini-9pi's programs). It is 1 GB,
@@ -1105,7 +1105,7 @@ CARD_examples = hellorio=$(IX9)/windows/rio/tests/hellorio hellokbd=$(IX9)/lib_g
 # the typesetter and the manual (docs/plans/done/plan_typesetting.md, stage 8)
 CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
 # the assembler and the linker, to build ix on the card
-# (docs/plans/plan_self_hosting.md, stage 1)
+# (docs/plans/done/plan_self_hosting.md, stage 1)
 # (and the compilers, mk and ar, to build /examples there)
 CARD_toolchain = asm=$(IX9)/assembler/mini-asm ld=$(IX9)/linker/mini-ld ml=$(IX9)/languages/ml/mini-ml cc=$(IX9)/languages/c/mini-cc \
   mk=$(IX9)/builder/mini-mk ar=$(IX9)/linker/tools/mini-ar

@@ -588,7 +588,7 @@ only thing the test is about.
 ## 18. A board that an emulator cannot stand in for: one variable a card, and a kernel that says its own state
 
 A day of 2026-10-12: a newer firmware on the Pi 1, then the Pi 2
-(docs/plans/plan_pi2.md has what was found; here, how). Every fault
+(docs/plans/done/plan_pi2.md has what was found; here, how). Every fault
 below was invisible under QEMU and mini-qemu, and each try was a card
 written and carried to the board by the author.
 

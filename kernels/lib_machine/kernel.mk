@@ -63,7 +63,7 @@ B ?= $(BUILD)/$(BOARD)-ocaml4
 IMAGE ?= kernel-$(BOARD)-ocaml4.elf
 endif
 # (The Pi 2 uses the Pi 1's directory, with PI2 defined for its C and
-# its assembly: docs/plans/plan_pi2.md.)
+# its assembly: docs/plans/done/plan_pi2.md.)
 ARM32 = $(filter pi1 pi2,$(BOARD))
 BD = $(LIB)/$(if $(ARM32),pi1,$(BOARD))
 # The build directory and the image. A kernel may build another one

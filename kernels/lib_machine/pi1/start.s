@@ -41,7 +41,7 @@
 	.equ	DEVICE, 0x412			@ the same, XN, neither C nor B: the devices'
 	.equ	UNCACHED, 0x1412		@ the same, TEX 001: memory that is not cached (machine.c says whose)
 
-@ The Pi 2 (--defsym PI2=1; docs/plans/plan_pi2.md): the same kernel
+@ The Pi 2 (--defsym PI2=1; docs/plans/done/plan_pi2.md): the same kernel
 @ on a Cortex-A7 or A53. What differs is here and marked: the mode the
 @ firmware starts the kernel in, the devices' physical address, the
 @ cycle counter, and the caches' operations on a whole cache, ARMv7's.

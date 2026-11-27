@@ -149,7 +149,7 @@ was:
    other systems are. It is not a port of MS-DOS: no program of the
    PC's runs on it.
 1. **The Pi 1 first, the Pi 2 by the same flag**
-   ([`plan_pi2.md`](plan_pi2.md)): the two boards the author has that
+   ([`plan_pi2.md`](done/plan_pi2.md)): the two boards the author has that
    are arm32. Under mini-qemu and QEMU as the others. The Pi 4 (arm64)
    is not in this plan.
 2. **Real mode is the MMU off.** It is what the firmware hands over:

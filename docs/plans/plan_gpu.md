@@ -12,7 +12,7 @@ plan read: "**ideally I would like TinyVirtuaRacing to run quickly
 under the Pi1, thx to the GPU**"; "and I have a Pi 2B"; "so definitely
 would love to have mini-9pi running on it"; "Pi2 should go in
 separate plan document, that can be linked from this one":
-[`plan_pi2.md`](plan_pi2.md).
+[`plan_pi2.md`](done/plan_pi2.md).
 
 (2026-10-23: the game itself is now
 [`plan_virtuaracing.md`](plan_virtuaracing.md)'s, mini-virtuaracing,
@@ -33,7 +33,7 @@ processor is **the Pi1's only** (and the Pi2's, the same one), it is
 documented, and **nothing but the board can say that it works**: QEMU
 has the device's name and nothing behind it. The Pi 2B has the same
 processor and four faster cores: a board of mini-9pi's to add
-([`plan_pi2.md`](plan_pi2.md)), and the better one for this game.
+([`plan_pi2.md`](done/plan_pi2.md)), and the better one for this game.
 
 Its numbers are `games/survey3d.sh`'s (run 2026-10-08). What is said
 of the processors was read in Linux's driver and the firmware's list
@@ -277,7 +277,7 @@ stage 4):
   [config.txt pages](https://www.raspberrypi.com/documentation/computers/config_txt.html)).
   Stage 4 wants `start.elf` and `fixup.dat` and a larger `gpu_mem`
   (the memory the firmware gives the processor's lists and pictures
-  is taken there: how much, to find). [`plan_pi2.md`](plan_pi2.md)'s
+  is taken there: how much, to find). [`plan_pi2.md`](done/plan_pi2.md)'s
   stage 3 renews the firmware's files for one card on the Pi1 and the
   Pi2: the full one is to be taken then.
 - **A shader is a program** of the processor's own (the QPU's
@@ -304,7 +304,7 @@ stage 4):
 
 A BCM2837 by the author's word (a V1.2: four Cortex-A53 run as 32-bit ones; a V1.1 is a BCM2836, four Cortex-A7), the Pi1's peripherals at 0x3F000000, the
 same VideoCore IV. mini-9pi has no board for it today:
-[`plan_pi2.md`](plan_pi2.md) is that port, its survey and its stages.
+[`plan_pi2.md`](done/plan_pi2.md) is that port, its survey and its stages.
 
 ## Four ways to draw a scene
 
@@ -390,7 +390,7 @@ Pi1 at a game's rate, if the game's own part lets it (stage 3).
    has A and B, on a processor that may be fast enough for B's small
    scenes (a guess).
 9. **The Pi 2B is its own plan** (the author):
-   [`plan_pi2.md`](plan_pi2.md). It waits for nothing here, and
+   [`plan_pi2.md`](done/plan_pi2.md). It waits for nothing here, and
    nothing here waits for it but the last stage's second column. The
    processor's driver is one file for both boards, the registers'
    address the board's.
@@ -457,7 +457,7 @@ Pi1 at a game's rate, if the game's own part lets it (stage 3).
    edges apart); ms a frame beside stage 2's.
 6. **TinyVirtuaRacing on the Pi1, by the processor**: the goal. Its
    frames a second on the author's Pi1, and on the Pi 2B when
-   [`plan_pi2.md`](plan_pi2.md) has it boot, the frame taken
+   [`plan_pi2.md`](done/plan_pi2.md) has it boot, the frame taken
    apart as at stage 3 (the program's part, the messages, the
    processor's), in this file's Status; then what the table says is
    next.
@@ -470,7 +470,7 @@ Pi1 at a game's rate, if the game's own part lets it (stage 3).
 
 Not in this plan: the ray tracer, the Pi4's processor, the sound
 ([`plan_audio.md`](done/plan_audio.md): the engine and the tyres are half
-of this game), the Pi 2B's kernel ([`plan_pi2.md`](plan_pi2.md)).
+of this game), the Pi 2B's kernel ([`plan_pi2.md`](done/plan_pi2.md)).
 
 ## Open questions
 
@@ -490,7 +490,7 @@ Nothing built. The same evening, the author's goal (TinyVirtuaRacing
 on the Pi1 by its processor) and the Pi 2B: the game surveyed, the
 device made one that keeps meshes and places vertices (decision 5),
 stages 3, 4 and 6 written for it; the Pi 2B's port its own plan
-([`plan_pi2.md`](plan_pi2.md)); the shaders by hand, and the
+([`plan_pi2.md`](done/plan_pi2.md)); the shaders by hand, and the
 processor in mini-pi left for later (the author).
 
 2026-10-23: TinyVirtuaRacing's own plan,

@@ -7,6 +7,8 @@ ml_vsp? and put things in the right order like in principia's kernel
 so we can then comment and assume it's in R10 and R9?", then "yes
 let's first write the plan".
 
+**Status: done, by design C instead** (2026-11-27): Status, at the end.
+
 ## Where things are (2026-10-29)
 
 mini-ml's code keeps its value stack's top in a register for a
@@ -147,3 +149,10 @@ needs it.
 ## Status
 
 2026-10-29: plan written; postponed for design C, which is done.
+
+2026-11-27: **done, by design C, not by this plan's design** (the
+author: "ok let's move the first 3"), moved to done/. Design C
+(d4263bba) made what was implicit explicit: R10 loaded back after
+each call of C, the conventions between ML and C numbered in mini-ml's
+Emit. `extern register` is the road not taken; mini-cc's gap (step 1)
+stays, for whenever principia's kernel C is compiled by it.

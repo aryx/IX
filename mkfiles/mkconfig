@@ -11,7 +11,7 @@
 # put it. No mkfile gives MINI a value: a mini-mk started by a recipe
 # takes it from the environment, as it was given to the first one.
 # The recipes are rc's on both, so that mini-9pi builds ix from the
-# same mkfiles (docs/plans/plan_self_hosting.md): mini-mk runs them
+# same mkfiles (docs/plans/done/plan_self_hosting.md): mini-mk runs them
 # with the rc named as it is, mini-rc on the host and rc on the card,
 # unless MKSHELL names another (no mkfile says it for the others: an
 # included file's MKSHELL is its own).

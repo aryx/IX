@@ -968,7 +968,7 @@ the build's time, in their order, and which did not. The compiler's
 own optimizations are Part 2's rows (C1 to C58), and this part only
 says which of them the build felt. Every number is copied from the
 plans, with the setting they give:
-[plan_self_hosting.md](../plans/plan_self_hosting.md) (October),
+[plan_self_hosting.md](../plans/done/plan_self_hosting.md) (October),
 [plan_9pi_self_speed.md](../plans/plan_9pi_self_speed.md) (November)
 and [plan_multicore.md](../plans/plan_multicore.md). The times are
 mk's on the card under QEMU on the author's Mac, unless CI is named.

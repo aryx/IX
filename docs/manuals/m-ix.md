@@ -298,7 +298,7 @@ Nothing declared that assumption (the author: "seems bad to leave
 this R10 implicit instead of enforced", then "What I want is clearer
 code, less hidden assumptions about register"). The other design was
 an `extern register` declaration, Plan 9's way; it is postponed
-(docs/plans/plan_extern_register.md).
+(docs/plans/done/plan_extern_register.md).
 
 The function called saves no register across a call; in Plan 9's
 convention, the caller saves. So a value live across a call either

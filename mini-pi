@@ -6,7 +6,7 @@
 #
 # ix's kernels, each built first, on the Pi1; a 4 after the name
 # (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core);
-# mini-9pi2 is mini-9pi on the Pi2 (docs/plans/plan_pi2.md: its four
+# mini-9pi2 is mini-9pi on the Pi2 (docs/plans/done/plan_pi2.md: its four
 # cores, as on the board; the Pi1's card):
 #
 #   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone

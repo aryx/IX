@@ -1,7 +1,7 @@
 # Plan: mini-9pi on the Pi 2B: a third board (`kernels/lib_machine/pi2/`, `kernels/9pi/`, `raspberry/`)
 
 The author (2026-10-08), of
-[`plan_gpu.md`](plan_gpu.md), whose goal is a 3D
+[`plan_gpu.md`](../plan_gpu.md), whose goal is a 3D
 game drawn by the Pi1's 3D processor: "and I have a Pi 2B"; "so
 definitely would love to have mini-9pi running on it"; and, the board
 being a stage of that plan: "Pi2 should go in separate plan document,
@@ -19,6 +19,33 @@ board's other address is a line; what is really the Pi2's is the
 processor's start and its caches. **Nothing here was built or run**;
 the numbers are `games/survey3d.sh`'s ("ix: the boards") and the greps
 said below (2026-10-08).
+
+**Status: done** (2026-11-27; the author: "ok let's move the first
+3"), moved to done/: stages 1 to 4. mini-9pi boots on the author's
+Pi 2B with the caches on, rio and the sound (cameltry 45 frames a
+second where the Pi 1 gives 16); one card boots both boards; mini-xv6
+builds; since 2026-11-19 both boards' kernels are by ix's tools, the
+Pi 2's with its four cores ([`plan_multicore.md`](../plan_multicore.md)).
+Left:
+- **No ~/principia for a card** (the author: "We should be able to
+  make a mini-9pi card that boot on pi1 and pi2 without any code from
+  ~/principia"). By reading the Makefiles (2026-11-27), not by a
+  build without ~/principia: `make card` takes `make ix`'s images,
+  whose boot directory is ix's own programs (BOOTDIR_IX) and whose
+  date is KERNDATE_IX; the firmware is in `kernels/firmware/`, the
+  pixels' tables in `lib_graphics/Memdata.ml`. What still reads
+  ~/principia: the Makefile's default image and its `run`, `check`
+  (principia's boot.rc, rc, ls, dossrv... and its `qemu-sd.img`);
+  `check-card`, which reads the card with principia's fdisk and dossrv
+  first; the kernels' mkfile (`kernels/9pi/mkfile`, PRINCIPIA
+  written as `/home/pad/principia`), whose bootdir is principia's
+  unless FS is given (the top Makefile's check-mix gives an empty one
+  without ~/principia, kernels-ix does not); `tests/seg.sh`, `acid.sh`,
+  `panic.sh`; and, as options, PIXEL=c and the C 9pi's comparisons.
+- The Pi 2's own recorded screens for `make check-menu` and the other
+  screens' checks (the recorded ones have the Pi 1's banner); the
+  window (`-g`); the page (MiniQemuWeb's `pi2 = false`).
+- The details in Status, at the end.
 
 ## The survey (2026-10-08, read; nothing run)
 
@@ -76,7 +103,7 @@ said below (2026-10-08).
   The BCM2836 keeps both and adds a controller for its cores at
   0x40000000, which by default gives the peripherals' interrupt to the
   first core (from memory; QEMU's `raspi2b` is what says first).
-  [`plan_pi.md`](done/plan_pi.md)'s table: xv6's arm-pi2 runs on `raspi2b`
+  [`plan_pi.md`](plan_pi.md)'s table: xv6's arm-pi2 runs on `raspi2b`
   with one core, the system timer and the PL011, as mini-9pi would;
   principia's 9pi2 uses the cores' own timer.
 - **The emulators**: QEMU has `raspi2b`. **mini-pi has no Pi2**: no
@@ -136,7 +163,7 @@ said below (2026-10-08).
   - **The cut-down firmware has no 3D**: "The cut-down firmware
     removes support for codecs, 3D and debug logging"; `gpu_mem=16`
     is what chooses it. Nothing for this plan, and
-    [`plan_gpu.md`](plan_gpu.md)'s stage 4 needs the other one
+    [`plan_gpu.md`](../plan_gpu.md)'s stage 4 needs the other one
     (`start.elf`, `fixup.dat`, more of `gpu_mem`).
 - **The programs are the Pi1's**: mini-ml's and the C compiler's arm
   code is ARMv6's at most, which a Cortex-A7 or A53 runs. Nothing of the
@@ -185,14 +212,14 @@ said below (2026-10-08).
    (`MKCARD`'s list), and the author's Pi 2B: the boot, its `board
    rev` (0xa22042), a keyboard, rio, Tetris; then the speed plan's two
    games with `stats=on`, their frames beside the Pi1's in
-   [`plan_playground_speed.md`](plan_playground_speed.md)'s Status.
+   [`plan_playground_speed.md`](../plan_playground_speed.md)'s Status.
    The same card back in the Pi1. (The Pi4's files join it when the
    Pi4's card is made: `kernels/firmware`'s README, "to come".)
 4. **mini-xv6 on it**, the same directory serving both kernels as the
    Pi1's does: if it is nothing more, done with stage 1.
 
 Not in this plan: several cores
-([`plan_multicore.md`](plan_multicore.md)); the 3D processor (plan_gpu.md:
+([`plan_multicore.md`](../plan_multicore.md)); the 3D processor (plan_gpu.md:
 its driver is one file for the Pi1 and the Pi2, the registers' address
 the board's); mini-pi's Pi2.
 

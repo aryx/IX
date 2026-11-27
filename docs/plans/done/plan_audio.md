@@ -136,7 +136,7 @@ What they change, beyond more files copied:
   `Int64`, `Int32` or `Bigarray` in `formats/mod`, `midi` or
   `mpeg_audio` (the survey). What the Huffman reader shifts is to be
   looked at when compiled (the survey's mini-ml column, stage 1).
-- **A Pi 2** (the author's 2B V1.2, [`plan_pi2.md`](../plan_pi2.md)) *from
+- **A Pi 2** (the author's 2B V1.2, [`plan_pi2.md`](plan_pi2.md)) *from
   memory*: the Pi1's jack, PWM0 and PWM1 on GPIO 40 and 45, the
   peripherals at 0x3F000000: the same driver, one more row in the
   board's table. Its cores are each faster than the Pi1's one, and
@@ -258,7 +258,7 @@ What they change, beyond more files copied:
    lines over what stages 1 and 6 brought).
 7. **The Pi 2 and the Pi 4**: the PWM's address and pins by board (the
    Pi 4's from the survey's table), after
-   [`plan_pi2.md`](../plan_pi2.md) for the first.
+   [`plan_pi2.md`](plan_pi2.md) for the first.
 8. Later, each its own decision: HDMI, a USB sound device (and with it
    QEMU's `usb-audio`), Vorbis, the effects not copied.
 

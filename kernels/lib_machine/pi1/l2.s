@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 //
 // mini-9pi on the Pi 2, for mini-asm and mini-ld: l.s, with what is
-// the Pi 2's (a Cortex-A7 or A53; docs/plans/plan_pi2.md). start.s
+// the Pi 2's (a Cortex-A7 or A53; docs/plans/done/plan_pi2.md). start.s
 // says each of these under its PI2, for GNU's assembler; the same
 // machine here.
 

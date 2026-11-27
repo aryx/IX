@@ -33,7 +33,7 @@
  * there is no place left for those. There is A THIRD ONE: directory
  * entries of 64 bytes, with names of 62 characters (a fifth of ix's
  * sources have names longer than 14, such as Out_channel.mli; see
- * docs/plans/plan_self_hosting.md). Because of it, xv6's own images
+ * docs/plans/done/plan_self_hosting.md). Because of it, xv6's own images
  * can no longer be read, nor can ix's be read by xv6: the format has
  * xv6's layout, but it is ix's (the author: "there is no need to
  * remain backward compatible with the actual xv6 filesystem").

@@ -15,9 +15,16 @@ there. The plan is five stages, from `hello.s` assembled on the card
 to mini-ml compiling itself there, each a program built on the card
 and compared, byte for byte, with the one Linux builds.**
 
-**Status: stages 1, 2 and 3's first half done** (2026-10-21: mini-mk
-on mini-9pi builds lib_core and a program by their mkfiles, the
-program Linux's bytes; Status below).
+**Status: done** (2026-11-27; the author: "ok let's move the first
+3"), moved to done/: stages 1 to 4, and stage 5's build of all of
+`/src`. `make self` (kernels/9pi, the Pi 2 under QEMU) builds the 85
+directories on the card, the 2,919 files Linux's byte for byte, 27
+minutes of mk on four cores, 48 on one (2026-11-19). Its speed went on
+in [`plan_9pi_self_speed.md`](../plan_9pi_self_speed.md). Left, not
+recorded here as done: mini-9pi's own image built on the card and
+booted; mini-ml built by the mini-ml built there (the fixed point) on
+the card. The history is in Status below, the 2026-10-21 line first:
+"stages 1, 2 and 3's first half done".
 
 ## Where it starts from (2026-10-09)
 

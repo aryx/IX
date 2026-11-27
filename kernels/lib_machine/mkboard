@@ -11,7 +11,7 @@
 #            the emulator, and QEMUSMP what more it takes
 #   CINC     the C library's headers
 #   PI2      1 for the Pi 2 (mini-mk O=5 PI2=1), which uses the Pi 1's
-#            files with what differs (docs/plans/plan_pi2.md); empty
+#            files with what differs (docs/plans/done/plan_pi2.md); empty
 #            otherwise
 #   SMP      1 for the other cores to run processes under an emulator
 #            too (mini-mk O=5 PI2=1 SMP=1: runtime.c's CORES_TEST,

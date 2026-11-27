@@ -50,7 +50,7 @@ echo "  raspi2b -bios, SCR read:   '$(run qemu-system-arm -M raspi2b -bios $D/sc
 echo "  raspi2b -bios, the firmware's way up: '$(run qemu-system-arm -M raspi2b -bios $D/hyp.img)'"
 
 echo "== ix: the author's board"
-grep -m1 -o 'by the author.s word a V1.2: a BCM2837' $T/docs/plans/plan_pi2.md | sed 's/^/  plan_pi2.md: /'
+grep -m1 -o 'by the author.s word a V1.2: a BCM2837' $T/docs/plans/done/plan_pi2.md | sed 's/^/  plan_pi2.md: /'
 echo "== ix: a 32-bit hypervisor's costs"
 echo "  lines of machine/arm32/Arm32.ml, Mmu32.ml and raspberry/boards/Board.ml that name the hypervisor's mode: $(cat $T/machine/arm32/Arm32.ml $T/machine/arm32/Mmu32.ml $T/raspberry/boards/Board.ml | grep -ciE 'hyp|hvc|eret')"
 echo "  a word in a model is an int: $(sed -n '1,2p' $T/machine/core/Bits.mli | tr -d '(*' | tr -s ' \n' ' ' | sed 's/^ //;s/ plan_arm.*//') (an arm32 kernel's int has 31)"

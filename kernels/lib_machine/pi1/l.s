@@ -9,7 +9,7 @@
 // devices at 0xFE000000, the vectors at 0xFFFF0000).
 //
 // A board's own is not here: this file is included by l1.s (the Pi 1)
-// or l2.s (the Pi 2: docs/plans/plan_pi2.md), which say first where
+// or l2.s (the Pi 2: docs/plans/done/plan_pi2.md), which say first where
 // the devices are and how much RAM (IO_MB, RAM_MB, UNC_L1), what the
 // start does before anything (BOARD_START), and after it the
 // functions that are a processor's: the cycle counter, the caches on,

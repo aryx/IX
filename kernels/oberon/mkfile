@@ -14,7 +14,7 @@
 TOP=../..
 # (Its recipes are still sh's, hence MKSHELL=sh, while the other
 # mkfiles' recipes are rc's, as mkfiles/mkconfig sets; see
-# docs/plans/plan_self_hosting.md.)
+# docs/plans/done/plan_self_hosting.md.)
 MKSHELL=sh
 DIR=kernels/oberon
 <$TOP/mkfiles/mkconfig

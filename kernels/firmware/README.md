@@ -18,7 +18,7 @@ redistribution is allowed, for use with a Raspberry Pi only. It covers
 What `make card` puts on the card (`kernels/9pi/Makefile`'s
 `FIRMWARE`). The same three files start a Pi 1 and a Pi 2: the
 firmware then loads the kernel of the board it finds
-([`docs/plans/plan_pi2.md`](../../docs/plans/plan_pi2.md): one card for
+([`docs/plans/done/plan_pi2.md`](../../docs/plans/done/plan_pi2.md): one card for
 both).
 
 | file | bytes | sha256 | what |

@@ -10,7 +10,10 @@ softwarica' hardcore aspect; stuff a programmer should know, programs
 that a developer use. but apps/ is different".
 
 **Status: a survey, still a list to choose from** (as plan_gaps.md:
-each application, when taken, gets a plan of its own). Done: mail,
+each application, when taken, gets a plan of its own). Brought up to
+date 2026-11-27: the file manager, video and maps done (below); left,
+0 and 4 to 7 of the order: mini-pim on m-ix, photos, spelling, music's
+library, chat. Done: mail,
 the calendar and the address book, as mini-pim, with tasks, notes and
 money ([`plan_pim.md`](done/plan_pim.md) and
 [`plan_mail.md`](done/plan_mail.md), both done 2026-10-30), in the
@@ -53,12 +56,12 @@ not the measure.
 | Write, calculate, draw, present | mini-office (`apps/office/`), slides and their show included | yes: `office` | spelling |
 | Read a document | mini-page (`apps/page/`): PDF and pictures | yes: `page` | |
 | Listen | mini-play (`apps/media/play/`), mini-rebirth | yes: `play`, `rebirth` | a player with a library and playlists |
-| Watch | mini-netscape hands YouTube's films to `mpv` on Linux | no | a video player |
+| Watch | mini-play's films (`apps/media/play/Film`: Y4M, FLI, AVI, GIF, MPEG-1); mini-netscape hands YouTube's to `mpv` on Linux | yes: `play` | today's formats (H.264), on purpose |
 | Write to people | mini-pim's Mail (`apps/pim/`), Gmail's; mini-netscape's `mailto:` | **no** | chat |
 | Keep time and people | mini-pim's Calendar, People, Tasks, Notes, Money | **no** | `date` still GMT only |
 | Look at and fix photos | mini-page shows one; mini-office's paint, 1 bit | yes, those two | a viewer of many and an editor |
-| Find a place, the weather | mini-maps (`apps/maps/`) | yes: `maps` | routes |
-| Look after files | the shell, `ls`, `cp`, `mv` | yes | a file manager |
+| Find a place, the weather | mini-maps (`apps/maps/`), routes by A* | yes: `maps` | |
+| Look after files | mini-files (`apps/files/`, `lib_mime/`); the shell, `ls`, `cp`, `mv` | yes: `files`, `open` | |
 | Browse the web | `browsers/` (lynx, netscape) | yes: `lynx`, `netscape` | |
 | Play | `games/` | yes | |
 
@@ -242,19 +245,19 @@ on purpose.
 ## Proposed, by value for the cost
 
 Done: mail, the calendar and the address book (mini-pim), and slides
-(mini-office). What is left, in order (2026-10-30, the author's choice
-for 1 to 3):
+(mini-office); 1 to 3 below (done 2026-10-31). What is left, in order
+(2026-10-30, the author's choice for 1 to 3): 0, then 4 to 7.
 
 0. **mini-pim on m-ix**, before any new application: a `mkfile`, on
    the card, run on mini-9pi. Not a new program, but until then the
    largest row of the table is Linux only, against the rule that every
    m-ix program runs under mini-9pi.
 1. **The file manager**: [`plan_files.md`](done/plan_files.md), a file's
-   kind leading to its program.
+   kind leading to its program. Done.
 2. **Video**: [`plan_video.md`](done/plan_video.md), the historical formats,
-   played by `play` and from the file manager.
+   played by `play` and from the file manager. Done.
 3. **Maps and the weather**: [`plan_maps.md`](done/plan_maps.md), fetched
-   from the internet: built (2026-10-30) but for routes.
+   from the internet. Done, routes too (A*, 2026-10-31).
 4. **Photos**: the big thing left that nearly every user does and ix
    cannot do, useful for real on the author's own JPEGs. It brings
    compositing, convolution, resampling and dithering, and needs a
@@ -311,3 +314,11 @@ the map, its cache, finding a place, the weather; on the card as `maps`.
 `done/`: a file's kind by its first bytes, its program by rules and a
 mailcap, the list, icons, changing files, dragging; on the card as `files`
 and `open`. Not yet run under mini-rio on mini-9pi. Video next.
+
+2026-11-27: brought up to date from the code. Done since: video
+(plan_video.md, `apps/media/play/Film`: Y4M, FLI, AVI, GIF, MPEG-1, on
+the card as `play`) and the maps' routes (A*, `apps/maps/Route`). Still
+as the survey found them: `apps/pim/` has no `mkfile` (mini-pim not on
+the card, item 0); `Jpeg.mli` decodes only and skips Exif (photos);
+no spelling in mini-office; no music library (ID3, playlists); no
+chat; `date` and `cal` GMT only. Left: 0, then 4 to 7.

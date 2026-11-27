@@ -79574,3 +79574,31 @@ Claude explained that mini-ml -start would take archive paths from the link line
 Claude noted that the start rule in mkprog and the library-plus-program mkfiles would both need editing.
 Claude proposed a unit-name index at the front of each archive, so mini-ml avoids unmarshalling every object.
 Claude said that index should be settled first, since lib.a.units exists to avoid the same slowness.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 22:25
+
+**Yoann:**
+
+> any plans we could move to done/ (in docs/plans and tiny/docs/plans) ? Analyze and report
+
+**Claude (summary):**
+
+Claude checked the Status sections of the plans that looked mostly finished, then stopped partway through scanning them. Claude found that most open plans still have stages left, so only a few candidates were close to done. Claude was in the middle of checking the last group, pi2, self_hosting, browser, ml_speed, and virtuaracing, for "all stages done". Claude's report did not yet name the first three plans to move to done/. Yoann's follow-up asks to move those first three, and it points at plan_pi2 as the one to work on.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 06:06
+
+**Yoann:**
+
+> ok let's move the first 3. For plan_pi2, a big hole might be that the card depends on ~/principia? I think you said so recently in other session. We should be able to make a mini-9pi card that boot on pi1 and pi2 without any code from ~/principia. For plan_apps maybe some of it is done? Further anaylysis might be needed there
+
+**Claude (summary):**
+
+Claude found by reading that `make card` is already principia-free, with leftovers in the kernel mkfile, `make check`, and `check-card`.
+Claude moved the plans, checked each plan's header and inbound links, and wrote the Status lines.
+Claude's grep missed paths without `./`, so it undid the edits to card files and redid the link fixes inside docs/plans.
+Claude recorded the self-hosting result in plan_9pi_self_speed.md: 85 of 85 directories built, 2,919 files identical to Linux's.
+Claude left the card-bound files untouched so the recorded sessions' size comparisons stay valid.

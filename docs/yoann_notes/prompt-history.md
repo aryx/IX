@@ -79527,3 +79527,50 @@ Claude verified that a clean `make` works with only the 10 tools in bin/, taking
 Claude edited the Makefile so `MK_GOALS` and the other goals reach `all` without needing `host`.
 Claude noted that `test-ix` and `test-ix-arm` still need `host`, since they compare against dune builds.
 Claude reported one failure in `make test`, in t-IX's image build under tiny/TinyKernel, and began checking its log.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 22:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the m-IX change as eb29b8a2, touching only the top-level Makefile.
+Claude noted the commit message records one make test failure, blamed on an editor lock file.
+Claude found the tiny/Makefile edits and prompt-history.md had been committed in the meantime.
+Claude reported that docs/plans/plan_simpler_builds.md is the only uncommitted file, which Claude did not touch.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 22:11
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session could be closed, since both changes were already committed.
+Claude committed 773943d7, adding make stage0 for nine stage-1 tools and make host for 27 programs.
+Claude committed eb29b8a2, so top-level make uses make stage0 and host-dependent targets still depend on host.
+Claude noted that docs/plans/plan_simpler_builds.md is the only uncommitted file.
+Claude saved a memory that the t-IX test failure on tiny/.#Makefile is an Emacs lock file, and did not add .#* to .gitignore.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 14:04
+
+**Yoann:**
+
+> so, can we do this improvement to mini-ml and the -start now? or we depend on the objects-beside-source thing?
+
+**Claude (summary):**
+
+Claude said the change can proceed now, since it does not depend on objects-beside-sources.
+Claude explained that mini-ml -start would take archive paths from the link line rather than fixed locations.
+Claude noted that the start rule in mkprog and the library-plus-program mkfiles would both need editing.
+Claude proposed a unit-name index at the front of each archive, so mini-ml avoids unmarshalling every object.
+Claude said that index should be settled first, since lib.a.units exists to avoid the same slowness.

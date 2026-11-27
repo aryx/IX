@@ -4,7 +4,8 @@ ps | grep -c boot
 ps -a | sed -n 's/^pad +[0-9]+ .* (ps -a)$/\1/p'
 time echo hi >[2=1] | sed 's/[0-9]+\.[0-9]+/N/g'
 time nothere >[2=1] | sed 's/[0-9]+\.[0-9]+/N/g'
-time sleep 1 >[2=1] | sed 's/[0-9]\.[0-9]+r/Nr/'
+sleep 0
+time sleep 1 >[2=1] | sed 's/[0-9]\.[0-9]+r/Nr/; s/0\.0[0-9]([us])/0.0N\1/g'
 sleep 100 &
 kill sleep | sed 's/[0-9]+/PID/'
 kill sleep | rc

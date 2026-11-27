@@ -41,7 +41,7 @@ both
 % test -x /bin/ls && echo may be run
 may be run
 % ls /bin | grep 'se' | xargs echo found:
-found: /bin/basename /bin/sed /bin/seq
+found: /bin/basename /bin/expose /bin/sed /bin/seq /bin/settings
 % seq 7 | xargs -n 3 echo
 1 2 3
 4 5 6

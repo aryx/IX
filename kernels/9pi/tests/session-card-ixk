@@ -53,6 +53,13 @@ gpu_mem=16
 # the Pi 2 (the 2B, with a BCM2836 or a BCM2837)
 [pi2]
 kernel=mini9pi2.img
+# At its full speed always (900 MHz), none more: without it the
+# firmware lets the ARM fall to its least, 600, after a while, there
+# being no system asking for more (the author's Pi 2, a Cortex-A53,
+# 2026-10-22: TinyCameltry from 50 frames a second to 33, cputype's
+# 600, 42 degrees, cputhrottle's none). No over_voltage: the warranty
+# bit stays unset.
+force_turbo=1
 
 # the Pi 1 (and the Zero)
 [pi1]
@@ -128,6 +135,8 @@ yes
 /mnt/fat/version.txt
 % ls /srv
 % ls /bin
+/bin/ar
+/bin/asm
 /bin/awk
 /bin/basename
 /bin/bc
@@ -137,6 +146,7 @@ yes
 /bin/cal
 /bin/cameltry
 /bin/cat
+/bin/cc
 /bin/chmod
 /bin/cleanname
 /bin/cmp
@@ -145,12 +155,18 @@ yes
 /bin/curl
 /bin/date
 /bin/dc
+/bin/desk
+/bin/desktop
+/bin/doom
+/bin/dotnet
 /bin/drscheme
 /bin/du
 /bin/echo
 /bin/ed
 /bin/emacs
+/bin/expose
 /bin/fdisk
+/bin/files
 /bin/free
 /bin/grep
 /bin/gunzip
@@ -164,22 +180,30 @@ yes
 /bin/hoc
 /bin/hog
 /bin/kill
+/bin/ld
 /bin/ls
 /bin/lynx
 /bin/man
+/bin/maps
 /bin/missilecommand
+/bin/mk
 /bin/mkdir
+/bin/ml
 /bin/mount
 /bin/mtime
 /bin/mv
 /bin/netscape
 /bin/office
+/bin/open
 /bin/page
+/bin/panel
 /bin/pascal
+/bin/pim
 /bin/play
 /bin/prolog
 /bin/ps
 /bin/pwd
+/bin/quake
 /bin/rc
 /bin/rebirth
 /bin/rio
@@ -187,11 +211,13 @@ yes
 /bin/scheme
 /bin/sed
 /bin/seq
+/bin/settings
 /bin/sleep
 /bin/sort
 /bin/sources
 /bin/spin
 /bin/squeak
+/bin/startmenu
 /bin/stats
 /bin/tail
 /bin/tar
@@ -199,6 +225,7 @@ yes
 /bin/test
 /bin/tetris
 /bin/threads
+/bin/tiger
 /bin/time
 /bin/timesync
 /bin/tone
@@ -209,8 +236,10 @@ yes
 /bin/turbopascal
 /bin/uniq
 /bin/unmount
+/bin/virtua
 /bin/walk
 /bin/wc
+/bin/window
 /bin/wolfenstein
 /bin/words
 /bin/xargs

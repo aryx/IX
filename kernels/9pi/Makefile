@@ -933,10 +933,13 @@ gcheck-all: ; $(call gcheck,$(GSESSIONS))
 #                    tests/session-card-ix). Then the kernel itself
 #                    reads the same files (Kdos: bind '#Fdos' /mnt).
 CARD = $(BUILD)/card.img
-# (The kernel's image on the card changes size with every program in
-# it. So its size is not compared, nor are the listing's columns, which
-# it widens.)
-cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 (2026|00:MM) [a-z\/]*\/(MINI9PI1\.IMG|mini9pi1\.img))/ SIZE \1/'
+# (The kernels' images on the card change size with every program in
+# them, and version.txt with the commit and the date it says. So their
+# sizes are not compared, nor are the listing's columns, which they
+# widen; nor the bytes the card has moved (/dev/sdM0/ctl's io line),
+# which are the kernel's cache's.)
+cardsize = sed -E -e 's/ +/ /g' -e 's/ [0-9]+ (Sep 26 (2026|00:MM) [a-z\/]*\/(MINI9PI[12]\.IMG|mini9pi[12]\.img|VERSION\.TXT|version\.txt))/ SIZE \1/' \
+  -e 's/^io [0-9]+ [0-9]+$$/io N N/'
 MKCARD = ../../_build/default/kernels/tools/Mkcard.exe
 FIRMWARE = ../firmware/pi1-pi2
 CARD_SD = -drive file=$(CARD),if=sd,format=raw,snapshot=on
@@ -1272,7 +1275,9 @@ QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
 #   - the rest (seq, du, sleep, cleanname, unmount)
 #   - the ones that look into a file (grep, tail, xd)
 #   - the filters (sort, uniq, tr, sed)
-#   - the processes (ps, time, kill)
+#   - the processes (ps, time, kill; sleep run once before it is timed,
+#     its first load from the card being system time, 0.2 s or so, and
+#     its time under 0.1 s, the clock's ticks falling where they fall)
 #   - what a script asks and builds with (test, xargs)
 #   - the ones that compute (hoc, awk, dc, bc)
 #   - the ones that typeset (man, troff: a page for the terminal, the

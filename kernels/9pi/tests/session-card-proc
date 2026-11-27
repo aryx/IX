@@ -32,6 +32,7 @@ dossrv: serving #s/dos
 pad% ps | sed 's/ .* / /' | sort -u
 pad boot
 pad dossrv
+pad kfs
 pad ps
 pad sed
 pad sort
@@ -46,8 +47,9 @@ Nu Ns Nr 	 echo hi
 % time nothere >[2=1] | sed 's/[0-9]+\.[0-9]+/N/g'
 time: nothere: '/bin/nothere' file does not exist
 Nu Ns Nr 	 nothere  # status= nothere
-% time sleep 1 >[2=1] | sed 's/[0-9]\.[0-9]+r/Nr/'
-0.00u 0.00s Nr 	 sleep 1
+% sleep 0
+% time sleep 1 >[2=1] | sed 's/[0-9]\.[0-9]+r/Nr/; s/0\.0[0-9]([us])/0.0N\1/g'
+0.0Nu 0.0Ns Nr 	 sleep 1
 % sleep 100 &
 % kill sleep | sed 's/[0-9]+/PID/'
 echo kill>/proc/PID/note # sleep

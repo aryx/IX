@@ -30,17 +30,18 @@ dossrv: serving #s/dos
 % cat /dev/sdM0/ctl
 inquiry Arasan eMMC SD Host Controller 02 Version 24
 rca 4567 ocr 80ffff00
-cid aa585951454d552101deadbeef006200 csd 002600325f59e07fffffdfff92600000
+cid aa585951454d552101deadbeef006200 csd 002600325f59e0ffffffdfff92600000
 geometry 524288 512
+io 4740 0
 part data 0 524288
 part dos 2048 67584
 part other 67584 524288
 % ls -l /root
 --rw-rw-rw- M 2 bill trog   52624 Sep 26  2026 /root/BOOTCODE.BIN
---rw-rw-rw- M 2 bill trog    1806 Sep 26  2026 /root/CONFIG.TXT
+--rw-rw-rw- M 2 bill trog    2178 Sep 26  2026 /root/CONFIG.TXT
 --rw-rw-rw- M 2 bill trog    3280 Sep 26  2026 /root/FIXUP_CD.DAT
---rw-rw-rw- M 2 bill trog 8409880 Sep 26  2026 /root/MINI9PI1.IMG
---rw-rw-rw- M 2 bill trog 8413480 Sep 26  2026 /root/MINI9PI2.IMG
+--rw-rw-rw- M 2 bill trog 9240936 Sep 26  2026 /root/MINI9PI1.IMG
+--rw-rw-rw- M 2 bill trog 9245256 Sep 26  2026 /root/MINI9PI2.IMG
 --rw-rw-rw- M 2 bill trog  844380 Sep 26  2026 /root/START_CD.ELF
 --rw-rw-rw- M 2 bill trog      51 Sep 26  2026 /root/VERSION.TXT
 % cat /root/config.txt
@@ -61,6 +62,13 @@ gpu_mem=16
 # the Pi 2 (the 2B, with a BCM2836 or a BCM2837)
 [pi2]
 kernel=mini9pi2.img
+# At its full speed always (900 MHz), none more: without it the
+# firmware lets the ARM fall to its least, 600, after a while, there
+# being no system asking for more (the author's Pi 2, a Cortex-A53,
+# 2026-10-22: TinyCameltry from 50 frames a second to 33, cputype's
+# 600, 42 degrees, cputhrottle's none). No over_voltage: the warranty
+# bit stays unset.
+force_turbo=1
 
 # the Pi 1 (and the Zero)
 [pi1]

@@ -24,7 +24,7 @@
  *
  * twin:
  * There is none in m-ix. lib_gui's small programs are the 7GUIs
- * (examples/Gui7Counter.ml and the others), and a calculator is not one
+ * (lib_gui/examples/Gui7Counter.ml and the others), and a calculator is not one
  * of them. Plan 9's calculators are text programs, hoc and dc
  * (principia's utilities/calc/); this one follows the pocket calculator
  * instead (below). It is the smallest program that is all buttons,

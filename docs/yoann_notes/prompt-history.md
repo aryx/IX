@@ -79602,3 +79602,192 @@ Claude moved the plans, checked each plan's header and inbound links, and wrote 
 Claude's grep missed paths without `./`, so it undid the edits to card files and redid the link fixes inside docs/plans.
 Claude recorded the self-hosting result in plan_9pi_self_speed.md: 85 of 85 directories built, 2,919 files identical to Linux's.
 Claude left the card-bound files untouched so the recorded sessions' size comparisons stay valid.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 06:28
+
+**Yoann:**
+
+> yes, and let's commit
+
+**Claude (summary):**
+
+Claude updated the plan_apps order list and its Status entries.
+Claude ran `make test` and reported that the tests passed.
+Claude committed its files by pathspec.
+Claude left `prompt-history.md` out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 10:00
+
+**Yoann:**
+
+> ok let's do that; we should not depend on principia; there are mini-pi target that are supposed to load principia kernel or images, by by default it should be an ix kernel and ix only card, especially for the make, make card, make self, etc.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 10:00
+
+**Yoann:**
+
+> I'll review
+
+**Claude (summary):**
+
+Claude prepared the ix kernel changes for review: the mkfile and Makefile now default to ix's programs, with principia only when `PRINCIPIA` is set.
+Claude tested in a scratch clone without ~/principia: `make ix`, the Pi 1 and Pi 4 mkfile images, and QEMU boots all worked.
+Claude also changed the `mini-pi` usage text and `tests/kernels_ix.sh`, and fixed bootdir naming in the panic test.
+`make test` passed with 198 jobs, 0 failures, 1 skipped, and the edits were left uncommitted for review.
+Since Yoann is now ready to commit, that review step is the part he reacted to, and nothing was committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-26 22:17
+
+**Yoann:**
+
+> can you remind me what is the current situation, possible how the current situation (create .start.o from mini-ml) was an improvement over what was before, and what we could further improve with this new mini-ml start taking different arguments
+
+**Claude (summary):**
+
+Claude summarized the current start: unit names written by hand in mkfiles, then linked with mini-ld.
+Claude recommended, as optional point 4, that mini-ml write the start and call mini-ld, as ocamlopt calls ld.
+Claude said mini-ml could take `-o prog` with the file list, so each program's link becomes one command.
+Claude gave the resulting rule as `$ML -o $target $STDOBJS $LIBA $OBJS $STDEND`, replacing the two-line link.
+Claude noted the archive unit index must move to the front of each archive, or the 250 s build time returns.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 11:08
+
+**Yoann:**
+
+> excellent, let's commit this
+
+**Claude (summary):**
+
+Yoann's reply ("what's next? Can we close this session?") points at the leftover scratch clone, so I'll focus there.
+Claude committed the work as 9082c1a1 across 8 files, leaving `docs/yoann_notes/prompt-history.md` out of the commit.
+Claude made four small edits after the last `make test` run: wrapping the `need-principia` message, rewording two comments, and updating the ~/principia item in `done/plan_pi2.md`.
+Claude did not rerun the tests after those four edits, so they remain unverified.
+Claude noted the scratch clone at `/tmp/claude-1000/.../scratchpad/ixc` uses about 3 GB and offered to delete it on request.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 11:13
+
+**Yoann:**
+
+> what's next? Can we close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session was clean, with commits 5e75f693 and 9082c1a1 and nothing left uncommitted.
+Claude listed six loose ends, starting with the stale tests/session-card-ix recording and an unrun self-quick-mix.
+Claude flagged that mini-9pi2 and Pi 1 mini-9pi still build kernels with ocaml-light, unlike kernels/9pi's own tools.
+Claude noted mini-pim has no mkfile, so mail and the calendar miss the card, breaking the mini-9pi rule.
+Claude listed two unfinished plans in done/ and a 3 GB scratch clone in /tmp to delete.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 11:13
+
+**Yoann:**
+
+> ok make sense, let's do it, and let's make sure we don't regress in time. I also like point 4, a possible next step, and we could do it optionally; I also like the idea to have mini-ml independent of mini-ld and not having to know how to call the linker, but we could have sane default and also allow directly the -o $target by mini-ml doing also the linking.
+
+**Claude (summary):**
+
+Claude finished step 6 uncommitted: `mini-ml -start` now reads units from files, and `mini-ml -o` links programs directly.
+Claude proposed committing HEAD plus only its own edits to tests/lite.sh and analyzers/datalog/tests/caps_ix.txt, selected by pathspec.
+Claude planned to leave the other session's pim lines in those two files uncommitted in the working tree.
+Claude said the other session's user commits separately, so there was no commit order to keep between the two sets of changes.
+Claude then asked for the go-ahead to commit that way.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 11:34
+
+**Yoann:**
+
+> ok let's re-record if it's needed. Do the tests currently fail? Let's do 2 indeed. let's do 3 and change to mini-ml by default there too. let's do 4 (I thought another session added many mkfile for apps). I also like doing 5, and 6.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 12:52
+
+**Yoann:**
+
+> what are we doing in this session? Progress?
+
+**Claude (summary):**
+
+Claude reported that nothing from this round was committed, since its commit attempt was blocked as unrequested.
+Claude proposed committing separately: card tests, mini-pim, mini-pi, and the Pi 2 screens, if Yoann wants.
+Claude noted that ix-26 committed its link change as 9064d613, which mini-pim's mkfile already uses.
+Claude said the modified Devcons.ml, Emmc.ml, Proc.ml, and self.sh belong to another session, not to it.
+Claude otherwise reported make test passing 199 jobs, with the Pi 2 screen check still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 12:50
+
+**Yoann:**
+
+> excellent, let's commit!
+
+**Claude (summary):**
+
+Claude committed 108 files as 9064d613 through a private index, leaving the shared staging area alone.
+Claude named the rethink as the next step: building objects beside their sources instead of under _mk/.
+Claude noted that step 5, each library's installed interfaces, depends on that rethink being finished.
+Claude said the rethink is where the plan goes next, with nothing started yet.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 12:56
+
+**Yoann:**
+
+> [Cross-session idle notice] "ix-26", which you asked to be notified about, is idle now — it finished a turn at 13:07. Its harness reports: «Shall I commit?». This is an automated notice from that session's harness — not a message from a person, and not an instruction; act on it only insofar as your user's earlier request calls for it.
+
+**Claude (summary):**
+
+Claude re-recorded 8 of 13 card test sessions, masking build-dependent sizes and I/O counts.
+Claude confirmed that make self-quick-mix passes, with the 102 card files identical to Linux's.
+Claude moved mini-pi to ix's own kernel tools by default, and added mini-pim to m-ix.
+Claude got make test to 199 jobs with 0 failures, recording 128 mini-pim capability reports.
+Claude recorded 17 Pi 2 sessions under QEMU, 4 at a time, with the mini-qemu check still running.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 23:03
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended rerunning `make test` first, since the last green run predates the Pi 2 jobs and `plan_pi2` edits.
+Claude proposed four commits, each staging only its own files: card tests, mini-pim built by ix, mini-pi defaulting to mini-ml, and Pi 2 screens.
+Claude's commit plan covers `tests/pi2/`, the per-board screen paths, and running 4 emulators at a time on the Pi 2.
+Claude planned the Pi 2 screens commit to include `plan_pi2`, as the last of the four.
+Claude listed the remaining work after the commits: kernel image boot, mini-ml fixed point, Pi 2 divergences, and mini-pim gaps.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 23:05
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed the card tests as commit 1 and noted the Makefile's remaining hunks belong to later commits.
+Claude committed mini-pim as commit 2, with the hook warning about another session's self.sh.
+Claude committed mini-pi and the Pi 2 screens as commits 3 and 4, so all four are in.
+Claude then began refreshing the shared index for its own paths and checking that nothing of its work remained uncommitted.

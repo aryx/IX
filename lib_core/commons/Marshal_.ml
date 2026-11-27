@@ -79,3 +79,9 @@ let colored () : bool =
 let to_string (v : 'a) (flags : Marshal.extern_flags list) : string =
   let m = Marshal.to_string v flags in
   if not (colored ()) then m else try clean m with Unknown | Invalid_argument _ | Not_found -> m
+
+let first (caps : < Cap.open_in; .. >) (file : string) : string =
+  let ic = CapStdlib.open_in caps file in
+  Fun.protect ~finally:(fun () -> close_in ic) (fun () ->
+    let h = really_input_string ic Marshal.header_size in
+    h ^ really_input_string ic (Marshal.total_size (Bytes.unsafe_of_string h) 0 - Marshal.header_size))

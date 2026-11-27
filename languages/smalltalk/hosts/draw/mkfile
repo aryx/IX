@@ -24,8 +24,7 @@ $D/Window.$O: Window.ml $LOCAL $STOBJS
 $D/Main.$O: Main.ml $LOCAL $D/Window.$O
 	$ML $INCLUDES -o $target Main.ml
 $D/squeak: $D/Main.$O $D/Window.$O $LIBOBJS $STOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB $SMALLTALK Window Main Std_exit -o $D/Main.start.$O
-	$LD $LDH -nofollow -o $target $D/Main.start.$O $STDOBJS $LIBOBJS $STOBJS $D/Window.$O $D/Main.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $STOBJS $D/Window.$O $D/Main.$O $STDEND
 
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D

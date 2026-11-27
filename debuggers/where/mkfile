@@ -7,7 +7,6 @@ LOCAL=`{ls *.ml}
 GEN=
 LIBDIRS=lib_executable
 LIBI=
-LIBUNITS=
 <$TOP/mkfiles/mkconfig
 LIBOBJS=
 <$TOP/mkfiles/mkprog

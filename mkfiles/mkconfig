@@ -36,7 +36,7 @@ AR=$TIMES ${MINI}ar
 LD=$TIMES ${MINI}ld -m $O -map -project $TOP
 LEX=${MINI}lex
 YACC=${MINI}yacc
-# (for the shell's commands: walk, Plan 9's find; rc, for mkfiles/units.rc;
+# (for the shell's commands: walk, Plan 9's find; rc, for mkfiles/*.rc;
 # mk, for a directory's builds by another's)
 WALK=${MINI}walk
 RC=${MINI}rc
@@ -50,6 +50,10 @@ MK=${MINI}mk
 # beside Linux's (_mk/5-plan9). UNIXDIR, P9DIR and RTSRC: below.
 <|. $TOP/mkfiles/config.rc system
 L=$B/lib_core
+# (LINKER: the linker's command for mini-ml -o prog, which writes the
+# program's start, of the units of the objects and libraries it is
+# given, then runs it: $ML -ld $LINKER -- -o $target files...)
+LINKER=$LD $LDH -nofollow
 
 # the stdlib's units, in the order they are linked and initialized
 # (lib_core/units.txt's), and ix's own library's
@@ -76,8 +80,10 @@ STDI=${SYSDIRS:%=-I $TOP/lib_core/%} ${STDDIRS:%=-I $TOP/lib_core/%}
 # unit again when lib_core's is
 STDSUM=-I $L
 # their objects (a recipe is the shell's: ${X:%=...} is mk's, done here),
-# kept in a library: a program links the units it uses (mini-ml -start
-# names them all, weakly: Link.weak), not the 69
+# kept in a library: a program links the units it uses (its start, by
+# mini-ml -o, names them all, weakly: Link.weak, as the library's index
+# has them), not the 69. STD and COMMONS: lib_core's mkfile's, and the
+# start of a kernel that names its units
 # old: STDOBJS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
 # each program all of the stdlib: mini-rm 885 KB, its link 54 MB alive
 STDUNITS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}

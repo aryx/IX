@@ -12,7 +12,6 @@ SRC=Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view Tui_turbo Keys Ma
 LOCAL=`{ls *.ml ../../*.ml ../../*.mli ../../editor/*.ml ../../editor/*.mli}
 GEN=
 LIBI=-I ../.. -I ../../editor
-LIBUNITS=
 # (lib_terminal; Lehmer, the numbers its Talk draws; lib_terminal/hosts,
 # over lib_graphics, its client of the draw device)
 LIBDIRS=lib_playground/random lib_terminal languages/pascal lib_compression lib_graphics lib_terminal/hosts

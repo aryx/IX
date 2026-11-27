@@ -83,8 +83,12 @@ KSRC=${KML:%=%.ml}
 # .depend, at the end). old: one rule for all of KNAMES, whose recipe
 # made the units out of date one after the other, whatever NPROC
 <|$RC $KLIB/units.rc $KML
-$D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
-	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
+# (the start of lib_core.a's units, the kernel's and std_exit's, in
+# that order, as linked)
+# (MLOBJS: mk's ${...:%=...} is not done in a recipe, the shell's)
+MLOBJS=${ALL_ML:%=$D/%.$O}
+$D/start.$O: $STDOBJS $MLOBJS mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
+	$ML -start $STDOBJS $MLOBJS $L/std_exit.$O -o $target
 
 # The C and the assembly, by their names. mini-cc compiles the C with
 # -O3, its back end with registers (plan_cc_ssa.md); COPT= gives

@@ -8,7 +8,6 @@ PROG=mini-smalltalk
 SRC=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot St_kernel Squeak CLI Main
 LOCAL=`{ls *.ml *.mli compiler/*.ml* vm/*.ml* graphics/*.ml*}
 LIBI=-I compiler -I vm -I graphics
-LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/smalltalk/St_kernel.ml

@@ -12,7 +12,6 @@ LOCAL=`{ls *.ml *.mli objects/*.ml* repo/*.ml* diff/*.ml* wire/*.ml* commands/*.
 GEN=
 LIBI=-I objects -I repo -I diff -I wire -I commands
 LIBDIRS=lib_crypto lib_compression
-LIBUNITS=
 LIBOBJS=
 # (the two other programs' mains, below, come after the units they
 # name)
@@ -39,11 +38,7 @@ $D/%.$O: wire/%.ml
 # main and its own start
 all:V: $D/mini-diff $D/mini-merge3
 VCSOBJS=${VCS:%=$D/%.$O}
-$D/start_diff.$O: mkfile $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $VCS Diffmain Std_exit -o $target
-$D/mini-diff: $D/start_diff.$O $LIBA $VCSOBJS $D/Diffmain.$O $STDOBJS $STDEND
-	$LD -H7 -nofollow -o $target $D/start_diff.$O $STDOBJS $LIBA $VCSOBJS $D/Diffmain.$O $STDEND
-$D/start_merge3.$O: mkfile $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $VCS Merge3main Std_exit -o $target
-$D/mini-merge3: $D/start_merge3.$O $LIBA $VCSOBJS $D/Merge3main.$O $STDOBJS $STDEND
-	$LD -H7 -nofollow -o $target $D/start_merge3.$O $STDOBJS $LIBA $VCSOBJS $D/Merge3main.$O $STDEND
+$D/mini-diff: $LIBA $VCSOBJS $D/Diffmain.$O $STDOBJS $STDEND mkfile
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $VCSOBJS $D/Diffmain.$O $STDEND
+$D/mini-merge3: $LIBA $VCSOBJS $D/Merge3main.$O $STDOBJS $STDEND mkfile
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $VCSOBJS $D/Merge3main.$O $STDEND

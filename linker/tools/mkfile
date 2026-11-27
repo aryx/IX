@@ -19,11 +19,9 @@ $D/%.$O: %.ml $LIBSRC
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-ar $D/mini-nm: $LIBA $STDOBJS $STDEND
 $D/mini-ar: $D/Ar.$O
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Ar Std_exit -o $D/Ar.start.$O
-	$LD $LDH -nofollow -o $target $D/Ar.start.$O $STDOBJS $LIBA $D/Ar.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Ar.$O $STDEND
 $D/mini-nm: $D/Nm.$O
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Nm Std_exit -o $D/Nm.start.$O
-	$LD $LDH -nofollow -o $target $D/Nm.start.$O $STDOBJS $LIBA $D/Nm.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Nm.$O $STDEND
 
 clean:V:
 	rm -rf $D

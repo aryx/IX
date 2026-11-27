@@ -40,20 +40,15 @@ ${UNITS:%=$D/%.$O}: $LOCAL
 
 # a program: its units in their order, then the start and the link
 $D/panel: $PANELOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $PANEL Std_exit -o $D/panel.start.$O
-	$LD $LDH -nofollow -o $target $D/panel.start.$O $STDOBJS $PANELOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $PANELOBJS $STDEND
 $D/startmenu: $MENUOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $MENU Std_exit -o $D/startmenu.start.$O
-	$LD $LDH -nofollow -o $target $D/startmenu.start.$O $STDOBJS $MENUOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $MENUOBJS $STDEND
 $D/desk: $DESKOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $DESK Std_exit -o $D/desk.start.$O
-	$LD $LDH -nofollow -o $target $D/desk.start.$O $STDOBJS $LIBA $DESKOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $DESKOBJS $STDEND
 $D/settings: $SETTINGSOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $SETTINGS Std_exit -o $D/settings.start.$O
-	$LD $LDH -nofollow -o $target $D/settings.start.$O $STDOBJS $SETTINGSOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $SETTINGSOBJS $STDEND
 $D/expose: $EXPOSEOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $EXPOSE Std_exit -o $D/expose.start.$O
-	$LD $LDH -nofollow -o $target $D/expose.start.$O $STDOBJS $EXPOSEOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $EXPOSEOBJS $STDEND
 
 clean:V:
 	rm -rf $D

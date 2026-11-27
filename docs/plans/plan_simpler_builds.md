@@ -18,6 +18,8 @@ languages/pascal, languages/scheme; the linker's units for mini-dotnet;
 languages/dotnet/runtime; languages/prolog; mini-ml's parser for
 mini-emacs; lib_terminal/hosts; the assembler and the linker as
 libraries. Left of step 4: runtime.c, which the kernel steps compile.
+Step 6 done for m-ix (the start's units read from the link's files,
+mini-ml -o linking), done before the rethink: they are independent.
 Next: the rethink (objects beside their sources), decided before step
 5. Proposed too (2026-11-26): t-IX's tests and checks, T1 to T6.**
 The author keeps the objects' dependency on mini-ml's date (MLEXE) for
@@ -291,6 +293,50 @@ first requirement.
    twice-written CORE with tiny-ml doing the same. Cost: the largest, a
    toolchain change in both systems; the order of a link is then the
    only list of units.
+   Done for m-ix (2026-11-27), before the rethink, which it does not
+   depend on (the archives read where the link line says). The files
+   read for their first value alone (Marshal_.first): a library
+   (Library_file, version 6, the assembler's library, moved from
+   Link) its index first, each member's source and names, then the
+   members' bytes; an object (Asm, version 6) its version and source
+   first. Versions 5 are still read, whole (an object of C is not made
+   again when mini-cc is: a checkout's _mk keeps them). mini-ml -start
+   takes those files, a library giving its units in its order, an
+   object its own, one of C none, a name itself; mini-ml -o prog,
+   given objects and libraries alone, writes prog.start.$O, then
+   execs the linker in its place, -ld's words up to -- (mkconfig's
+   LINKER), else its own name with ld for ml (mini-ld -m 7, the card's
+   ld). 88 links in 52 mkfiles are one line each, mkprog's start rule
+   gone; units.rc, lib.a.units and every mkfile's LIBUNITS gone
+   (LIBOBJS's objects say them). STD and COMMONS stay: lib_core's
+   mkfile builds lib_core.a from them, and oberon, squeak and
+   singularity, which start $STD without $COMMONS though they link
+   lib_core.a, still name their units (from lib_core.a they would
+   start COMMONS too: a change of what they do, left to them).
+   A unit twice: given again as an object (mini-node's Js_compile, in
+   lib.a too) started once, at its library's place; a program's unit
+   of a library's name (quake's Physics, lib_playground/apis's) at the
+   object's place alone, mini-ld linking the object, where the old
+   start named it at apis's place first (Physics reads no unit when it
+   starts: two constants); two libraries' (troff's Fill,
+   lib_graphics's) both, as before (started at lib_graphics's place
+   alone, troff's Fill read troff's units not yet started: mini-troff
+   crashed, make test).
+   Measured, a build from nothing in a scratch copy against HEAD's:
+   Linux, 138 of 149 programs the same bytes (the toolchain's 7,
+   whose code changed; quake's two, Physics; tiny-build and tiny-vcs,
+   112 bytes, lib_crypto's units now all named, weakly, where Sha1
+   alone was); the card's (O=5 OS=plan9) the same cases, 124 of 137
+   then. The kernels' images the same. Time: Linux's build 27.2 s
+   against 26.1, its no-op 3.40 s against 3.56 (noise). On the card a
+   link ran units.rc's rc and a cat a library; mini-ml reads the
+   indices instead, 31 KB of lib_core.a's 4.9 MB (0.1% to 1.5% of a
+   library); mini-ml's own link's start under mini-5i 30.45 s against
+   30.07 (its three indices), the rc and three cats gone (about 0.4 s
+   on mini-9pi), and the linker exec'ed, no fork of mini-ml. mini-nm
+   73 KB smaller (Library_file, not Link). Not done: t-IX's tiny-ml
+   and CORE (the t-IX session's); make self-quick-mix not run (the
+   card's bytes).
 
 Not planned: dropping libs.rc's `<|.` way, which is mini-9pi's speed.
 

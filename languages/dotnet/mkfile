@@ -12,7 +12,6 @@ SRC=Frame Arith Machine Verifier Jit Code_memory Jit_run CLI Main
 LOCAL=`{ls *.ml *.mli interpreter/*.ml* jit/*.ml* jit/mini-ml/*.ml}
 GEN=
 LIBI=-I interpreter -I jit
-LIBUNITS=
 # (assembly/, the file's tables, read and written: a library, which
 # mini-cc, mini-ml, mini-csc, mini-tiger and mini-datalog link too;
 # runtime/, Value, Library and Types, one too, which mini-csc links;

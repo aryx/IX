@@ -45,8 +45,7 @@ $LIBOBJS $D/Doom.$O: $LOCAL
 $D/mini-doom: $D/doom
 	cp $D/doom $target
 $D/doom: $D/Doom.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Doom Std_exit -o $D/Doom.start.$O
-	$LD $LDH -nofollow -o $target $D/Doom.start.$O $STDOBJS $LIBA $LIBOBJS $D/Doom.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $D/Doom.$O $STDEND
 
 clean:V:
 	rm -rf $D

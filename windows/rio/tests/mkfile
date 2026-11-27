@@ -16,8 +16,7 @@ $D/%.$O: $G/%.ml $LOCAL
 $D/Hellorio.$O: Hellorio.ml $LOCAL
 	$ML $INCLUDES -o $target Hellorio.ml
 $D/hellorio: $D/Hellorio.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB Hellorio Std_exit -o $D/Hellorio.start.$O
-	$LD $LDH -nofollow -o $target $D/Hellorio.start.$O $STDOBJS $LIBOBJS $D/Hellorio.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $D/Hellorio.$O $STDEND
 
 clean:V:
 	rm -rf $D

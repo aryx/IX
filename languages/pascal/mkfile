@@ -21,5 +21,4 @@ all:V: $D/mini-pascal
 # (CLI and Main: libs.rc's rule for ., as the library's units)
 $D/CLI.$O $D/Main.$O: $LOCAL $MLEXE
 $D/mini-pascal: $D/CLI.$O $D/Main.$O $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA $D/lib.a} CLI Main Std_exit -o $D/mini-pascal.start.$O
-	$LD $LDH -nofollow -o $target $D/mini-pascal.start.$O $STDOBJS $LIBA $D/lib.a $D/CLI.$O $D/Main.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/lib.a $D/CLI.$O $D/Main.$O $STDEND

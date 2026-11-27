@@ -199,21 +199,27 @@ let cond_of_string =
 
 (* the objects: marshalled, with a version, as xix's; 4: a shift's
  * count By_imm or By_reg, not a polymorphic variant;
- * 5: an operand may be a system register (Spr) *)
-let version = 5
+ * 5: an operand may be a system register (Spr); 6: the version and the
+ * source first, a value of their own (source) *)
+let version = 6
 
-(* an object as version 5 has it: [obj] but its history, which follows
- * it in the file as a second value (2026-10-29), so that an object
- * made before is read (with no history) and an older linker reads a
- * new one (the bytes after the first value not looked at): the tools
- * and the objects of a checkout's _mk change at different times *)
-type stored = { s_arch : arch; s_file : Fpath.t; s_items : (item * int) array }
+(* an object as version 6 has it: its version and its source, a first
+ * value, which mini-ml -start reads alone (Marshal_.first: the unit a
+ * program starts), then [obj] but its history, which follows it in the
+ * file as a value of its own (2026-10-29), so that an object made
+ * before is read (with no history): the tools and the objects of a
+ * checkout's _mk change at different times (an object of C is not made
+ * again when mini-cc is). Version 5, the version and the object one
+ * value, its source a field, is read too (stored5).
+ * old (5): an older linker read a newer object, the bytes after its
+ * first value not looked at; not version 6's *)
+type stored = { s_arch : arch; s_items : (item * int) array }
 
 (* No_sharing: an object's bytes its value's alone, not which of its
  * parts are one block in memory, which depends on the compiler that
  * built the tool (mini-cc by OCaml and by mini-ml: the same code, 5 of
  * libc's objects not the same bytes, plan_self_hosting.md), for 5% more *)
-let stored (o : obj) = { s_arch = o.arch; s_file = o.file; s_items = o.items }
+let stored (o : obj) = { s_arch = o.arch; s_items = o.items }
 (* (the declarations a third value, after the history, which is then
  * written even if empty: the same way, an object without them read; the
  * compile's flags a fourth, the declarations then written too) *)
@@ -226,14 +232,14 @@ let history_bytes (o : obj) =
 
 (* the value at [pos], then the history and the declarations if there
  * are bytes after it *)
-let with_history (b : string) pos (st : stored) : obj =
+let with_history (b : string) pos (file : Fpath.t) (st : stored) : obj =
   let next = pos + Marshal.total_size (Bytes.unsafe_of_string b) pos in
   let history = if next < String.length b then (Marshal.from_string b next : (string option * int) list) else [] in
   let next = if next < String.length b then next + Marshal.total_size (Bytes.unsafe_of_string b) next else next in
   let acid = if next < String.length b then (Marshal.from_string b next : string list) else [] in
   let next = if next < String.length b then next + Marshal.total_size (Bytes.unsafe_of_string b) next else next in
   let flags = if next < String.length b then (Marshal.from_string b next : string list) else [] in
-  { arch = st.s_arch; file = st.s_file; items = st.s_items; history; acid; flags }
+  { arch = st.s_arch; file; items = st.s_items; history; acid; flags }
 
 (* [in_project caps project file]: an object's source by its path in the
  * project, from its top (the compilers' -project, from here: mkconfig's
@@ -256,7 +262,9 @@ let in_project (caps : < Cap.readdir; .. >) (project : string) (file : Fpath.t) 
 (* the files through the capabilities
  * old: Marshal.to_string (version, o) [] *)
 let save caps file (o : obj) =
-  FS.write caps file (Marshal_.to_string (version, stored o) [ Marshal.No_sharing ] ^ history_bytes o)
+  FS.write caps file
+    (Marshal_.to_string (version, o.file) [ Marshal.No_sharing ]
+     ^ Marshal_.to_string (stored o) [ Marshal.No_sharing ] ^ history_bytes o)
 
 (* (a file that is not one, its header's magic number and size checked
  * first: Marshal.from_string's own errors are Invalid_argument, read as
@@ -273,12 +281,37 @@ let marshalled (b : string) : bool =
  * old: a member the object without the version (to_bytes, of_bytes):
  * mini-ar u wrote each object as a value again to take the version
  * out, 40% of its instructions on lib_core.a, 3.9 s on mini-9pi *)
-let of_saved name (b : string) : obj =
+(* an object of version 5, its source a field of the first value: one
+ * made before is read (its source with the whole value) *)
+type stored5 = { s5_arch : arch; s5_file : Fpath.t; s5_items : (item * int) array }
+
+(* the first value: the version, and the source (6), or the object (5) *)
+let first name (b : string) : int * Obj.t =
   if not (marshalled b) then failwith (name ^ ": not an object");
-  let v, (st : stored) = Marshal.from_string b 0 in
-  if v <> version then failwith (name ^ ": an object of another version");
-  with_history b 0 st
+  let v, (x : Obj.t) = Marshal.from_string b 0 in
+  if v <> version && v <> 5 then failwith (name ^ ": an object of another version (to make again: remove it)");
+  (v, x)
+
+let of_saved name (b : string) : obj =
+  match first name b with
+  | 5, x ->
+      let st : stored5 = Obj.obj x in
+      with_history b 0 st.s5_file { s_arch = st.s5_arch; s_items = st.s5_items }
+  | _, x ->
+      let pos = Marshal.total_size (Bytes.unsafe_of_string b) 0 in
+      if not (pos + Marshal.header_size <= String.length b) then failwith (name ^ ": not an object");
+      with_history b pos (Obj.obj x : Fpath.t) (Marshal.from_string b pos : stored)
 
 let load caps file : obj = of_saved (Fpath.to_string file) (FS.read caps file)
+
+(* the object's source, from its first value alone (version 6) *)
+let source caps file : Fpath.t =
+  let name = Fpath.to_string file in
+  match Marshal_.first caps name with
+  | exception (End_of_file | Failure _) -> failwith (name ^ ": not an object")
+  | b -> (
+      match first name b with
+      | 5, x -> (Obj.obj x : stored5).s5_file
+      | _, x -> (Obj.obj x : Fpath.t))
 
 (* (an item as text, the linker's messages and listing: Show_asm) *)

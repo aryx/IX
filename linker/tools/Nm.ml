@@ -104,8 +104,8 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
                | Some e -> print caps o ~prefix:(prefix f) None (Elf_file.symbols bytes e); ok
                | None -> Console.eprint caps (Printf.sprintf "nm: %s: no symbol table\n" f); false)
           | None when Fpath.has_ext ".a" (Fpath.v f) ->
-              List.iter (fun ((name, member, _) : Link.member) -> print caps o ~prefix:(prefix name) None (of_object (Asm.of_saved name member)))
-                (Link.read_library caps (Fpath.v f));
+              List.iter (fun ((name, member, _) : Library_file.member) -> print caps o ~prefix:(prefix name) None (of_object (Asm.of_saved name member)))
+                (Library_file.read_library caps (Fpath.v f));
               ok
           | None ->
               (match Asm.load caps (Fpath.v f) with

@@ -12,11 +12,9 @@ all:V: $D/mini-date $D/mini-cal
 $D/%.$O: %.ml
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-date: $D/Date.$O $LIBS
-	$ML -start $STD $COMMONS Date Std_exit -o $D/Date.start.$O
-	$LD $LDH -nofollow -o $target $D/Date.start.$O $STDOBJS $D/Date.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/Date.$O $STDEND
 $D/mini-cal: $D/Cal.$O $LIBS
-	$ML -start $STD $COMMONS Cal Std_exit -o $D/Cal.start.$O
-	$LD $LDH -nofollow -o $target $D/Cal.start.$O $STDOBJS $D/Cal.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/Cal.$O $STDEND
 
 clean:V:
 	rm -rf $D

@@ -25,10 +25,8 @@ $D/hello-c: $D/hello-c.$O $L/libc.a
 
 $D/Hello.$O: Hello.ml
 	$ML $STDI -o $target Hello.ml
-$D/hello-ml.start.$O: mkfile
-	$ML -start Stdlib Hello Std_exit -o $target
-$D/hello-ml: $D/hello-ml.start.$O $L/Stdlib.$O $D/Hello.$O $STDEND
-	$LD $LDH -nofollow -o $target $prereq
+$D/hello-ml: $L/Stdlib.$O $D/Hello.$O $STDEND
+	$ML -ld $LINKER -- -o $target $prereq
 
 clean:V:
 	rm -rf $D

@@ -9,7 +9,6 @@ PROG=mini-csc
 SRC=Csc_ast Csc_lexer Csc_parser Csc_types Csc_emit Csc_compile CLI Main
 LOCAL=`{ls *.ml *.mli *.mll}
 LIBI=
-LIBUNITS=
 # (the assembly's writer, Writer and what it stands on; runtime/'s
 # Value and Library)
 LIBDIRS=languages/dotnet/assembly languages/dotnet/runtime

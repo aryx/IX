@@ -19,5 +19,4 @@ all:V: $D/mini-prolog
 PROGOBJS=${DEPMORE:%=$D/%.$O}
 $PROGOBJS: $LOCAL $MLEXE
 $D/mini-prolog: $PROGOBJS $D/lib.a $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $D/lib.a} $DEPMORE Std_exit -o $D/mini-prolog.start.$O
-	$LD $LDH -nofollow -o $target $D/mini-prolog.start.$O $STDOBJS $D/lib.a $PROGOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/lib.a $PROGOBJS $STDEND

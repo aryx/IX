@@ -15,8 +15,7 @@ all:V: $D/boxes
 $D/Boxes.$O: Boxes.ml $LIBSRC
 	$ML $INCLUDES -o $target Boxes.ml
 $D/boxes: $D/Boxes.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Boxes Std_exit -o $D/Boxes.start.$O
-	$LD $LDH -nofollow -o $target $D/Boxes.start.$O $STDOBJS $LIBA $D/Boxes.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Boxes.$O $STDEND
 
 clean:V:
 	rm -rf $D

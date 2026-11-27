@@ -6,7 +6,6 @@ SRC=Text Input Out Address Command CLI Main
 LOCAL=`{ls *.ml *.mli}
 GEN=
 LIBI=
-LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog

@@ -86,35 +86,30 @@ $D/procs: $D/procs.$O $LIBC
 	$LD -o $target $prereq
 
 # An ML program on the standard library alone: its unit compiled with
-# the library's interfaces (-I); its start, which ml makes from the
-# names of the units it may link, their initializations in order (ar t
-# lists an archive's units by their sources); then the link: the start,
-# the library (from which ld takes the units the program uses), the
-# unit, and the end.
+# the library's interfaces (-I); then ml -o, which writes its start
+# from the files it is given (the units' initializations in order: a
+# library's units as its index has them, then the unit's own) and runs
+# ld on the same files (-ld: with its flags): the start, the library
+# (from which ld takes the units the program uses), the unit, and the
+# end.
 CORE=$LIB/ml/lib_core
 STD=$CORE/lib_core.a
 END=$CORE/std_exit.$O $CORE/runtime.$O $LIBC
-UNITS=sed 's,.*/,,; s,\.ml$,,'
 
 $D/Helloml.$O: Helloml.ml
 	$ML -I $CORE -o $target Helloml.ml
-$D/Helloml.start: mkfile $STD
-	$ML -start `{$AR t $STD | $UNITS} Helloml Std_exit -o $target
-$D/helloml: $D/Helloml.start $D/Helloml.$O $STD $END
-	$LD -o $target $D/Helloml.start $STD $D/Helloml.$O $END
+$D/helloml: $D/Helloml.$O $STD $END
+	$ML -ld $LD -- -o $target $STD $D/Helloml.$O $END
 
 $D/Procsml.$O: Procsml.ml
 	$ML -I $CORE -o $target Procsml.ml
-$D/Procsml.start: mkfile $STD
-	$ML -start `{$AR t $STD | $UNITS} Procsml Std_exit -o $target
-$D/procsml: $D/Procsml.start $D/Procsml.$O $STD $END
-	$LD -o $target $D/Procsml.start $STD $D/Procsml.$O $END
+$D/procsml: $D/Procsml.$O $STD $END
+	$ML -ld $LD -- -o $target $STD $D/Procsml.$O $END
 
 # An ML program on other libraries is built the same way, with their
-# interfaces, their units' names in the start and their archives in the
-# link, each library after the ones it names. PLATFORM is what runs a
-# playground program: the draw device on mini-9pi, and on Linux ppm, no
-# window, a frame written to a file.
+# interfaces and their archives, each library after the ones it names.
+# PLATFORM is what runs a playground program: the draw device on
+# mini-9pi, and on Linux ppm, no window, a frame written to a file.
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 LIBS=lib_crypto lib_compression lib_graphics lib_playground/random lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
@@ -123,17 +118,15 @@ LIBI=${LIBS:%=-I $LIB/ml/%}
 
 $D/%.$O: %.ml $LIBA
 	$ML $LIBI -I $CORE -o $target $stem.ml
-$D/%.start: mkfile $STD $LIBA
-	$ML -start `{for(a in $STD $LIBA) $AR t $a | $UNITS} $stem Std_exit -o $target
 
-$D/fetchml: $D/Fetchml.start $D/Fetchml.$O $STD $LIBA $END
-	$LD -o $target $D/Fetchml.start $STD $LIBA $D/Fetchml.$O $END
-$D/shapesml: $D/Shapesml.start $D/Shapesml.$O $STD $LIBA $END
-	$LD -o $target $D/Shapesml.start $STD $LIBA $D/Shapesml.$O $END
-$D/game: $D/Game.start $D/Game.$O $STD $LIBA $END
-	$LD -o $target $D/Game.start $STD $LIBA $D/Game.$O $END
-$D/counter: $D/Counter.start $D/Counter.$O $STD $LIBA $END
-	$LD -o $target $D/Counter.start $STD $LIBA $D/Counter.$O $END
+$D/fetchml: $D/Fetchml.$O $STD $LIBA $END
+	$ML -ld $LD -- -o $target $STD $LIBA $D/Fetchml.$O $END
+$D/shapesml: $D/Shapesml.$O $STD $LIBA $END
+	$ML -ld $LD -- -o $target $STD $LIBA $D/Shapesml.$O $END
+$D/game: $D/Game.$O $STD $LIBA $END
+	$ML -ld $LD -- -o $target $STD $LIBA $D/Game.$O $END
+$D/counter: $D/Counter.$O $STD $LIBA $END
+	$ML -ld $LD -- -o $target $STD $LIBA $D/Counter.$O $END
 
 clean:V:
-	rm -f $D/*.$O $D/*.start $D/hello $D/procs $D/helloml $D/procsml $D/fetchml $D/shapesml $D/game $D/counter
+	rm -f $D/*.$O $D/hello $D/procs $D/helloml $D/procsml $D/fetchml $D/shapesml $D/game $D/counter

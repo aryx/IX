@@ -9,7 +9,6 @@ LOCAL=`{ls *.ml}
 GEN=
 LIBI=
 LIBDIRS=lib_compression lib_graphics typesetting/troff
-LIBUNITS=
 <$TOP/mkfiles/mkconfig
 LIBOBJS=
 <$TOP/mkfiles/mkprog

@@ -77,8 +77,8 @@ if [ $bad = 0 ]; then ok "mini-ml on arm: $n assemblies as its arm64 build's"; e
 
 # a whole link, by the linker built for arm
 cp $M/assembler/mini-asm $W/ref; rm $M/assembler/mini-asm
-cmd=$(cd assembler && mini-mk O=5 2>&1 | grep '^mini-ld' | tail -1)
-if (cd assembler && sh -c "$(echo "$cmd" | sed "s|^mini-ld|../$M/linker/mini-ld|; s| -o [^ ]*| -o $W/by5|")") 2> $W/err && cmp -s $W/by5 $W/ref
+cmd=$(cd assembler && mini-mk O=5 2>&1 | grep '^mini-ml .* -ld ' | tail -1)
+if (cd assembler && sh -c "$(echo "$cmd" | sed "s| -ld [^ ]*| -ld ../$M/linker/mini-ld|; s| -- -o [^ ]*| -- -o $W/by5|")") 2> $W/err && cmp -s $W/by5 $W/ref
 then ok "mini-ld on arm: mini-asm for arm linked ($(stat -c %s $W/ref) bytes), the same executable as the 64-bit linker's"
 else fail "mini-ld on arm: mini-asm linked differs: $(head -1 $W/err | cut -c1-120)"; fi
 

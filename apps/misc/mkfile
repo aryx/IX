@@ -16,8 +16,7 @@ $D/%.$O: $G/%.ml $LOCAL
 $D/Colors.$O: Colors.ml $LOCAL
 	$ML $INCLUDES -o $target Colors.ml
 $D/mini-colors: $D/Colors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB Colors Std_exit -o $D/Colors.start.$O
-	$LD $LDH -nofollow -o $target $D/Colors.start.$O $STDOBJS $LIBOBJS $D/Colors.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $D/Colors.$O $STDEND
 
 clean:V:
 	rm -rf $D

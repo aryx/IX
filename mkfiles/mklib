@@ -54,15 +54,15 @@ lib:V: $D/lib.a $D/dirs
 #      with each unit, LOCAL whole: 1,096 lines of a build's 2,636)
 $OBJS: $LOCAL $MLEXE
 
-# (lib.a.units: its units' names in their order, what mkfiles/units.rc
-# says for a program's -start, written once here. Each program's link
-# asked mini-ar t of each of its libraries, which reads the library
-# whole: 388 times in a build of ix on the card, 250 s of its 3,687
-# (2026-11-19).)
+# (its units in their order, UNITS's, which a program's start reads
+# from the library's index: mini-ml -o, Library_file.
+# old: lib.a.units beside it, their names, for mkfiles/units.rc, a
+# program's -start: each program's link had asked mini-ar t of each of
+# its libraries, which read the library whole, 388 times in a build of
+# ix on the card, 250 s of its 3,687 (2026-11-19))
 $D/lib.a: $OBJS mkfile
-	rm -f $target $target.units
+	rm -f $target
 	$AR u $target $OBJS
-	$AR t $target | sed 's,.*/,,; s,\.ml$,,' > $target.units
 
 # its directories, for a program's -I (mkfiles/mklibs reads them: the
 # library knows which, a system's or a platform's among them), and the

@@ -16,3 +16,10 @@
  * bigarray), or with a closure, is given back as Marshal wrote it. *)
 
 val to_string : 'a -> Marshal.extern_flags list -> string
+
+(* [first caps file]: the bytes of the file's first value, the others
+ * not read: what a library's index or an object's source is, at the
+ * start of its file (Link, Asm), where the whole file was read for it
+ * (mini-ar t, mini-ml -start). Failure or End_of_file when the file
+ * does not start with a value. *)
+val first : < Cap.open_in; .. > -> string -> string

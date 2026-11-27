@@ -13,8 +13,9 @@
 # :Pfalse:, out of date always), and its dirs asked of it: a build
 # where nothing changed took 3 minutes 21 for mini-9pi's programs, 8.5 s
 # before (2026-10-21)
-# The start names the libraries' units in their order:
-#   $ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Main Std_exit ...
+# A program's link names the archives, its start their units (mini-ml
+# -o reads each one's index):
+#   $ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Main.$O $STDEND
 # (not ${LIBDIRS:%=$B/%/lib.a}: of an empty list, mk gives the name
 # LIBDIRS; mkprog's programs name none)
 # The three by mkfiles/libs.rc, one rc for them.

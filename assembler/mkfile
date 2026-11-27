@@ -1,6 +1,7 @@
 # assembler as a library (mkfiles/mklib): Asm, the objects' form, read
-# and written, Show_asm, its messages, and Lexer_asm and Parser_asm, an
-# assembly file read, what every tool of the toolchain links (mini-ld,
+# and written, Library_file, a library's (lib.a), Show_asm, its
+# messages, and Lexer_asm and Parser_asm, an assembly file read, what
+# every tool of the toolchain links (mini-ld,
 # mini-ar, mini-nm, mini-cc, mini-ml, mini-dotnet), which took this
 # directory's objects one by one before (plan_simpler_builds.md, step
 # 4); and mini-asm, its CLI and Main linked with that library.
@@ -9,7 +10,7 @@ TOP=..
 LIB=assembler
 DIRS=.
 NEEDS=
-UNITS=Asm Show_asm Lexer_asm Parser_asm
+UNITS=Asm Library_file Show_asm Lexer_asm Parser_asm
 # (mini-asm's own units, after the library's units they name)
 DEPMORE=CLI Main
 <$TOP/mkfiles/mklib
@@ -20,5 +21,4 @@ all:V: $D/mini-asm
 PROGOBJS=${DEPMORE:%=$D/%.$O}
 $PROGOBJS: $LOCAL $MLEXE
 $D/mini-asm: $PROGOBJS $D/lib.a $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $D/lib.a} $DEPMORE Std_exit -o $D/mini-asm.start.$O
-	$LD $LDH -nofollow -o $target $D/mini-asm.start.$O $STDOBJS $D/lib.a $PROGOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/lib.a $PROGOBJS $STDEND

@@ -36,8 +36,9 @@ ar tv libc.a
 
 # DIFFERENCES
 The keys `u`, `t` and `v` only: no `r`, `d`, `x`, `m`, `p` nor `q`,
-nor a *posname*. The file is ix's own, the objects marshalled with
-their index, and not *ar*'s format: only ix's linker reads it.
+nor a *posname*. The file is ix's own, its index marshalled first,
+then the objects, and not *ar*'s format: only ix's tools read it (the
+linker, and \man{ml}{1} -start its index alone, as `t` does).
 
 # SEE ALSO
 \man{ld}{1}, \man{mk}{1}; Plan 9's *ar*(1)

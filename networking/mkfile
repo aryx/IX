@@ -17,14 +17,11 @@ all:V: $PROGS
 $D/%.$O: %.ml $LIBSRC
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-curl: $D/Curl.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Curl Std_exit -o $D/Curl.start.$O
-	$LD $LDH -nofollow -o $target $D/Curl.start.$O $STDOBJS $LIBA $D/Curl.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Curl.$O $STDEND
 $D/mini-timesync: $D/Timesync.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Timesync Std_exit -o $D/Timesync.start.$O
-	$LD $LDH -nofollow -o $target $D/Timesync.start.$O $STDOBJS $LIBA $D/Timesync.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Timesync.$O $STDEND
 $D/mini-httpd: $D/Httpd.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Httpd Std_exit -o $D/Httpd.start.$O
-	$LD $LDH -nofollow -o $target $D/Httpd.start.$O $STDOBJS $LIBA $D/Httpd.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Httpd.$O $STDEND
 
 clean:V:
 	rm -rf $D

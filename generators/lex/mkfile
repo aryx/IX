@@ -5,7 +5,6 @@ PROG=mini-lex
 SRC=Lex Dfa Output CLI Main
 GEN=
 LIBI=
-LIBUNITS=
 LIBOBJS=
 LOCAL=`{ls *.ml *.mli}
 <$TOP/mkfiles/mkconfig

@@ -12,8 +12,7 @@ all:V: $D/mini-cmp
 $D/%.$O: %.ml
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-cmp: $D/Cmp.$O $LIBS
-	$ML -start $STD $COMMONS Cmp Std_exit -o $D/Cmp.start.$O
-	$LD $LDH -nofollow -o $target $D/Cmp.start.$O $STDOBJS $D/Cmp.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/Cmp.$O $STDEND
 
 clean:V:
 	rm -rf $D

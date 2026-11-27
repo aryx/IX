@@ -47,8 +47,7 @@ $D/Worker_spawn.$O: spawn/large_threads.ml Worker_spawn.mli
 $D/mini-netscape: $D/netscape
 	cp $D/netscape $target
 $D/netscape: $D/Netscape.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Netscape Std_exit -o $D/Netscape.start.$O
-	$LD $LDH -nofollow -o $target $D/Netscape.start.$O $STDOBJS $LIBA $WHOLE $LIBOBJS $D/Netscape.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $WHOLE $LIBOBJS $D/Netscape.$O $STDEND
 
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D

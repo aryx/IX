@@ -154,10 +154,10 @@ for p in ${@:-$all}; do
   esac
   dir=$(dirname $mk)
   rm -f $bin
-  link=$(cd $dir && MINI=mini- PATH=$ROOT/bin:$PATH mini-mk 2>&1 | grep -E '^mini-ld' | tail -1)
+  # (its link, mini-ml -o's line, again with mini-ld -g, to $W/prog)
+  link=$(cd $dir && MINI=mini- PATH=$ROOT/bin:$PATH mini-mk 2>&1 | grep -E '^mini-ml .* -ld ' | tail -1)
   [ -x $bin ] && [ -n "$link" ] || { echo "$p: not built"; failures=$((failures + 1)); continue; }
-  set -- $link; shift
-  (cd $dir && $ROOT/bin/mini-ld -g "$@" -o $W/prog) || { echo "$p: not linked with -g"; failures=$((failures + 1)); continue; }
+  (cd $dir && PATH=$ROOT/bin:$PATH sh -c "$(echo "$link" | sed "s| -ld [^ ]*| -ld $ROOT/bin/mini-ld -g|; s| -- -o [^ ]*| -- -o $W/prog|")") || { echo "$p: not linked with -g"; failures=$((failures + 1)); continue; }
   rm -rf $W/cwd $W/prof.*; mkdir $W/cwd; n=0
   workload $p
   # (the program as linked: its manifest, mini-ld -map's)

@@ -2,10 +2,11 @@
 # directory from TOP), PROG, SRC (its units, each before the ones that
 # name it, the main last), LOCAL (its sources), GEN (the units mini-lex
 # and mini-yacc make: $D/Parser.ml...), and what else it links: LIBI
-# (-I for other directories of ix, whose interfaces it names), LIBUNITS
-# and LIBOBJS (their units and their objects, in order). Each is set,
-# even to nothing. LIBDIRS, when it is, names the libraries it links
-# (mkfiles/mklibs: lib_graphics...). Then it includes mkconfig and this file; a unit in a
+# (-I for other directories of ix, whose interfaces it names) and
+# LIBOBJS (their objects, in order: the start reads their units from
+# them). Each is set, even to nothing. LIBDIRS, when it is, names the
+# libraries it links (mkfiles/mklibs: lib_graphics...). Then it
+# includes mkconfig and this file; a unit in a
 # subdirectory (compat/Follow) has a rule of its own after, by its name.
 # (Not ${LIBDIRS:%=-I %}: of an empty list, mk gives the name LIBDIRS.)
 
@@ -41,20 +42,25 @@ $D/%.ml: %.mll
 $D/%.ml: %.mly
 	$YACC -b $D/$stem $stem.mly
 
-# the start: the units' initializations, in their order
-# claude: named after the program, not start.$O: where the file names'
-# case does not count (macOS), that is a unit Start's object too
-# (editors/emacs's Start.ml)
-# old: $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
-$D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig $MLEXE
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIBUNITS $SRC Std_exit -o $target
-
-# (the libraries too: a program is linked again when one of them is remade)
+# the program: mini-ml -o writes its start, the units' initializations
+# in their order, of the objects' and the libraries' units (a library's
+# by its index, an object's by its first value), beside it
+# ($PROG.start.$O), then runs the linker on the same files (LINKER:
+# mkconfig's). The libraries too: a program is linked again when one of
+# them is remade; and its mkfile, which says its units.
 # -nofollow: the code in the objects' order, not moved along its flow as
 # 5l does (linker/compat/, for goken's bytes): a program of 1 MB of code
 # then has conditional branches farther than they reach
-$D/$PROG: $D/$PROG.start.$O $OBJS $LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
-	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBA $LIBOBJS $OBJS $STDEND
+# old: a rule of its own for the start, which named the units again
+#      (mkconfig's STD COMMONS, units.rc's of each library, LIBUNITS,
+#      SRC), then $LD $LDH -nofollow on the files:
+#      $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig $MLEXE
+#      	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIBUNITS $SRC Std_exit -o $target
+#      (named after the program, not start.$O: where the file names'
+#      case does not count, macOS, that is a unit Start's object too,
+#      editors/emacs's Start.ml)
+$D/$PROG: $OBJS $LIBA $LIBOBJS $STDOBJS $STDEND mkfile $TOP/mkfiles/mkprog $TOP/mkfiles/mkconfig
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $OBJS $STDEND
 
 # the units' order (mkfiles/mkdepend); DEPMORE, the mkfile's: units
 # compiled here that are not the program's, other programs' mains

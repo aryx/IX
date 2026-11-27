@@ -45,8 +45,7 @@ $LIBOBJS $D/Quake.$O: $LOCAL
 $D/mini-quake: $D/quake
 	cp $D/quake $target
 $D/quake: $D/Quake.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Quake Std_exit -o $D/Quake.start.$O
-	$LD $LDH -nofollow -o $target $D/Quake.start.$O $STDOBJS $LIBA $LIBOBJS $D/Quake.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $D/Quake.$O $STDEND
 
 clean:V:
 	rm -rf $D

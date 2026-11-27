@@ -43,8 +43,7 @@ $D/P9_wire.$O: ../../lib_networking/9p/P9_wire.ml $LOCAL
 $D/P9_server.$O: ../../lib_networking/9p/P9_server.ml $LOCAL
 	$ML $INCLUDES -o $target ../../lib_networking/9p/P9_server.ml
 $D/mini-rio: $OBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $UNITS Std_exit -o $D/start.$O
-	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $OBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $OBJS $STDEND
 
 clean:V:
 	rm -rf $D

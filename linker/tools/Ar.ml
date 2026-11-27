@@ -44,11 +44,12 @@ in one file, lib.a, from which mini-ld takes those a program needs. The key:
   mini-ar vu libc.a print.7           and each said: a - print.c (r: replaced)
   mini-ar t libc.a                    its objects, by their sources: print.c
   mini-ar tv libc.a                   with the names each defines
-The file is ix's own, not ar's: a marshalled value, as an object is.
+The file is ix's own, not ar's: an index, a marshalled value as an object is,
+then the objects; t reads the index alone.
 |}
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let name = Link.member_file in
+  let name = Library_file.member_file in
   match List.tl (Array.to_list argv) with
   | args when List.mem "-h" args || List.mem "--help" args -> Console.print caps help; 0
   | key :: lib :: files when key <> "" && String.for_all (fun c -> String.contains "utvc" c) key -> (
@@ -56,22 +57,25 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       try
         let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
         let lib = path lib in
-        if String.contains key 't' then begin
+        if String.contains key 't' && not verbose then
+          (* (the index alone, the file's first value: no member read) *)
+          List.iter (fun f -> Console.print caps (f ^ "\n")) (Library_file.read_sources caps lib)
+        else if String.contains key 't' then begin
           (* (the members as they are in the file: none read as an object) *)
           Logs.info (fun m -> m "reading %a" Fpath.pp lib);
-          let l = Link.read_library caps lib in
+          let l = Library_file.read_library caps lib in
           List.iter2 (fun m (_, names) ->
-            Console.print caps (name m ^ (if verbose then ": " ^ String.concat " " names else "") ^ "\n")) l (Link.index l)
+            Console.print caps (name m ^ (if verbose then ": " ^ String.concat " " names else "") ^ "\n")) l (Library_file.index l)
         end else begin
-          let old = if Sys.file_exists (Fpath.to_string lib) then Link.read_library caps lib else [] in
-          let added = List.map (fun f -> let b = FS.read caps (path f) in Link.member_of b (Asm.of_saved f b)) files in
+          let old = if Sys.file_exists (Fpath.to_string lib) then Library_file.read_library caps lib else [] in
+          let added = List.map (fun f -> let b = FS.read caps (path f) in Library_file.member_of b (Asm.of_saved f b)) files in
           let replaced m = List.exists (fun n -> name n = name m) added in
           if verbose then
             List.iter (fun n ->
               Console.print caps (Printf.sprintf "%s - %s\n" (if List.exists (fun o -> name o = name n) old then "r" else "a") (name n))) added;
           (* an older object of the same source goes; the new ones last, in their order *)
           Logs.info (fun m -> m "writing %a: %d members added or replaced, %d before" Fpath.pp lib (List.length added) (List.length old));
-          Link.write_library caps lib (List.filter (fun o -> not (replaced o)) old @ added)
+          Library_file.write_library caps lib (List.filter (fun o -> not (replaced o)) old @ added)
         end;
         0
       with Link.Error m | Sys_error m | Failure m -> Console.eprint caps ("mini-ar: " ^ m ^ "\n"); 1)

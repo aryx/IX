@@ -7,7 +7,6 @@ PROG=mini-tiger
 SRC=Tiger_ast Tiger_parser Tiger_lexer Tiger_tree Tiger_semant Tiger_emit CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll dotnet/*.ml dotnet/*.mli}
 LIBI=-I dotnet
-LIBUNITS=
 # (the assembly's writer, Writer and what it stands on)
 LIBDIRS=languages/dotnet/assembly
 <$TOP/mkfiles/mkconfig

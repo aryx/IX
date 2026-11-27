@@ -15,7 +15,6 @@ LIBDIRS=lib_crypto
 # implementation; the implementation in TinyLibSystem/tinykernel/ is
 # compiled by tiny-ml)
 INCLUDES=-I . -I TinyLibSystem/unix -I $D -I ../lib_crypto $STDI
-START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-cc tiny-ml tiny-as tiny-ld tiny-ar tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfat
@@ -99,8 +98,7 @@ $D/TinyMkfat.$O: TinyKernel/steps/t6/TinyMkfat.ml
 
 $D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
 $D/tiny-build: $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
-	$START Sha1 TinyLibSystem TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
-	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
 
 # (The shell's system is the host's, TinyLibSystem/unix/TinyLibSystem.ml.
 # TinyLibSystem/tinykernel/TinyLibSystem.ml is tiny-machine's, and
@@ -111,51 +109,39 @@ $D/TinyLibSystem.$O: TinyLibSystem/unix/TinyLibSystem.ml
 	$ML $INCLUDES -o $target TinyLibSystem/unix/TinyLibSystem.ml
 $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
-	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
-	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND
 
 # (the utilities use the same TinyLibSystem as the shell, and
 # TinyLibRegex for grep)
 $D/TinyUtilities.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyUtilities.ml
 $D/tiny-utils: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $LIBS
-	$START TinyLibSystem TinyLibRegex TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
-	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
 
 # (the line editor uses the same TinyLibSystem as the shell and the
 # same TinyLibRegex as grep; it is also tiny-kernel's ed and sam)
 $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
 $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
-	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
-	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
 $D/tiny-cc: $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyLibExecutable $CCP TinyC Std_exit -o $D/TinyC.start.$O
-	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $CCPO $D/cc/TinyC.$O $STDEND
 $D/tiny-ml: $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $LIBS
-	$START TinyLibSystem $MLC TinyML Std_exit -o $D/TinyML.start.$O
-	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $STDEND
 $D/tiny-as: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyAssembler.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
-	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyAssembler.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyAssembler.$O $STDEND
 $D/tiny-ld: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyLinker.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyLinker Std_exit -o $D/TinyLinker.start.$O
-	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyLinker.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyLinker.$O $STDEND
 $D/tiny-ar: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyArchiver.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyArchiver Std_exit -o $D/TinyArchiver.start.$O
-	$LINK -o $target $D/TinyArchiver.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyArchiver.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyArchiver.$O $STDEND
 $D/TinyDatabase.$O: $D/TinyLibSystem.$O TinyDatabase.ml
 $D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
-	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
-	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyDatabase.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyDatabase.$O $STDEND
 $D/TinyVCS.$O: $D/TinyLibSystem.$O TinyVCS.ml
 $D/tiny-vcs: $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
-	$START Sha1 TinyLibSystem TinyVCS Std_exit -o $D/TinyVCS.start.$O
-	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $STDEND
 $D/tiny-cpu: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
-	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
 $D/tiny-machine: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyMachineCPU TinyMachineDevices KNetwork Strings Url Http TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/KNetwork.$O $D/Strings.$O $D/Url.$O $D/Http.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
 
 # (Parallel runs on the host's cores where OCaml has domains, for
 # -cores-parallel. mini-ml has none, so this is lib_core/parallel's file
@@ -168,11 +154,9 @@ $D/TinyLibExecutable.$O: $D/TinyLibMachine.$O TinyLibExecutable.ml
 $D/TinyProfiler.$O $D/TinyLinker.$O $D/TinyArchiver.$O $D/TinyAssembler.$O $D/TinyML.$O $D/cc/TinyC.$O: $D/TinyLibMachine.$O $D/TinyLibExecutable.$O
 $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
 $D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyProfiler.$O $LIBS
-	$START TinyLibSystem TinyLibMachine TinyLibExecutable TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
-	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyProfiler.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyLibMachine.$O $D/TinyLibExecutable.$O $D/TinyProfiler.$O $STDEND
 $D/tiny-mkfat: $D/TinyLibSystem.$O $D/TinyMkfat.$O $LIBS
-	$START TinyLibSystem TinyMkfat Std_exit -o $D/TinyMkfat.start.$O
-	$LINK -o $target $D/TinyMkfat.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMkfat.$O $STDEND
+	$ML -ld $LINK -- -o $target $STDOBJS $D/TinyLibSystem.$O $D/TinyMkfat.$O $STDEND
 
 clean:V:
 	rm -rf $D

@@ -508,10 +508,10 @@ ix() {
   mk browsers/netscape & pids+=($!)
   mk apps/files & pids+=($!)
   mk apps/maps & pids+=($!)
-  # (mini-emacs: its mkfiles list mini-ml's parser's units by their own
-  # LIBUNITS, which dune's build does not read: Annotations missing from
-  # them broke the link unseen, ad93e2ae. It links mini-ml's objects of
-  # them, so after languages/ml, its two side by side)
+  # (mini-emacs: it links mini-ml's objects of its parser, listed by its
+  # mkfiles, which dune's build does not read: Annotations missing from
+  # them broke the link unseen, ad93e2ae; so after languages/ml, its two
+  # side by side)
   (mk languages/ml || exit 1; mk editors/emacs/tty & e=$!
    mk editors/emacs/draw || exit 1; wait $e) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done

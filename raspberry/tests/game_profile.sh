@@ -21,9 +21,9 @@ R=$(cd "$(dirname "$0")/../.." && pwd); S=${1:?a directory}; name=${2:-play}; ip
 mkdir -p $S/gb; [ -d $S/gb/lib_core ] || cp -r $R/_mk/5-plan9/lib_core $S/gb/
 cd $R/games && PATH=$R/bin:$PATH mini-mk O=5 OS=plan9 CATEGORIES=arcade B=$S/gb > $S/gb.log 2>&1 || { grep -v '^mini-ml\|^mkdir' $S/gb.log | tail -20; exit 1; }
 # (the link's command, when the game was linked again: once more with -v, its listing)
-L=$(grep 'mini-ld' $S/gb.log | tail -1)
+L=$(grep '^mini-ml .* -ld ' $S/gb.log | tail -1)
 if [ -n "$L" ]; then
-  L=$(echo "$L" | sed 's/`echo $stem | tr A-Z a-z`/x.out/; s/-nofollow/-nofollow -v/; s|-o [^ ]*/x.out|-o '$S'/x.out|')
+  L=$(echo "$L" | sed 's/`echo $stem | tr A-Z a-z`/x.out/; s/-nofollow --/-nofollow -v --/; s|-- -o [^ ]*/x.out|-- -o '$S'/x.out|')
   (cd $R/games/arcade && PATH=$R/bin:$PATH sh -c "$L" > $S/camel.list 2>&1)
   grep 'TEXT ' $S/camel.list | sed 's/^\([0-9a-f]*\): [0-9a-f]*\tTEXT \([^+]*\).*/\1 T \2/' > $S/camel.syms
 fi

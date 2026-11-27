@@ -146,25 +146,8 @@ val load :
  * passes after load. *)
 val load_objects : 'm t -> decode:(string -> 'm option) -> Asm.obj list -> unit
 
-(* A library (lib.a) is a list of objects, each with the names it
- * defines, from which load takes those that define what is undefined.
- * Its file is ix's own, a marshalled value as an object is, and not
- * ar's; mini-ar makes it (Plan 9's ar; xix's Library_file). In the
- * file, a member is its object's source, its bytes and the names it
- * defines. load reads as values only the members it takes, and mini-ar
- * reads none. *)
-type def_kind = T | D
-type member = string * string * (def_kind * string) list
-(* (the object and its file's bytes, which the member keeps) *)
-val member_of : string -> Asm.obj -> member
-val member_file : member -> string
-(* each member's bytes and the names indexed for it (a text name that
- * a later member defines again is not indexed for that member, as in
- * ar) *)
-val index : member list -> (string * string list) list
-val read_library : < Cap.open_in; .. > -> Fpath.t -> member list
-
-val write_library : < Cap.open_out; .. > -> Fpath.t -> member list -> unit
+(* (a library, lib.a, from which load takes the members that define
+ * what is undefined: Library_file, its file) *)
 
 (* Sets the branch targets: a BL f(SB) goes to f's TEXT, and a branch
  * to a branch goes to the final one (5l's patch and brloop; xix's

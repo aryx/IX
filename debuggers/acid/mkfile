@@ -7,7 +7,6 @@ PROG=mini-acid
 SRC=Ast Code Value Eval Das Das_arm64 Ptrace Acid_dwarf Frame64 Proc Parser Lexer Builtin CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll linux/mini-ml/*.ml}
 LIBI=
-LIBUNITS=
 LIBOBJS=
 # (to read the program's tables)
 LIBDIRS=lib_executable

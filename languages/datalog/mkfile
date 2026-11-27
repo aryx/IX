@@ -9,7 +9,6 @@ SRC=Parallel Tuples Btree Relset Hash_index Tree_index Index Datalog Datalog_eva
 LOCAL=`{ls *.ml *.mli dotnet/*.ml dotnet/*.mli}
 GEN=
 LIBI=-I dotnet
-LIBUNITS=
 # (the writer of assemblies, Writer and what it stands on; Prolog's
 # terms and reader)
 LIBDIRS=languages/dotnet/assembly languages/prolog

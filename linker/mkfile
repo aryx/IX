@@ -27,5 +27,4 @@ all:V: $D/mini-ld
 PROGOBJS=${DEPMORE:%=$D/%.$O}
 $PROGOBJS: $LOCAL $MLEXE
 $D/mini-ld: $PROGOBJS $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA $D/lib.a} $DEPMORE Std_exit -o $D/mini-ld.start.$O
-	$LD $LDH -nofollow -o $target $D/mini-ld.start.$O $STDOBJS $LIBA $D/lib.a $PROGOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/lib.a $PROGOBJS $STDEND

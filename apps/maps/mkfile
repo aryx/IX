@@ -35,8 +35,7 @@ $D/Worker_spawn.$O: $TOP/browsers/netscape/spawn/large_threads.ml $TOP/browsers/
 	$ML $INCLUDES -o $target $D/Worker_spawn.ml
 
 $D/mini-maps: $D/Maps.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Maps Std_exit -o $D/Maps.start.$O
-	$LD $LDH -nofollow -o $target $D/Maps.start.$O $STDOBJS $LIBA $LIBOBJS $D/Maps.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $D/Maps.$O $STDEND
 
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D

@@ -21,8 +21,7 @@ $D/Usbdev.$O: Usbdev.ml $LOCAL
 $D/Usbd.$O: Usbd.ml $LOCAL
 	$ML $INCLUDES -o $target Usbd.ml
 $D/mini-usbd: $SRCOBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB $SRC Std_exit -o $D/start.$O
-	$LD $LDH -nofollow -o $target $D/start.$O $STDOBJS $LIBOBJS $SRCOBJS $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $SRCOBJS $STDEND
 
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D

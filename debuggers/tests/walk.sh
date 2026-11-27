@@ -42,7 +42,7 @@ M=$ROOT/_mk/5-plan9
 if [ -f $M/lib_core/lib_core.a ]; then
   L=$ROOT/lib_core
   I="-I $F -I $L/system/plan9 -I $L/core -I $L/base -I $L/collections -I $L/printing -I $L/parsing -I $L/system -I $L/concurrency -I $L/commons"
-  # (the start's units: lib_core's, as mkfiles/units.rc names them)
+  # (the start's units: lib_core's, as its index has them)
   U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '\n' ' ')
   # a unit linked with its tables: $W/its name in lower case (with
   # mini-ml's flags $2: -g)

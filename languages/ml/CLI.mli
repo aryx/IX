@@ -48,8 +48,12 @@
  *     lib_core's libc  mini-cc, mini-asm,            |
  *                      mini-ar           libc.a     /
  *
- * mini-mk runs all this from a mkfile, with mini-ml -M for a unit's
- * dependencies. The programs of ix are compiled this way, mini-ml
+ * -start's units are read from the objects and libraries the link is
+ * given (a library's index, an object's first value: start_units), and
+ * mini-ml -o prog, given those alone, writes the start, then runs the
+ * linker in its place (-ld its command, else mini-ld), as ocamlopt reads a .cmxa's
+ * units and runs ld. mini-mk runs all this from a mkfile, with
+ * mini-ml -M for a unit's dependencies. The programs of ix are compiled this way, mini-ml
  * itself among them (the fixed point), and so is the kernel, mini-9pi,
  * which then runs programs compiled by the same compiler.
  *
@@ -167,7 +171,7 @@
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
-val main : < caps; .. > -> string array -> int
+val main : < caps; Cap.exec; Cap.env; .. > -> string array -> int
 
 (* What mini-analyze -flow (analyzers/ml/Ml_flow) shares with the
  * command: the steps on the way to Lower. *)

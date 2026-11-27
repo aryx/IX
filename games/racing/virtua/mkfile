@@ -44,8 +44,7 @@ $LIBOBJS $D/Virtua.$O: $LOCAL
 $D/mini-virtuaracing: $D/virtua
 	cp $D/virtua $target
 $D/virtua: $D/Virtua.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Virtua Std_exit -o $D/Virtua.start.$O
-	$LD $LDH -nofollow -o $target $D/Virtua.start.$O $STDOBJS $LIBA $LIBOBJS $D/Virtua.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $D/Virtua.$O $STDEND
 
 clean:V:
 	rm -rf $D

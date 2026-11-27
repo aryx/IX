@@ -14,8 +14,7 @@ all:V: $D/mini-lynx
 $D/%.$O: %.ml $LIBSRC
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-lynx: $D/Lynx.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Lynx Std_exit -o $D/Lynx.start.$O
-	$LD $LDH -nofollow -o $target $D/Lynx.start.$O $STDOBJS $LIBA $D/Lynx.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Lynx.$O $STDEND
 
 clean:V:
 	rm -rf $D

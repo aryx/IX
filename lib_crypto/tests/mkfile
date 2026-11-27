@@ -15,11 +15,9 @@ all:V: $D/vectors $D/speed
 $D/%.$O: %.ml $LIBSRC
 	$ML $INCLUDES -o $target $stem.ml
 $D/vectors: $D/Vectors.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Vectors Std_exit -o $D/Vectors.start.$O
-	$LD $LDH -nofollow -o $target $D/Vectors.start.$O $STDOBJS $LIBA $D/Vectors.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Vectors.$O $STDEND
 $D/speed: $D/Speed.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Speed Std_exit -o $D/Speed.start.$O
-	$LD $LDH -nofollow -o $target $D/Speed.start.$O $STDOBJS $LIBA $D/Speed.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Speed.$O $STDEND
 
 clean:V:
 	rm -rf $D

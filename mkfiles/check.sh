@@ -71,8 +71,10 @@ bad=0
 for flags in "-H7 -E _start" "-H2 -E _start"; do
   $M/linker/mini-ld -m 7 $flags -o $W/mk.exe $W/hello.7 && mini-ld -m 7 $flags -o $W/dune.exe $W/hello.7 && cmp -s $W/mk.exe $W/dune.exe || bad=$((bad + 1))
 done
-link=$(cd assembler && mini-mk -a -n 2>/dev/null | grep '^mini-ld ' | sed 's|^mini-ld ||; s| -o [^ ]*| |; s|\.\./_mk|_mk|g')
-$M/linker/mini-ld $link -o $W/mk.exe && cmp -s $W/mk.exe $M/assembler/mini-asm || bad=$((bad + 1))
+# (mini-asm's link, mini-ml -o's line, its linker ix's: -ld's program,
+# up to --, the one replaced)
+link=$(cd assembler && mini-mk -a -n 2>/dev/null | grep '^mini-ml .* -ld ' | tail -1)
+(cd assembler && sh -c "$(echo "$link" | sed "s| -ld [^ ]*| -ld ../$M/linker/mini-ld|; s| -- -o [^ ]*| -- -o $W/mk.exe|")") && cmp -s $W/mk.exe $M/assembler/mini-asm || bad=$((bad + 1))
 if [ $bad = 0 ]; then ok "mini-ld: hello (ELF, a.out) and mini-asm itself ($(wc -c < $W/mk.exe) bytes), the same executables as dune's mini-ld"; else fail "mini-ld: $bad links differ"; fi
 }
 job tools

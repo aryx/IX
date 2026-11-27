@@ -22,14 +22,11 @@ $D/Hellomenu.$O: Hellomenu.ml $LOCAL
 $D/Hellokbd.$O: Hellokbd.ml $LOCAL
 	$ML $INCLUDES -o $target Hellokbd.ml
 $D/hellokbd: $D/Hellokbd.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Hellokbd Std_exit -o $D/Hellokbd.start.$O
-	$LD $LDH -nofollow -o $target $D/Hellokbd.start.$O $STDOBJS $LIBOBJS $D/Hellokbd.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $D/Hellokbd.$O $STDEND
 $D/hellodraw: $D/Hellodraw.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Hellodraw Std_exit -o $D/Hellodraw.start.$O
-	$LD $LDH -nofollow -o $target $D/Hellodraw.start.$O $STDOBJS $LIBOBJS $D/Hellodraw.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $D/Hellodraw.$O $STDEND
 $D/hellomenu: $D/Hellomenu.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Hellomenu Std_exit -o $D/Hellomenu.start.$O
-	$LD $LDH -nofollow -o $target $D/Hellomenu.start.$O $STDOBJS $LIBOBJS $D/Hellomenu.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBOBJS $D/Hellomenu.$O $STDEND
 
 clean:V:
 	rm -rf $D

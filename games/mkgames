@@ -108,8 +108,7 @@ $QO/%.$O: $LOCAL
 $D/%.$O: %.ml $LOCAL
 	$ML $INCLUDES -o $target $stem.ml
 $D/%.linked: $D/%.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB $stem Std_exit -o $D/$stem.start.$O
-	$LD $LDH -nofollow -o $D/`{echo $stem | tr A-Z a-z} $D/$stem.start.$O $STDOBJS $LIBA $LIBOBJS $D/$stem.$O $STDEND
+	$ML -ld $LINKER -- -o $D/`{echo $stem | tr A-Z a-z} $STDOBJS $LIBA $LIBOBJS $D/$stem.$O $STDEND
 	touch $target
 
 # the units' order (mkfiles/depend.rc) in the directories their objects

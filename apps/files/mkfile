@@ -23,11 +23,9 @@ $D/%.$O: %.ml $LOCAL
 	$ML $INCLUDES -o $target $stem.ml
 
 $D/files: $D/Files.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Files Std_exit -o $D/Files.start.$O
-	$LD $LDH -nofollow -o $target $D/Files.start.$O $STDOBJS $LIBA $LIBOBJS $D/Files.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $LIBOBJS $D/Files.$O $STDEND
 $D/open: $D/Open.$O $LIBS
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Open Std_exit -o $D/Open.start.$O
-	$LD $LDH -nofollow -o $target $D/Open.start.$O $STDOBJS $LIBA $D/Open.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $LIBA $D/Open.$O $STDEND
 
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D

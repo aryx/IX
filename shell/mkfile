@@ -6,7 +6,6 @@ SRC=Ast Show_ast Lexer Parser Glob Word Env Process Eval Builtin CLI Main
 LOCAL=`{ls *.ml *.mli}
 GEN=
 LIBI=
-LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog

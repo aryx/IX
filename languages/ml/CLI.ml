@@ -9,16 +9,24 @@ let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: mini-ml [-m 5|7] [-S | -gas] [-o out] [-I dir] [-i] [-M] file.ml
-       mini-ml [-m 5|7] [-S | -gas] [-o out] -start Unit...
+       mini-ml [-m 5|7] [-S | -gas] [-o out] -start Unit|file.7|lib.a...
+       mini-ml [-m 5|7] [-ld cmd... --] -o prog file.7... lib.a...
        mini-ml -pp file.ml
 ocaml-light's ocamlopt's twin in behavior (-m 5: arm, the default; 7: arm64):
 a unit to its object, x.5 (x.7) for mini-ld, another unit's names from its .mli
 (or .ml) in the source's directory, then the -Is; -S its assembly instead, -gas
 GNU's (arm, x.s); -start the program's start, initializing the units in their
-order (weakly, mini-ld -h: a library's unit the program does not use is not linked); -i the toplevel's types, as ocamlopt -i; -M the units it names. With
+order (weakly, mini-ld -h: a library's unit the program does not use is not
+linked): those named, an object's own, a library's as its index has them; -o
+prog, given only objects and libraries, writes prog.start.5 of their units,
+then runs the linker on it and them, -ld's command (else mini-ld -m 5), as
+ocamlopt runs ld; -i the toplevel's types, as ocamlopt -i; -M the units it
+names. With
 ocaml-light's stdlib (S=~/github/ocaml-light/stdlib) and a fact.ml:
   mini-ml -I $S -i fact.ml                    val fact : int -> int
   mini-ml -m 7 -I $S fact.ml                  fact.7
+  mini-ml -m 7 -o fact lib_core.a fact.7 std_exit.7 runtime.7 libc.a
+                                              fact.start.7, then mini-ld: fact
   languages/ml/tests/run.sh 7 $PWD/w fact.ml  the stdlib, the runtime, libc,
     compiled, linked by mini-ld, run: w/fact (the stdlib: kernels/ocaml-light.sh)
 mlpp (plan_ml_bootstrap.md): -pp prints the file as OCaml, its [%bits "..."],
@@ -449,9 +457,86 @@ let depend (caps : < caps; .. >) obj dirs units (k, n) =
       (List.sort_uniq compare names))
     mine
 
-let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
+(* -start's units: a library's (.a) its members' of ML, in their order,
+ * from its index alone (Library_file); an object's (x.7) its own, from
+ * its first value alone (Asm.source); a name as it is. A unit of C (the
+ * runtime, libc's) none. The same list as the link's, so that the two
+ * do not disagree.
+ * old: the names alone, each program's mkfile listing them again
+ * (mkfiles/units.rc, lib.a.units, mkconfig's STD and COMMONS) *)
+let start_units (caps : < Cap.open_in; .. >) (args : string list) : string list =
+  let of_source (src : string) : string option =
+    if Filename.check_suffix src ".ml" then
+      Some (String.capitalize_ascii (Filename.remove_extension (Filename.basename src)))
+    else None in
+  (* (each unit with its source, and whether an object gave it, not a
+   * library; a name given, a unit of no file) *)
+  let units = List.concat_map (fun (a : string) ->
+    if Filename.check_suffix a ".a" then
+      List.filter_map (fun src -> Option.map (fun u -> (u, src, false)) (of_source src))
+        (Library_file.read_sources caps (Fpath.v a))
+    else if String.contains a '.' then
+      let src = Fpath.to_string (Asm.source caps (Fpath.v a)) in
+      Option.to_list (Option.map (fun u -> (u, src, true)) (of_source src))
+    else [ (a, "", true) ]) args in
+  (* a unit once, where it is known which one mini-ld links. A
+   * library's member given again as an object, the same source, for the
+   * link to take it whatever names it (mini-node's Js_compile): at its
+   * first place, its library's order. Another unit of the same name,
+   * given as an object (quake's Physics, lib_playground/apis's): the
+   * object's place, mini-ld loading every object and taking a member
+   * only for a name still undefined. Two libraries' units of one name
+   * (troff's Fill, lib_graphics's), which mini-ld takes is not known
+   * here: both places, as before, the one linked started at each (its
+   * own after what it reads; troff's Fill started at lib_graphics's
+   * place alone read troff's units not yet started, a crash).
+   * old: units.rc's names, then the program's: quake's Physics started
+   * twice, at apis's place and at its own *)
+  let objects = Hashtbl.create 64 in
+  List.iter (fun ((u, src, o) : string * string * bool) -> if o then Hashtbl.replace objects u src) units;
+  let seen = Hashtbl.create 64 in
+  List.filter_map (fun ((u, src, o) : string * string * bool) ->
+    let other_object = (not o) && (match Hashtbl.find_opt objects u with Some s -> s <> src | None -> false) in
+    if Hashtbl.mem seen (u, src) || other_object then None
+    else (Hashtbl.replace seen (u, src) (); Some u)) units
 
-let main (caps : < caps; .. >) (argv : string array) : int =
+(* what mini-ml links rather than compiles: an object or a library *)
+let linked (f : string) : bool =
+  List.exists (fun x -> Filename.check_suffix f x) [ ".a"; ".5"; ".7" ]
+
+(* -o prog: the linker run in this process's place, with the start
+ * first, then the files as given: -ld's command, its words up to --
+ * (mkconfig's LINKER, with its flags), else this program's name with ld
+ * for ml (mini-ml's mini-ld, the card's ml's ld), given -m. Exec, not fork and wait: on mini-9pi a
+ * fork copies mini-ml's memory, and nothing is left to do here; the
+ * linker's status is the command's.
+ * (a name with no / looked for in $PATH, as a shell does) *)
+let link (caps : < Cap.exec; Cap.env; Cap.stdout; Cap.stderr; .. >) (me : string) mach (ld : string list) ~(out : string) (start : string) (files : string list) : int =
+  let cmd =
+    if ld <> [] then ld
+    else
+      let base = Filename.basename me in
+      let n = String.length base in
+      let name = if n >= 2 && String.sub base (n - 2) 2 = "ml" then String.sub base 0 (n - 2) ^ "ld" else "mini-ld" in
+      let ld = if String.contains me '/' && name <> "mini-ld" then Filename.concat (Filename.dirname me) name else name in
+      [ ld; "-m"; (match Gen.arch mach with Arm -> "5" | Arm64 -> "7") ] @ (if !project = "" then [] else [ "-project"; !project ]) in
+  match cmd with
+  | [] -> failwith "-ld: no command"
+  | prog :: args ->
+      let argv = Array.of_list (prog :: args @ [ "-o"; out; start ] @ files) in
+      let candidates =
+        if String.contains prog '/' then [ prog ]
+        else
+          let path = try CapSys.getenv caps "PATH" with Not_found -> "/bin:/usr/bin" in
+          List.map (fun d -> Filename.concat (if d = "" then "." else d) prog) (String.split_on_char ':' path) in
+      Logs.info (fun m -> m "run %s" (String.concat " " (Array.to_list argv)));
+      flush_all ();
+      List.iter (fun f -> try CapUnix.execv caps f argv with Unix.Unix_error _ -> ()) candidates;
+      failwith (prog ^ ": not found")
+
+let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit... | [-ld cmd... --] -o prog file.7... lib.a...   (-h: how)"
+
+let main (caps : < caps; Cap.exec; Cap.env; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and ssa = ref false and ssa_stack = ref false in
   let show_types = ref false and unsafe = ref false and pp = ref false and depends = ref "" and part = ref "1/1" in
   let dotnet = ref false in
@@ -470,7 +555,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-M", Arg.Set deps, " the units the file names, printed";
     "-depend", Arg.Set_string depends, " obj: the Units given, mk's order of their objects, printed (mkfiles/depend.rc)";
     "-part", Arg.Set_string part, " K/N: with -depend, the K-th of N parts of the Units only (1 the first)";
-    "-start", Arg.Set start, " the start object of the units named";
+    "-start", Arg.Set start, " the start object of the units named, or of the objects' and libraries' given";
     "-unsafe-types", Arg.Set unsafe, " no type checking";
     (* mlpp: *)
     "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
@@ -503,6 +588,20 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-dotnet", Arg.Set dotnet, " the unit as a .NET assembly (file.dll)";
     "-h", Arg.Unit (fun () -> raise (Arg.Help "")), " how, by examples";
   ] @ List.map (fun (pass, _) -> "-O" ^ pass, Arg.Unit (fun () -> opti := pass :: !opti), "") Opti.passes in
+  (* -ld cmd... --: -o prog's linker, its words (else mini-ld -m ...,
+   * ld for the card's ml), taken out before the options are read *)
+  let ld, argv =
+    let rec split before = function
+      | "-ld" :: rest ->
+          let rec upto cmd = function
+            | "--" :: after -> (List.rev cmd, List.rev_append before after)
+            | w :: more -> upto (w :: cmd) more
+            | [] -> failwith "-ld cmd... --: no --" in
+          upto [] rest
+      | a :: rest -> split (a :: before) rest
+      | [] -> ([], List.rev before) in
+    let ld, l = split [] (Array.to_list argv) in
+    (ld, Array.of_list l) in
   match Arg.parse_argv argv options (fun f -> files := f :: !files) usage with
   | exception Arg.Help _ -> print caps help; 0
   | exception Arg.Bad m -> eprint caps m; 2
@@ -536,14 +635,23 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         | [ k; n ] -> (try int_of_string k, max 1 (int_of_string n) with _ -> 1, 1)
         | _ -> 1, 1 in
       depend caps !depends dirs units (k, n); 0
-  | units, _ when !start ->
+  | args, _ when !start || (args <> [] && List.for_all linked args) ->
       let file = path "start.s" in
       (* (its functions ssa's with -ssa, as a unit's) *)
       let compile fns =
         let u : Ir.unit_ = { funcs = fns; data = [] } in
         if !ssa then Emit.unit_ (Gen.arch !mach) u else Gen.unit_ !mach u
       in
-      (match output caps !mach ~listing:!listing ~out:(outfile file) ~file ~acid:[] (Gen.startup !mach compile units) with
+      (* -o prog and no -start: the start beside it (prog.start.7), then
+       * the link *)
+      let program = not !start in
+      if program && !out = "" then failwith "-o prog: the program to link";
+      let start_out = if program then path (!out ^ ".start" ^ ext) else outfile file in
+      (match
+         output caps !mach ~listing:(!listing && not program) ~out:start_out ~file ~acid:[]
+           (Gen.startup !mach compile (start_units caps args))
+       with
+       | () when program -> link caps (Array.get argv 0) !mach ld ~out:!out (Fpath.to_string start_out) args
        | () -> 0
        | exception Failure m -> fail ("mini-ml: " ^ m))
   (* -dotnet: the units, in order, into one assembly (named after -o,

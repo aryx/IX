@@ -12,14 +12,11 @@ all:V: $D/mini-tee $D/mini-tail $D/mini-xargs
 $D/%.$O: %.ml
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-tee: $D/Tee.$O $LIBS
-	$ML -start $STD $COMMONS Tee Std_exit -o $D/Tee.start.$O
-	$LD $LDH -nofollow -o $target $D/Tee.start.$O $STDOBJS $D/Tee.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/Tee.$O $STDEND
 $D/mini-tail: $D/Tail.$O $LIBS
-	$ML -start $STD $COMMONS Tail Std_exit -o $D/Tail.start.$O
-	$LD $LDH -nofollow -o $target $D/Tail.start.$O $STDOBJS $D/Tail.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/Tail.$O $STDEND
 $D/mini-xargs: $D/Xargs.$O $LIBS
-	$ML -start $STD $COMMONS Xargs Std_exit -o $D/Xargs.start.$O
-	$LD $LDH -nofollow -o $target $D/Xargs.start.$O $STDOBJS $D/Xargs.$O $STDEND
+	$ML -ld $LINKER -- -o $target $STDOBJS $D/Xargs.$O $STDEND
 
 clean:V:
 	rm -rf $D

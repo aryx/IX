@@ -25,8 +25,10 @@ all:V: $D/kernel8.img
 
 $D/Main.$O: Main.ml
 	$ML $STDI -o $target Main.ml
-$D/start.$O: mkfile $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS Main Std_exit -o $target
+# (the start of the units of lib_core.a, Main's and std_exit's, in
+# that order, as linked)
+$D/start.$O: $STDOBJS $D/Main.$O mkfile $TOP/mkfiles/mkconfig
+	$ML -start $STDOBJS $D/Main.$O $L/std_exit.$O -o $target
 $D/runtime.$O: $RTSRC mkfile
 	$CC $CINC $HEAP -o $target $TOP/languages/ml/runtime/runtime.c
 $D/l.$O: $BD/l.s ../step2/$BD/l.s ../step0/${P}l.s

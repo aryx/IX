@@ -6,7 +6,6 @@ SRC=Sources
 LOCAL=`{ls *.ml}
 GEN=
 LIBI=
-LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog

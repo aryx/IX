@@ -17,7 +17,13 @@ ml – the OCaml compiler, for arm and arm64
 **ml**
 [ **-m** *arch* ]
 [ **-o** *out* ]
-**-start** *unit* ...
+**-start** *unit*|*file*`.7`|*lib*`.a` ...
+
+**ml**
+[ **-m** *arch* ]
+[ **-ld** *command* ... **--** ]
+**-o** *prog*
+*file*`.7` ... *lib*`.a` ...
 
 **ml**
 **-pp**
@@ -34,7 +40,8 @@ object, *file*`.5` or *file*`.7`, for \man{ld}{1}. It behaves as
 ocaml-light's *ocamlopt*. Another unit's names are read from its
 `.mli`, or its `.ml`, in the source's directory and then in each
 **-I** *dir*. A program is its units' objects, the object that
-**-start** makes, and the runtime, linked.
+**-start** makes, and the runtime, linked: **-o** *prog* with only
+objects and libraries does both, as *ocamlopt* runs *ld*.
 
 **-m 5**
 :    For arm. What is done with no **-m**.
@@ -68,9 +75,19 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
 **-M**
 :    The units that the file names.
 
-**-start** *unit* ...
+**-start** *unit*|*file*`.7`|*lib*`.a` ...
 :    The program's start: the units initialized in that order. A
      unit of a library that the program does not use is not linked.
+     An object gives its own unit, a library its units as its index
+     has them (\man{ar}{1}), one of C none; a unit named twice is
+     started once, where the one linked is.
+
+**-o** *prog* *file*`.7` ... *lib*`.a` ...
+:    The program: its start, *prog*`.start.7` of the files' units, then
+     \man{ld}{1} run in *ml*'s place on it and the files, in their
+     order. The linker is **-ld**'s command, its words up to **--**
+     (the mkfiles': `-ld $LINKER --`), else *ml*'s name with *ld* for
+     *ml*, given **-m**: `ld -m 5`, or `mini-ld -m 7`.
 
 **-pp**
 :    The file printed as OCaml with ix's extensions rewritten
@@ -124,6 +141,7 @@ ocaml-light's *ocamlopt*. Another unit's names are read from its
 ```
 ml -i fact.ml
 ml -m 7 fact.ml
+ml -m 7 -o fact lib_core.a fact.7 std_exit.7 runtime.7 libc.a
 ml -pp Prelude.ml
 ml -dotnet fib.ml; dotnet fib.dll
 ```

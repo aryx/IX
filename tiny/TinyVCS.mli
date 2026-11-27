@@ -83,9 +83,10 @@
  * SHA-1 (Sha1) and stored as it is.
  *
  * context:
- * Sha1 is an ix library (lib_crypto), also used by mini-git, which
+ * Sha1 is TinyLibCore's, the subset of lib_crypto's module that tiny
+ * programs name, its digest computed by the runtime. m-ix's mini-git
  * deflates its objects with Zlib (lib_compression; Zlib.mli explains
- * what a deflated object is). mini-git's Object, Loose, Pack and Index9
+ * what a deflated object is), and its Object, Loose, Pack and Index9
  * implement git's own formats for what is, here, one text format and
  * one file. A file that is only appended to, plus one small write to
  * commit, is also how TinyDatabase works; and the stamps of

@@ -476,24 +476,23 @@ let close (n : fd) : unit =
   if Hashtbl.mem made n then (Hashtbl.remove made n; Unix.close (U.fd n))
   else TinyLibSystemUnix.close n
 
+let open_out = U.open_out
+
 (* /dev/audio, a voice; the speaker started at the first open, and what
  * was written heard to its end, as tiny-kernel's speaker plays on after
- * a program ends *)
-let open_out (caps : < Cap.open_out; .. >) (file : Fpath.t) : fd =
-  if Fpath.to_string file <> "/dev/audio" then TinyLibSystemUnix.open_out caps file
-  else begin
-    if !started = None then begin
-      started := Some (Unix.gettimeofday ());
-      at_exit (fun () ->
-        let last =
-          Hashtbl.fold
-            (fun _ m k -> match m with Speaker a -> max k !a | _ -> k)
-            made 0 in
-        while !fed < last + 1600 do feed (); Unix.sleepf 0.02 done;
-        while (display ()).queued () > 0 do Unix.sleepf 0.02 done)
-    end;
-    opened (Speaker (ref 0))
-  end
+ * a program ends (old: open_out's, when its file was "/dev/audio") *)
+let open_audio (_ : < Cap.audio; .. >) : fd =
+  if !started = None then begin
+    started := Some (Unix.gettimeofday ());
+    at_exit (fun () ->
+      let last =
+        Hashtbl.fold
+          (fun _ m k -> match m with Speaker a -> max k !a | _ -> k)
+          made 0 in
+      while !fed < last + 1600 do feed (); Unix.sleepf 0.02 done;
+      while (display ()).queued () > 0 do Unix.sleepf 0.02 done)
+  end;
+  opened (Speaker (ref 0))
 
 (* the window's keys are raw already: ^C a key *)
 let raw_console (_ : < Cap.keyboard; .. >) (_ : bool) = ()

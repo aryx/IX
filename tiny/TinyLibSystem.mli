@@ -139,6 +139,12 @@ val ignore_interrupt : < Cap.signal; .. > -> unit
  * interrupt, which is what an editor or a game wants. *)
 val raw_console : < Cap.keyboard; .. > -> bool -> unit
 
+(* A voice of the speaker, /dev/audio: messages written to it are sounds
+ * (KAudio.mli). It takes Cap.audio, not Cap.open_out, which would let a
+ * game write any file. Failure when there is no speaker (plain Unix,
+ * the tests' stub). *)
+val open_audio : < Cap.audio; .. > -> fd
+
 (*****************************************************************************)
 (* Files *)
 (*****************************************************************************)

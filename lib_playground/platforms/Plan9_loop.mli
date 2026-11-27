@@ -77,7 +77,7 @@ val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags
 val run_app :
   'w window ->
   < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ;
-    Cap.fork ; Cap.open_out ; Cap.clock ; .. > ->
+    Cap.fork ; Cap.open_out ; Cap.audio ; Cap.clock ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit
 
 (* Playground_platform's cursor over the window: Plan 9's arrow, or a

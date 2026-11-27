@@ -16,3 +16,8 @@ val stderr : < Cap.stderr; .. > -> out_channel
  * (echo writes its message in one write) *)
 val stdin_fd : < Cap.stdin; .. > -> Unix.file_descr
 val stdout_fd : < Cap.stdout; .. > -> Unix.file_descr
+
+(* A voice of the speaker, /dev/audio, written to (Plan 9's: mini-9pi's
+ * Devaudio). It takes Cap.audio, not Cap.open_out, which would let a
+ * player write any file. Unix_error when there is none. *)
+val open_audio : < Cap.audio; .. > -> Unix.file_descr

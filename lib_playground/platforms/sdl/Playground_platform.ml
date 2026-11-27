@@ -158,7 +158,7 @@ let play_audio (device : Sdl.audio_device_id) (slow : float) : unit =
       end
 
 let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
-    Cap.clock ; .. >) (flags : Playground.flags)
+    Cap.audio ; Cap.clock ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   let own = Playground.flags_of_strings cli.args in

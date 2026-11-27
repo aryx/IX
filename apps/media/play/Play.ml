@@ -39,7 +39,7 @@
  *
  * References: Plan 9's audio(3), for the samples' layout. *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.audio; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-play [-c] [-s seconds] file
   the file's sound (.mod, .mid, .mp3, .mp2, .wav, .abc) played: written
@@ -90,7 +90,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             match Player.of_file file bytes with
             | Error why -> error (file ^ ": " ^ why)
             | Ok p -> (
-                match if stdout then Some (Console.stdout_fd caps) else (try Some (FS.open_device_fd caps device) with Unix.Unix_error _ -> None) with
+                match if stdout then Some (Console.stdout_fd caps) else (try Some (Console.open_audio caps) with Unix.Unix_error _ -> None) with
                 | None -> error ("can't open " ^ device ^ " (-c: the samples to standard output)")
                 | Some out -> (
                     match play out p limit with

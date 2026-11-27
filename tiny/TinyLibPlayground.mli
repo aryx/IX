@@ -224,7 +224,7 @@ type 'm game = {
 
 (* The loop of a game. It draws only when the shapes differ, and ends on
  * q or at the end of the keys with Exit.OK, so a game never sees a q. *)
-val run : < Cap.open_out; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
+val run : < Cap.audio; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
 
 (* [sin a] and [cos a] for an angle a in 4096ths of a turn, times 1024
  * (any a, taken modulo a turn): tiny-ml has no floats. They come from

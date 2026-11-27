@@ -194,6 +194,11 @@ let open_in _caps file =
 let open_out _caps file =
   let fd = u_open (str file) o_anew in
   if fd < 0 then failwith "cannot create" else fd
+(* a voice of the speaker: an open of /dev/audio, a file as any other
+ * for the kernel, by Cap.audio *)
+let open_audio _caps =
+  let fd = u_open "/dev/audio" o_anew in
+  if fd < 0 then failwith "no speaker" else fd
 let open_append _caps file =
   let fd = u_open (str file) o_write in
   if fd < 0 then failwith "cannot create"

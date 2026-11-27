@@ -141,7 +141,8 @@ let set_clipboard (s : string) : unit = !writer s
 
 let run_app (w : 'w window)
     (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ;
-             Cap.keyboard ; Cap.fork ; Cap.open_out ; Cap.clock ; .. >)
+             Cap.keyboard ; Cap.fork ; Cap.open_out ; Cap.audio ; Cap.clock ;
+             .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   (* A game makes much at each frame and keeps little (a float is a
@@ -344,7 +345,7 @@ let run_app (w : 'w window)
     let audio =
       match !Audio_source.source with
       | None -> None
-      | Some a -> (try Some (a, FS.open_device_fd caps "/dev/audio") with Unix.Unix_error _ -> None) in
+      | Some a -> (try Some (a, Console.open_audio caps) with Unix.Unix_error _ -> None) in
     let written = ref 0 and playing_since = ref start and last = ref start in
     let sound (now : float) : unit =
       match audio with

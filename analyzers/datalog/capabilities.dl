@@ -233,6 +233,7 @@ cap_includes(console, stderr).
 cap_includes(console, draw).
 cap_includes(console, keyboard).
 cap_includes(console, mouse).
+cap_includes(console, audio).
 cap_includes(process_multi, fork).
 cap_includes(process_multi, wait).
 cap_includes(process_multi, kill).
@@ -344,7 +345,11 @@ allowed(R, S) :- holds(R, C), requires(S, C).
 device_cap(draw).
 device_cap(keyboard).
 device_cap(mouse).
+% (/dev/audio by Cap.audio, a voice of the speaker: Console.open_audio, and
+% TinyLibSystem.open_audio on tiny-kernel's u_open)
+device_cap(audio).
 allowed(R, 'Unix.openfile') :- holds(R, C), device_cap(C).
+allowed(R, 'prim:u_open') :- holds(R, C), device_cap(C).
 
 % ---- the program, given by mini-analyze: own_unit(U), own_init('U:init')
 
@@ -373,6 +378,7 @@ needs(R, S) :- uses(R, S).
 needs(R, S) :- names_function(R, G), \+ authority(G), needs(G, S).
 needed(R, C) :- needs(R, S), requires(S, C).
 needed(R, C) :- needs(R, 'Unix.openfile'), device_cap(C).
+needed(R, C) :- needs(R, 'prim:u_open'), device_cap(C).
 needed(R, A) :- needed(R, C), cap_includes(A, C).
 
 % the capability's value: where the parameter goes

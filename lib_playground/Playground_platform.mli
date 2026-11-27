@@ -82,10 +82,11 @@ val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags
  * given to its update (through its subscriptions), and its view is
  * drawn. The capabilities are those of all the platforms: a window
  * and its events (on Plan 9, the draw device, the mouse, the keyboard,
- * and the threads that read them), and a file to write (ppm/). *)
+ * and the threads that read them), the speaker (Plan 9's /dev/audio),
+ * and a file to write (ppm/, and the sound written by -dump-audio). *)
 val run_app :
   < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
-    Cap.clock ; .. > ->
+    Cap.audio ; Cap.clock ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit
 
 (* [set_cursor c] sets the mouse's cursor over the window from now on

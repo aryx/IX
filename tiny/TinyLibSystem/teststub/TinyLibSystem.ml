@@ -33,6 +33,7 @@ let read_line _ = None
 let isatty _ = false
 let ignore_interrupt _ = ()
 let raw_console _ _ = ()
+let open_audio _ = none "open_audio"
 
 (* files: none *)
 let open_in _ _ = none "open_in"

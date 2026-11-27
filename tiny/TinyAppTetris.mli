@@ -136,9 +136,9 @@ val cells : piece -> (int * int) list
 
 (* What the playground's loop needs, so what tetris needs: the clock for
  * the frames' times and the music's notes, a random seed for [init]
- * (the pieces' order), and open_out for /dev/audio, where the loop plays
+ * (the pieces' order), and the speaker (Cap.audio), where the loop plays
  * the sounds and the theme. *)
-type caps = < Cap.open_out; Cap.random; Cap.clock >
+type caps = < Cap.audio; Cap.random; Cap.clock >
 
 (* The program tetris. It runs until a q or the end of the keys. *)
 val main : < caps; .. > -> string array -> Exit.t

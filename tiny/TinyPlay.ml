@@ -107,7 +107,7 @@ let main caps argv =
   end
   else
     let file = argv.(1) in
-    let out = TSys.open_out caps (Fpath.v "/dev/audio") in
+    let out = TSys.open_audio caps in
     let data = try TSys.read_file caps (Fpath.v file) with Failure _ -> "" in
     (try play out (if data = "" then failwith "no such file, or empty" else data)
      with Failure why -> failwith (file ^ ": " ^ why));

@@ -79,4 +79,4 @@ val play : TinyLibSystem.fd -> string -> unit
  * tiny-kernel (user/play.ml is one line). On the host, /dev/audio is
  * not Unix's but the one that TinyLibSystem/sdl/ provides, as it
  * provides the window. *)
-val main : < Cap.open_in; Cap.open_out; Cap.stderr; .. > -> string array -> Exit.t
+val main : < Cap.open_in; Cap.audio; Cap.stderr; .. > -> string array -> Exit.t

@@ -149,6 +149,6 @@ let game : model P.game = {
   sound = (fun _ _ -> []); music = (fun _ -> None);
 }
 
-type caps = < Cap.open_out; Cap.random; Cap.clock >
+type caps = < Cap.audio; Cap.random; Cap.clock >
 
 let main (caps : < caps; .. >) (_ : string array) = P.run caps game

@@ -260,8 +260,7 @@ type voice = { vfd : TSys.fd option; mutable vnext : int; mutable vuntil : int }
 
 (* a voice of /dev/audio, None when there is no speaker (the tests'
  * stub, its open a Failure; old: -1) *)
-let speaker caps =
-  try Some (TSys.open_out caps (Fpath.v "/dev/audio")) with Failure _ -> None
+let speaker caps = try Some (TSys.open_audio caps) with Failure _ -> None
 let ahead = 500
 
 let feed pace p v now =

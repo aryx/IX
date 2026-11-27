@@ -76,6 +76,7 @@ let not_here what =
                     not plain Unix's")
 
 let raw_console (_ : < Cap.keyboard; .. >) (_ : bool) = not_here "raw_console"
+let open_audio (_ : < Cap.audio; .. >) : int = not_here "open_audio"
 
 (*****************************************************************************)
 (* Files *)

@@ -12,3 +12,7 @@ let stderr (_ : < Cap.stderr; .. >) = stderr
 
 let stdin_fd (_ : < Cap.stdin; .. >) = Unix.stdin
 let stdout_fd (_ : < Cap.stdout; .. >) = Unix.stdout
+
+let open_audio (_ : < Cap.audio; .. >) : Unix.file_descr =
+  (* nosemgrep: use-caps *)
+  Unix.openfile "/dev/audio" [ Unix.O_WRONLY ] 0

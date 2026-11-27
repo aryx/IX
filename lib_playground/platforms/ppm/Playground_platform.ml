@@ -37,7 +37,7 @@ let clipboard () : string = !kept
 let set_clipboard (s : string) : unit = kept := s
 
 let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ;
-    Cap.clock ; .. >) (flags : Playground.flags)
+    Cap.audio ; Cap.clock ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   (* (heap=game: the collector as Plan9_loop sets it for a game on

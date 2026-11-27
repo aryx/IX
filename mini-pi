@@ -10,8 +10,9 @@
 # cores, as on the board; the Pi1's card):
 #
 #   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone
-#                       (nothing but ix is needed: without ~/ocaml-light
-#                       the kernel is compiled by ix's own tools):
+#                       (nothing but ix is needed: the kernel is
+#                       compiled by ix's own tools, COMPILER=light for
+#                       ocaml-light and gcc):
 #                       ix's own programs in the kernel's image (mini-rc,
 #                       mini-ed, utilities/'s: kernels/9pi's make ix), to
 #                       rc's prompt. Its SD card is ix's own (make card:
@@ -157,9 +158,11 @@ case $1 in
     # alone: ix's own programs in the image (kernels/9pi's make ix), no card
     dir=$ROOT/kernels/9pi
     board=pi1; arch=arm; [ $1 = mini-9pi4 ] && { board=pi4; arch=arm64; }
-    # (the Pi2: the Pi1's kernel with what differs, by ocaml-light and
-    # gcc here; raspi2b, mini-qemu's or QEMU's)
-    [ $1 = mini-9pi2 ] && { board=pi2; COMPILER=light; }
+    # (the Pi2: the Pi1's kernel with what differs; raspi2b, mini-qemu's
+    # or QEMU's)
+    # old: [ $1 = mini-9pi2 ] && { board=pi2; COMPILER=light; }, by
+    # ocaml-light and gcc, until kernels/9pi's own default (2026-11-19)
+    [ $1 = mini-9pi2 ] && board=pi2
     if [ $build = 1 ]; then
       # (the Pi1's card too: the Pi4's firmware is not in ix yet; -g: with
       # mini-usbd in the image, for the window's keyboard and mouse)
@@ -167,13 +170,13 @@ case $1 in
       [ $graphics = 1 ] && what="$what ix-usb"
       # (the Pi2 takes the Pi1's card: the same programs)
       [ $board = pi2 ] && { step "the card" make -C $dir card || { echo "mini-pi: the card not built"; exit 1; }; }
-      # claude: the kernel by ocaml-light and a C compiler when
-      # ocaml-light is here ($OCAML_LIGHT, default ~/ocaml-light), or
-      # asked for (COMPILER=light); else by ix's own tools (COMPILER=ix:
-      # mini-ml, mini-cc..., nothing but ix)
-      # (the Pi4's by ocaml-light wants the host's gcc to be an arm64
-      # Linux's)
-      [ -n "$COMPILER" ] || { COMPILER=ix; [ -d "${OCAML_LIGHT:-$HOME/ocaml-light}" ] && { [ $board = pi1 ] || [ "$(uname -sm)" = "Linux aarch64" ]; } && COMPILER=light; }
+      # the kernel by ix's own tools (COMPILER=ix: mini-ml, mini-cc...,
+      # nothing but ix), on every board; by ocaml-light and a C compiler
+      # when asked for (COMPILER=light; the Pi4's wants the host's gcc
+      # to be an arm64 Linux's)
+      # old: COMPILER=light when ~/ocaml-light ($OCAML_LIGHT) was there,
+      # for the Pi1 (and the Pi4 on an arm64 Linux)
+      [ -n "$COMPILER" ] || COMPILER=ix
       if [ $COMPILER = ix ]; then
         step "ix's programs" sh -c "cd $ROOT && dune build @install" &&
         step "$1, by ix's own tools" make -C $dir BOARD=$board COMPILER=ix $what || { echo "mini-pi: $1 not built"; exit 1; }

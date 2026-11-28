@@ -47,8 +47,14 @@ let syspread (p : proc) fd buf n off =
      * others' are asked at each read, as before: a mounted directory's
      * are 9P messages, and how many there are shows (plumber's two
      * processes take turns, tests/session-d).
-     * old: let s, k = Dev.dirread (Kchan.dirs c) c.dri n in *)
-    if c.dri = 0 || c.dev <> 'p' then c.snap <- Kchan.dirs c;
+     * opti: Kfs's (#x, no union) kept as #p's: its directories were
+     * listed again for the read that finds the end, 47,405 directories
+     * each twice in make self; the directories' reads were 503 s of
+     * Pread x's 722 (plan_9pi_self_speed.md, 2026-11-28).
+     * old: let s, k = Dev.dirread (Kchan.dirs c) c.dri n in;
+     * then if c.dri = 0 || c.dev <> 'p' *)
+    let kept = c.dev = 'p' || (c.dev = 'x' && c.umh = []) in
+    if c.dri = 0 || not kept then c.snap <- Kchan.dirs c;
     let s, k = Dev.dirread c.snap c.dri n in
     if k = 0 then c.snap <- [];
     user_write p buf s;

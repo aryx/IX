@@ -78,9 +78,21 @@ let b32 v = b16 v ^ b16 (v lsr 16)
 (* a number of 8, 16 or 32 bits of the disk, at a byte: read (from its
  * block, kept), written. (A number is never across two blocks: they
  * are at even places, 4 for 32 bits) *)
+(* opti: the block looked for once a number, not once a byte: a
+ * directory's listing reads each entry's kind, size and time, and a
+ * file's read each block's number, four lookups of the kept blocks
+ * for 32 bits (mini-9pi's make self: 2.5 million entries listed, 156
+ * µs each, plan_9pi_self_speed.md, 2026-11-28).
+ * old: get16 t at = get8 t at lor (get8 t (at + 1) lsl 8), get32 by
+ * two get16 *)
 let get8 t at = Char.code (Bytes.get (block_of t (at / t.bsize)) (at mod t.bsize))
-let get16 t at = get8 t at lor (get8 t (at + 1) lsl 8)
-let get32 t at = get16 t at lor (get16 t (at + 2) lsl 16)
+let get16 t at =
+  let b = block_of t (at / t.bsize) and o = at mod t.bsize in
+  Char.code (Bytes.get b o) lor (Char.code (Bytes.get b (o + 1)) lsl 8)
+let get32 t at =
+  let b = block_of t (at / t.bsize) and o = at mod t.bsize in
+  let g k = Char.code (Bytes.get b (o + k)) in
+  (g 0 lor (g 1 lsl 8)) lor ((g 2 lor (g 3 lsl 8)) lsl 16)
 let set16 t at v = pwrite t at (b16 v)
 let set32 t at v = pwrite t at (b32 v)
 

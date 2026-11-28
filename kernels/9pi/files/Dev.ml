@@ -125,9 +125,8 @@ let tab_open (c : chan) m =
 let byte v = String.make 1 (Char.chr (v land 0xff))
 let le16 v = byte v ^ byte (v lsr 8)
 let le32 v = Machine.le32 v
-(* an int as 8 bytes: the Pi1's ints are 31 bits, the high word 0 *)
-let le64 v = le32 v ^ le32 (if v < 0 then -1 else 0)
-let str s = le16 (String.length s) ^ s
+(* (old: le64 v, an int as 8 bytes, and str s, a string after its
+ * length: encode's, below, which writes them itself) *)
 
 (* a 32-bit unsigned field kept as its low 31 bits (a time, past 2^30
  * since 2004: the Pi1's ints; 2^31, in 2038, is out of reach), bit 31
@@ -135,22 +134,44 @@ let str s = le16 (String.length s) ^ s
 let u31 v =
   if v = -1 then le32 (-1) else byte v ^ byte (v lsr 8) ^ byte (v lsr 16) ^ byte ((v lsr 24) land 0x7f)
 
-(* wstat's "unchanged" fields (-1) written back as all ones *)
+(* wstat's "unchanged" fields (-1) written back as all ones.
+ * opti: the bytes into one buffer, the same as byte, le16, le32, u31
+ * and str say: an entry was some forty strings of a byte or two joined,
+ * each join a copy of all after it, 83 µs an entry under QEMU, 1.3
+ * million entries in make self (plan_9pi_self_speed.md, 2026-11-28).
+ * old: le16 (rune_of d.d_type) ^ u31 d.d_dev ^ ... ^ str d.d_muid,
+ * then le16 (String.length body) ^ body *)
 let encode d =
   let dir = d.d_qid.typ = Qt_dir in
-  let body =
-    le16 (rune_of d.d_type) ^ u31 d.d_dev
-    ^ byte (if dir then 0x80 else 0) ^ u31 d.d_qid.vers ^ u31 d.d_qid.path ^ le32 0
-    (* the mode: DMDIR the top byte's bit *)
-    ^ (if d.d_perm = -1 then le32 (-1)
-       else byte d.d_perm ^ byte (d.d_perm lsr 8) ^ byte (d.d_perm lsr 16) ^ byte ((d.d_perm lsr 24) lor (if dir then 0x80 else 0)))
-    ^ u31 d.d_atime ^ u31 d.d_mtime
-    (* the length: d_lenhi's 2^30s over d_length's 30 bits *)
-    ^ (if d.d_length = -1 then le64 (-1)
-       else byte d.d_length ^ byte (d.d_length lsr 8) ^ byte (d.d_length lsr 16)
-            ^ byte (((d.d_length lsr 24) land 0x3f) lor ((d.d_lenhi land 3) lsl 6)) ^ le32 (d.d_lenhi lsr 2))
-    ^ str d.d_name ^ str d.d_uid ^ str d.d_gid ^ str d.d_muid in
-  le16 (String.length body) ^ body
+  let b = Buffer.create 96 in
+  let b8 v = Buffer.add_char b (Char.chr (v land 0xff)) in
+  let b16 v = b8 v; b8 (v lsr 8) in
+  (* (le32's: by asr, as Machine's) *)
+  let b32 v = b16 (v land 0xffff); b16 ((v asr 16) land 0xffff) in
+  let b31 v =
+    if v = -1 then b32 (-1)
+    else begin
+      b8 v; b8 (v lsr 8); b8 (v lsr 16); b8 ((v lsr 24) land 0x7f)
+    end in
+  let bstr s = b16 (String.length s); Buffer.add_string b s in
+  b16 (rune_of d.d_type); b31 d.d_dev;
+  b8 (if dir then 0x80 else 0); b31 d.d_qid.vers; b31 d.d_qid.path; b32 0;
+  (* the mode: DMDIR the top byte's bit *)
+  if d.d_perm = -1 then b32 (-1)
+  else begin
+    b8 d.d_perm; b8 (d.d_perm lsr 8); b8 (d.d_perm lsr 16);
+    b8 ((d.d_perm lsr 24) lor (if dir then 0x80 else 0))
+  end;
+  b31 d.d_atime; b31 d.d_mtime;
+  (* the length: d_lenhi's 2^30s over d_length's 30 bits *)
+  if d.d_length = -1 then begin b32 (-1); b32 (-1) end
+  else begin
+    b8 d.d_length; b8 (d.d_length lsr 8); b8 (d.d_length lsr 16);
+    b8 (((d.d_length lsr 24) land 0x3f) lor ((d.d_lenhi land 3) lsl 6));
+    b32 (d.d_lenhi lsr 2)
+  end;
+  bstr d.d_name; bstr d.d_uid; bstr d.d_gid; bstr d.d_muid;
+  le16 (Buffer.length b) ^ Buffer.contents b
 
 let get8 s o = Char.code s.[o]
 let get16 s o = get8 s o lor (get8 s (o + 1) lsl 8)

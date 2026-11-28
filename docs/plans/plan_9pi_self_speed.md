@@ -889,6 +889,45 @@ card's reads 485 s, then 525): the host's speed.
 
 Next: Pread x, now the first, 538 s.
 
+### 2026-11-28, later: Pread x is directories
+
+A kernel of the day's (not kept) timed Pread x's parts on Kfs (#x),
+by /dev/lockstat's "in" lines: a directory's read (Kchan.dirs, then
+Dev.dirread), a file's (Xv6fs.read, under the storage qlock), the
+copy to the user. The whole build: Pread x 885,576 calls, 722 s, 568
+of them the lock's; 95,797 of the calls are directories, 503 s of it
+(the qlock's waits in it too), for 47,405 directories, each read twice
+(its entries, then the read that finds the end), 27 entries a listing.
+Each listing at each read; each entry's kind, size and time 14 lookups
+of Xv6fs's kept blocks, one a byte; and Dev.encode some forty strings
+of a byte or two joined, 83 µs an entry. Three changes:
+
+1. Sysfile: Kfs's entries kept from the first read to the end, as
+   #p's already were (not a union: a mounted server's are asked at
+   each read, as before).
+2. Xv6fs's get16 and get32 look for their block once, not once a
+   byte (a file's read gains too: each block's number is a get32).
+3. Dev.encode writes into one buffer, the same bytes (checked against
+   the old on 200,000 random entries).
+
+| the whole build | before | after |
+|---|---|---|
+| directories' reads | 503 s | 145 s (71% less) |
+| of it, the listings | 397 s | 113 s |
+| of it, the encoding | 106 s | 32 s |
+| files' reads (Xv6fs.read) | 316 s | 258 s (18% less) |
+| Pread x, the lock | 568 s | 317 s (44% less) |
+| the lock held, in all | 2,286 s | 1,718 s |
+| the build, minutes | 59 | 48 |
+
+Self-quick: directories' reads 1.31 s to 0.40, Pread x's lock 3.8 s
+to 2.7. The host was faster in the second whole build: Pread e, which
+none of this touches, 63.5 s then 41, so the last three lines say more
+than the changes did; the parts above are their own.
+
+What held the lock most, after: Pread x 317 s, fault-zero 274, Open
+193, Create 151, Rfork 135, Pwrite x 119.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

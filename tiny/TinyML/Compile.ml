@@ -270,6 +270,59 @@ type closure =
   | Closure_static of Machine.sym * Machine.sym * int
   | Closure_pushed of Machine.sym * int
 
+(* How many of the stack's registers e takes, about (Sethi and Ullman's
+ * count): a list computed right to left, as a block's fields and a
+ * call's arguments, takes for each the values below it and its own.
+ * A call spills what is below it, so its result is one. fields_block
+ * reads it, so that a record of fields that are records or calls is
+ * not built in registers it has not (old: by its number of fields
+ * alone; the browser's screen, 11 fields, among them a record of 5, was
+ * "an expression too deep"). *)
+let rec need (e : Tree.expr) : int =
+  match e with
+  | Tree.Const _ | Tree.Var _ | Tree.Fun _ -> 1
+  | Tree.Con (_, es) -> max 1 (pushed es)
+  | Tree.Tuple es -> max 1 (pushed es)
+  | Tree.Record (fs, order) ->
+      if List.length !order <> List.length fs then pushed (List.map snd fs)
+      else
+        pushed (List.map snd
+          (List.sort (fun (a, _) (b, _) -> compare a b)
+             (List.combine !order (List.map snd fs))))
+  | Tree.App (f, args) ->
+      let p = pushed args in
+      max p (List.length args + need f)
+  | Tree.With (e, fs, _, n) ->
+      let most = List.fold_left (fun k (_, v) -> max k (need v)) 1 fs in
+      let k = need e in
+      max k (!n - 1 + most)
+  | Tree.Dot (e, _, _) -> need e
+  | Tree.SetDot (e, _, _, v) -> let k = need v in max k (1 + need e)
+  | Tree.If (c, a, b) -> most [ c; a; b ]
+  | Tree.Seq (a, b) -> most [ a; b ]
+  | Tree.While (a, b) -> most [ a; b ]
+  | Tree.For (_, a, b, _, body) ->
+      let k = need a in
+      let k = max k (1 + need b) in
+      max k (2 + need body)
+  | Tree.Let (_, binds, body) ->
+      List.fold_left (fun k (_, v) -> max k (need v)) (need body) binds
+  | Tree.Match (e, cases) -> cases_need (need e) cases
+  | Tree.Try (e, cases) -> cases_need (need e) cases
+(* (the needs one after the other: need reads the typer's refs) *)
+and most (es : Tree.expr list) : int =
+  List.fold_left (fun k e -> max k (need e)) 0 es
+and cases_need (k : int) (cases : Tree.case list) : int =
+  List.fold_left (fun k (_, guard, body) ->
+    let g = match guard with Some g -> need g | None -> 0 in
+    max k (max g (need body))) k cases
+(* a list computed right to left: the last first, with nothing below it *)
+and pushed (es : Tree.expr list) : int =
+  let (_, most) =
+    List.fold_left (fun (below, most) e -> below + 1, max most (below + need e))
+      (0, 0) (List.rev es) in
+  most
+
 (* e's value pushed *)
 let rec value env e =
   match e with
@@ -288,7 +341,8 @@ let rec value env e =
           List.iter (value env) (List.rev args);
           emit (Machine.Addr (Machine.exn_id u c));
           emit (Machine.Alloc (0, 1 + List.length args)))
-  | Tree.Tuple es -> fields_block (List.map (fun e () -> value env e) es)
+  | Tree.Tuple es ->
+      fields_block (pushed es) (List.map (fun e () -> value env e) es)
   (* a record is a tuple of its fields in their declaration's order,
    * evaluated as ocamlopt does, right to left *)
   | Tree.Record (fs, order) ->
@@ -309,10 +363,11 @@ let rec value env e =
             emit (Machine.Set s);
             (fun () -> emit (Machine.Get s)) in
       let given = List.combine !idxs (List.map snd fs) in
-      fields_block (List.init !n (fun k () ->
-        match List.assoc_opt k given with
-        | Some v -> value env v
-        | None -> base (); emit (Machine.Field k)))
+      fields_block (need (Tree.With (e, fs, idxs, n)))
+        (List.init !n (fun k () ->
+           match List.assoc_opt k given with
+           | Some v -> value env v
+           | None -> base (); emit (Machine.Field k)))
   | Tree.Dot (e, _, i) -> value env e; emit (Machine.Field !i)
   | Tree.SetDot (e, _, i, v) ->
       value env v; value env e; emit (Machine.SetField !i);
@@ -369,12 +424,13 @@ let rec value env e =
 (* e as a function's last: its value returned, or a call made a jump *)
 (* A block of the fields given in their order, computed right to left
  * (ocamlopt's order): each on the stack of registers, then allocated
- * and filled. Past 11 fields there are not the registers: the block
- * allocated first, blank, kept in a slot, each field stored in it as
- * it is computed (a process of tiny-kernel's, 12) *)
-and fields_block fields =
+ * and filled. When they take more than the 11 registers (their [need]):
+ * the block allocated first, blank, kept in a slot, each field stored
+ * in it as it is computed (a process of tiny-kernel's, 12 fields; old:
+ * past 11 fields alone) *)
+and fields_block (needs : int) fields =
   let n = List.length fields in
-  if n <= 11 then
+  if n <= 11 && needs <= 11 then
     (List.iter (fun f -> f ()) (List.rev fields); emit (Machine.Alloc (0, n)))
   else begin
     emit (Machine.Blank (0, n));

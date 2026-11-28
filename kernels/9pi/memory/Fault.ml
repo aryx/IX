@@ -122,6 +122,33 @@ let make pgdir s pg =
 let fill pgdir s pg =
   try map_seg pgdir s pg (Hashtbl.find s.pages pg) with Not_found -> make pgdir s pg
 
+(* opti: fault-around (Linux's fault_around_bytes, which maps a file's
+ * pages already in its cache; here a heap's zeros). A zero fault of the
+ * bss whose page below is the segment's already, a program walking up
+ * its heap, makes the pages after it too, up to [around] in all: a
+ * fault costs 70 µs under QEMU, the zeroing 19 of them (make self,
+ * 2026-11-27: 9.3 million zero faults, 658 s of the lock), and a
+ * copying collector's halves are walked up again after each segfree
+ * (mini-ml's GIVEBACK: mini-ld's were half of those faults). Only the
+ * walk up: a page made and never touched costs a fork its copy (dup),
+ * and rc forks the most. Pages from the free list alone, while more
+ * than [around_spare] are left: never a wait for one, nor the kept
+ * texts given back (Mmu.on_empty). around = 1: none.
+ * old: each page its own fault *)
+let around = 16
+let around_spare = 2048
+let fill_around pgdir s pg =
+  if around > 1 && s.kind = Bss && Hashtbl.mem s.pages (pg - pgsize) then begin
+    let rec go q n =
+      if n > 0 && q < s.top && Mmu.nfree () > around_spare
+         && not (Hashtbl.mem s.pages q) then
+        match Mmu.kalloc () with
+        | Some pa ->
+            Hashtbl.add s.pages q pa; map pgdir q pa; go (q + pgsize) (n - 1)
+        | None -> () in
+    go (pg + pgsize) (around - 1)
+  end
+
 (* Copy on write (Plan 9's fork and fixfault): a fork gives the child
  * the data and bss pages of its parent, mapped to be read only in
  * both, and a page is copied when one of them writes it. How many
@@ -224,9 +251,12 @@ let fault (p : proc) va =
         (* (/dev/lockstat: a page there, mapped; or one made, read from
          * the image or zeroed: make's) *)
         let read = match s.image with Some _ -> pg - s.base < s.flen | None -> false in
+        let zero = not read && not (Hashtbl.mem s.pages pg) in
         Proc.reaccount p (if Hashtbl.mem s.pages pg then Proc.a_fault_map
                           else if read then Proc.a_fault_read else Proc.a_fault_zero);
-        fill p.pgdir s pg; true end
+        fill p.pgdir s pg;
+        if zero then fill_around p.pgdir s pg;
+        true end
 
 (* (a page shared since a fork is made the process's own here, though
  * the call may only read it: the kernel then writes a user's page

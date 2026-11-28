@@ -859,6 +859,36 @@ Next: fault-around for a zero-filled page, of a heap and a stack
 in order): about 300 s of the lock, every program, no more memory;
 then what Pread x does with the lock for 545 µs.
 
+### 2026-11-28: fault-around for the heap
+
+Fault's fill_around: a zero fault of the bss whose page below is the
+segment's already (a program walking up its heap) makes the 15 pages
+after it too, from the free list alone while more than 2,048 pages
+are left, so that it never waits for a page nor gives the kept texts
+back. The stack is left out, and so is a fault with nothing below it:
+a page made and never touched costs a fork its copy, and rc forks the
+most. around = 1 turns it off.
+
+| | before (full-prof) | fault-around |
+|---|---|---|
+| zero faults | 9.32 million | 1.94 million (79% fewer) |
+| fault-zero, the lock | 658 s | 298 s (55% less) |
+| fault-copy | 49 s | 63 s |
+| Rfork | 133 s | 146 s |
+| the lock held, in all | 2,364 s | 2,133 s (10% less) |
+| mk on the card | 3,653 s | 3,350 s (8% less) |
+| the build, minutes | 61 | 56 |
+
+The whole build passed, the 4,611 files Linux's, no page waited for
+(page 0). Self-quick the same way: zero faults 111,359 to 15,263, 8.1 s
+to 3.5, mk 72 s to 67. What fault-around adds: pages made ahead and
+shared at a fork, copied when written (fault-copy, 23% more faults),
+and Rfork's dup holding more pages. The other accounts moved by as
+much as 10% from one run to the next (Pread x 483 s, then 538; the
+card's reads 485 s, then 525): the host's speed.
+
+Next: Pread x, now the first, 538 s.
+
 ## The gate
 
 - make self-quick's files Linux's, each step; make self-mix's at the

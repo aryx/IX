@@ -79791,3 +79791,83 @@ Claude committed the card tests as commit 1 and noted the Makefile's remaining h
 Claude committed mini-pim as commit 2, with the hook warning about another session's self.sh.
 Claude committed mini-pi and the Pi 2 screens as commits 3 and 4, so all four are in.
 Claude then began refreshing the shared index for its own paths and checking that nothing of its work remained uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 23:07
+
+**Yoann:**
+
+> can we close the session? What's next otherwise?
+
+**Claude (summary):**
+
+Claude decided to run the skipped `make test` before closing, to confirm the commits are green.
+Claude found two failures, mini-yacc and mini-lex, and noted neither touches its own files.
+Claude noted both tools build fine, so the fault seems to lie in the test itself.
+Claude suspected both failures come from the ml corpus comparison naming tiny/TinyVCS.mli, possibly changed mid-run.
+Claude had not finished reading the logs, so the test status stays unconfirmed.
+
+------------------------------------------------------------------------
+
+## 2026-11-27 23:03
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Yoann's reply "ok let's do 1" points at the first item: finishing step 4 by having the kernel steps link the shared runtime object instead of compiling `runtime.c` themselves.
+Claude recommended finishing step 4 first, as a small clean commit, before the larger rethink.
+Claude said the fix is one recipe in each of the three kernel step mkfiles, linking the shared runtime object.
+The kernel images should come out byte-identical, which would confirm the change is safe.
+Claude also laid out the large rethink and step 5 as later work, with the rethink decided first.
+
+------------------------------------------------------------------------
+
+## 2026-11-28 01:52
+
+**Yoann:**
+
+> ok let's do 1
+
+**Claude (summary):**
+
+Claude recommended a fix for the kernel runtimes, giving each kernel its own small `rt.c` that sets its heap sizes.
+Claude built every kernel image before and after the change, at O=7 and O=5, and the step images came out byte-identical.
+Claude found and fixed a singularity link-order bug, where `Given` compiled before `Sip` and produced a nondeterministic `p_init.img`.
+Claude fixed stray comments in step mkfiles and left make test with four failures, none caused by this change.
+Nothing is committed yet; Claude is waiting to commit the 15 files by pathspec, with make test rerun first.
+
+------------------------------------------------------------------------
+
+## 2026-11-28 09:09
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed 15 files as `24a6dd72` by pathspec through a private index, leaving other sessions' work out.
+Claude reset the shared index entries for those paths to the new HEAD, so the tree now shows its own files as clean.
+Claude left `plan_9pi_self_speed.md` and three files under `kernels/9pi/` modified, since they belong to other sessions.
+The commit guard flagged `plan_9pi_self_speed.md` as an uncommitted file in a directory the commit touched, so Claude excluded it.
+Claude noted that `make test` ended with 4 failures from the other sessions, and a clean run is still owed.
+
+------------------------------------------------------------------------
+
+## 2026-11-28 09:13
+
+**Yoann:**
+
+> there are remaining work uncommited file but not sure what other claude session this is; I would need to resume it but dunno which one
+
+**Claude (summary):**
+
+Claude said this session's transcripts never edited the four uncommitted files.
+Claude explained a session started from /home/pad/ix would keep its transcripts under another project directory.
+Claude identified that session as 4d2db1ee-b18f-4b67-8ce8-0398a3dd1bcd, started from ~/github/ix/tiny.
+Claude noted that docs/yoann_notes/prompt-history.md, partly staged, belongs to neither session.
+Claude gave no next step for this session, since its answer covered only the tiny session.

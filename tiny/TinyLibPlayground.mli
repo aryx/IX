@@ -156,12 +156,23 @@ type key =
 
 val key_of_byte : char -> key
 
-(* A text's colour is a byte; the bits above it give the style of the
+(* A text's colour is a byte; *)
+
+type colour = int
+
+(* the bits above it give the style of the
  * office's words: [bold], [italic], [underlined], [large] (16x32
  * characters). [fat_pixels] is for a row of a paint picture instead:
  * each character is a colour letter (see [pixel_letters]) drawn as a
  * 4x4 square.
- *
+ *)
+val bold : int
+val italic : int
+val underlined : int
+val large : int
+val fat_pixels : int
+
+(*
  * [Ellipse] and [Disc] are the outline and the inside of the ellipse in
  * a box of that width and height, placed as a [Rect] is; a circle's box
  * is square. When the width or the height is even, the box has no
@@ -176,7 +187,6 @@ val key_of_byte : char -> key
  * inside an odd number of times (a star of five points drawn in one
  * stroke has a hole in its middle). Elm's triangle, pentagon, hexagon
  * and octagon are [regular]'s, below. *)
-type colour = int
 type shape =
   | Rect of colour * int * int
   | Polygon of colour * (int * int) list
@@ -185,11 +195,6 @@ type shape =
   | Words of colour * string
   | Group of shape list
   | Move of int * int * shape
-val bold : int
-val italic : int
-val underlined : int
-val large : int
-val fat_pixels : int
 
 (* . white, k black, r red, g green, b blue, y yellow, o orange,
  * p purple, n brown, a grey *)
@@ -217,8 +222,9 @@ type tune = { pace : int; parts : part list }
 (* [init] gets a random seed. The sounds of [sound was now] play one
  * after the other; [music] gives None for silence. *)
 type 'm game = {
-  width : int; height : int; init : int -> 'm; view : 'm -> shape list;
-  key : key -> 'm -> 'm; frame : 'm -> 'm;
+  width : int; height : int;
+  init : int -> 'm;
+  view : 'm -> shape list; key : key -> 'm -> 'm; frame : 'm -> 'm;
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
@@ -256,5 +262,6 @@ val flush : unit -> unit
  * which is the first shape, only when it changed. The tests use the
  * image numbers [picture] and [ground]. *)
 val show : 'm game -> shape list -> shape list -> unit
+
 val picture : int
 val ground : int

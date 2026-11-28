@@ -96,6 +96,8 @@ type screen = {
   mutable sc_state : state;
   mutable sc_msgs : string list;    (* drawing messages not yet written, last
                                      * first *)
+  sc_window : < Cap.draw >;         (* the window drawn in, held: what
+                                     * writes the messages *)
 }
 
 

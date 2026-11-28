@@ -74,6 +74,7 @@ type screen = {
   sc_doc : doc;
   mutable sc_state : state;
   mutable sc_msgs : string list;
+  sc_window : < Cap.draw >;
 }
 
 let put sc m = sc.sc_msgs <- m :: sc.sc_msgs
@@ -101,13 +102,15 @@ let menus sc =
  * is drawn again over what the messages drew. *)
 let send sc =
   if sc.sc_msgs <> [] then begin
-    (try TSys.write TSys.fd_draw (String.concat "" (List.rev sc.sc_msgs))
+    (try
+       TSys.write (TSys.fd_draw sc.sc_window)
+         (String.concat "" (List.rev sc.sc_msgs))
      with Failure _ -> ());
     sc.sc_msgs <- [];
     if sc.sc_tools.tb_menu.opened <> None then begin
       List.iter (P.draw 0 0 0)
         (List.tl (G.menu_view (sc.sc_cols * 8) (menus sc) sc.sc_tools.tb_menu));
-      P.flush ()
+      P.flush sc.sc_window
     end
   end
 
@@ -222,7 +225,7 @@ let draw_bar sc =
        (P.Words (0, if String.length t > n then String.sub t 0 n else t));
      List.iter (P.draw 0 0 0) opened
    | [] -> ());
-  P.flush ()
+  P.flush sc.sc_window
 
 (* When the address is longer than the field, the field shows its end,
  * and what is typed goes after the part not shown. *)
@@ -247,7 +250,7 @@ let draw_tools sc =
   P.draw 0 0 G.bar_height (P.Rect (0xcc, sc.sc_cols * 8, area_top - G.bar_height));
   List.iter (P.draw 0 0 0) shapes;
   List.iter (fun (_, s) -> P.draw 0 0 0 s) (G.over boxes sc.sc_tools.tb_mouse);
-  P.flush ()
+  P.flush sc.sc_window
 
 (* the field has the keys: the mouse's button went down in it last *)
 let focused sc = G.focused sc.sc_tools.tb_mouse (input_box sc)

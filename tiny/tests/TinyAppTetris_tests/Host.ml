@@ -68,6 +68,8 @@ let play seed script =
   !m
 
 let () =
+  (* the stub's capabilities, the caps library's *)
+  Cap.main @@ fun caps ->
   (* the theme: each part's eighths (the parts go round together when they
    * are as long) *)
   List.iter (fun (p : TinyLibPlayground.part) ->
@@ -91,8 +93,8 @@ let () =
     ^ TinyLibDraw.d_image TinyLibPlayground.ground
         (0, 0, game.width, game.height) 0
   in
-  TinyLibSystem.write TinyLibSystem.fd_draw both;
-  TinyLibPlayground.show game [] (game.view m);
+  TinyLibSystem.write (TinyLibSystem.fd_draw caps) both;
+  TinyLibPlayground.show caps game [] (game.view m);
   KGraphics.arena 0xf4b000 0xb4000;
   let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in

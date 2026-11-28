@@ -213,13 +213,19 @@ requires('prim:ml_print_newline', stdout).
 requires('prim:u_flush', stdout).
 % (a program's first descriptors are numbers, TinyLibSystem.fd_stderr, and
 % a number given to the kernel's u_write is Unix.stderr: authority where a
-% function names both, TinyLibSystem/tinykernel's eprint; not where a
-% program passes fd_mouse to TinyLibSystem.read, the descriptor held)
+% function names both, TinyLibSystem/tinykernel's eprint)
 descriptor_number('TinyLibSystem.fd_stdin', stdin).
 descriptor_number('TinyLibSystem.fd_stdout', stdout).
 descriptor_number('TinyLibSystem.fd_stderr', stderr).
-descriptor_number('TinyLibSystem.fd_draw', draw).
-descriptor_number('TinyLibSystem.fd_mouse', mouse).
+% (the window's two given by their capabilities: the gate's result is the
+% authority, a number, which its body does not show (fd_draw caps = 3);
+% the descriptor given then held, passed to TinyLibSystem.read; old:
+% numbers, descriptor_number's, as the three above)
+number_gate('TinyLibSystem.fd_draw', draw).
+number_gate('TinyLibSystem.fd_mouse', mouse).
+% (sdl/'s are unix/'s, fd_draw = U.fd_draw: a call resolves to that name)
+number_gate('TinyLibSystemUnix.fd_draw', draw).
+number_gate('TinyLibSystemUnix.fd_mouse', mouse).
 on_number('prim:u_write').
 on_number('prim:u_read').
 % (in_channel_of_descr, out_channel_of_descr: TinyLibSystem.stdin's channel)
@@ -377,6 +383,8 @@ needs(R, S) :- uses(R, S).
 % whatever its body does with exit; capabilities_types.dl's by_need found this)
 needs(R, S) :- names_function(R, G), \+ authority(G), needs(G, S).
 needed(R, C) :- needs(R, S), requires(S, C).
+needs(R, S) :- names_known(R, S), number_gate(S, _).
+needed(R, C) :- needs(R, S), number_gate(S, C).
 needed(R, C) :- needs(R, 'Unix.openfile'), device_cap(C).
 needed(R, C) :- needs(R, 'prim:u_open'), device_cap(C).
 needed(R, A) :- needed(R, C), cap_includes(A, C).

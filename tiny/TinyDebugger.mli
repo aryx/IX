@@ -167,6 +167,6 @@
  * caps includes what a window needs (-window, with TinyLibGUI's
  * run_canvas), and stdout, where it prints its answers at once. *)
 val main :
-  < Cap.clock; Cap.keyboard; Cap.open_in; Cap.pipe; Cap.forkew; Cap.kill;
-    Cap.stdout; Cap.stderr; .. > ->
+  < Cap.clock; Cap.keyboard; Cap.draw; Cap.mouse; Cap.open_in; Cap.pipe;
+    Cap.forkew; Cap.kill; Cap.stdout; Cap.stderr; .. > ->
   string array -> Exit.t

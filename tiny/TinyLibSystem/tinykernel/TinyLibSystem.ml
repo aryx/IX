@@ -54,8 +54,8 @@
 let fd_stdin = 0
 let fd_stdout = 1
 let fd_stderr = 2
-let fd_draw = 3
-let fd_mouse = 4
+let fd_draw _caps = 3
+let fd_mouse _caps = 4
 
 external u_write : int -> string -> int = "u_write"
 external u_read : int -> int -> string = "u_read"

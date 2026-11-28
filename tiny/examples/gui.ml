@@ -24,4 +24,4 @@ let update msg n = match msg with Less -> n - 1 | More -> n + 1
 let counter : (int, msg) G.gui =
   { init = 0; view = view; update = update; key = (fun _ -> []) }
 
-let () = TinyLibSystem.main "gui" (fun _ _ -> G.run counter)
+let () = TinyLibSystem.main "gui" (fun caps _ -> G.run caps counter)

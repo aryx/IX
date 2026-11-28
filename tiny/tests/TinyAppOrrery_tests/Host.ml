@@ -13,6 +13,8 @@ let sin = P.sin
 let cos = P.cos
 
 let () =
+  (* the stub's capabilities, the caps library's *)
+  Cap.main @@ fun caps ->
   (* the dates: the first day, a leap day (2000 is a leap year, being
    * a multiple of 400), a year later, the end of 2099 *)
   List.iter (fun d -> Printf.printf "day %d: %s\n" d (date d))
@@ -61,10 +63,10 @@ let () =
     (List.hd (g.view m) == List.hd (g.view (g.frame m)));
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
   Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
-  TinyLibSystem.write TinyLibSystem.fd_draw
+  TinyLibSystem.write (TinyLibSystem.fd_draw caps)
     (TinyLibDraw.d_image P.picture (0, 0, g.width, g.height) 0
      ^ TinyLibDraw.d_image P.ground (0, 0, g.width, g.height) 0);
-  P.show g [] (g.view m);
+  P.show caps g [] (g.view m);
   KGraphics.arena 0xf4b000 0xb4000;
   let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in

@@ -244,12 +244,15 @@ val seed : < Cap.random; .. > -> int
  * KGraphics.mli). fd_mouse is a box that holds x, y and the buttons,
  * each in a word, low byte first. Both come from a window, either
  * tiny-kernel's or the host's (TinyLibSystem/sdl/); without a window
- * they are not open. *)
+ * they are not open. The window's two are given by their capabilities,
+ * Cap.draw and Cap.mouse, so that a function that draws says so in its
+ * type (old: constants, as fd_stdout, which TSys.print's Cap.stdout
+ * covers); the descriptor given is then held, as any open file's. *)
 val fd_stdin : fd
 val fd_stdout : fd
 val fd_stderr : fd
-val fd_draw : fd
-val fd_mouse : fd
+val fd_draw : < Cap.draw; .. > -> fd
+val fd_mouse : < Cap.mouse; .. > -> fd
 
 (* [ready fds until] returns the first of fds that can be read without
  * waiting, or None once [millis] reaches until (never when until is

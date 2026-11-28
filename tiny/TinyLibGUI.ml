@@ -189,7 +189,7 @@ let rec differ shown now =
  * pressed is its four edges, whatever the widgets. Every shape drawn
  * at each picture would be some eighty messages a click, and a click
  * shorter than them would be lost. *)
-let redraw shown was now is =
+let redraw caps shown was now is =
   let at (x, y, w, h) s =
     match s with
     | P.Move (sx, sy, P.Group (P.Rect (_, sw, sh) :: _)) ->
@@ -211,7 +211,7 @@ let redraw shown was now is =
   List.iter (fun s -> P.draw 0 0 0 (blank s)) olds;
   List.iter (P.draw 0 0 0) news;
   List.iter (fun (_, s) -> P.draw 0 0 0 s) is;
-  P.flush ()
+  P.flush caps
 
 (*****************************************************************************)
 (* The mouse, the keys *)
@@ -268,7 +268,7 @@ let key (update : 'msg -> 'm -> 'm) (keys : P.key -> 'msg list) (boxes : 'msg bo
 
 (* what a loop waits on (TSys.ready's descriptors): the keys and the
  * mouse *)
-let keys_and_mouse = [ TSys.fd_stdin; TSys.fd_mouse ]
+let keys_and_mouse caps = [ TSys.fd_stdin; TSys.fd_mouse caps ]
 
 (* The program, until an Escape, a q that no field takes, or the keys'
  * end: what changed drawn (the widgets when the model's are other
@@ -276,12 +276,12 @@ let keys_and_mouse = [ TSys.fd_stdin; TSys.fd_mouse ]
  * the mouse waited for, whichever is first. The widgets are made and
  * placed when the model is another one, and after each key that makes
  * it so: the next key is the new field's. *)
-let run (g : ('m, 'msg) gui) =
-  let fds = keys_and_mouse in
+let run caps (g : ('m, 'msg) gui) =
+  let fds = keys_and_mouse caps in
   let rec loop model m view shown was =
     let (now, boxes) = view in
     let is = over boxes m in
-    if now != shown || is <> was then redraw shown was now is;
+    if now != shown || is <> was then redraw caps shown was now is;
     if TSys.ready fds None = Some TSys.fd_stdin then begin
       let s = TSys.read TSys.fd_stdin 16 in
       let rec typed i model view =
@@ -298,7 +298,7 @@ let run (g : ('m, 'msg) gui) =
       if s = "" then Exit.OK else typed 0 model view
     end
     else
-      match D.mouse_event (TSys.read TSys.fd_mouse 12) with
+      match D.mouse_event (TSys.read (TSys.fd_mouse caps) 12) with
       | None -> Exit.OK
       | Some e ->
           let (model', m') = mouse g.update boxes model m e.mo_x e.mo_y e.mo_buttons in
@@ -448,10 +448,10 @@ let window_size caps =
   TSys.write TSys.fd_stdout "\005";
   let until = TSys.millis caps + 500 in
   let rec answer () =
-    if TSys.ready [ TSys.fd_mouse ] (Some until) = None then
+    if TSys.ready [ TSys.fd_mouse caps ] (Some until) = None then
       D.screen_w, D.screen_h
     else
-      match D.mouse_event (TSys.read TSys.fd_mouse 12) with
+      match D.mouse_event (TSys.read (TSys.fd_mouse caps) 12) with
       | Some e when e.mo_buttons = -1 -> e.mo_x, e.mo_y
       | _ -> answer () in
   answer ()
@@ -602,7 +602,7 @@ type part =
   | Changed of ((int * int * P.shape) * drawn) list
   | Same of (int * int * P.shape) list * area
 
-let repaint_leaves shown now =
+let repaint_leaves caps shown now =
   let rec pairs olds news erased parts =
     match olds, news with
     | (o, _, _) :: os, (n, nl, b) :: ns when o == n ->
@@ -632,7 +632,7 @@ let repaint_leaves shown now =
           if List.exists (meets b) erased then
             List.iter (fun leaf -> paint erased (leaf, Untouched)) l)
       (List.rev parts);
-    P.flush ()
+    P.flush caps
   end
 
 (* a shape with its leaves and their box: the old ones when it is the
@@ -654,9 +654,9 @@ let rec with_leaves olds news =
   | _, [] -> []
 
 (* run_canvas does it itself, keeping the leaves for the next change *)
-let repaint shown now =
+let repaint caps shown now =
   let olds = with_leaves [] shown in
-  repaint_leaves olds (with_leaves olds now)
+  repaint_leaves caps olds (with_leaves olds now)
 [@@for_testing]
 
 (* The program, until its typed says None or the keys end: its picture
@@ -666,10 +666,10 @@ let repaint shown now =
 let run_canvas caps (c : 'm canvas) =
   let size = window_size caps in
   TSys.raw_console caps true;
-  let fds = keys_and_mouse in
+  let fds = keys_and_mouse caps in
   let rec loop size model shown =
     let now = with_leaves shown (c.picture model) in
-    repaint_leaves shown now;
+    repaint_leaves caps shown now;
     if TSys.ready fds None = Some TSys.fd_stdin then begin
       let s = TSys.read TSys.fd_stdin 16 in
       let rec typed i model =
@@ -681,7 +681,7 @@ let run_canvas caps (c : 'm canvas) =
       if s <> "" then typed 0 model
     end
     else begin
-      match D.mouse_event (TSys.read TSys.fd_mouse 16) with
+      match D.mouse_event (TSys.read (TSys.fd_mouse caps) 16) with
       | Some e ->
           (* the window given another size, which its mouse says *)
           let size', model =
@@ -698,5 +698,5 @@ let run_canvas caps (c : 'm canvas) =
     end in
   loop size (c.first (fst size) (snd size)) [];
   P.draw 0 0 0 (P.Rect (255, D.screen_w, D.screen_h));
-  P.flush ();
+  P.flush caps;
   TSys.raw_console caps false

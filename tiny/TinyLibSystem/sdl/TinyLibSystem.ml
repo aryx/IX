@@ -59,6 +59,10 @@ let exists = U.exists
 let exit = U.exit
 let fd_draw = U.fd_draw
 let fd_mouse = U.fd_mouse
+(* their numbers, for the descriptors' functions below, which are given
+ * a number *)
+let n_draw = 3
+let n_mouse = 4
 let fd_stderr = U.fd_stderr
 let fd_stdin = U.fd_stdin
 let fd_stdout = U.fd_stdout
@@ -127,7 +131,7 @@ let reserve () : fd = U.number (Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0)
 let () =
   let rec take () =
     let n = reserve () in
-    if n <= fd_mouse then take () else Unix.close (U.fd n) in
+    if n <= n_mouse then take () else Unix.close (U.fd n) in
   take ()
 
 (*****************************************************************************)
@@ -345,11 +349,11 @@ let opened (m : made) : fd =
  * file's descriptor always *)
 let can_read n =
   (n = fd_stdin && !typed <> "")
-  || (n = fd_mouse && (!fresh || !size_asked))
+  || (n = n_mouse && (!fresh || !size_asked))
   || (match Hashtbl.find_opt made n with
       | Some (Asking _) -> false
       | Some _ -> true
-      | None -> n > fd_mouse)
+      | None -> n > n_mouse)
 
 (*****************************************************************************)
 (* The wire's port 70 *)
@@ -437,7 +441,7 @@ let read (n : fd) (max : int) : string =
     typed := String.sub !typed k (String.length !typed - k);
     s
   end
-  else if n = fd_mouse then begin
+  else if n = n_mouse then begin
     if !size_asked then (
       size_asked := false;
       word width ^ word height ^ word (-1))
@@ -457,7 +461,7 @@ let read (n : fd) (max : int) : string =
     | None -> TinyLibSystemUnix.read n max
 
 let write (n : fd) (s : string) : unit =
-  if n = fd_draw then draw s
+  if n = n_draw then draw s
   else if n = fd_stdout && s = enq then size_asked := true
   else
     match Hashtbl.find_opt made n with

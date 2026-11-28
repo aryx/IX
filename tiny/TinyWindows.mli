@@ -186,4 +186,5 @@
  * in the menu kills the shells. On the host, OCaml only type-checks it,
  * because boxes exist only on tiny-kernel. *)
 val main :
-  < Cap.pipe; Cap.forkew; Cap.kill; .. > -> string array -> Exit.t
+  < Cap.draw; Cap.mouse; Cap.pipe; Cap.forkew; Cap.kill; .. > ->
+  string array -> Exit.t

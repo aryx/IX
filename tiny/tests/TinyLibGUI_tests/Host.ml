@@ -60,6 +60,8 @@ let convert script =
     script m.c m.f (List.length (TinyLibGUI.over (boxes t m) ms))
 
 let () =
+  (* the stub's capabilities, the caps library's *)
+  Cap.main @@ fun caps ->
   List.iter (fun s -> Printf.printf "keys %-16s %s\n" s (text (typed s)))
     [ "12*3="; "12*3=+6"; "2+3*4="; "7-9="; "9/2="; "7/0="; "7/0=5";
       "7/0=c5"; "5+*3="; "5="; "999999999+1="; "99999*99999=";
@@ -96,10 +98,10 @@ let () =
   Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
   let m = typed "12*3=+6" in
   let shown, b = TinyLibGUI.laid g m in
-  TinyLibGUI.redraw [] [] shown [];
+  TinyLibGUI.redraw caps [] [] shown [];
   let all = written () in
   let _, ms = TinyLibGUI.mouse g.update b m TinyLibGUI.up x y 1 in
-  TinyLibGUI.redraw shown [] shown (TinyLibGUI.over b ms);
+  TinyLibGUI.redraw caps shown [] shown (TinyLibGUI.over b ms);
   Printf.printf
     "%d shapes; a press draws none of them: %d bytes of messages for %d\n"
     (List.length shown) (written () - all) all;
@@ -111,7 +113,7 @@ let () =
   let (fx, fy, _, _), _ = List.nth tb 1 in
   let over =
     TinyLibGUI.over tb { TinyLibGUI.up with m_focus = Some (fx, fy) } in
-  TinyLibGUI.redraw [] [] (down shapes)
+  TinyLibGUI.redraw caps [] [] (down shapes)
     (List.map (fun (box, s) -> box, TinyLibPlayground.Move (0, 200, s)) over);
   (* a canvas's picture changed twice, on a white ground: a disc moved
    * (its old box erased) over a square, then the square moved from
@@ -126,9 +128,9 @@ let () =
   let d = disc 460 in
   let one = [ ground; square 470; disc 400; triangle 440 ]
   and two = [ ground; square 470; d; triangle 440 ] in
-  TinyLibGUI.repaint [] one;
-  TinyLibGUI.repaint one two;
-  TinyLibGUI.repaint two [ ground; square 560; d; triangle 610 ];
+  TinyLibGUI.repaint caps [] one;
+  TinyLibGUI.repaint caps one two;
+  TinyLibGUI.repaint caps two [ ground; square 560; d; triangle 610 ];
   KGraphics.arena 0xf4b000 0xb4000;
   let screen = { KGraphics.r = KGraphics.rect 0 0 640 480;
                  at = 0xf00000; repl = false } in

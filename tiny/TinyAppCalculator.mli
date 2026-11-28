@@ -80,5 +80,10 @@ type msg = Digit of int | Op of char | Equals | Clear
 (* The calculator, for TinyLibGUI's run *)
 val calculator : (model, msg) TinyLibGUI.gui
 
-(* The program calc. It needs no capability of its own. *)
-val main : < .. > -> string array -> Exit.t
+(* What TinyLibGUI's loop needs, so what the program needs: the window
+ * to draw in and its mouse (old: no capability, the window's descriptors
+ * constants). *)
+type caps = < Cap.draw; Cap.mouse >
+
+(* The program calc. *)
+val main : < caps; .. > -> string array -> Exit.t

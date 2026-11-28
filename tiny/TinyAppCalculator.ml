@@ -114,4 +114,6 @@ let key (k : P.key) : msg list =
 let calculator : (model, msg) G.gui = { init = start; view; update; key }
 
 (* the program, calc: the calculator run (no system call of its own) *)
-let main (_ : < .. >) (_ : string array) = G.run calculator
+type caps = < Cap.draw; Cap.mouse >
+
+let main (caps : < caps; .. >) (_ : string array) = G.run caps calculator

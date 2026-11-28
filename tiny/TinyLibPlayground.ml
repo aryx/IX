@@ -149,15 +149,26 @@ let random s =
 (* The picture *)
 (*****************************************************************************)
 
-(* messages gathered, written past a kilobyte and at a picture's end *)
+(* messages gathered, a write each kilobyte, all written at a picture's
+ * end: only flush draws, by Cap.draw (old: put wrote each kilobyte as
+ * it was full, and drawing needed the descriptor everywhere) *)
 let gathered = ref ""
+let full : string list ref = ref []
 (* (a message refused said by the system, not a reason to end: TSys.write's
  * Failure caught, as u_write's -1 was ignored) *)
 let send fd m = try TSys.write fd m with Failure _ -> ()
-let flush () = if !gathered <> "" then (send TSys.fd_draw !gathered; gathered := "")
+let flush caps =
+  let fd = TSys.fd_draw caps in
+  List.iter (send fd) (List.rev !full);
+  if !gathered <> "" then send fd !gathered;
+  full := [];
+  gathered := ""
 let put m =
   gathered := !gathered ^ m;
-  if String.length !gathered > 1024 then flush ()
+  if String.length !gathered > 1024 then begin
+    full := !gathered :: !full;
+    gathered := ""
+  end
 
 (* our images: 0 is the window, 1 the picture off it, 2 the ground, a
  * colour's byte c 3 + c *)
@@ -199,7 +210,7 @@ let rec draw dst x y shape =
  * kernel makes, and the other shapes on it; then the picture goes on
  * the window. Every shape drawn at each picture would be, for a
  * Tetris piece's move, a hundred messages through two pipes. *)
-let show g shown shapes =
+let show caps g shown shapes =
   (match shapes with
    | first :: rest ->
        if (match shown with
@@ -210,7 +221,7 @@ let show g shown shapes =
        List.iter (draw picture 0 0) rest
    | [] -> ());
   put (D.d_draw 0 picture (-1) (0, 0, g.width, g.height) (0, 0));
-  flush ()
+  flush caps
 
 (* whether these are other shapes than those shown: the ground the same
  * value, or equal, and the rest equal *)
@@ -323,7 +334,7 @@ let run caps g =
     if model != seen then play sounds (g.sound seen model);
     let voices = play_music caps voices (g.music model) in
     let shapes = if model != seen then g.view model else shown in
-    if not (same shown shapes) then show g shown shapes;
+    if not (same shown shapes) then show caps g shown shapes;
     if TSys.ready [ TSys.fd_stdin ] (Some next) <> None then begin
       let s = TSys.read TSys.fd_stdin 16 in
       (* the model after the keys, None at a q *)
@@ -345,5 +356,5 @@ let run caps g =
        ^ D.d_image ground (0, 0, g.width, g.height) 0);
   let first = g.init (TSys.seed caps) in
   let shapes = g.view first in
-  show g [] shapes;
+  show caps g [] shapes;
   loop first first shapes (TSys.millis caps + period) []

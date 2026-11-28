@@ -25,12 +25,23 @@ let blue = 4
 let pale = 5
 let red = 6
 
-(* (written past a kilobyte too: a message joined to n bytes copies them) *)
+(* (a write a kilobyte: a message joined to n bytes copies them; only
+ * flush draws, by Cap.draw, as TinyLibPlayground's; old: send wrote each
+ * kilobyte as it was full) *)
 let gathered = ref ""
-let flush () =
-  if !gathered <> "" then (put TSys.fd_draw !gathered; gathered := "")
+let full : string list ref = ref []
+let flush caps =
+  let fd = TSys.fd_draw caps in
+  List.iter (put fd) (List.rev !full);
+  if !gathered <> "" then put fd !gathered;
+  full := [];
+  gathered := ""
 let send m =
-  gathered := !gathered ^ m; if String.length !gathered > 1024 then flush ()
+  gathered := !gathered ^ m;
+  if String.length !gathered > 1024 then begin
+    full := !gathered :: !full;
+    gathered := ""
+  end
 
 (* the numbers in use; the lowest free one *)
 let used = ref []
@@ -334,7 +345,8 @@ let cells (x0, y0, x1, y1) =
  * and a box, the shell given an end of each as its 0, its 1 and 2, its
  * 3 and its 4. Its inside is whole characters, 8 by 16. No window
  * when the kernel has no pipe or no process left *)
-let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) r =
+let create (caps : < Cap.draw; Cap.mouse; Cap.pipe; Cap.fork; Cap.exec; .. >)
+    r =
   let x0, y0, _, _ = r in
   let made make = try Some (make caps) with Failure _ -> None in
   let k = made TSys.pipe and p = made TSys.pipe and d = made TSys.pipe
@@ -351,8 +363,8 @@ let create (caps : < Cap.pipe; Cap.fork; Cap.exec; .. >) r =
           TSys.dup2 kr TSys.fd_stdin;
           TSys.dup2 pw TSys.fd_stdout;
           TSys.dup2 pw TSys.fd_stderr;
-          TSys.dup2 dw TSys.fd_draw;
-          TSys.dup2 mr TSys.fd_mouse;
+          TSys.dup2 dw (TSys.fd_draw caps);
+          TSys.dup2 mr (TSys.fd_mouse caps);
           ignore (TSys.exec caps (Fpath.v "/bin/sh") [ "/bin/sh" ] []);
           (* the child's end, out of our code: its status by
            * TinyLibSystem.main *)
@@ -472,7 +484,7 @@ let tell w x y b =
     (word (x - w.x - border) ^ word (y - w.y - border) ^ word b
      ^ D.i16 w.w ^ D.i16 w.h)
 
-let finish caps = List.iter (delete caps) !windows; flush (); doing := Ended
+let finish caps = List.iter (delete caps) !windows; flush caps; doing := Ended
 
 (* the mouse at (x, y), its buttons b (1 left, 4 right) *)
 let mouse caps x y b =
@@ -575,16 +587,17 @@ let mouse caps x y b =
  * most: the windows past the 14th not read until one in front of them
  * ends *)
 let rec loop caps =
-  flush ();
+  flush caps;
   let rec theirs n ws =
     match ws with
     | w :: rest when n < 31 -> w.ends.draws :: w.ends.prints :: theirs (n + 2) rest
     | _ -> [] in
-  let fds = TSys.fd_mouse :: TSys.fd_stdin :: theirs 2 !windows in
+  let mouse_fd = TSys.fd_mouse caps in
+  let fds = mouse_fd :: TSys.fd_stdin :: theirs 2 !windows in
   let more =
     match TSys.ready fds None with
     | None -> true
-    | Some fd when fd = TSys.fd_mouse ->
+    | Some fd when fd = mouse_fd ->
       let s = TSys.read fd 12 in
       if String.length s < 12 then false
       else begin

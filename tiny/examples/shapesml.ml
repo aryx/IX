@@ -40,7 +40,7 @@ let picture =
       D.d_text 0 black (100, 280) "hello, world, in pixels" ]
 
 let () =
-  TSys.main "shapesml" (fun _ _ ->
-      TSys.write TSys.fd_draw picture;
+  TSys.main "shapesml" (fun caps _ ->
+      TSys.write (TSys.fd_draw caps) picture;
       ignore (TSys.read TSys.fd_stdin 1);
       Exit.OK)

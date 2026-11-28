@@ -190,8 +190,8 @@ let seed (_ : < Cap.random; .. >) : int = not_here "seed"
 let fd_stdin = 0
 let fd_stdout = 1
 let fd_stderr = 2
-let fd_draw = 3
-let fd_mouse = 4
+let fd_draw (_ : < Cap.draw; .. >) : fd = 3
+let fd_mouse (_ : < Cap.mouse; .. >) : fd = 4
 
 let ready (_ : fd list) (_ : milliseconds option) : fd option =
   not_here "ready"

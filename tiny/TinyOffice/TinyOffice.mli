@@ -224,5 +224,6 @@ val say : Model.office -> string -> unit
  * document in the window and saves it when asked. It prints the usage
  * when argv does not name a file. *)
 val main :
-  < Cap.open_in; Cap.open_out; Cap.stderr; Cap.clock; Cap.keyboard; .. > ->
+  < Cap.open_in; Cap.open_out; Cap.stderr; Cap.clock; Cap.keyboard;
+    Cap.draw; Cap.mouse; .. > ->
   string array -> Exit.t

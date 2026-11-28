@@ -76,12 +76,13 @@ let seed _ = 0
 let fd_stdin = 0
 let fd_stdout = 1
 let fd_stderr = 2
-let fd_draw = 3
-let fd_mouse = 4
+let fd_draw _ = 3
+let fd_mouse _ = 4
 let ready _ _ = Some fd_stdin
 let read _ _ = ""
 let read_all _ = ""
-let write n s = if n = fd_draw then Buffer.add_string TinySystemTest.drawn s
+(* (3: fd_draw's number) *)
+let write n s = if n = 3 then Buffer.add_string TinySystemTest.drawn s
 let save _ = None
 let dup2 _ _ = ()
 let pipe _ = none "pipe"

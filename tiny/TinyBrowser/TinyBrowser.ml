@@ -372,6 +372,7 @@ let quit (sc : Screen.screen) =
 
 let browse caps typed =
   let w, h = G.window_size caps in
+  let mouse = TSys.fd_mouse caps in
   let nav : Screen.nav =
     { nv_address = ""; nv_wire = Wire_off; nv_history = []; nv_goal = None;
       nv_goal_id = None; nv_pressed = false; nv_hover = false } in
@@ -381,7 +382,8 @@ let browse caps typed =
       sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
       sc_doc = { dc_got = 0; dc_head = ""; dc_type = None; dc_status = None;
                  dc_file = None };
-      sc_state = Page_reading; sc_msgs = [] } in
+      sc_state = Page_reading; sc_msgs = [];
+      sc_window = (caps :> < Cap.draw >) } in
   Screen.put sc Screen.colours;
   Screen.put sc (D.d_image Screen.c_strip (0, 0, sc.sc_cols * 8, 16) 255);
   load caps sc (Url.absolute typed);
@@ -396,7 +398,7 @@ let browse caps typed =
       | Wire_picture (fd, _) -> [ fd ]
       | Wire_off -> [] in
     if wire <> [] || keys then begin
-      let fds = (if keys then [ TSys.fd_stdin; TSys.fd_mouse ] else []) @ wire in
+      let fds = (if keys then [ TSys.fd_stdin; mouse ] else []) @ wire in
       (* (the first ready; -1 none, which TSys.ready without a deadline
        * does not answer) *)
       let ready = match TSys.ready fds None with Some n -> n | None -> -1 in
@@ -441,8 +443,8 @@ let browse caps typed =
         end;
         Screen.send sc;
         loop keys
-      | _ when keys && ready = TSys.fd_mouse ->
-        (match D.mouse_event (TSys.read TSys.fd_mouse 16) with
+      | _ when keys && ready = mouse ->
+        (match D.mouse_event (TSys.read mouse 16) with
          (* the window given another size: the page is asked for again,
           * its lines to be broken at the new width *)
          | Some { mo_size = Some (w, h); _ }

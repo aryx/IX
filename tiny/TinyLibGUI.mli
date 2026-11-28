@@ -176,7 +176,7 @@ type ('m, 'msg) gui = {
 
 (* The loop. It draws only what changed, and ends on Escape, on a q that
  * no field takes, or when the keys end. It returns Exit.OK for a main. *)
-val run : ('m, 'msg) gui -> Exit.t
+val run : < Cap.draw; Cap.mouse; .. > -> ('m, 'msg) gui -> Exit.t
 
 (* a point in the window, in pixels *)
 type point = int * int
@@ -224,6 +224,7 @@ val key :
 (* [redraw shown was now is] draws only where the new shapes and what is
  * over them differ from the old ones. The tests draw on image 0. *)
 val redraw :
+  < Cap.draw; .. > ->
   TinyLibPlayground.shape list -> (box * TinyLibPlayground.shape) list ->
   TinyLibPlayground.shape list -> (box * TinyLibPlayground.shape) list ->
   unit
@@ -286,14 +287,17 @@ type 'm canvas = {
  * after repainting what lies under them; a word is redrawn from its
  * first differing character, and a polygon or an ellipse uncovered in
  * part is redrawn whole. The console is raw meanwhile, so ^C is a key. *)
-val run_canvas : < Cap.clock; Cap.keyboard; .. > -> 'm canvas -> unit
+val run_canvas :
+  < Cap.clock; Cap.keyboard; Cap.draw; Cap.mouse; .. > -> 'm canvas -> unit
 
 (* [repaint shown now] is what [run_canvas] does after each change:
  * the picture [now] drawn where it differs from [shown], on image 0.
  * The tests use it. *)
-val repaint : TinyLibPlayground.shape list -> TinyLibPlayground.shape list -> unit
+val repaint :
+  < Cap.draw; .. > ->
+  TinyLibPlayground.shape list -> TinyLibPlayground.shape list -> unit
 
 (* The window's size. Inside tiny-windows, it is the answer to an ENQ;
  * with no answer within half a second, it is the whole screen of the
  * console. *)
-val window_size : < Cap.clock; .. > -> int * int
+val window_size : < Cap.clock; Cap.mouse; .. > -> int * int

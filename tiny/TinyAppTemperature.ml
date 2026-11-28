@@ -61,4 +61,6 @@ let temperature : (model, msg) G.gui =
 
 (* the program, temp: the converter run (no system call of its own;
  * user/temp.ml its one line) *)
-let main (_ : < .. >) (_ : string array) = G.run temperature
+type caps = < Cap.draw; Cap.mouse >
+
+let main (caps : < caps; .. >) (_ : string array) = G.run caps temperature

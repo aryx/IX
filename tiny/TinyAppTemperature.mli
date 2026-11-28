@@ -65,5 +65,10 @@ type msg = Celsius of string | Fahrenheit of string
 (* The converter, for TinyLibGUI's run *)
 val temperature : (model, msg) TinyLibGUI.gui
 
-(* The program temp. It needs no capability of its own. *)
-val main : < .. > -> string array -> Exit.t
+(* What TinyLibGUI's loop needs, so what the program needs: the window
+ * to draw in and its mouse (old: no capability, the window's descriptors
+ * constants). *)
+type caps = < Cap.draw; Cap.mouse >
+
+(* The program temp. *)
+val main : < caps; .. > -> string array -> Exit.t

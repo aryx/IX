@@ -8,6 +8,8 @@
  * tiny-machine -screen writes it. The model's place is printed.
  * usage: Host.exe font1.bin out.ppm *)
 let () =
+  (* the stub's capabilities, the caps library's *)
+  Cap.main @@ fun caps ->
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
   Bytes.blit_string font 0 KRaw.mem 0x1000 (String.length font);
   let g = TinyAppSquare.game in
@@ -21,10 +23,10 @@ let () =
     |> frames 45
     |> after (List.init 20 (fun _ -> TinyLibPlayground.Up)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
-  TinyLibSystem.write TinyLibSystem.fd_draw
+  TinyLibSystem.write (TinyLibSystem.fd_draw caps)
     (TinyLibDraw.d_image TinyLibPlayground.picture (0, 0, g.width, g.height) 0)
   |> ignore;
-  TinyLibSystem.write TinyLibSystem.fd_draw
+  TinyLibSystem.write (TinyLibSystem.fd_draw caps)
     (TinyLibDraw.d_image TinyLibPlayground.ground (0, 0, g.width, g.height) 0)
   |> ignore;
   (* the game's shapes, then ellipses and discs: a circle's box of 21,
@@ -64,7 +66,7 @@ let () =
         Move (92, 140, regular 6 0xfc 14);
         Move (128, 140, Disc (0, 29, 29));
         Move (128, 140, regular 8 0xf0 14) ] in
-  TinyLibPlayground.show g [] (g.view m @ shapes);
+  TinyLibPlayground.show caps g [] (g.view m @ shapes);
   (* twice the same random numbers from a seed *)
   let rec numbers n s =
     if n = 0 then []

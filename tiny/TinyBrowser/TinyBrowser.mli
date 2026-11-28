@@ -124,15 +124,17 @@
  * arrow the previous one. The up and down arrows move by a line; q
  * quits and clears the screen. When the keys end (as in a recorded
  * session) and the page is all there, the program ends
- * and leaves the page on the screen. The capabilities are for waiting
- * for the window's size, dialing the wire, keeping a download, and
- * running a helper. *)
+ * and leaves the page on the screen. The capabilities are for drawing
+ * in the window and reading its mouse, waiting for the window's size,
+ * dialing the wire, keeping a download, and running a helper. *)
 val browse :
-  < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; .. > ->
+  < Cap.draw; Cap.mouse; Cap.clock; Cap.network; Cap.open_out; Cap.fork;
+    Cap.exec; .. > ->
   string -> unit
 
 (* [main caps argv] is the program, run as "www address" or "www words".
  * It shows the page at the address, or searches for the words. *)
 val main :
-  < Cap.clock; Cap.network; Cap.open_out; Cap.fork; Cap.exec; Cap.stderr; .. > ->
+  < Cap.draw; Cap.mouse; Cap.clock; Cap.network; Cap.open_out; Cap.fork;
+    Cap.exec; Cap.stderr; .. > ->
   string array -> Exit.t

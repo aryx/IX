@@ -70,12 +70,12 @@ type model = { days : int; speed : int; paused : bool }
 
 val game : model TinyLibPlayground.game
 
-(* What the playground's loop needs, so what the orrery needs: the clock
- * for the frames' times, a random seed for [init] (the orrery's ignores
- * it), and the speaker (Cap.audio), which the loop opens for any game's
- * sounds, though the orrery makes none (its [sound] and [music] are
- * silent). *)
-type caps = < Cap.audio; Cap.random; Cap.clock >
+(* What the playground's loop needs, so what the orrery needs: the window
+ * to draw in (Cap.draw), the clock for the frames' times, a random seed
+ * for [init] (the orrery's ignores it), and the speaker (Cap.audio),
+ * which the loop opens for any game's sounds, though the orrery makes
+ * none (its [sound] and [music] are silent). *)
+type caps = < Cap.draw; Cap.audio; Cap.random; Cap.clock >
 
 (* the program, orrery: the game run with the system's clock *)
 val main : < caps; .. > -> string array -> Exit.t

@@ -287,6 +287,6 @@ let game : model P.game = {
 
 (* the program, tetris: the game run, its speaker, seed and clock the
  * system's *)
-type caps = < Cap.audio; Cap.random; Cap.clock >
+type caps = < Cap.draw; Cap.audio; Cap.random; Cap.clock >
 
 let main (caps : < caps; .. >) (_ : string array) = P.run caps game

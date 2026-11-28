@@ -230,7 +230,8 @@ type 'm game = {
 
 (* The loop of a game. It draws only when the shapes differ, and ends on
  * q or at the end of the keys with Exit.OK, so a game never sees a q. *)
-val run : < Cap.audio; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
+val run :
+  < Cap.draw; Cap.audio; Cap.random; Cap.clock; .. > -> 'm game -> Exit.t
 
 (* [sin a] and [cos a] for an angle a in 4096ths of a turn, times 1024
  * (any a, taken modulo a turn): tiny-ml has no floats. They come from
@@ -254,14 +255,15 @@ val random : int -> int
 val samples_message : string -> string
 
 (* [draw image x y shape] gathers the drawing messages, and [flush]
- * writes them. TinyLibGUI uses them for widgets, not whole pictures. *)
+ * writes them, the only one that draws. TinyLibGUI uses them for
+ * widgets, not whole pictures. *)
 val draw : TinyLibDraw.image -> int -> int -> shape -> unit
-val flush : unit -> unit
+val flush : < Cap.draw; .. > -> unit
 
 (* [show g shown now] draws the shapes [now]. It redraws the ground,
  * which is the first shape, only when it changed. The tests use the
  * image numbers [picture] and [ground]. *)
-val show : 'm game -> shape list -> shape list -> unit
+val show : < Cap.draw; .. > -> 'm game -> shape list -> shape list -> unit
 
 val picture : int
 val ground : int

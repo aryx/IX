@@ -134,11 +134,11 @@ val music : model -> TinyLibPlayground.tune option
 (* a piece's four cells in the well, as (column, row) *)
 val cells : piece -> (int * int) list
 
-(* What the playground's loop needs, so what tetris needs: the clock for
- * the frames' times and the music's notes, a random seed for [init]
- * (the pieces' order), and the speaker (Cap.audio), where the loop plays
- * the sounds and the theme. *)
-type caps = < Cap.audio; Cap.random; Cap.clock >
+(* What the playground's loop needs, so what tetris needs: the window to
+ * draw in (Cap.draw), the clock for the frames' times and the music's
+ * notes, a random seed for [init] (the pieces' order), and the speaker
+ * (Cap.audio), where the loop plays the sounds and the theme. *)
+type caps = < Cap.draw; Cap.audio; Cap.random; Cap.clock >
 
 (* The program tetris. It runs until a q or the end of the keys. *)
 val main : < caps; .. > -> string array -> Exit.t

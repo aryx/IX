@@ -17,8 +17,8 @@ languages/dotnet/assembly, lib_playground/random, lib_terminal,
 languages/pascal, languages/scheme; the linker's units for mini-dotnet;
 languages/dotnet/runtime; languages/prolog; mini-ml's parser for
 mini-emacs; lib_terminal/hosts; the assembler and the linker as
-libraries. Left of step 4: runtime.c, which the kernel steps compile.
-Step 6 done for m-ix (the start's units read from the link's files,
+libraries; the kernels' runtime, a file of each kernel including
+runtime.c with its heap. Step 4 done. Step 6 done for m-ix (the start's units read from the link's files,
 mini-ml -o linking), done before the rethink: they are independent.
 Next: the rethink (objects beside their sources), decided before step
 5. Proposed too (2026-11-26): t-IX's tests and checks, T1 to T6.**
@@ -258,6 +258,29 @@ first requirement.
    where the flushes fall (most of the growth right after a few
    functions, 19 KB after libc's pow). Not changed here.
    Step 4 is done but for runtime.c, which the kernel steps compile.
+   Done (2026-11-28): runtime.c, compiled by eight rules of six
+   mkfiles (steps 1 to 3, mkkernel's for mini-xv6 and mini-9pi,
+   oberon, squeak, singularity's kernel and its processes) with five
+   heaps, -DMAXHEAP and -DSTACK (and mkkernel's -DTRACING). The heap is
+   the runtime's bss, its size known when compiled, so a kernel cannot
+   link lib_core's runtime object: each has instead a file that sets
+   its sizes and includes runtime.c, step0's rt.c for the steps,
+   lib_machine's rt.c, oberon's, squeak's and singularity's
+   machine/rt.c, singularity's lib/prt.c, an object each of its own
+   source; the HEAP variables gone. mini-cc finds runtime.c's parts
+   (gc.c...) by -I, a quoted include searched first in the directory of
+   the file compiled (5c's), the kernel's: none of their names there.
+   Checked, the images of a scratch copy built before and after, O=7
+   and O=5: the steps' the same bytes; mini-xv6's, mini-9pi's
+   (FS=/dev/null), oberon's, squeak's (O=7 only, Pi 4 only) and
+   singularity's 6 to 8 bytes apart, the kernel's stamp, the checksum
+   of its objects, whose runtime's names another source; the 13
+   processes' images the same. Found on the way: singularity's p_init
+   not the same from nothing and again (bugs/ix.md, fixed); and
+   comments right after a recipe line, which mini-mk takes as the
+   recipe's and prints (step 1's noise): the steps' before their start
+   rule (9064d613's, step 6) and the runtime's, a blank line before
+   each now.
 
 5. **Interfaces from one place (habit 3, t-IX's -L).** Programs are
    compiled against the libraries as installed, `mk install`'s

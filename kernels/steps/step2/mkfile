@@ -17,20 +17,23 @@ D=$B/kernels/steps/step2
 MADE=`{mkdir -p $D}
 BD=`{if(~ $O 5) echo pi1; if not if(~ $O 7) echo pi4}
 ENTRY=`{if(~ $O 5) echo _start; if not if(~ $O 7) echo vectors}
-# (The words are quoted because, after a variable's =, mk reads a word
-# before another = as attributes.)
-HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 
 all:V: $D/kernel8.img
 
 $D/Main.$O: Main.ml
 	$ML $STDI -o $target Main.ml
+
 # (the start of the units of lib_core.a, Main's and std_exit's, in
 # that order, as linked)
 $D/start.$O: $STDOBJS $D/Main.$O mkfile $TOP/mkfiles/mkconfig
 	$ML -start $STDOBJS $D/Main.$O $L/std_exit.$O -o $target
-$D/runtime.$O: $RTSRC mkfile
-	$CC $CINC $HEAP -o $target $TOP/languages/ml/runtime/runtime.c
+
+# (mini-ml's runtime with the steps' heap, step0's rt.c, which
+# includes it; its parts found by -I)
+# old: $CC $CINC $HEAP -o $target $TOP/languages/ml/runtime/runtime.c,
+# HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
+$D/runtime.$O: ../step0/rt.c $RTSRC
+	$CC $CINC -I$TOP/languages/ml/runtime -o $target ../step0/rt.c
 $D/l.$O: $BD/l.s ../step0/${P}l.s
 	$AS -o $target $BD/l.s
 $D/user.$O: $BD/user.s

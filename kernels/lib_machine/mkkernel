@@ -50,12 +50,6 @@ IMAGE=$D/`{if(~ $O 5) echo kernel.img; if not if(~ $O 7) echo kernel8.img}
 KTEXT=`{if(~ $O 5) echo 0x80008000; if not if(~ $O 7) echo 0xffffff8000080000}
 ENTRY=`{if(~ $O 5) echo _start; if not if(~ $O 7) echo vectors}
 WORD=`{if(~ $O 5) echo 4; if not if(~ $O 7) echo 8}
-# The heap is two halves of 4M words (32 MB each), and the value stack
-# is 1 MB, for the boot's use. With the image, they stay far below the
-# 256 MB where the processes' pages start (board.h's HEAP_LIMIT).
-# (Quoted, because after a variable's =, mk reads a word before another
-# = as attributes.)
-HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 LIB_ML=Machine Screen Page Arch Mmu
 ALL_ML=$LIB_ML $KNAMES
 MLI=-I $KLIB -I $BD $KI $STDI
@@ -94,8 +88,11 @@ $D/start.$O: $STDOBJS $MLOBJS mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 # -O3, its back end with registers (plan_cc_ssa.md); COPT= gives
 # compat's back end instead, with 5c -O0's code.
 COPT=-O3
-$D/rt.$O: $RTSRC $KLIB/mkkernel
-	$CC $COPT $CINC $HEAP -DTRACING -o $target $RT/runtime.c
+# (mini-ml's runtime with the kernel's heap, rt.c, which includes it)
+# old: $CC $COPT $CINC $HEAP -DTRACING -o $target $RT/runtime.c,
+# HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
+$D/rt.$O: $KLIB/rt.c $RTSRC
+	$CC $COPT $CINC -I$RT -o $target $KLIB/rt.c
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
 $D/kruntime.$O: $KLIB/runtime.c $KH
 	$CC $COPT $KINC $KFLAGS -o $target $KLIB/runtime.c

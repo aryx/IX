@@ -725,3 +725,19 @@ less of the build, so the processes that would give pages back do not
 within it. Not fixed; not reproduced on the Mac. A fix could be a wait
 that counts the others' progress rather than the clock, or fewer
 links at once on the card.
+
+## mini-singularity: p_init.img not the same from nothing and again (2026-11-28, fixed)
+
+Found comparing the kernels' images before and after their runtime's
+rt.c (plan_simpler_builds.md, step 4): a build of kernels/singularity
+from nothing made a p_init.img of 676,080 bytes, a build again (its
+mkfile touched) one of 676,056, and the kernel, which has the programs
+inside, 137,794 bytes different; the 12 other programs the same. Each
+program's Given (mini-singml -given) is compiled by mini-ml -O3, which
+reads Sip's summary, Sip.inline, when it is there; the rule asked
+lib/Sip.mli alone, not Sip's object, so from nothing g_init's, the
+first, was compiled before it and called Sip.given where the others
+inline it. Reproduce: rm -rf _mk/7/kernels/singularity; mini-mk;
+cp p_init.img a; touch mkfile; mini-mk; cmp a p_init.img. Fixed: the
+rule after $D/Sip.$O; from nothing, all 13 images the bytes of a build
+again.

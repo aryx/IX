@@ -57,13 +57,6 @@ LIBC=$TOP/lib_core/libc
 CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
 KINC=$CINC -I$RT -I$BD
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
-# The kernel's heap has two halves of 1M words, and its value stack has
-# 1 MB. The words are quoted because, after a variable's =, mk reads a
-# word before another = as attributes.
-HEAP='-DMAXHEAP=1048576' '-DSTACK=131072'
-# A process's heap has two halves of 256k words, and its value stack
-# has 64k.
-PHEAP='-DMAXHEAP=262144' '-DSTACK=65536'
 
 # The image: its name (the one the firmware looks for on each board),
 # the address of its text (where the board loads it, in the kernel's
@@ -115,8 +108,12 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	$ML -start $STD $UNITS Std_exit -o $target
 
 # the C and the assembly
-$D/rt.$O: $RTSRC mkfile
-	$CC $CINC $HEAP -o $target $RT/runtime.c
+# (mini-ml's runtime with the kernel's heap, machine/rt.c, which
+# includes it)
+# old: $CC $CINC $HEAP -o $target $RT/runtime.c,
+# HEAP='-DMAXHEAP=1048576' '-DSTACK=131072'
+$D/rt.$O: $M/rt.c $RTSRC
+	$CC $CINC -I$RT -o $target $M/rt.c
 $D/kruntime.$O: $M/runtime.c $KH
 	$CC $KINC -o $target $M/runtime.c
 $D/usb_c.$O: $M/usb.c $KH
@@ -136,7 +133,7 @@ $D/crossl.$O: cross_$ARCH.s
 
 # A process's program: its Main comes after the standard library and
 # Sip (in lib/, the kernel's calls), and before the run-time system,
-# which has its own heap (PHEAP). It runs on top of lib/'s start and
+# which has its own heap (lib/prt.c). It runs on top of lib/'s start and
 # system, where sip.c takes the place of Linux's calls. It is linked at
 # its slot's address, with the start first, because the image's first
 # bytes are its entry.
@@ -170,8 +167,12 @@ ${MADE:%=$D/%.$O}: $CMADE $CSRC lib/Sip.mli lib/Contract.mli
 	for t in $target; do
 		$ML $PMLI -o $t $D/`basename $t .$O`.ml || exit 1
 	done
-$D/prt.$O: $RTSRC mkfile
-	$CC $CINC $PHEAP -o $target $RT/runtime.c
+
+# (a process's heap: lib/prt.c)
+# old: $CC $CINC $PHEAP -o $target $RT/runtime.c,
+# PHEAP='-DMAXHEAP=262144' '-DSTACK=65536'
+$D/prt.$O: lib/prt.c $RTSRC
+	$CC $CINC -I$RT -o $target lib/prt.c
 $D/pstart.$O: mkfile $TOP/mkfiles/mkconfig
 	$ML -start $STD Contract Sip $CONTRACTS Given Main Std_exit -o $target
 PMLI=-I lib -I contracts -I $D ${LIBDIRS:%=-I $TOP/lib_core/%}
@@ -182,8 +183,10 @@ PEND=$L/std_exit.$O $D/prt.$O $L/libc.a
 # own code.)
 # (Each program has a module Given, with what its manifest names and
 # the endpoints its parent gave it. mini-singml makes one for each
-# program.)
-$D/g_%.given: programs/%/Main.ml lib/Sip.mli $MANIFESTS mkfile
+# program. After Sip's object, whose summary, Sip.inline, -O3 reads:
+# without it, a build from nothing compiled g_init's first, calling
+# Sip.given where the others inline it, and made another p_init.img.)
+$D/g_%.given: programs/%/Main.ml lib/Sip.mli $D/Sip.$O $MANIFESTS mkfile
 	mkdir -p $D/g_$stem
 	m=programs/$stem/Main.app; [ -f $m ] || m=/dev/null
 	mini-singml -given -o $D/g_$stem $m

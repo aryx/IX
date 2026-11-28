@@ -55,10 +55,6 @@ LIBC=$TOP/lib_core/libc
 CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux
 KINC=$CINC -I$RT -I$BD
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
-# The heap has two halves of 4M words, and the value stack has 1 MB.
-# The words are quoted because, after a variable's =, mk reads a word
-# before another = as attributes.
-HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
 
 # The image: its name (the one the firmware looks for on each board),
 # the address of its text (where the board loads it, in the kernel's
@@ -88,8 +84,12 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig
 	$ML -start $STD $UNITS Std_exit -o $target
 
 # the C and the assembly
-$D/rt.$O: $RTSRC mkfile
-	$CC $CINC $HEAP -o $target $RT/runtime.c
+# (mini-ml's runtime with the kernel's heap, machine/rt.c, which
+# includes it)
+# old: $CC $CINC $HEAP -o $target $RT/runtime.c,
+# HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
+$D/rt.$O: $M/rt.c $RTSRC
+	$CC $CINC -I$RT -o $target $M/rt.c
 $D/kruntime.$O: $M/runtime.c $KH
 	$CC $KINC -o $target $M/runtime.c
 $D/usb_c.$O: $M/usb.c $KH
